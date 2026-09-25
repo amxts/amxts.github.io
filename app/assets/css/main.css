@@ -12,9 +12,249 @@
   --ui-container: var(--container-8xl);
 }
 
+/* The landing's sections are neutral-950 in dark mode; the rest of the site matches them. */
+.dark {
+  --ui-bg: var(--ui-color-neutral-950);
+}
+
 @layer base {
   button:not(:disabled),
   [role='button']:not([aria-disabled='true']) {
     cursor: pointer;
   }
+}
+
+/*
+ * Twoslash: the types on hover in the docs' code. Its stylesheet is written
+ * for VitePress: it colors the popup through --twoslash-* variables that point
+ * at VitePress' --vp-* ones, which the site does not have. They are set here
+ * to the site's tokens (html:root outranks its :root). The hover's code comes
+ * out as an inline <code> styled by the prose component: it is made a block.
+ */
+html:root {
+  --twoslash-popup-bg: color-mix(in oklab, var(--ui-bg-elevated) 60%, var(--ui-bg));
+  --twoslash-popup-color: var(--ui-text);
+  --twoslash-border-color: var(--ui-border-accented);
+  --twoslash-docs-color: var(--ui-text-toned);
+  --twoslash-code-size: 0.75rem;
+  --twoslash-popup-shadow: 0 12px 32px -8px rgb(0 0 0 / 0.35);
+  --twoslash-underline-color: color-mix(in oklab, var(--ui-text-muted) 60%, transparent);
+  --vp-code-line-height: 1.6;
+  --vp-z-index-local-nav: 61;
+}
+
+.twoslash .twoslash-hover {
+  border-bottom: 1px dotted var(--twoslash-underline-color);
+  transition: background-color 0.15s;
+}
+
+.twoslash .twoslash-hover:hover {
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--ui-text-muted) 18%, transparent);
+}
+
+.v-popper--theme-twoslash .v-popper__inner {
+  /* floating-vue sets its own max-width inline */
+  max-width: min(52rem, calc(100vw - 2rem)) !important;
+  overflow: hidden;
+  border: 1px solid var(--twoslash-border-color);
+  border-radius: calc(var(--ui-radius) * 2);
+  box-shadow: var(--twoslash-popup-shadow);
+}
+
+.v-popper--theme-twoslash .v-popper__arrow-container {
+  display: none;
+}
+
+/* The type scrolls; its description stays in view below it. */
+.twoslash-floating .v-popper__inner > div,
+.twoslash-floating .twoslash-popup-container {
+  display: flex;
+  flex-direction: column;
+  /* floating-vue caps the popup at the room left on screen: take that cap,
+     and scroll the type inside it rather than cut its end off */
+  max-height: inherit;
+  transform: none;
+}
+
+.twoslash-floating .twoslash-popup-container code.twoslash-popup-code {
+  max-height: 24rem;
+  overscroll-behavior: contain;
+}
+
+.twoslash-floating .twoslash-popup-container code.twoslash-popup-code {
+  display: block;
+  max-width: none;
+  margin: 0;
+  padding: 0.625rem 0.875rem;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: var(--twoslash-code-size);
+  font-weight: 400;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.twoslash-floating .twoslash-popup-docs,
+.twoslash-floating .twoslash-popup-docs-tags {
+  flex-shrink: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0.75rem 0.875rem;
+  border-top: 1px solid var(--ui-border);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--ui-text);
+}
+
+.twoslash-floating .twoslash-popup-docs code {
+  padding: 0.05rem 0.3rem;
+  border-radius: calc(var(--ui-radius) * 1);
+  background: var(--ui-bg-accented);
+  font-family: var(--font-mono);
+  font-size: 0.8em;
+}
+
+.twoslash-floating .twoslash-popup-code :is(div, pre, code) {
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  font: inherit;
+  white-space: inherit;
+}
+
+.twoslash-floating .twoslash-popup-code :is(div, pre, code) button {
+  display: none;
+}
+
+/* An example inside a description: a small code block, a line per line. */
+.twoslash-floating .twoslash-popup-docs :is(div, pre) {
+  margin: 0.5rem 0;
+}
+
+.twoslash-floating .twoslash-popup-docs pre {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  overflow-x: auto;
+  border: 1px solid var(--ui-border);
+  border-radius: calc(var(--ui-radius) * 1.5);
+  background: var(--ui-bg) !important;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.twoslash-floating .twoslash-popup-docs pre code {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: inherit;
+  white-space: pre;
+}
+
+.twoslash-floating .twoslash-popup-docs pre .line {
+  display: block;
+  min-height: 1lh;
+}
+
+.twoslash-floating .twoslash-popup-docs pre button {
+  display: none;
+}
+
+/* A line of the hover's type per row, whatever renders the code (the landing
+   has its own inline-code component, which drops the line breaks). */
+.twoslash-floating .twoslash-popup-code .line {
+  display: block;
+  min-height: 1lh;
+  background: none;
+}
+
+/* Shiki's dark rule paints every token with the theme's background; in the
+   popup that shows as a box per token. One background: the popup's. */
+.twoslash-floating .twoslash-popup-container span {
+  background-color: transparent !important;
+}
+
+/* An example in a description arrives wrapped in an inline <code>: no chip
+   around the block, and the prose paragraphs keep a hover's spacing. */
+.twoslash-floating .twoslash-popup-docs > code {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.twoslash-floating .twoslash-popup-docs p {
+  margin: 0.375rem 0;
+  line-height: inherit;
+}
+
+.twoslash-floating .twoslash-popup-docs > :first-child {
+  margin-top: 0;
+}
+
+.twoslash-floating .twoslash-popup-docs > :last-child {
+  margin-bottom: 0;
+}
+
+/* A member of a type on one line: the popup widens or scrolls sideways
+   instead of wrapping a signature in two. */
+.twoslash-floating .twoslash-popup-container code.twoslash-popup-code,
+.twoslash-floating .twoslash-popup-code :is(pre, code) {
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* The description: across the whole popup, under a full-width rule, with an
+   info mark on the left, in the body text's color. */
+.twoslash-floating .twoslash-popup-container .twoslash-popup-docs {
+  position: relative;
+  align-self: stretch;
+  width: auto;
+  max-width: none !important;
+  max-height: none;
+  padding: 0.75rem 1rem 0.75rem 2.5rem !important;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--ui-text-toned);
+}
+
+.twoslash-floating .twoslash-popup-docs::before {
+  content: 'i';
+  position: absolute;
+  /* centered on the first line of the text */
+  top: 0.9rem;
+  left: 0.875rem;
+  display: grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--ui-primary) 18%, transparent);
+  color: var(--ui-primary);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* The popup's scrollbars, visible on the dark background. */
+.twoslash-floating :is(.twoslash-popup-code, .twoslash-popup-code pre, .twoslash-popup-docs) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-border-accented) transparent;
+}
+
+/* A code block's copy button has no place in a hover. */
+.twoslash-floating .twoslash-popup-container button {
+  display: none !important;
 }

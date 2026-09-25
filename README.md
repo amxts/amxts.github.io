@@ -1,6 +1,6 @@
-# Xen site
+# amxts site
 
-The website of Xen, the framework for writing AMX Mod X (Counter-Strike 1.6)
+The website of amxts, the framework for writing AMX Mod X (Counter-Strike 1.6)
 plugins in TypeScript: a landing page, the documentation in English and
 Russian, and a catalog of modules.
 
@@ -72,18 +72,18 @@ page in the framework goes there too, in both languages.
 
 ## How a module gets into the catalog
 
-Publish it to npm with the keyword `xen-module` in its `package.json`:
+Publish it to npm with the keyword `amxts-module` in its `package.json`:
 
 ```json
 {
-  "name": "xen-votes",
-  "keywords": ["xen-module", "xen-menus"]
+  "name": "amxts-votes",
+  "keywords": ["amxts-module", "amxts-menus"]
 }
 ```
 
-A second keyword picks the category: `xen-menus`, `xen-config`,
-`xen-network`; without one it is "Other". The catalog reads the npm search
-API (`keywords:xen-module`) on the server and caches the answer for an hour
+A second keyword picks the category: `amxts-menus`, `amxts-config`,
+`amxts-network`; without one it is "Other". The catalog reads the npm search
+API (`keywords:amxts-module`) on the server and caches the answer for an hour
 (`server/utils/modules.ts`); a module's page shows its npm README.
 
 Modules that ship with the framework and are not on npm yet - menu-core,
@@ -96,7 +96,6 @@ Each lives in one constant in `shared/site.ts`:
 
 - `repository` - the framework's repository (GitHub or GitLab). Empty for
   now, so the header's button is disabled.
-- `officialScope` - the npm scope of the official modules (`@xen` may be
-  taken).
-- `siteUrl` - the public address (`https://xen.example` is a placeholder);
+- `officialScope` - the npm scope of the official modules (`@amxts`).
+- `siteUrl` - the public address (`https://amxts.example` is a placeholder);
   `NUXT_PUBLIC_SITE_URL` overrides it.

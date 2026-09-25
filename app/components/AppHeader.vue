@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { ContentNavigationItem } from '@nuxt/content'
-import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
+import type { NavigationMenuItem } from '@nuxt/ui'
+import { en, ru } from '@nuxt/ui/locale'
 import { repository } from '#shared/site'
 
 const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
 
 const route = useRoute()
-const { t, locale, locales } = useI18n()
+const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const switchLocalePath = useSwitchLocalePath()
 
@@ -20,12 +21,11 @@ const items = computed<NavigationMenuItem[]>(() => [{
   active: route.path.startsWith(localePath('/modules')),
 }])
 
-const languages = computed<DropdownMenuItem[]>(() => locales.value.map(item => ({
-  label: item.name ?? item.code,
-  to: switchLocalePath(item.code),
-  type: 'checkbox',
-  checked: item.code === locale.value,
-})))
+// The same page in the other language: switchLocalePath keeps the path.
+const language = computed({
+  get: () => locale.value,
+  set: code => navigateTo(switchLocalePath(code as typeof locale.value)),
+})
 
 const providerName = repository.provider === 'gitlab' ? 'GitLab' : 'GitHub'
 const repositoryLabel = computed(() => repository.url
@@ -46,16 +46,30 @@ const repositoryLabel = computed(() => repository.url
 
       <UContentSearchButton :collapsed="false" class="hidden lg:inline-flex" />
 
-      <UDropdownMenu :items="languages" :content="{ align: 'end' }">
-        <UButton
-          icon="i-lucide-languages"
-          color="neutral"
-          variant="ghost"
-          :label="locale.toUpperCase()"
-          :aria-label="t('header.language')"
-        />
-      </UDropdownMenu>
+      <USelectMenu
+        v-model="language"
+        :items="[en, ru]"
+        value-key="code"
+        label-key="name"
+        :search-input="false"
+        variant="none"
+        :aria-label="t('header.language')"
+        :ui="{
+          base: 'text-muted transition-colors hover:text-highlighted data-[state=open]:text-highlighted',
+          content: 'rounded-lg',
+          item: 'cursor-pointer items-center data-[state=checked]:cursor-default data-[state=checked]:text-highlighted data-[state=checked]:before:bg-elevated!',
+          itemTrailing: 'hidden',
+        }"
+        class="w-32"
+      >
+        <template #leading>
+          <span class="rounded bg-elevated px-1 py-0.5 text-[10px]/none font-semibold text-highlighted uppercase">{{ locale }}</span>
+        </template>
 
+        <template #item-leading="{ item }">
+          <span class="rounded bg-elevated px-1 py-0.5 text-[10px]/none font-semibold text-highlighted uppercase">{{ item.code }}</span>
+        </template>
+      </USelectMenu>
       <UColorModeButton />
 
       <UTooltip :text="repositoryLabel">
@@ -76,7 +90,12 @@ const repositoryLabel = computed(() => repository.url
 
       <USeparator class="my-4" />
 
-      <UContentNavigation highlight :navigation="navigation" />
+      <UContentNavigation
+        highlight
+        :collapsible="false"
+        :navigation="navigation"
+        :ui="{ linkTrailingIcon: 'hidden' }"
+      />
     </template>
   </UHeader>
 </template>

@@ -59,7 +59,7 @@ defineProps<{
           <circle cx="64" cy="64" r="7" fill="#F2C94C" />
         </svg>
         <div class="h-px flex-1 bg-border" />
-        <span class="text-xl text-dimmed">Xen</span>
+        <span class="text-xl text-dimmed">amxts</span>
       </div>
     </div>
   </div>

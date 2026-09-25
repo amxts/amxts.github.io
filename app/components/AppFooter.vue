@@ -6,7 +6,7 @@ const localePath = useLocalePath()
 <template>
   <UFooter>
     <template #left>
-      <p>Xen · {{ t('footer.tagline') }}</p>
+      <p>amxts · {{ t('footer.tagline') }}</p>
     </template>
 
     <template #right>

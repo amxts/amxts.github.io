@@ -20,6 +20,6 @@
       <circle cx="64" cy="64" r="7" fill="#F2C94C" />
     </svg>
 
-    <span class="text-xl font-bold tracking-tight text-highlighted">Xen</span>
+    <span class="text-xl font-bold tracking-tight text-highlighted">amxts</span>
   </span>
 </template>

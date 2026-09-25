@@ -17,7 +17,7 @@
   },
   "modules": {
     "title": "Modules",
-    "description": "Libraries for Xen plugins: menus, configs, HTTP and more. Every package on npm with the xen-module keyword is listed here.",
+    "description": "Libraries for amxts plugins: menus, configs, HTTP and more. Every package on npm with the amxts-module keyword is listed here.",
     "search": "Search modules",
     "all": "All",
     "count": "No modules | {n} module | {n} modules",
@@ -41,13 +41,15 @@
     "noReadme": "This module has no README on npm yet.",
     "back": "All modules",
     "addYours": "Add your module",
-    "addYoursHint": "Publish it to npm with the xen-module keyword in package.json; a second keyword (xen-menus, xen-config, xen-network) picks its category.",
+    "addYoursHint": "Publish it to npm with the amxts-module keyword in package.json; a second keyword (amxts-menus, amxts-config, amxts-network) picks its category.",
     "categories": {
       "menus": "Menus",
       "config": "Configuration",
       "network": "Network",
       "other": "Other"
-    }
+    },
+    "browseNpm": "Browse on npm",
+    "create": "Create your own module"
   },
   "page": {
     "copy": "Copy page",
@@ -59,5 +61,16 @@
     "more": "More ways to copy this page",
     "notFound": "Page not found",
     "notFoundDescription": "This page does not exist."
+  },
+  "architecture": {
+    "server": "CS 1.6 server",
+    "amxx": "AMX Mod X",
+    "module": "runs your .aot plugins with WAMR",
+    "host": "generated, holds no logic",
+    "natives": "natives by name",
+    "others": "Modules and Pawn plugins",
+    "othersHint": "reapi, hamsandwich, cstrike, your .amxx",
+    "build": "Build",
+    "loaded": "loaded"
   }
 }

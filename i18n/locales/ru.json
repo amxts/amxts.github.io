@@ -17,7 +17,7 @@
   },
   "modules": {
     "title": "Модули",
-    "description": "Библиотеки для плагинов Xen: меню, конфиги, HTTP и другое. Здесь собран каждый пакет на npm с ключевым словом xen-module.",
+    "description": "Библиотеки для плагинов amxts: меню, конфиги, HTTP и другое. Здесь собран каждый пакет на npm с ключевым словом amxts-module.",
     "search": "Поиск модулей",
     "all": "Все",
     "count": "Модулей: {n}",
@@ -41,13 +41,15 @@
     "noReadme": "У этого модуля пока нет README на npm.",
     "back": "Все модули",
     "addYours": "Добавить свой модуль",
-    "addYoursHint": "Опубликуйте его на npm с ключевым словом xen-module в package.json; второе ключевое слово (xen-menus, xen-config, xen-network) задаёт категорию.",
+    "addYoursHint": "Опубликуйте его на npm с ключевым словом amxts-module в package.json; второе ключевое слово (amxts-menus, amxts-config, amxts-network) задаёт категорию.",
     "categories": {
       "menus": "Меню",
       "config": "Конфигурация",
       "network": "Сеть",
       "other": "Другое"
-    }
+    },
+    "browseNpm": "Смотреть на npm",
+    "create": "Создать свой модуль"
   },
   "page": {
     "copy": "Копировать страницу",
@@ -59,5 +61,16 @@
     "more": "Другие способы скопировать страницу",
     "notFound": "Страница не найдена",
     "notFoundDescription": "Такой страницы нет."
+  },
+  "architecture": {
+    "server": "Сервер CS 1.6",
+    "amxx": "AMX Mod X",
+    "module": "запускает ваши плагины .aot через WAMR",
+    "host": "сгенерирован, без логики",
+    "natives": "нативы по имени",
+    "others": "Модули и Pawn-плагины",
+    "othersHint": "reapi, hamsandwich, cstrike, ваши .amxx",
+    "build": "Сборка",
+    "loaded": "загружен"
   }
 }
