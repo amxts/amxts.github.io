@@ -1229,6 +1229,23 @@ export declare class PluginInfo {
 }
 export declare function plugin(info: PluginInfo): void;
 /**
+ * What amxts.config.ts sets for each module, under its configKey. Empty here:
+ * a module adds its own key by augmenting this interface in "@amxts/core" -
+ * `menus?: Partial<MenuCoreOptions>` - and the editor types the config from it.
+ */
+export interface ModuleOptions {
+}
+/**
+ * A module's definition - `export default defineModule<Options>({ meta,
+ * requires, defaults, setup })` in its module file, global like Nuxt's.
+ * asc never compiles the call: the build reads meta, requires and defaults
+ * from the source and turns setup into a function of the module that its
+ * top level calls with the merged options (scripts/project.ts). This is
+ * here, and global, so that an explicit `import { defineModule } from
+ * "@amxts/core"` resolves too; its types for the editor are in amxts.d.ts.
+ */
+export declare function defineModule<T>(definition: AmxtsModule<T>): AmxtsModule<T>;
+/**
  * When the plugins answering a forward stop it: `"never"` - everyone hears
  * it, whatever they return - or `"handled"`, the first PLUGIN_HANDLED ends it.
  */

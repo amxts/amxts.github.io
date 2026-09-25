@@ -12,6 +12,9 @@ const to = (path: string) => `${baseURL}${path.slice(1)}`
 // the origin (the deploy workflow passes the Pages one); site-config, OG
 // images and i18n add the base path to it, llms.txt does not
 const publicUrl = process.env.NUXT_PUBLIC_SITE_URL || siteUrl
+// a file of the framework's declarations (docs-types/), with forward slashes,
+// the form TypeScript uses for paths
+const declarations = (path: string) => fileURLToPath(new URL(`./docs-types/${path}`, import.meta.url)).replaceAll('\\', '/')
 
 /** https://nuxt.com/docs/api/configuration/nuxt-config */
 export default defineNuxtConfig({
@@ -63,8 +66,12 @@ export default defineNuxtConfig({
       // (the module's default), and without it `number[]` reads as `{}`. No DOM:
       // the framework declares its own Event and AbortSignal.
       lib: ['lib.esnext.d.ts'],
-      // with forward slashes, the form TypeScript uses for paths
-      paths: { '~/*': [fileURLToPath(new URL('./docs-types/amxts/*', import.meta.url)).replaceAll('\\', '/')] },
+      // `~/*` inside the framework, and the packages a project imports
+      paths: {
+        '~/*': [declarations('amxts/*')],
+        '@amxts/core': [declarations('amxts/facade.d.ts')],
+        '@amxts/*': [declarations('packages/*/index.d.ts')],
+      },
     },
   },
 

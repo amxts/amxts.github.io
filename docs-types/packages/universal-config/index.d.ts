@@ -1,4 +1,15 @@
-/// <reference path="../../as-types.d.ts" />
+/** What a project sets for universal-config in amxts.config.ts, under `universalConfig`. */
+export interface UniversalConfigOptions {
+    /** The folder under configs/ that file names are relative to: "" is configs/ itself. */
+    folder: string;
+}
+declare const _default: AmxtsModule<UniversalConfigOptions>;
+export default _default;
+declare module "@amxts/core" {
+    interface ModuleOptions {
+        universalConfig?: Partial<UniversalConfigOptions>;
+    }
+}
 /** A `key = value` line, or a `key = { ... }` block. */
 export type EntryKind = "value" | "block";
 /** What a block holds: one value, a line of strings, or rows. */

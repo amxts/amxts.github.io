@@ -103,7 +103,7 @@ function twoslash(block: string) {
     return block
   const [fence, ...rest] = block.split('\n')
   const code = rest.join('\n')
-  const hidden = facade.length && !block.includes('from "~/facade"')
+  const hidden = facade.length && !/from "(?:~\/facade|@amxts\/core)"/.test(block)
     ? [`import { ${facade.join(', ')} } from "~/facade";`]
     : []
   // An example that talks about `player` without declaring it gets one, so
