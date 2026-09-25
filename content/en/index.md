@@ -1,8 +1,8 @@
 ---
-title: Xen
+title: amxts
 seo:
-  title: Xen - CS 1.6 plugins in TypeScript
-description: AMX Mod X plugins for Counter-Strike 1.6 in TypeScript. Xen compiles a plugin to native code and runs it inside AMX Mod X, next to your Pawn plugins.
+  title: amxts — CS 1.6 plugins in TypeScript
+description: AMX Mod X plugins for Counter-Strike 1.6 in TypeScript. amxts compiles a plugin to native code and runs it inside AMX Mod X, next to your Pawn plugins.
 ---
 
 ::u-page-hero{class="dark:bg-linear-to-b from-neutral-900 to-neutral-950"}
@@ -15,7 +15,7 @@ orientation: horizontal
 #headline
   :::u-badge
   ---
-  color: neutral
+  color: primary
   variant: subtle
   ---
   AMX Mod X · Counter-Strike 1.6
@@ -25,7 +25,7 @@ orientation: horizontal
 CS 1.6 plugins in [TypeScript]{.text-primary}.
 
 #description
-Write a plugin the way you write any TypeScript: familiar types, classes, `Map`, `async`/`await`, events. Xen compiles it to WebAssembly and then ahead of time to machine code, and runs it inside an AMX Mod X module - next to your Pawn plugins.
+Write a plugin the way you write any TypeScript: familiar types, classes, `Map`, `async`/`await`, events. amxts compiles it to WebAssembly and then ahead of time to machine code, and runs it inside an AMX Mod X module — next to your Pawn plugins.
 
 #links
   :::u-button
@@ -47,8 +47,8 @@ Write a plugin the way you write any TypeScript: familiar types, classes, `Map`,
   :::
 
 #default
-  :::hero-code
-  ```ts [say-hp.ts]
+  :::code-panel{height="26.5rem"}
+  ```ts twoslash [say-hp.ts]
   import { Player, plugin, print, server } from "~/facade";
 
   plugin({
@@ -70,18 +70,20 @@ Write a plugin the way you write any TypeScript: familiar types, classes, `Map`,
   }
   ```
 
-  ```ts [say-hp.test.ts]
-  import { expect, test } from "bun:test";
+  ```ts twoslash [say-hp.test.ts]
+  import { expect, test } from "vitest"; // or "bun:test"
   import { loadPlugin } from "../src/testing";
 
-  test("/hp tells the player's health", async () => {
+  test("/hp heals a hurt player", async () => {
     const server = await loadPlugin("as/say-hp.ts");
-    const player = server.join("Alice", { health: 100 });
+    const player = server.join("Alice", { health: 40 });
 
     player.say("/hp");
-    expect(player.chat).toContain("Alice, your HP: 100");
-  });
+    expect(player.chat).toContain("Alice, your HP: 40");
+    expect(player.health).toBe(100);
+  }, 60_000);
   ```
+
   :::
 ::
 
@@ -90,7 +92,7 @@ Write a plugin the way you write any TypeScript: familiar types, classes, `Map`,
 TypeScript, not a new language
 
 #description
-A plugin is ordinary TypeScript. Everything AssemblyScript and Pawn need - cells, float bit patterns, string buffers - is kept under the hood, in the facade and the generated natives.
+A plugin is ordinary TypeScript. Everything AssemblyScript and Pawn need — cells, float bit patterns, string buffers — is kept under the hood, in the facade and the generated natives.
 
 #features
   :::u-page-feature
@@ -150,7 +152,7 @@ A plugin is ordinary TypeScript. Everything AssemblyScript and Pawn need - cells
   Save and play
 
   #description
-  `bun run dev` rebuilds the plugins a save affects, deploys them and reloads the running server over rcon. No amxxpc, no map change, nobody disconnected.
+  Save a file and the running server rebuilds and reloads it. No amxxpc, no map change, nobody disconnected.
   :::
 
   :::u-page-feature
@@ -162,7 +164,7 @@ A plugin is ordinary TypeScript. Everything AssemblyScript and Pawn need - cells
   Tests without a server
 
   #description
-  `bun test` loads the plugin's real compiled code into a fake server written in TypeScript: players join, say commands, and timers advance when the test says so.
+  Test plugins with Vitest or bun test: a fake server runs the real compiled plugin. Players join, say commands, and timers advance when the test says so.
   :::
 ::
 
@@ -171,13 +173,19 @@ A plugin is ordinary TypeScript. Everything AssemblyScript and Pawn need - cells
 orientation: horizontal
 ---
 #headline
-Under the hood
+  :::u-badge
+  ---
+  color: primary
+  variant: subtle
+  ---
+  Under the hood
+  :::
 
 #title
 Compiled ahead of time, inside AMX Mod X
 
 #description
-Xen does not translate anything into Pawn. The plugin is compiled to WebAssembly by AssemblyScript, then to i386 machine code by WAMR's `wamrc`, and the `xen_amxx` module loads the result. A native is looked up by name, so every native of every loaded module - and of any other plugin - is reachable.
+amxts does not translate anything into Pawn. The plugin is compiled to WebAssembly by AssemblyScript, then to i386 machine code by WAMR's `wamrc`, and the `amxts_amxx` module loads the result. A native is looked up by name, so every native of every loaded module — and of any other plugin — is reachable.
 
 #features
   :::u-page-feature
@@ -203,26 +211,7 @@ Xen does not translate anything into Pawn. The plugin is compiled to WebAssembly
   :::
 
 #default
-  :::prose-pre
-  ---
-  code: |
-    CS 1.6 server
-    └── AMX Mod X
-        ├── xen_amxx.dll ── WAMR ── your .aot plugins
-        │        │
-        │        └── resolves natives by name in ↓
-        └── xen_host.amxx (generated, holds no logic)
-  ---
-
-  ```text
-  CS 1.6 server
-  └── AMX Mod X
-      ├── xen_amxx.dll ── WAMR ── your .aot plugins
-      │        │
-      │        └── resolves natives by name in ↓
-      └── xen_host.amxx (generated, holds no logic)
-  ```
-  :::
+  :architecture-diagram
 ::
 
 ::u-page-section{class="dark:bg-neutral-950"}
@@ -231,7 +220,13 @@ orientation: horizontal
 reverse: true
 ---
 #headline
-Pawn keeps working
+  :::u-badge
+  ---
+  color: primary
+  variant: subtle
+  ---
+  Pawn keeps working
+  :::
 
 #title
 Pawn plugins can call TypeScript
@@ -245,39 +240,20 @@ Every `export function` of a plugin is an AMX Mod X native with its real types, 
   to: /docs/natives
   color: neutral
   variant: subtle
-  trailing-icon: i-lucide-arrow-right
   ---
-  Natives
+  Read about natives
   :::
 
 #default
-  :::prose-pre
-  ---
-  filename: my-plugin.ts
-  code: |
-    /** A value from a config file, or false when the key is not there. */
-    export function cfg_get_value(file: string, section: string, key: string) {
-      return lookup(file, section, key);   // string | null
-    }
-  ---
-
-  ```ts [my-plugin.ts]
+  :::code-panel{height="6.5rem"}
+  ```ts twoslash [my-plugin.ts]
   /** A value from a config file, or false when the key is not there. */
   export function cfg_get_value(file: string, section: string, key: string) {
     return lookup(file, section, key);   // string | null
   }
   ```
-  :::
 
-  :::prose-pre
-  ---
-  filename: dist-wasm/my_plugin.inc
-  code: |
-    /** A value from a config file, or false when the key is not there. */
-    native bool:cfg_get_value(const file[], const section[], const key[], out[], len);
-  ---
-
-  ```c [dist-wasm/my_plugin.inc]
+  ```pawn [dist-wasm/my_plugin.inc]
   /** A value from a config file, or false when the key is not there. */
   native bool:cfg_get_value(const file[], const section[], const key[], out[], len);
   ```
@@ -290,12 +266,11 @@ Every `export function` of a plugin is an AMX Mod X native with its real types, 
   links:
     - label: Write your first plugin
       to: '/docs/getting-started'
-      trailingIcon: i-lucide-arrow-right
     - label: Explore modules
       to: '/modules'
       variant: subtle
   title: Menus, configs and HTTP are modules
-  description: menu-core, universal-config and http ship with the framework, and every package on npm with the xen-module keyword joins the catalog.
+  description: menu-core, universal-config and http ship with the framework, and every package on npm with the amxts-module keyword joins the catalog.
   class: dark:bg-neutral-950
   ---
 

@@ -23,6 +23,6 @@ useSeoMeta({
     v-if="page"
     :value="page"
     :prose="false"
-    :components="{ a: 'prose-a' }"
+    :components="{ a: 'prose-a', code: 'landing-code' }"
   />
 </template>
