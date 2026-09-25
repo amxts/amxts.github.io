@@ -1,6 +1,14 @@
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import pawn from './pawn.tmLanguage'
+import { docPages, docsPrefix } from './shared/docs'
 import { siteUrl } from './shared/site'
+
+// The path the site is served under: '/' locally, '/site/' on the GitHub Pages
+// project page (the deploy workflow sets NUXT_APP_BASE_URL).
+const baseURL = process.env.NUXT_APP_BASE_URL || '/'
+// the deploy workflow passes the Pages URL; locally the constant's
+const publicUrl = process.env.NUXT_PUBLIC_SITE_URL || siteUrl
 
 /** https://nuxt.com/docs/api/configuration/nuxt-config */
 export default defineNuxtConfig({
@@ -22,7 +30,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: `${baseURL}logo.svg` }],
     },
   },
 
@@ -30,7 +38,7 @@ export default defineNuxtConfig({
 
   site: {
     name: 'amxts',
-    url: siteUrl,
+    url: publicUrl,
   },
 
   // Types on hover in the docs' TypeScript. The framework's declarations come
@@ -67,8 +75,9 @@ export default defineNuxtConfig({
     },
   },
 
-  // Docs and the landing are prerendered. The modules catalog is not: it is
-  // rendered on request from /api/modules, which caches npm's answer for an hour.
+  // The whole site is static (GitHub Pages): the docs, the landing and the
+  // modules catalog are prerendered, the catalog with npm's answer at build
+  // time - the deploy workflow rebuilds it every day.
   routeRules: {
     '/docs': { redirect: '/docs/introduction' },
     '/ru/docs': { redirect: '/ru/docs/introduction' },
@@ -79,8 +88,6 @@ export default defineNuxtConfig({
     '/ru/docs/universal-config': { redirect: '/ru/modules/universal-config' },
     '/docs/extensions': { redirect: '/modules/http' },
     '/ru/docs/extensions': { redirect: '/ru/modules/http' },
-    '/modules/**': { prerender: false },
-    '/ru/modules/**': { prerender: false },
   },
 
   experimental: {
@@ -91,9 +98,17 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
-      routes: ['/', '/ru'],
+      // /api/modules as a JSON file; each page's markdown for "Copy page",
+      // which is a menu, not a link the crawler follows
+      routes: [
+        '/',
+        '/ru',
+        '/modules',
+        '/ru/modules',
+        '/api/modules',
+        ...(['en', 'ru'] as const).flatMap(locale => docPages.map(page => `/raw${docsPrefix(locale)}/${page}.md`)),
+      ],
       crawlLinks: true,
-      ignore: ['/modules', '/ru/modules'],
     },
   },
 
@@ -111,11 +126,11 @@ export default defineNuxtConfig({
       { code: 'ru', language: 'ru-RU', name: 'Русский', file: 'ru.json' },
     ],
     detectBrowserLanguage: false,
-    baseUrl: siteUrl,
+    baseUrl: publicUrl,
   },
 
   llms: {
-    domain: siteUrl,
+    domain: publicUrl,
     title: 'amxts',
     description: 'AMX Mod X plugins for Counter-Strike 1.6 in TypeScript.',
     full: {

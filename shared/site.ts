@@ -19,8 +19,7 @@ export const officialScope = '@amxts'
 export const moduleKeyword = 'amxts-module'
 
 /**
- * The site's public address, for OG images, llms.txt and hreflang links. Not
- * decided yet: `.example` is the reserved placeholder domain. NUXT_PUBLIC_SITE_URL
- * overrides it at build time.
+ * The site's public address, for OG images, llms.txt and hreflang links: the
+ * GitHub Pages project page. NUXT_PUBLIC_SITE_URL overrides it at build time.
  */
-export const siteUrl = 'https://amxts.example'
+export const siteUrl = 'https://amxts.github.io/site'

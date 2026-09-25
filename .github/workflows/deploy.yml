@@ -1,0 +1,68 @@
+name: deploy
+
+# The site is static on GitHub Pages. It is built on every push to main, by
+# hand, and every day - the modules catalog is npm's answer at build time, so
+# the daily build is what brings new modules in.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v6
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Generate
+        run: bun run generate
+        env:
+          # the project page lives under /<repo>/ (https://amxts.github.io/site/)
+          NUXT_APP_BASE_URL: ${{ steps.pages.outputs.base_path }}/
+          NUXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.base_url }}
+
+      - name: Upload
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: .output/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5
