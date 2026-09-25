@@ -40,6 +40,7 @@
     },
   },
   "patchedDependencies": {
+    "@shikijs/twoslash@4.4.3": "patches/@shikijs%2Ftwoslash@4.4.3.patch",
     "twoslash@0.3.9": "patches/twoslash@0.3.9.patch",
   },
   "packages": {
