@@ -45,7 +45,7 @@ jobs:
       - name: Generate
         run: bun run generate
         env:
-          # the project page lives under /<repo>/ (https://amxts.github.io/site/)
+          # '/' for amxts.github.io; a project page would be /<repo>/
           NUXT_APP_BASE_URL: ${{ steps.pages.outputs.base_path }}/
           # the origin only: the site's modules add the base path themselves
           NUXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.origin }}

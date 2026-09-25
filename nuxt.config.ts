@@ -4,8 +4,8 @@ import pawn from './pawn.tmLanguage'
 import { docPages, docsPrefix } from './shared/docs'
 import { siteUrl } from './shared/site'
 
-// The path the site is served under: '/' locally, '/site/' on the GitHub Pages
-// project page (the deploy workflow sets NUXT_APP_BASE_URL).
+// The path the site is served under: '/' (the Pages site amxts.github.io);
+// the deploy workflow sets NUXT_APP_BASE_URL from the Pages settings.
 const baseURL = process.env.NUXT_APP_BASE_URL || '/'
 // a redirect's target, under the base path (a static redirect page does not add it)
 const to = (path: string) => `${baseURL}${path.slice(1)}`
@@ -35,6 +35,12 @@ export default defineNuxtConfig({
     baseURL,
     head: {
       link: [{ rel: 'icon', type: 'image/svg+xml', href: `${baseURL}logo.svg` }],
+      // The site used to live under /site/ (github.io/site): an old link lands
+      // on 404.html, and this sends it to the same page at the root, before
+      // anything renders. Only when the site itself is at the root.
+      script: baseURL === '/'
+        ? [{ innerHTML: `var p=location.pathname;if(p==='/site'||p.startsWith('/site/'))location.replace((p.slice(5)||'/')+location.search+location.hash)` }]
+        : [],
     },
   },
 

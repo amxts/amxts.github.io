@@ -25,7 +25,10 @@ folders `D:\xen-site` and `D:\ts2pawn` keep their old names for now.
 - amxts is the GitHub organization https://github.com/amxts with repositories
   `core` (the framework: compiler patches, the amxts_amxx module, the host, the
   facade, a CLI), `modules/*` (official modules: menu-core, universal-config,
-  http - each a package) and `site` (this one: docs + the modules catalog).
+  http - each a package) and `amxts.github.io` (this one: docs + the modules
+  catalog, served by GitHub Pages at https://amxts.github.io, built by
+  .github/workflows/deploy.yml on push, daily and by hand; it was at /site/
+  before, and old links redirect).
   Projects such as nhnse live apart and depend on them, like an app on Nuxt.
   menu-core and universal-config have their repositories already; npm
   packages are ready but not published (the npm org is not created yet).

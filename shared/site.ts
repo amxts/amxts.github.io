@@ -20,8 +20,8 @@ export const moduleKeyword = 'amxts-module'
 
 /**
  * The site's origin, for OG images, canonical and hreflang links: GitHub Pages.
- * Without the base path - the site serves under app.baseURL (/site/ on the
- * project page), which those modules add themselves. NUXT_PUBLIC_SITE_URL
- * overrides it at build time.
+ * Without the base path: a site served under a base (app.baseURL) gets it
+ * from those modules themselves. NUXT_PUBLIC_SITE_URL overrides it at build
+ * time.
  */
 export const siteUrl = 'https://amxts.github.io'
