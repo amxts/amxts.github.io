@@ -1,4 +1,4 @@
-import type { XenModule } from '#shared/modules'
+import type { AmxtsModule } from '#shared/modules'
 import { categoryFromKeywords, fallbackModules, moduleSlug } from '#shared/modules'
 import { moduleKeyword } from '#shared/site'
 
@@ -25,10 +25,10 @@ interface NpmPackage {
 const registry = 'https://registry.npmjs.org'
 
 /**
- * Every package on npm with the `xen-module` keyword, cached for an hour. A
+ * Every package on npm with the `amxts-module` keyword, cached for an hour. A
  * failed request throws, so that it is not what gets cached.
  */
-const searchNpmCached = defineCachedFunction(async (): Promise<XenModule[]> => {
+const searchNpmCached = defineCachedFunction(async (): Promise<AmxtsModule[]> => {
   const result = await $fetch<NpmSearch>(`${registry}/-/v1/search`, {
     query: { text: `keywords:${moduleKeyword}`, size: 250 },
     timeout: 8000,
@@ -65,7 +65,7 @@ async function searchNpm() {
  * and keeps what npm does not say (docs page, requirements, a Russian
  * description).
  */
-export async function listModules(): Promise<XenModule[]> {
+export async function listModules(): Promise<AmxtsModule[]> {
   const published = await searchNpm()
   const byPackage = new Map(published.map(module => [module.package, module]))
 

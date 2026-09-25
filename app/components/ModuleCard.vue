@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { XenModule } from '#shared/modules'
+import type { AmxtsModule } from '#shared/modules'
 import { useClipboard } from '@vueuse/core'
 import { categoryIcons, isOfficial } from '#shared/modules'
 
 const props = defineProps<{
-  module: XenModule
+  module: AmxtsModule
 }>()
 
 const { t } = useI18n()
@@ -13,7 +13,7 @@ const locale = useSiteLocale()
 const { copy, copied } = useClipboard()
 
 const description = computed(() => props.module.description[locale.value] || props.module.description.en)
-const command = computed(() => `bun add ${props.module.package}`)
+const { command } = usePackageManager(() => props.module.package)
 </script>
 
 <template>
@@ -22,11 +22,11 @@ const command = computed(() => `bun add ${props.module.package}`)
     :title="module.package"
     :description="description"
     variant="subtle"
-    :ui="{ leading: 'flex w-full', title: 'font-mono', description: 'line-clamp-2', footer: 'w-full' }"
+    :ui="{ leading: 'flex w-full', description: 'line-clamp-2', footer: 'w-full' }"
   >
     <template #leading>
       <div class="flex w-full items-start justify-between gap-2">
-        <img v-if="isOfficial(module.package)" src="/logo.svg" alt="Xen" class="size-8">
+        <LogoMark v-if="isOfficial(module.package)" class="size-8 text-primary" />
 
         <UIcon v-else :name="categoryIcons[module.category]" class="size-8 text-primary" />
 

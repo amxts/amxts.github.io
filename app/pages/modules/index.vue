@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import type { ModuleCategory, XenModule } from '#shared/modules'
-import { moduleCategories } from '#shared/modules'
+import type { AmxtsModule, ModuleCategory } from '#shared/modules'
+import { categoryIcons, moduleCategories } from '#shared/modules'
+import { moduleKeyword } from '#shared/site'
 
 const { t } = useI18n()
+const localePath = useLocalePath()
 const route = useRoute()
 const router = useRouter()
 const locale = useSiteLocale()
 
-const { data: modules, status } = await useFetch<XenModule[]>('/api/modules', {
+const { data: modules, status } = await useFetch<AmxtsModule[]>('/api/modules', {
   key: 'modules',
   default: () => [],
 })
@@ -23,7 +25,7 @@ const category = computed<ModuleCategory | 'all'>({
   set: c => router.replace({ query: { ...route.query, category: c === 'all' ? undefined : c } }),
 })
 
-function matches(module: XenModule, text: string) {
+function matches(module: AmxtsModule, text: string) {
   if (!text)
     return true
   const haystack = [module.slug, module.package, module.author, module.description[locale.value], module.description.en]
@@ -36,13 +38,16 @@ const searched = computed(() => modules.value.filter(module => matches(module, q
 const filtered = computed(() => searched.value.filter(module => category.value === 'all' || module.category === category.value))
 
 const categories = computed(() => [
-  { value: 'all' as const, label: t('modules.all'), count: searched.value.length },
+  { value: 'all' as const, label: t('modules.all'), icon: 'i-lucide-layout-grid', count: searched.value.length },
   ...moduleCategories.map(value => ({
     value,
     label: t(`modules.categories.${value}`),
+    icon: categoryIcons[value],
     count: searched.value.filter(module => module.category === value).length,
   })),
 ])
+
+const npmSearch = `https://www.npmjs.com/search?q=keywords:${moduleKeyword}`
 
 function clear() {
   router.replace({ query: {} })
@@ -59,45 +64,65 @@ useSeoMeta({
     <UPageHero
       :title="t('modules.title')"
       :description="t('modules.description')"
-      :ui="{ container: 'py-12 sm:py-16 lg:py-20' }"
+      :ui="{ container: 'py-12 sm:py-16 lg:py-20', title: 'text-4xl sm:text-5xl' }"
     />
 
     <UPage>
       <template #left>
         <UPageAside>
-          <nav :aria-label="t('modules.category')" class="flex flex-col gap-1">
+          <UInput
+            v-model="query"
+            icon="i-lucide-search"
+            :placeholder="t('modules.search')"
+            :aria-label="t('modules.search')"
+            :loading="status === 'pending'"
+            class="mb-4 w-full"
+          />
+
+          <nav :aria-label="t('modules.category')" class="flex flex-col gap-0.5">
             <UButton
               v-for="item in categories"
               :key="item.value"
               :label="item.label"
+              :icon="item.icon"
               :color="category === item.value ? 'primary' : 'neutral'"
               :variant="category === item.value ? 'soft' : 'ghost'"
               :aria-pressed="category === item.value"
-              class="justify-between"
               @click="category = item.value"
             >
               <template #trailing>
-                <span class="text-xs text-dimmed tabular-nums">{{ item.count }}</span>
+                <span class="ms-auto text-xs text-dimmed tabular-nums">{{ item.count }}</span>
               </template>
             </UButton>
           </nav>
 
-          <USeparator class="my-6" />
+          <div class="mt-6 rounded-lg bg-elevated/50 p-4 text-sm ring ring-default">
+            <p class="flex items-center gap-1.5 font-semibold text-highlighted">
+              <UIcon name="i-lucide-package-plus" class="size-4 text-primary" />
 
-          <div class="flex flex-col gap-2 text-sm">
-            <p class="font-semibold text-highlighted">
               {{ t('modules.addYours') }}
             </p>
 
-            <p class="text-muted">
+            <p class="mt-2 text-muted">
               {{ t('modules.addYoursHint') }}
             </p>
+
+            <UButton
+              :to="npmSearch"
+              target="_blank"
+              :label="t('modules.browseNpm')"
+              trailing-icon="i-lucide-arrow-up-right"
+              color="neutral"
+              variant="link"
+              size="sm"
+              class="mt-2 px-0"
+            />
           </div>
         </UPageAside>
       </template>
 
-      <UPageBody>
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <UPageBody :ui="{ base: 'mt-8 space-y-4 pb-16' }">
+        <div class="flex flex-col gap-3 lg:hidden">
           <UInput
             v-model="query"
             icon="i-lucide-search"
@@ -105,7 +130,6 @@ useSeoMeta({
             :aria-label="t('modules.search')"
             :loading="status === 'pending'"
             size="lg"
-            class="flex-1"
           />
 
           <USelect
@@ -114,13 +138,24 @@ useSeoMeta({
             value-key="value"
             :aria-label="t('modules.category')"
             size="lg"
-            class="w-full sm:w-48 lg:hidden"
           />
         </div>
 
-        <p class="text-sm text-muted" aria-live="polite">
-          {{ t('modules.count', filtered.length) }}
-        </p>
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-sm text-muted" aria-live="polite">
+            {{ t('modules.count', filtered.length) }}
+          </p>
+
+          <UButton
+            :to="localePath('/docs/modules')"
+            :label="t('modules.create')"
+            trailing-icon="i-lucide-arrow-right"
+            color="neutral"
+            variant="link"
+            size="sm"
+            class="px-0"
+          />
+        </div>
 
         <UPageGrid v-if="filtered.length">
           <ModuleCard v-for="module in filtered" :key="module.package" :module="module" />

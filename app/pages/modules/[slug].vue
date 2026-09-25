@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ButtonProps } from '@nuxt/ui'
-import type { XenModule } from '#shared/modules'
+import type { AmxtsModule } from '#shared/modules'
 
 const route = useRoute()
 const { t } = useI18n()
@@ -9,7 +9,7 @@ const locale = useSiteLocale()
 
 const slug = computed(() => String(route.params.slug))
 
-const { data, error } = await useFetch<{ module: XenModule, readme: string | null }>(
+const { data, error } = await useFetch<{ module: AmxtsModule, readme: string | null }>(
   () => `/api/modules/${slug.value}`,
   { key: `module-${slug.value}` },
 )
@@ -18,6 +18,14 @@ if (error.value || !data.value) {
 }
 
 const module = computed(() => data.value!.module)
+
+// The framework's own page about an official module (menus, INI configs),
+// imported with the docs: shown here, the way a package shows its README.
+const content = useLocaleContent()
+const { data: doc } = await useAsyncData(
+  () => `module-doc-${content.value.locale}-${slug.value}`,
+  () => queryCollection(content.value.moduleDocs).path(`${content.value.prefix.slice(0, -'/docs'.length)}/modules/${slug.value}`).first(),
+)
 const description = computed(() => module.value.description[locale.value] || module.value.description.en)
 
 const links = computed(() => {
@@ -77,7 +85,9 @@ useSeoMeta({
           :description="t('modules.unpublishedHint')"
         />
 
-        <MDC v-if="data?.readme" :value="data.readme" tag="article" />
+        <ContentRenderer v-if="doc" :value="doc" />
+
+        <MDC v-else-if="data?.readme" :value="data.readme" tag="article" />
 
         <p v-else-if="module.published" class="text-muted">
           {{ t('modules.noReadme') }}
