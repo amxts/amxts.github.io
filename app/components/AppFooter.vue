@@ -1,23 +1,18 @@
 <script setup lang="ts">
-const { footer } = useAppConfig()
+const { t } = useI18n()
+const localePath = useLocalePath()
 </script>
 
 <template>
   <UFooter>
     <template #left>
-      {{ footer.credits }}
+      <p>Xen · {{ t('footer.tagline') }}</p>
     </template>
 
     <template #right>
-      <UColorModeButton v-if="footer?.colorMode" />
+      <UButton :to="localePath('/docs/getting-started')" :label="t('nav.docs')" color="neutral" variant="link" />
 
-      <template v-if="footer?.links">
-        <UButton
-          v-for="(link, index) of footer?.links"
-          :key="index"
-          v-bind="{ color: 'neutral', variant: 'ghost', ...link }"
-        />
-      </template>
+      <UButton :to="localePath('/modules')" :label="t('nav.modules')" color="neutral" variant="link" />
     </template>
   </UFooter>
 </template>

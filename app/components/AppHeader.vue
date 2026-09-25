@@ -1,75 +1,82 @@
 <script setup lang="ts">
 import type { ContentNavigationItem } from '@nuxt/content'
+import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui'
+import { repository } from '#shared/site'
 
 const navigation = inject<Ref<ContentNavigationItem[]>>('navigation')
 
-const { header } = useAppConfig()
+const route = useRoute()
+const { t, locale, locales } = useI18n()
+const localePath = useLocalePath()
+const switchLocalePath = useSwitchLocalePath()
+
+const items = computed<NavigationMenuItem[]>(() => [{
+  label: t('nav.docs'),
+  to: localePath('/docs/getting-started'),
+  active: route.path.startsWith(localePath('/docs')),
+}, {
+  label: t('nav.modules'),
+  to: localePath('/modules'),
+  active: route.path.startsWith(localePath('/modules')),
+}])
+
+const languages = computed<DropdownMenuItem[]>(() => locales.value.map(item => ({
+  label: item.name ?? item.code,
+  to: switchLocalePath(item.code),
+  type: 'checkbox',
+  checked: item.code === locale.value,
+})))
+
+const providerName = repository.provider === 'gitlab' ? 'GitLab' : 'GitHub'
+const repositoryLabel = computed(() => repository.url
+  ? t('header.repository', { provider: providerName })
+  : t('header.repositoryUnset'))
 </script>
 
 <template>
-  <UHeader
-    :ui="{ center: 'flex-1' }"
-    :to="header?.to || '/'"
-  >
-    <UContentSearchButton
-      v-if="header?.search"
-      :collapsed="false"
-      class="w-full"
-    />
-
-    <template
-      v-if="header?.logo?.dark || header?.logo?.light || header?.title"
-      #title
-    >
-      <UColorModeImage
-        v-if="header?.logo?.dark || header?.logo?.light"
-        :light="header?.logo?.light!"
-        :dark="header?.logo?.dark!"
-        :alt="header?.logo?.alt"
-        class="h-6 w-auto shrink-0"
-      />
-
-      <span v-else-if="header?.title">
-        {{ header.title }}
-      </span>
+  <UHeader :to="localePath('/')">
+    <template #title>
+      <AppLogo />
     </template>
 
-    <template
-      v-else
-      #left
-    >
-      <NuxtLink
-        :to="header?.to || '/'"
-        class="focus-visible:outline-3 outline-primary/25 rounded-md p-1 -ms-1"
-      >
-        <AppLogo class="w-auto h-6 shrink-0" />
-      </NuxtLink>
-
-      <TemplateMenu />
-    </template>
+    <UNavigationMenu :items="items" variant="link" />
 
     <template #right>
-      <UContentSearchButton
-        v-if="header?.search"
-        class="lg:hidden"
-      />
+      <UContentSearchButton class="lg:hidden" />
 
-      <UColorModeButton v-if="header?.colorMode" />
+      <UContentSearchButton :collapsed="false" class="hidden lg:inline-flex" />
 
-      <template v-if="header?.links">
+      <UDropdownMenu :items="languages" :content="{ align: 'end' }">
         <UButton
-          v-for="(link, index) of header.links"
-          :key="index"
-          v-bind="{ color: 'neutral', variant: 'ghost', ...link }"
+          icon="i-lucide-languages"
+          color="neutral"
+          variant="ghost"
+          :label="locale.toUpperCase()"
+          :aria-label="t('header.language')"
         />
-      </template>
+      </UDropdownMenu>
+
+      <UColorModeButton />
+
+      <UTooltip :text="repositoryLabel">
+        <UButton
+          :icon="repository.provider === 'gitlab' ? 'i-simple-icons-gitlab' : 'i-simple-icons-github'"
+          color="neutral"
+          variant="ghost"
+          :to="repository.url || undefined"
+          target="_blank"
+          :disabled="!repository.url"
+          :aria-label="repositoryLabel"
+        />
+      </UTooltip>
     </template>
 
     <template #body>
-      <UContentNavigation
-        highlight
-        :navigation="navigation"
-      />
+      <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />
+
+      <USeparator class="my-4" />
+
+      <UContentNavigation highlight :navigation="navigation" />
     </template>
   </UHeader>
 </template>

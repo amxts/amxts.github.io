@@ -1,34 +1,41 @@
 <script setup lang="ts">
-const { seo } = useAppConfig()
+import * as uiLocales from '@nuxt/ui/locale'
 
-const { data: navigation } = await useAsyncData('navigation', () => queryCollectionNavigation('docs'))
-const { data: files } = useLazyAsyncData('search', () => queryCollectionSearchSections('docs'), {
-  server: false
-})
+const { seo } = useAppConfig()
+const content = useLocaleContent()
+const head = useLocaleHead()
+
+const { data: navigation } = await useAsyncData(
+  () => `navigation-${content.value.locale}`,
+  async () => groupDocs(await queryCollectionNavigation(content.value.docs), content.value.locale),
+)
+const { data: files } = useLazyAsyncData(
+  () => `search-${content.value.locale}`,
+  () => queryCollectionSearchSections(content.value.docs),
+  { server: false },
+)
 
 useHead({
   meta: [
-    { name: 'viewport', content: 'width=device-width, initial-scale=1' }
-  ],
-  link: [
-    { rel: 'icon', href: '/favicon.ico' }
+    { name: 'viewport', content: 'width=device-width, initial-scale=1' },
   ],
   htmlAttrs: {
-    lang: 'en'
-  }
+    lang: () => head.value.htmlAttrs.lang,
+  },
+  link: () => head.value.link,
 })
 
 useSeoMeta({
   titleTemplate: `%s - ${seo?.siteName}`,
   ogSiteName: seo?.siteName,
-  twitterCard: 'summary_large_image'
+  twitterCard: 'summary_large_image',
 })
 
 provide('navigation', navigation)
 </script>
 
 <template>
-  <UApp>
+  <UApp :locale="uiLocales[content.locale]">
     <NuxtLoadingIndicator />
 
     <AppHeader />

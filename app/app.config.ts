@@ -1,72 +1,39 @@
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: 'green',
-      neutral: 'slate'
+      primary: 'amber',
+      neutral: 'zinc',
+    },
+    pageHero: {
+      slots: {
+        description: 'text-muted text-pretty text-[15px] sm:text-base lg:text-lg max-w-154 mt-2 sm:mt-4',
+        links: 'gap-3',
+      },
+      variants: {
+        title: {
+          true: {
+            description: 'mt-2 sm:mt-4',
+          },
+        },
+      },
+    },
+    pageFeature: {
+      variants: {
+        to: {
+          true: {
+            root: 'rounded-lg p-4 ring ring-default hover:bg-elevated/50 hover:ring-accented',
+          },
+        },
+      },
     },
     footer: {
       slots: {
         root: 'border-t border-default',
-        left: 'text-sm text-muted'
-      }
-    }
+        left: 'text-sm text-muted',
+      },
+    },
   },
   seo: {
-    siteName: 'Nuxt Docs Template'
+    siteName: 'Xen',
   },
-  header: {
-    title: '',
-    to: '/',
-    logo: {
-      alt: '',
-      light: '',
-      dark: ''
-    },
-    search: true,
-    colorMode: true,
-    links: [{
-      'icon': 'i-simple-icons-github',
-      'to': 'https://github.com/nuxt-ui-templates/docs',
-      'target': '_blank',
-      'aria-label': 'GitHub'
-    }]
-  },
-  footer: {
-    credits: `Built with Nuxt UI • © ${new Date().getFullYear()}`,
-    colorMode: false,
-    links: [{
-      'icon': 'i-simple-icons-discord',
-      'to': 'https://go.nuxt.com/discord',
-      'target': '_blank',
-      'aria-label': 'Nuxt on Discord'
-    }, {
-      'icon': 'i-simple-icons-x',
-      'to': 'https://go.nuxt.com/x',
-      'target': '_blank',
-      'aria-label': 'Nuxt on X'
-    }, {
-      'icon': 'i-simple-icons-github',
-      'to': 'https://github.com/nuxt/ui',
-      'target': '_blank',
-      'aria-label': 'Nuxt UI on GitHub'
-    }]
-  },
-  toc: {
-    title: 'Table of Contents',
-    bottom: {
-      title: 'Community',
-      edit: 'https://github.com/nuxt-ui-templates/docs/edit/main/content',
-      links: [{
-        icon: 'i-lucide-star',
-        label: 'Star on GitHub',
-        to: 'https://github.com/nuxt/ui',
-        target: '_blank'
-      }, {
-        icon: 'i-lucide-book-open',
-        label: 'Nuxt UI docs',
-        to: 'https://ui.nuxt.com/docs/getting-started/installation/nuxt',
-        target: '_blank'
-      }]
-    }
-  }
 })

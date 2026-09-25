@@ -1,7 +1,6 @@
-import { withLeadingSlash } from 'ufo'
-import { stringify } from 'minimark/stringify'
 import { queryCollection } from '@nuxt/content/server'
-import type { Collections } from '@nuxt/content'
+import { stringify } from 'minimark/stringify'
+import { withLeadingSlash } from 'ufo'
 
 export default eventHandler(async (event) => {
   const slug = getRouterParams(event)['slug.md']
@@ -10,15 +9,17 @@ export default eventHandler(async (event) => {
   }
 
   const path = withLeadingSlash(slug.replace('.md', ''))
+  const collection = path.startsWith('/ru/') ? 'docs_ru' : 'docs_en'
 
-  const page = await queryCollection(event, 'docs' as keyof Collections).path(path).first()
+  const page = await queryCollection(event, collection).path(path).first()
   if (!page) {
     throw createError({ statusCode: 404, statusMessage: 'Page not found', fatal: true })
   }
 
-  // Add title and description to the top of the page if missing
+  // The page's title goes on top: the importer moved the `# heading` into it.
   if (page.body.value[0]?.[0] !== 'h1') {
-    page.body.value.unshift(['blockquote', {}, page.description])
+    if (page.description)
+      page.body.value.unshift(['blockquote', {}, page.description])
     page.body.value.unshift(['h1', {}, page.title])
   }
 

@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "docs": "Docs",
+    "modules": "Modules"
+  },
+  "header": {
+    "language": "Language",
+    "repository": "Source code on {provider}",
+    "repositoryUnset": "The repository link is not published yet"
+  },
+  "footer": {
+    "tagline": "AMX Mod X plugins for Counter-Strike 1.6 in TypeScript."
+  },
+  "docs": {
+    "toc": "On this page",
+    "notFound": "This page does not exist."
+  },
+  "modules": {
+    "title": "Modules",
+    "description": "Libraries for Xen plugins: menus, configs, HTTP and more. Every package on npm with the xen-module keyword is listed here.",
+    "search": "Search modules",
+    "all": "All",
+    "count": "No modules | {n} module | {n} modules",
+    "empty": "No module matches this search.",
+    "clear": "Clear filters",
+    "install": "Install",
+    "copy": "Copy install command",
+    "copied": "Copied",
+    "official": "Official",
+    "unpublished": "Not on npm yet",
+    "unpublishedHint": "Ships with the framework for now; the package name is not final.",
+    "docs": "Documentation",
+    "repository": "Repository",
+    "npm": "npm",
+    "package": "Package",
+    "author": "Author",
+    "category": "Category",
+    "version": "Version",
+    "requires": "Needs on the server",
+    "readme": "README",
+    "noReadme": "This module has no README on npm yet.",
+    "back": "All modules",
+    "addYours": "Add your module",
+    "addYoursHint": "Publish it to npm with the xen-module keyword in package.json; a second keyword (xen-menus, xen-config, xen-network) picks its category.",
+    "categories": {
+      "menus": "Menus",
+      "config": "Configuration",
+      "network": "Network",
+      "other": "Other"
+    }
+  },
+  "page": {
+    "copy": "Copy page",
+    "copyLink": "Copy Markdown link",
+    "copied": "Copied to clipboard",
+    "viewMarkdown": "View as Markdown",
+    "openIn": "Open in {app}",
+    "prompt": "Read {url} so I can ask questions about it.",
+    "more": "More ways to copy this page",
+    "notFound": "Page not found",
+    "notFoundDescription": "This page does not exist."
+  }
+}

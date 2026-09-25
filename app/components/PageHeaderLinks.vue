@@ -1,46 +1,49 @@
 <script setup lang="ts">
+import type { DropdownMenuItem } from '@nuxt/ui'
 import { useClipboard } from '@vueuse/core'
 import { withoutTrailingSlash } from 'ufo'
 
 const route = useRoute()
 const toast = useToast()
+const { t } = useI18n()
 const { copy, copied } = useClipboard()
 const site = useSiteConfig()
 
 const routePath = computed(() => withoutTrailingSlash(route.path))
 const mdPath = computed(() => `${site.url}/raw${routePath.value}.md`)
+const prompt = computed(() => encodeURIComponent(t('page.prompt', { url: mdPath.value })))
 
-const items = [
+const items = computed<DropdownMenuItem[]>(() => [
   {
-    label: 'Copy Markdown link',
+    label: t('page.copyLink'),
     icon: 'i-lucide-link',
     onSelect() {
       copy(mdPath.value)
       toast.add({
-        title: 'Copied to clipboard',
-        icon: 'i-lucide-check-circle'
+        title: t('page.copied'),
+        icon: 'i-lucide-check-circle',
       })
-    }
+    },
   },
   {
-    label: 'View as Markdown',
+    label: t('page.viewMarkdown'),
     icon: 'i-simple-icons:markdown',
     target: '_blank',
-    to: `/raw${routePath.value}.md`
+    to: `/raw${routePath.value}.md`,
   },
   {
-    label: 'Open in ChatGPT',
+    label: t('page.openIn', { app: 'ChatGPT' }),
     icon: 'i-simple-icons:openai',
     target: '_blank',
-    to: `https://chatgpt.com/?hints=search&q=${encodeURIComponent(`Read ${mdPath.value} so I can ask questions about it.`)}`
+    to: `https://chatgpt.com/?hints=search&q=${prompt.value}`,
   },
   {
-    label: 'Open in Claude',
+    label: t('page.openIn', { app: 'Claude' }),
     icon: 'i-simple-icons:anthropic',
     target: '_blank',
-    to: `https://claude.ai/new?q=${encodeURIComponent(`Read ${mdPath.value} so I can ask questions about it.`)}`
-  }
-]
+    to: `https://claude.ai/new?q=${prompt.value}`,
+  },
+])
 
 async function copyPage() {
   copy(await $fetch<string>(`/raw${routePath.value}.md`))
@@ -50,24 +53,25 @@ async function copyPage() {
 <template>
   <UFieldGroup>
     <UButton
-      label="Copy page"
+      :label="t('page.copy')"
       :icon="copied ? 'i-lucide-copy-check' : 'i-lucide-copy'"
       color="neutral"
       variant="outline"
       :ui="{
-        leadingIcon: [copied && 'text-primary', 'size-3.5']
+        leadingIcon: [copied && 'text-primary', 'size-3.5'],
       }"
       @click="copyPage"
     />
+
     <UDropdownMenu
       :items="items"
       :content="{
         align: 'end',
         side: 'bottom',
-        sideOffset: 8
+        sideOffset: 8,
       }"
       :ui="{
-        content: 'w-48'
+        content: 'w-52',
       }"
     >
       <UButton
@@ -75,7 +79,7 @@ async function copyPage() {
         size="sm"
         color="neutral"
         variant="outline"
-        aria-label="Open copy actions menu"
+        :aria-label="t('page.more')"
       />
     </UDropdownMenu>
   </UFieldGroup>

@@ -1,0 +1,63 @@
+{
+  "nav": {
+    "docs": "Документация",
+    "modules": "Модули"
+  },
+  "header": {
+    "language": "Язык",
+    "repository": "Исходный код на {provider}",
+    "repositoryUnset": "Ссылка на репозиторий ещё не опубликована"
+  },
+  "footer": {
+    "tagline": "Плагины AMX Mod X для Counter-Strike 1.6 на TypeScript."
+  },
+  "docs": {
+    "toc": "На странице",
+    "notFound": "Такой страницы нет."
+  },
+  "modules": {
+    "title": "Модули",
+    "description": "Библиотеки для плагинов Xen: меню, конфиги, HTTP и другое. Здесь собран каждый пакет на npm с ключевым словом xen-module.",
+    "search": "Поиск модулей",
+    "all": "Все",
+    "count": "Модулей: {n}",
+    "empty": "Ни один модуль не подходит под поиск.",
+    "clear": "Сбросить фильтры",
+    "install": "Установка",
+    "copy": "Скопировать команду установки",
+    "copied": "Скопировано",
+    "official": "Официальный",
+    "unpublished": "Ещё не на npm",
+    "unpublishedHint": "Пока поставляется с фреймворком; имя пакета не окончательное.",
+    "docs": "Документация",
+    "repository": "Репозиторий",
+    "npm": "npm",
+    "package": "Пакет",
+    "author": "Автор",
+    "category": "Категория",
+    "version": "Версия",
+    "requires": "Нужно на сервере",
+    "readme": "README",
+    "noReadme": "У этого модуля пока нет README на npm.",
+    "back": "Все модули",
+    "addYours": "Добавить свой модуль",
+    "addYoursHint": "Опубликуйте его на npm с ключевым словом xen-module в package.json; второе ключевое слово (xen-menus, xen-config, xen-network) задаёт категорию.",
+    "categories": {
+      "menus": "Меню",
+      "config": "Конфигурация",
+      "network": "Сеть",
+      "other": "Другое"
+    }
+  },
+  "page": {
+    "copy": "Копировать страницу",
+    "copyLink": "Копировать ссылку на Markdown",
+    "copied": "Скопировано",
+    "viewMarkdown": "Открыть как Markdown",
+    "openIn": "Открыть в {app}",
+    "prompt": "Прочитай {url}, чтобы я мог задавать по нему вопросы.",
+    "more": "Другие способы скопировать страницу",
+    "notFound": "Страница не найдена",
+    "notFoundDescription": "Такой страницы нет."
+  }
+}

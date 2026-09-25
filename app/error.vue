@@ -1,31 +1,40 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app'
+import * as uiLocales from '@nuxt/ui/locale'
 
 defineProps<{
   error: NuxtError
 }>()
 
+const { t } = useI18n()
+const content = useLocaleContent()
+
 useHead({
   htmlAttrs: {
-    lang: 'en'
-  }
+    lang: () => content.value.locale,
+  },
 })
 
 useSeoMeta({
-  title: 'Page not found',
-  description: 'We are sorry but this page could not be found.'
+  title: () => t('page.notFound'),
+  description: () => t('page.notFoundDescription'),
 })
 
-const { data: navigation } = await useAsyncData('navigation', () => queryCollectionNavigation('docs'))
-const { data: files } = useLazyAsyncData('search', () => queryCollectionSearchSections('docs'), {
-  server: false
-})
+const { data: navigation } = await useAsyncData(
+  () => `navigation-${content.value.locale}`,
+  async () => groupDocs(await queryCollectionNavigation(content.value.docs), content.value.locale),
+)
+const { data: files } = useLazyAsyncData(
+  () => `search-${content.value.locale}`,
+  () => queryCollectionSearchSections(content.value.docs),
+  { server: false },
+)
 
 provide('navigation', navigation)
 </script>
 
 <template>
-  <UApp>
+  <UApp :locale="uiLocales[content.locale]">
     <AppHeader />
 
     <UError :error="error" />
