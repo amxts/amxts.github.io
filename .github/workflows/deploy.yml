@@ -47,7 +47,8 @@ jobs:
         env:
           # the project page lives under /<repo>/ (https://amxts.github.io/site/)
           NUXT_APP_BASE_URL: ${{ steps.pages.outputs.base_path }}/
-          NUXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.base_url }}
+          # the origin only: the site's modules add the base path themselves
+          NUXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.origin }}
 
       - name: Upload
         uses: actions/upload-pages-artifact@v5

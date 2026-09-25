@@ -7,7 +7,10 @@ import { siteUrl } from './shared/site'
 // The path the site is served under: '/' locally, '/site/' on the GitHub Pages
 // project page (the deploy workflow sets NUXT_APP_BASE_URL).
 const baseURL = process.env.NUXT_APP_BASE_URL || '/'
-// the deploy workflow passes the Pages URL; locally the constant's
+// a redirect's target, under the base path (a static redirect page does not add it)
+const to = (path: string) => `${baseURL}${path.slice(1)}`
+// the origin (the deploy workflow passes the Pages one); site-config, OG
+// images and i18n add the base path to it, llms.txt does not
 const publicUrl = process.env.NUXT_PUBLIC_SITE_URL || siteUrl
 
 /** https://nuxt.com/docs/api/configuration/nuxt-config */
@@ -29,6 +32,7 @@ export default defineNuxtConfig({
   },
 
   app: {
+    baseURL,
     head: {
       link: [{ rel: 'icon', type: 'image/svg+xml', href: `${baseURL}logo.svg` }],
     },
@@ -79,15 +83,15 @@ export default defineNuxtConfig({
   // modules catalog are prerendered, the catalog with npm's answer at build
   // time - the deploy workflow rebuilds it every day.
   routeRules: {
-    '/docs': { redirect: '/docs/introduction' },
-    '/ru/docs': { redirect: '/ru/docs/introduction' },
+    '/docs': { redirect: to('/docs/introduction') },
+    '/ru/docs': { redirect: to('/ru/docs/introduction') },
     // module pages moved from the docs to the modules' catalog pages
-    '/docs/menus': { redirect: '/modules/menu-core' },
-    '/ru/docs/menus': { redirect: '/ru/modules/menu-core' },
-    '/docs/universal-config': { redirect: '/modules/universal-config' },
-    '/ru/docs/universal-config': { redirect: '/ru/modules/universal-config' },
-    '/docs/extensions': { redirect: '/modules/http' },
-    '/ru/docs/extensions': { redirect: '/ru/modules/http' },
+    '/docs/menus': { redirect: to('/modules/menu-core') },
+    '/ru/docs/menus': { redirect: to('/ru/modules/menu-core') },
+    '/docs/universal-config': { redirect: to('/modules/universal-config') },
+    '/ru/docs/universal-config': { redirect: to('/ru/modules/universal-config') },
+    '/docs/extensions': { redirect: to('/modules/http') },
+    '/ru/docs/extensions': { redirect: to('/ru/modules/http') },
   },
 
   experimental: {
@@ -130,7 +134,7 @@ export default defineNuxtConfig({
   },
 
   llms: {
-    domain: publicUrl,
+    domain: `${publicUrl}${baseURL}`.replace(/\/$/, ''),
     title: 'amxts',
     description: 'AMX Mod X plugins for Counter-Strike 1.6 in TypeScript.',
     full: {

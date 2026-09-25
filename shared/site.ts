@@ -19,7 +19,9 @@ export const officialScope = '@amxts'
 export const moduleKeyword = 'amxts-module'
 
 /**
- * The site's public address, for OG images, llms.txt and hreflang links: the
- * GitHub Pages project page. NUXT_PUBLIC_SITE_URL overrides it at build time.
+ * The site's origin, for OG images, canonical and hreflang links: GitHub Pages.
+ * Without the base path - the site serves under app.baseURL (/site/ on the
+ * project page), which those modules add themselves. NUXT_PUBLIC_SITE_URL
+ * overrides it at build time.
  */
-export const siteUrl = 'https://amxts.github.io/site'
+export const siteUrl = 'https://amxts.github.io'
