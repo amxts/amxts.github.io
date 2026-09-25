@@ -1,77 +1,76 @@
-// The docs sidebar, as the framework's VitePress config has it
-// (docs/api/.vitepress/config.ts in the Xen repository): "Getting started",
-// then the API pages in this order. A new page there goes here too, with its
-// title in both languages, and `bun run docs:import` brings its text.
+// The docs sidebar: groups of pages, as on nuxt.com. The order here is the
+// order of the sidebar, the prev/next links and the search; the importer
+// (`bun run docs:import`) numbers the files by it. A new framework page goes
+// into a group here, with its title in both languages, and the import brings
+// its text.
 
 export type SiteLocale = 'en' | 'ru'
 
-export const firstDocPage = 'getting-started'
+export const docGroups = [
+  { key: 'start', icon: 'i-lucide-rocket', pages: ['introduction', 'getting-started'] },
+  { key: 'core', icon: 'i-lucide-zap', pages: ['plugin', 'hooks', 'forwards', 'async'] },
+  { key: 'game', icon: 'i-lucide-gamepad-2', pages: ['entities', 'players', 'flags', 'cvars'] },
+  { key: 'data', icon: 'i-lucide-database', pages: ['storage', 'fs'] },
+  { key: 'modules', icon: 'i-lucide-package', pages: ['shared-modules', 'modules'] },
+  { key: 'pawn', icon: 'i-lucide-plug', pages: ['natives'] },
+  { key: 'testing', icon: 'i-lucide-flask-conical', pages: ['testing'] },
+] as const
 
-export const apiPages = [
-  'plugin',
-  'entities',
-  'players',
-  'flags',
-  'hooks',
-  'forwards',
-  'storage',
-  'cvars',
-  'async',
-  'fs',
-  'shared-modules',
-  'universal-config',
-  'menus',
-  'extensions',
-  'natives',
-  'testing',
-]
+export type DocGroup = typeof docGroups[number]['key']
 
-export const docPages = [firstDocPage, ...apiPages]
+export const docPages: string[] = docGroups.flatMap(group => group.pages)
 
-export const sidebarTitles: Record<SiteLocale, { start: string, api: string, pages: string[] }> = {
+/**
+ * Framework pages about an official module: not in the docs, but on the
+ * module's own catalog page (/modules/menu-core), like a package's README.
+ */
+export const modulePages: Record<string, string> = {
+  'menus': 'menu-core',
+  'universal-config': 'universal-config',
+  'http': 'http',
+}
+
+export const groupTitles: Record<SiteLocale, Record<DocGroup, string>> = {
+  en: { start: 'Getting started', core: 'Core', game: 'Game', data: 'Data', modules: 'Modules', pawn: 'Pawn', testing: 'Testing' },
+  ru: { start: 'Начало работы', core: 'Основы', game: 'Игра', data: 'Данные', modules: 'Модули', pawn: 'Pawn', testing: 'Тесты' },
+}
+
+export const pageTitles: Record<SiteLocale, Record<string, string>> = {
   en: {
-    start: 'Getting started',
-    api: 'API',
-    pages: [
-      'Plugin',
-      'Players and entities',
-      'Players: actions',
-      'Flags',
-      'Hookchains',
-      'Forwards',
-      'Storage',
-      'Cvars',
-      'Async and promises',
-      'Files',
-      'Shared modules',
-      'INI configs',
-      'Menus',
-      'Extensions',
-      'Natives',
-      'Testing',
-    ],
+    'introduction': 'Introduction',
+    'getting-started': 'Quick start',
+    'plugin': 'Plugin',
+    'hooks': 'Hookchains',
+    'forwards': 'Forwards',
+    'async': 'Async and promises',
+    'entities': 'Players and entities',
+    'players': 'Players: actions',
+    'flags': 'Flags',
+    'cvars': 'Cvars',
+    'storage': 'Storage',
+    'fs': 'Files',
+    'shared-modules': 'Shared modules',
+    'modules': 'Creating a module',
+    'natives': 'Natives',
+    'testing': 'Testing',
   },
   ru: {
-    start: 'Начало работы',
-    api: 'API',
-    pages: [
-      'Плагин',
-      'Игроки и сущности',
-      'Игроки: действия',
-      'Флаги',
-      'Хукчейны',
-      'Форварды',
-      'Хранилище',
-      'Квары',
-      'Async и промисы',
-      'Файлы',
-      'Общие модули',
-      'INI-конфиги',
-      'Меню',
-      'Расширения',
-      'Нативы',
-      'Тесты',
-    ],
+    'introduction': 'Введение',
+    'getting-started': 'Быстрый старт',
+    'plugin': 'Плагин',
+    'hooks': 'Хукчейны',
+    'forwards': 'Форварды',
+    'async': 'Async и промисы',
+    'entities': 'Игроки и сущности',
+    'players': 'Игроки: действия',
+    'flags': 'Флаги',
+    'cvars': 'Квары',
+    'storage': 'Хранилище',
+    'fs': 'Файлы',
+    'shared-modules': 'Общие модули',
+    'modules': 'Свой модуль',
+    'natives': 'Нативы',
+    'testing': 'Тесты',
   },
 }
 
@@ -83,6 +82,6 @@ export function docsPrefix(locale: SiteLocale) {
 /** The Nuxt Content collections of a locale (content.config.ts). */
 export function collections(locale: SiteLocale) {
   return locale === 'ru'
-    ? { docs: 'docs_ru', landing: 'landing_ru' } as const
-    : { docs: 'docs_en', landing: 'landing_en' } as const
+    ? { docs: 'docs_ru', landing: 'landing_ru', moduleDocs: 'module_docs_ru' } as const
+    : { docs: 'docs_en', landing: 'landing_en', moduleDocs: 'module_docs_en' } as const
 }

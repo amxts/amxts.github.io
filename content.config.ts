@@ -17,11 +17,21 @@ function docs(locale: 'en' | 'ru') {
   })
 }
 
+// The framework's page about an official module, shown on its catalog page.
+function moduleDocs(locale: 'en' | 'ru') {
+  return defineCollection({
+    type: 'page',
+    source: { include: `${locale}/modules/**`, prefix: locale === 'en' ? '/modules' : `/${locale}/modules` },
+  })
+}
+
 export default defineContentConfig({
   collections: {
     landing_en: landing('en'),
     landing_ru: landing('ru'),
     docs_en: docs('en'),
     docs_ru: docs('ru'),
+    module_docs_en: moduleDocs('en'),
+    module_docs_ru: moduleDocs('ru'),
   },
 })

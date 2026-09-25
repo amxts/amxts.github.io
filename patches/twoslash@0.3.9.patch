@@ -1,0 +1,300 @@
+diff --git a/dist/core.cjs b/dist/core.cjs
+index b504d7a..3fc72c2 100644
+--- a/dist/core.cjs
++++ b/dist/core.cjs
+@@ -156,9 +156,143 @@ ${unknownFlags.map((i) => `@${i.name}`).join(", ")}`,
+       return meta.virtualFiles.find((i) => twoslashProtocol.isInRange(pos, [i.offset, i.offset + i.content.length]));
+     }
+     function getQuickInfo(file, start, target) {
+-      const quickInfo = ls.getQuickInfoAtPosition(file.filepath, getOffsetInFile(start, file));
++      const offset = getOffsetInFile(start, file);
++      let quickInfo = ls.getQuickInfoAtPosition(file.filepath, offset);
++      // xen-site: what TypeScript said, before the rewrites below
++      const original = quickInfo?.displayParts?.map((dp) => dp.text).join("") ?? "";
++      // xen-site: a function the example declares itself (`function sayHp`) has
++      // no hover: only what comes from the framework's types does
++      if (quickInfo && ["function", "local function"].includes(quickInfo.kind) && typeof ts.getTokenAtPosition === "function") {
++        try {
++          const program = ls.getProgram();
++          const node = ts.getTokenAtPosition(program.getSourceFile(file.filepath), offset);
++          const declarations = program.getTypeChecker().getSymbolAtLocation(node)?.declarations ?? [];
++          if (declarations.length && declarations.every((declaration) => declaration.getSourceFile().fileName === file.filepath))
++            return void 0;
++        }
++        catch {}
++      }
++      // xen-site: a hover on a value of a named type, or on a class, shows what
++      // the type holds (TypeScript's verbosityLevel 1), written as an interface
++      if (quickInfo?.displayParts) {
++        const expanded = ls.getQuickInfoAtPosition(file.filepath, offset, void 0, 1);
++        const short = quickInfo.displayParts.map((dp) => dp.text).join("");
++        const long = expanded?.displayParts?.map((dp) => dp.text).join("") ?? "";
++        // an import adds lines after the type ("import server"): the same tail on both
++        const tail = short.slice(short.split("\n")[0].length);
++        const head = short.slice(0, short.length - tail.length);
++        const inner = long.endsWith(tail) ? long.slice(0, long.length - tail.length) : "";
++        let name = "";
++        let body = "";
++        const declared = head.match(/\bclass (\w+)$/);
++        if (declared) {
++          name = declared[1];
++          body = inner.slice(inner.indexOf("{"));
++        }
++        else if (head.indexOf(": ") >= 0) {
++          const colon = head.indexOf(": ");
++          name = head.slice(colon + 2);
++          body = inner.slice(colon + 2);
++        }
++        // a get/set pair is a field, a lone get a readonly one, a lone set a field
++        if (/^[\w.]+$/.test(name) && body.startsWith("{")) {
++          const lines = body.split("\n").filter((line) => !/^\s*\.\.\. \d+ more \.\.\.\s*;?$/.test(line));
++          // what every array and object has (toString, [Symbol.iterator]...) is
++          // noise in a hover about the framework's types: those members go
++          const noise = /^\s*(?:readonly )?(?:toString\b|toLocaleString\b|valueOf\b|\[Symbol\.\w+\])/;
++          let skipping = "";
++          const kept = [];
++          for (const line of lines) {
++            if (skipping) {
++              if (line.startsWith(`${skipping}}`))
++                skipping = "";
++              continue;
++            }
++            if (noise.test(line)) {
++              if (line.trimEnd().endsWith("{"))
++                skipping = line.match(/^\s*/)[0];
++              continue;
++            }
++            kept.push(line);
++          }
++          lines.splice(0, lines.length, ...kept);
++          const names = (pattern) => new Set(lines.map((line) => line.match(pattern)?.[1]).filter(Boolean));
++          const getters = names(/^\s*get (\w+)\(/);
++          const setters = names(/^\s*set (\w+)\(/);
++          const members = lines.flatMap((line) => {
++            const get = line.match(/^(\s*)get (\w+)\(\): (.*);$/);
++            if (get)
++              return [`${get[1]}${setters.has(get[2]) ? "" : "readonly "}${get[2]}: ${get[3]};`];
++            const set = line.match(/^(\s*)set (\w+)\(\w+: (.*)\);$/);
++            if (set)
++              return getters.has(set[2]) ? [] : [`${set[1]}${set[2]}: ${set[3]};`];
++            return [line];
++          });
++          quickInfo = { ...quickInfo, displayParts: [{ text: `${name.includes(".") ? "type" : "interface"} ${name} ${members.join("\n")}`, kind: "text" }] };
++        }
++      }
++      // xen-site: a function's hover also lists the fields of its parameters'
++      // own types (`plugin(info: PluginInfo)` shows what PluginInfo holds)
++      if (quickInfo?.displayParts && ["function", "method", "alias", "local function"].includes(quickInfo.kind) && typeof ts.getTokenAtPosition === "function") {
++        try {
++          const program = ls.getProgram();
++          const checker = program.getTypeChecker();
++          const node = ts.getTokenAtPosition(program.getSourceFile(file.filepath), offset);
++          let symbol = checker.getSymbolAtLocation(node);
++          if (symbol && symbol.flags & ts.SymbolFlags.Alias)
++            symbol = checker.getAliasedSymbol(symbol);
++          const signature = symbol && checker.getTypeOfSymbolAtLocation(symbol, node).getCallSignatures()[0];
++          const blocks = [];
++          const seen = new Set();
++          for (const parameter of signature?.getParameters() ?? []) {
++            const type = checker.getNonNullableType(checker.getTypeOfSymbol(parameter));
++            const declaration = type.symbol?.declarations?.[0];
++            const name = type.symbol?.name;
++            if (!name || seen.has(name) || !declaration || /[\/]typescript[\/]lib[\/]/.test(declaration.getSourceFile().fileName) || !(type.flags & ts.TypeFlags.Object) || type.getCallSignatures().length)
++              continue;
++            seen.add(name);
++            const fields = checker.getPropertiesOfType(type).map((property) => {
++              const optional = property.flags & ts.SymbolFlags.Optional ? "?" : "";
++              return `    ${property.name}${optional}: ${checker.typeToString(checker.getTypeOfSymbol(property))};`;
++            });
++            if (fields.length)
++              blocks.push(`interface ${name} {\n${fields.join("\n")}\n}`);
++          }
++          if (blocks.length) {
++            // the parameters' types say it all; the signature line goes
++            quickInfo = { ...quickInfo, displayParts: [{ text: blocks.join("\n"), kind: "text" }] };
++          }
++        }
++        catch {}
++      }
++      // xen-site: a class, interface or type named as a type (`Player` in
++      // `player: Player`) has no hover of its own; the value it types has one
++      if (quickInfo && /^(?:\(alias\) )?(?:class|interface|type|enum) /.test(original))
++        return void 0;
+       if (quickInfo && quickInfo.displayParts) {
+-        const text = quickInfo.displayParts.map((dp) => dp.text).join("");
++        let text = quickInfo.displayParts.map((dp) => dp.text).join("");
++        // xen-site: the first line as TypeScript Shiki can color, without the
++        // kind ("(property)", "(alias)") and an import's extra line ("import server")
++        const kinded = text.split("\n")[0].match(/^\(([^)]+)\) (.*)$/);
++        const lines = text.split("\n").filter((line, index) => index === 0 || !/^import \w+$/.test(line));
++        if (kinded) {
++          const [, kind, rest] = kinded;
++          const member = rest.match(/^([\w$]+)\.([\w$]+.*)$/);
++          // a member reads as itself: `name: type`, `method(args): type`
++          lines[0] = /^(?:const|let|var|function|class|interface|type|enum|namespace|module)\b/.test(rest)
++            ? rest
++            : member
++              ? member[2]
++              : rest;
++        }
++        text = lines.join("\n");
++        // xen-site: a player is an entity too (Player extends Entity), so where
++        // a type says Entity the hover says `Entity | Player` - the same type,
++        // read the way a plugin passes it; arrays and the Entity header stay
++        text = text.split("\n").map((line) => {
++          const colon = line.indexOf(": ");
++          return colon < 0 ? line : line.slice(0, colon + 2) + line.slice(colon + 2).replace(/\bEntity\b(?![\w.[])/g, "Entity | Player");
++        }).join("\n");
+         const docs = quickInfo.documentation?.map((d) => d.text).join("\n") || void 0;
+         const tags = quickInfo.tags?.map((t) => [t.name, t.text?.map((i) => i.text).join("")]);
+         return {
+diff --git a/dist/core.mjs b/dist/core.mjs
+index a7b02c6..04c59be 100644
+--- a/dist/core.mjs
++++ b/dist/core.mjs
+@@ -155,9 +155,143 @@ ${unknownFlags.map((i) => `@${i.name}`).join(", ")}`,
+       return meta.virtualFiles.find((i) => isInRange(pos, [i.offset, i.offset + i.content.length]));
+     }
+     function getQuickInfo(file, start, target) {
+-      const quickInfo = ls.getQuickInfoAtPosition(file.filepath, getOffsetInFile(start, file));
++      const offset = getOffsetInFile(start, file);
++      let quickInfo = ls.getQuickInfoAtPosition(file.filepath, offset);
++      // xen-site: what TypeScript said, before the rewrites below
++      const original = quickInfo?.displayParts?.map((dp) => dp.text).join("") ?? "";
++      // xen-site: a function the example declares itself (`function sayHp`) has
++      // no hover: only what comes from the framework's types does
++      if (quickInfo && ["function", "local function"].includes(quickInfo.kind) && typeof ts.getTokenAtPosition === "function") {
++        try {
++          const program = ls.getProgram();
++          const node = ts.getTokenAtPosition(program.getSourceFile(file.filepath), offset);
++          const declarations = program.getTypeChecker().getSymbolAtLocation(node)?.declarations ?? [];
++          if (declarations.length && declarations.every((declaration) => declaration.getSourceFile().fileName === file.filepath))
++            return void 0;
++        }
++        catch {}
++      }
++      // xen-site: a hover on a value of a named type, or on a class, shows what
++      // the type holds (TypeScript's verbosityLevel 1), written as an interface
++      if (quickInfo?.displayParts) {
++        const expanded = ls.getQuickInfoAtPosition(file.filepath, offset, void 0, 1);
++        const short = quickInfo.displayParts.map((dp) => dp.text).join("");
++        const long = expanded?.displayParts?.map((dp) => dp.text).join("") ?? "";
++        // an import adds lines after the type ("import server"): the same tail on both
++        const tail = short.slice(short.split("\n")[0].length);
++        const head = short.slice(0, short.length - tail.length);
++        const inner = long.endsWith(tail) ? long.slice(0, long.length - tail.length) : "";
++        let name = "";
++        let body = "";
++        const declared = head.match(/\bclass (\w+)$/);
++        if (declared) {
++          name = declared[1];
++          body = inner.slice(inner.indexOf("{"));
++        }
++        else if (head.indexOf(": ") >= 0) {
++          const colon = head.indexOf(": ");
++          name = head.slice(colon + 2);
++          body = inner.slice(colon + 2);
++        }
++        // a get/set pair is a field, a lone get a readonly one, a lone set a field
++        if (/^[\w.]+$/.test(name) && body.startsWith("{")) {
++          const lines = body.split("\n").filter((line) => !/^\s*\.\.\. \d+ more \.\.\.\s*;?$/.test(line));
++          // what every array and object has (toString, [Symbol.iterator]...) is
++          // noise in a hover about the framework's types: those members go
++          const noise = /^\s*(?:readonly )?(?:toString\b|toLocaleString\b|valueOf\b|\[Symbol\.\w+\])/;
++          let skipping = "";
++          const kept = [];
++          for (const line of lines) {
++            if (skipping) {
++              if (line.startsWith(`${skipping}}`))
++                skipping = "";
++              continue;
++            }
++            if (noise.test(line)) {
++              if (line.trimEnd().endsWith("{"))
++                skipping = line.match(/^\s*/)[0];
++              continue;
++            }
++            kept.push(line);
++          }
++          lines.splice(0, lines.length, ...kept);
++          const names = (pattern) => new Set(lines.map((line) => line.match(pattern)?.[1]).filter(Boolean));
++          const getters = names(/^\s*get (\w+)\(/);
++          const setters = names(/^\s*set (\w+)\(/);
++          const members = lines.flatMap((line) => {
++            const get = line.match(/^(\s*)get (\w+)\(\): (.*);$/);
++            if (get)
++              return [`${get[1]}${setters.has(get[2]) ? "" : "readonly "}${get[2]}: ${get[3]};`];
++            const set = line.match(/^(\s*)set (\w+)\(\w+: (.*)\);$/);
++            if (set)
++              return getters.has(set[2]) ? [] : [`${set[1]}${set[2]}: ${set[3]};`];
++            return [line];
++          });
++          quickInfo = { ...quickInfo, displayParts: [{ text: `${name.includes(".") ? "type" : "interface"} ${name} ${members.join("\n")}`, kind: "text" }] };
++        }
++      }
++      // xen-site: a function's hover also lists the fields of its parameters'
++      // own types (`plugin(info: PluginInfo)` shows what PluginInfo holds)
++      if (quickInfo?.displayParts && ["function", "method", "alias", "local function"].includes(quickInfo.kind) && typeof ts.getTokenAtPosition === "function") {
++        try {
++          const program = ls.getProgram();
++          const checker = program.getTypeChecker();
++          const node = ts.getTokenAtPosition(program.getSourceFile(file.filepath), offset);
++          let symbol = checker.getSymbolAtLocation(node);
++          if (symbol && symbol.flags & ts.SymbolFlags.Alias)
++            symbol = checker.getAliasedSymbol(symbol);
++          const signature = symbol && checker.getTypeOfSymbolAtLocation(symbol, node).getCallSignatures()[0];
++          const blocks = [];
++          const seen = new Set();
++          for (const parameter of signature?.getParameters() ?? []) {
++            const type = checker.getNonNullableType(checker.getTypeOfSymbol(parameter));
++            const declaration = type.symbol?.declarations?.[0];
++            const name = type.symbol?.name;
++            if (!name || seen.has(name) || !declaration || /[\/]typescript[\/]lib[\/]/.test(declaration.getSourceFile().fileName) || !(type.flags & ts.TypeFlags.Object) || type.getCallSignatures().length)
++              continue;
++            seen.add(name);
++            const fields = checker.getPropertiesOfType(type).map((property) => {
++              const optional = property.flags & ts.SymbolFlags.Optional ? "?" : "";
++              return `    ${property.name}${optional}: ${checker.typeToString(checker.getTypeOfSymbol(property))};`;
++            });
++            if (fields.length)
++              blocks.push(`interface ${name} {\n${fields.join("\n")}\n}`);
++          }
++          if (blocks.length) {
++            // the parameters' types say it all; the signature line goes
++            quickInfo = { ...quickInfo, displayParts: [{ text: blocks.join("\n"), kind: "text" }] };
++          }
++        }
++        catch {}
++      }
++      // xen-site: a class, interface or type named as a type (`Player` in
++      // `player: Player`) has no hover of its own; the value it types has one
++      if (quickInfo && /^(?:\(alias\) )?(?:class|interface|type|enum) /.test(original))
++        return void 0;
+       if (quickInfo && quickInfo.displayParts) {
+-        const text = quickInfo.displayParts.map((dp) => dp.text).join("");
++        let text = quickInfo.displayParts.map((dp) => dp.text).join("");
++        // xen-site: the first line as TypeScript Shiki can color, without the
++        // kind ("(property)", "(alias)") and an import's extra line ("import server")
++        const kinded = text.split("\n")[0].match(/^\(([^)]+)\) (.*)$/);
++        const lines = text.split("\n").filter((line, index) => index === 0 || !/^import \w+$/.test(line));
++        if (kinded) {
++          const [, kind, rest] = kinded;
++          const member = rest.match(/^([\w$]+)\.([\w$]+.*)$/);
++          // a member reads as itself: `name: type`, `method(args): type`
++          lines[0] = /^(?:const|let|var|function|class|interface|type|enum|namespace|module)\b/.test(rest)
++            ? rest
++            : member
++              ? member[2]
++              : rest;
++        }
++        text = lines.join("\n");
++        // xen-site: a player is an entity too (Player extends Entity), so where
++        // a type says Entity the hover says `Entity | Player` - the same type,
++        // read the way a plugin passes it; arrays and the Entity header stay
++        text = text.split("\n").map((line) => {
++          const colon = line.indexOf(": ");
++          return colon < 0 ? line : line.slice(0, colon + 2) + line.slice(colon + 2).replace(/\bEntity\b(?![\w.[])/g, "Entity | Player");
++        }).join("\n");
+         const docs = quickInfo.documentation?.map((d) => d.text).join("\n") || void 0;
+         const tags = quickInfo.tags?.map((t) => [t.name, t.text?.map((i) => i.text).join("")]);
+         return {

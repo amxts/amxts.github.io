@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url'
+import pawn from './pawn.tmLanguage'
 import { siteUrl } from './shared/site'
 
 /** https://nuxt.com/docs/api/configuration/nuxt-config */
@@ -6,6 +8,7 @@ export default defineNuxtConfig({
     '@nuxt/eslint',
     '@nuxt/image',
     '@nuxt/ui',
+    'nuxt-content-twoslash',
     '@nuxt/content',
     'nuxt-og-image',
     'nuxt-llms',
@@ -26,8 +29,25 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   site: {
-    name: 'Xen',
+    name: 'amxts',
     url: siteUrl,
+  },
+
+  // Types on hover in the docs' TypeScript. The framework's declarations come
+  // with the docs (`bun run docs:import` copies them into docs-types/); an
+  // example that is a fragment shows no errors instead of failing the build.
+  twoslash: {
+    includeNuxtTypes: false,
+    throws: false,
+    handbookOptions: { noErrors: true },
+    compilerOptions: {
+      // lib by file name: under TypeScript 6 Twoslash does not find 'esnext'
+      // (the module's default), and without it `number[]` reads as `{}`. No DOM:
+      // the framework declares its own Event and AbortSignal.
+      lib: ['lib.esnext.d.ts'],
+      // with forward slashes, the form TypeScript uses for paths
+      paths: { '~/*': [fileURLToPath(new URL('./docs-types/amxts/*', import.meta.url)).replaceAll('\\', '/')] },
+    },
   },
 
   content: {
@@ -38,7 +58,7 @@ export default defineNuxtConfig({
           searchDepth: 2,
         },
         highlight: {
-          langs: ['ts', 'js', 'json', 'sh', 'bash', 'ini', 'c', 'cpp', 'vue'],
+          langs: ['ts', 'js', 'json', 'sh', 'bash', 'ini', 'c', 'cpp', 'vue', pawn],
         },
       },
     },
@@ -50,8 +70,15 @@ export default defineNuxtConfig({
   // Docs and the landing are prerendered. The modules catalog is not: it is
   // rendered on request from /api/modules, which caches npm's answer for an hour.
   routeRules: {
-    '/docs': { redirect: '/docs/getting-started' },
-    '/ru/docs': { redirect: '/ru/docs/getting-started' },
+    '/docs': { redirect: '/docs/introduction' },
+    '/ru/docs': { redirect: '/ru/docs/introduction' },
+    // module pages moved from the docs to the modules' catalog pages
+    '/docs/menus': { redirect: '/modules/menu-core' },
+    '/ru/docs/menus': { redirect: '/ru/modules/menu-core' },
+    '/docs/universal-config': { redirect: '/modules/universal-config' },
+    '/ru/docs/universal-config': { redirect: '/ru/modules/universal-config' },
+    '/docs/extensions': { redirect: '/modules/http' },
+    '/ru/docs/extensions': { redirect: '/ru/modules/http' },
     '/modules/**': { prerender: false },
     '/ru/modules/**': { prerender: false },
   },
@@ -89,11 +116,11 @@ export default defineNuxtConfig({
 
   llms: {
     domain: siteUrl,
-    title: 'Xen',
+    title: 'amxts',
     description: 'AMX Mod X plugins for Counter-Strike 1.6 in TypeScript.',
     full: {
-      title: 'Xen - full documentation',
-      description: 'The whole Xen reference in one file.',
+      title: 'amxts - full documentation',
+      description: 'The whole amxts reference in one file.',
     },
     sections: [
       {
@@ -104,7 +131,7 @@ export default defineNuxtConfig({
   },
 
   mcp: {
-    name: 'Xen docs',
+    name: 'amxts docs',
   },
 
   ogImage: {

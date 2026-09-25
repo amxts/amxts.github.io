@@ -1,4 +1,4 @@
-// Copies the framework's reference (docs/api in the Xen repository, written
+// Copies the framework's reference (docs/api in the amxts repository, written
 // for VitePress) into content/en/docs and content/ru/docs, in the form Nuxt
 // Content reads it:
 //
@@ -14,37 +14,109 @@
 // - links to another page (`plugin.md`, `./async`, `entities.md#vectors-vector`)
 //   become site paths (`/docs/plugin`, `/ru/docs/async`), and a link that reads
 //   as a file name (`[plugin.md](plugin.md)`) reads as the page's title;
-// - a "Status:" paragraph becomes a callout: `::tip` when it says the page is
-//   verified or done, `::warning` when it is in progress, `::note` otherwise.
+// - a VitePress container (`::: warning Title` ... `:::`) becomes a Nuxt UI
+//   callout (`::warning`), its title a bold first line (a `<br>`: the callout
+//   unwraps paragraphs, so a blank line would not break it);
+// - the space (or line break) before a dash becomes a non-breaking one, so a
+//   wrapped line never starts with a dash;
+// - a TypeScript example gets `twoslash`, so the site shows its types on
+//   hover; the declarations it needs (docs/api/types) go to docs-types/.
 // index.md is VitePress' home page; the site's landing (content/*/index.md)
 // replaces it.
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
-import { docPages, docsPrefix, sidebarTitles } from '../shared/docs'
+import * as ts from 'typescript'
+import { docPages, docsPrefix, modulePages, pageTitles } from '../shared/docs'
 
 const source = resolve(process.argv[2] ?? '../ts2pawn/docs/api')
 const target = resolve('content')
 
-const known = new Set(docPages)
+const known = new Set([...docPages, ...Object.keys(modulePages)])
 const locales = [
-  { code: 'en' as const, dir: source, status: /^Status\b/ },
-  { code: 'ru' as const, dir: join(source, 'ru'), status: /^Статус\b/ },
+  { code: 'en' as const, dir: source },
+  { code: 'ru' as const, dir: join(source, 'ru') },
 ]
 
-function callout(paragraph: string) {
-  const verdict = paragraph.split(/[.;(-]/)[0] ?? ''
-  const kind = /verified|works|done|проверено|работает|готово/i.test(verdict)
-    ? 'tip'
-    : /in progress|в работе|собирается/i.test(paragraph) ? 'warning' : 'note'
+const callouts: Record<string, string> = { tip: 'tip', warning: 'warning', danger: 'caution', info: 'note', details: 'note' }
 
-  return `::${kind}\n${paragraph}\n::`
+// ponytail: a container with a code block inside is cut in two by splitFences and stays as it is; handle it when the docs get one.
+function containers(prose: string) {
+  return prose.replace(
+    /^::: (\w+)(?: (\S.*))?\n([\s\S]*?)\n:::$/gm,
+    (match, kind: string, title: string | undefined, body: string) => callouts[kind]
+      ? `::${callouts[kind]}\n${title ? `**${title}**<br>\n` : ''}${body}\n::`
+      : match,
+  )
+}
+
+const managers = [
+  { name: 'npm', run: 'npm run', add: 'npm i' },
+  { name: 'pnpm', run: 'pnpm run', add: 'pnpm add' },
+  { name: 'yarn', run: 'yarn run', add: 'yarn add' },
+  { name: 'bun', run: 'bun run', add: 'bun add' },
+]
+
+/**
+ * A shell block of `bun run ...` / `bun add ...` lines becomes tabs, one per
+ * package manager, synced across the site like nuxt.com's: the framework
+ * does not tie a project to bun.
+ */
+function packageManagers(block: string) {
+  const lines = block.split('\n')
+  const commands = lines.slice(1, -1)
+  if (!/^```(?:sh|bash)\s*$/.test(lines[0]!) || !commands.length || !commands.every(line => /^bun (?:run|add) /.test(line)))
+    return block
+
+  const tabs = managers.map(manager => [
+    `\`\`\`sh [${manager.name}]`,
+    ...commands.map((line) => {
+      const command = line.replace(/^bun run /, `${manager.run} `).replace(/^bun add /, `${manager.add} `)
+      // yarn passes a script's arguments on without the `--` separator
+      return manager.name === 'yarn' ? command.replace(' -- ', ' ') : command
+    }),
+    '```',
+  ].join('\n'))
+  return `::code-group{sync="pm"}\n${tabs.join('\n\n')}\n::`
+}
+
+/**
+ * What `~/facade` exports, read with the TypeScript compiler from the
+ * framework's declarations: an example that uses `Player` or `server` without
+ * importing them gets a hidden import of all of them (above `// ---cut---`,
+ * which Twoslash does not show), so their types still show on hover.
+ */
+function facadeExports() {
+  const file = join(source, 'types/amxts/facade.d.ts')
+  if (!existsSync(file))
+    return []
+  const program = ts.createProgram([file], { noEmit: true, types: [] })
+  const checker = program.getTypeChecker()
+  const module = checker.getSymbolAtLocation(program.getSourceFile(file)!)
+  return module ? checker.getExportsOfModule(module).map(symbol => symbol.name).filter(name => !name.startsWith('__')) : []
+}
+
+const facade = facadeExports()
+
+function twoslash(block: string) {
+  if (!/^```ts\s/.test(block))
+    return block
+  const [fence, ...rest] = block.split('\n')
+  const code = rest.join('\n')
+  const hidden = facade.length && !block.includes('from "~/facade"')
+    ? [`import { ${facade.join(', ')} } from "~/facade";`]
+    : []
+  // An example that talks about `player` without declaring it gets one, so
+  // what it reads from the player has its types too.
+  if (/\bplayer\b/.test(code) && !/(?:\b(?:const|let|var)\s+|[(,]\s*)player\b/.test(code))
+    hidden.push('declare const player: import("~/facade").Player;')
+  const prelude = hidden.length ? [...hidden, '// ---cut---'] : []
+  return [fence!.replace(/^```ts/, '```ts twoslash'), ...prelude, ...rest].join('\n')
 }
 
 interface Page {
   markdown: string
   prefix: string
-  status: RegExp
   titles: string[]
   navigation: string
 }
@@ -79,31 +151,35 @@ function splitFences(text: string) {
   return parts
 }
 
-function convert({ markdown, prefix, status, titles, navigation }: Page) {
+function convert({ markdown, prefix, titles, navigation }: Page) {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n')
   const h1 = lines.findIndex(line => line.startsWith('# '))
-  const title = h1 >= 0 ? lines[h1]!.slice(2).trim() : navigation
+  // the page header shows the title as text: `Map` reads as Map there
+  const title = (h1 >= 0 ? lines[h1]!.slice(2).trim() : navigation).replaceAll('`', '')
   if (h1 >= 0)
     lines.splice(h1, 1)
 
   const body = splitFences(lines.join('\n').trim()).map((part, i) => {
     if (i % 2 === 1)
-      return part
+      return twoslash(packageManagers(part))
 
     const linked = part.replace(
       /\[([^\]]*)\]\((?:\.\/)?([a-z-]+)(?:\.md)?(#[^)]*)?\)/g,
       (match, text: string, page: string, hash = '') => {
         if (!known.has(page))
           return match
-        const label = /^[\w-]+\.md(?:#.*)?$/.test(text) ? titles[docPages.indexOf(page)] : text
-        return `[${label}](${prefix}/${page}${hash})`
+        // a module's page lives on the module's catalog page
+        const module = modulePages[page]
+        const label = /^[\w-]+\.md(?:#.*)?$/.test(text) ? (module ?? titles[docPages.indexOf(page)]) : text
+        return module
+          ? `[${label}](${prefix.slice(0, -'/docs'.length)}/modules/${module}${hash})`
+          : `[${label}](${prefix}/${page}${hash})`
       },
     )
+      // the site's own pages (`/modules`) in the page's language: `/ru/modules`
+      .replace(/\]\(\/(?!docs\/|ru\/)/g, `](${prefix.slice(0, -'/docs'.length)}/`)
 
-    return linked
-      .split(/\n{2,}/)
-      .map(paragraph => status.test(paragraph) ? callout(paragraph) : paragraph)
-      .join('\n\n')
+    return containers(linked).replace(/(\S)[ \n]\u2014/g, '$1\u00A0\u2014')
   }).join('\n')
 
   const frontmatter = [
@@ -117,16 +193,24 @@ function convert({ markdown, prefix, status, titles, navigation }: Page) {
   return `${frontmatter}\n\n${body.trim()}\n`
 }
 
-for (const { code, dir, status } of locales) {
+for (const { code, dir } of locales) {
   const out = join(target, code, 'docs')
-  const { start, pages } = sidebarTitles[code]
-  const titles = [start, ...pages]
+  const modulesOut = join(target, code, 'modules')
+  const titles = docPages.map(page => pageTitles[code][page]!)
   rmSync(out, { recursive: true, force: true })
+  rmSync(modulesOut, { recursive: true, force: true })
   mkdirSync(out, { recursive: true })
+  mkdirSync(modulesOut, { recursive: true })
 
   const files = readdirSync(dir).filter(file => file.endsWith('.md') && file !== 'index.md')
   for (const file of files) {
     const page = file.slice(0, -3)
+    const module = modulePages[page]
+    if (module) {
+      const markdown = readFileSync(join(dir, file), 'utf8')
+      writeFileSync(join(modulesOut, `${module}.md`), convert({ markdown, prefix: docsPrefix(code), titles, navigation: module }))
+      continue
+    }
     const place = docPages.indexOf(page)
     if (place < 0) {
       console.warn(`${code}/${file}: not in the sidebar (shared/docs.ts), skipped`)
@@ -137,7 +221,7 @@ for (const { code, dir, status } of locales) {
     const navigation = titles[place]!
     writeFileSync(
       join(out, `${String(place + 1).padStart(2, '0')}.${file}`),
-      convert({ markdown, prefix: docsPrefix(code), status, titles, navigation }),
+      convert({ markdown, prefix: docsPrefix(code), titles, navigation }),
     )
   }
 
@@ -147,4 +231,23 @@ for (const { code, dir, status } of locales) {
   }
 
   console.log(`${code}: ${files.length} pages -> ${out}`)
+}
+
+const types = join(source, 'types')
+rmSync(resolve('docs-types'), { recursive: true, force: true })
+if (existsSync(types)) {
+  cpSync(types, resolve('docs-types'), { recursive: true })
+  // The AssemblyScript prelude (i32, bool...) is global: every declaration
+  // file under amxts/ references it, so an example sees it whatever it imports.
+  const framework = resolve('docs-types/amxts')
+  for (const file of readdirSync(framework, { recursive: true, encoding: 'utf8' }).filter(file => file.endsWith('.d.ts'))) {
+    const path = join(framework, file)
+    const up = relative(dirname(path), resolve('docs-types')).replaceAll('\\', '/') || '.'
+    writeFileSync(path, `/// <reference path="${up}/as-types.d.ts" />\n${readFileSync(path, 'utf8')}`)
+  }
+  console.log(`types: ${types} -> docs-types`)
+}
+else {
+  mkdirSync(resolve('docs-types'))
+  console.warn(`types: ${types} is missing, the examples show no framework types on hover`)
 }

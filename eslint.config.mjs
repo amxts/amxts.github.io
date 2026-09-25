@@ -12,10 +12,11 @@ export default antfu(
   {
     formatters: true,
     antislop: true,
-    // content/ is imported from the framework repository (scripts/import-docs.ts),
-    // and its code blocks are fragments ("..."), not programs.
+    // content/ and docs-types/ are imported from the framework repository
+    // (scripts/import-docs.ts): its pages, whose code blocks are fragments
+    // ("..."), and its generated type declarations.
     markdown: false,
-    ignores: ['content/**'],
+    ignores: ['content/**', 'docs-types/**'],
   },
   {
     ...betterTailwindcss.configs['correctness-error'],

@@ -1,6 +1,6 @@
 import type { ContentNavigationItem } from '@nuxt/content'
 import type { SiteLocale } from '#shared/docs'
-import { collections, docsPrefix, firstDocPage, sidebarTitles } from '#shared/docs'
+import { collections, docGroups, docsPrefix, groupTitles } from '#shared/docs'
 
 /** The current language as the content knows it: 'en' or 'ru'. */
 export function useSiteLocale() {
@@ -23,18 +23,18 @@ function pagesOf(items: ContentNavigationItem[]): ContentNavigationItem[] {
 }
 
 /**
- * The sidebar the framework's VitePress config has: "Getting started", then
- * the "API" group. Nuxt Content gives the pages in file order (the importer
- * numbers them); only the grouping is added here.
+ * The sidebar in groups (shared/docs.ts), each with its icon: the group's
+ * title is also the page header's headline. Nuxt Content gives the pages; only
+ * the grouping is added here.
  */
 export function groupDocs(items: ContentNavigationItem[], locale: SiteLocale): ContentNavigationItem[] {
   const prefix = docsPrefix(locale)
-  const pages = pagesOf(items)
-  const start = pages.filter(page => page.path === `${prefix}/${firstDocPage}`)
-  const api = pages.filter(page => page.path !== `${prefix}/${firstDocPage}`)
+  const byPath = new Map(pagesOf(items).map(page => [page.path, page]))
 
-  return [
-    ...start,
-    { title: sidebarTitles[locale].api, path: `${prefix}/api`, children: api },
-  ]
+  return docGroups.map(group => ({
+    title: groupTitles[locale][group.key],
+    icon: group.icon,
+    path: `${prefix}/${group.pages[0]}`,
+    children: group.pages.flatMap(page => byPath.get(`${prefix}/${page}`) ?? []),
+  }))
 }
