@@ -47,7 +47,7 @@ declare global {
 	 * export default defineModule<MenuCoreOptions>({
 	 *   meta: { name: "menu-core", configKey: "menus" },
 	 *   requires: ["@amxts/universal-config"],
-	 *   defaults: { folder: "" },
+	 *   defaults: { file: "menu" },
 	 *   setup(options) { ... },
 	 * });
 	 * ```
@@ -60,7 +60,7 @@ declare global {
 	 * ```ts
 	 * export default defineConfig({
 	 *   modules: ["@amxts/universal-config", "@amxts/menu-core"],
-	 *   menus: { folder: "myserver" },
+	 *   menus: { file: "myserver/menu" },
 	 * });
 	 * ```
 	 */

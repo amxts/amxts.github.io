@@ -1,49 +1,12 @@
 /**
- * menu-core — menus for amxts plugins.
- *
- * A menu is written in an ini file or built in code; the module shows it to a
- * player and answers the keys he presses. Seven rows a page: 8 and 9 turn the
- * pages or go back, 0 closes.
- *
- * ```ts
- * import * as menus from "@amxts/menu-core";
- *
- * menus.setConfigFile("myplugin/menu");              // configs/myplugin/menu.ini
- * menus.addCondition("IS_ALIVE", player => player.isAlive);
- * menus.addAction("RESET_SCORE", (player) => { player.frags = 0; });
- * menus.addPlaceholder("hp", player => `${player.health}`);
- *
- * const shop = menus.create("SHOP", "Shop");
- * menus.addItem(shop, "Heal %hp%", { onSelect: heal });
- * menus.show(player, "SHOP");
- * ```
- *
- * Two kinds of menu:
- * - **items** — a list of items: a `[SECTION]` of the file (TITLE, ITEMS,
- *   FIXED_ITEMS, ...) or one made with `create()`;
- * - **list** — a name starting with `LIST_`: one row per player, or per row a
- *   list source gives, drawn from its VIEW template.
- *
- * Conditions, actions and placeholders go by name: the file names them, and
- * whichever plugin registered the name answers — a TypeScript plugin here, a
- * Pawn plugin through the `mc_*` natives (`include/menu_core.inc`).
- *
- * The server runs one instance of the module, in its own plugin
- * (`src/natives.ts`). Every plugin that imports it talks to that instance, so a
- * menu has the items all plugins added and a player has one open menu.
- *
- * The types are in `./types`.
+ * Menu Core — an opinionated way to create menus: from an ini file or in code,
+ * with conditions, placeholders and lists. How to use it: README.md.
  */
 import { MenuItemOptions, MenuShowOptions, Player } from "~/facade";
 import { ActionHandler, ActionTest, ConditionFilter, ConditionTest, ListRow, ListSource, Menu, MenuCoreOptions, MenuEventType, MenuListener, PlaceholderValue, RestrictionTest } from "./types";
 export * from "./types";
 declare const _default: AmxtsModule<MenuCoreOptions>;
 export default _default;
-declare module "@amxts/core" {
-    interface ModuleOptions {
-        menus?: Partial<MenuCoreOptions>;
-    }
-}
 /**
  * The file menus are read from, under configs/ and without ".ini"; read when a
  * menu is first asked for. `fallback` is read instead when `file` has no sections.

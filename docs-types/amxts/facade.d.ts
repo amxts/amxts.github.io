@@ -661,6 +661,11 @@ export declare class CommandOptions {
     /** What `amx_help` and the like show next to it. */
     description?: string;
 }
+/**
+ * The rights users.ini letters give, as names: `accessOf("abc")` is
+ * ["Immunity", "Reservation", "Kick"]. A letter it does not know is left out.
+ */
+export declare function accessOf(letters: string): Access[];
 /** What a server command's handler gets: the words after its name. */
 export type ServerCommandHandler = (args: string[]) => void;
 /**
@@ -678,8 +683,9 @@ export declare class HudOptions {
     hold?: number;
     /** "fade" in and out, "flicker", or "typewriter" - written out letter by letter. */
     effect?: HudEffect;
-    /** Seconds to fade in and out. */
+    /** Seconds to fade in. */
     fadeIn?: number;
+    /** Seconds to fade out. */
     fadeOut?: number;
     /** One of the four HUD channels; -1 lets AMX Mod X pick a free one. */
     channel?: number;
@@ -971,6 +977,7 @@ export declare class Game {
 export type RoundWinner = "TERRORIST" | "CT" | "draw" | "none";
 /** How `game.endRound` ends the round. Only `winner` is needed. */
 export declare class EndRoundOptions {
+    /** Who wins: "TERRORIST", "CT", "draw", or "none" - a restart. */
     winner: RoundWinner;
     /** Seconds until the next round starts. */
     delay?: number;
@@ -1020,7 +1027,9 @@ import { ServerEventMap } from "./events";
  * what 0 means, which is everyone.
  */
 export declare class Target {
+    /** The player's id; 0 is everyone. */
     id: number;
+    /** Where it shows: "chat", "center", "console" or "notify". */
     variant?: VariantName;
 }
 /**
@@ -1215,15 +1224,19 @@ export declare function ham(name: HamName, entityClass: string, handler: WideHan
  * host's, so this is the only place their names exist.
  */
 export declare class PluginInfo {
+    /** The plugin's name, as `amx plugins` lists it: "My Plugin". */
     name: string;
+    /** Its version, as `amx plugins` lists it: "1.0.0". */
     version: string;
+    /** Who wrote it. */
     author: string;
+    /** What it does, in a line. */
     description: string;
     /**
-     * The Pawn include this plugin's natives implement - `"nhnse_core.inc"`,
+     * The Pawn include this plugin's natives implement - `"myplugin.inc"`,
      * from includes/ or beside the plugin. The build reads it: each exported
      * function crosses to Pawn as that include declares it, and the include
-     * is what Pawn plugins get (docs/api/natives.md).
+     * is what Pawn plugins get.
      */
     include?: string;
 }
@@ -1431,6 +1444,10 @@ export declare function textCells(text: string, count: number): number[];
  * beyond that the head goes out first as ShowMenu messages marked "more" -
  * the client joins them - and show_menu sends the rest, which ends the menu
  * and tells AMX Mod X its title, so the keys reach register_menucmd.
+ *
+ * The text is written with the colour tags chat uses - `!y` yellow, `!r` red,
+ * `!w` white, `!d` grey, `!R` to the right edge - and the game's own codes
+ * (`\y`, as an old menu.ini has them) pass as they are.
  */
 export declare function showMenu(id: number, keys: number, text: string, title: string): void;
 /**
@@ -1457,14 +1474,20 @@ export declare class MenuShowOptions {
 export declare class MenuItemOptions {
     /** Text after the name, placeholders and all: "%hp%". */
     placeholder?: string;
+    /** The condition it is shown under - a name from addCondition, "!NAME" for its opposite, several space-separated must all hold. */
     condition?: string;
+    /** What choosing it does - a name from addAction, or a built-in: "SHOW_<MENU>", "CLOSE_MENU". */
     action?: string;
     /** What choosing it does, instead of naming an action. */
     onSelect?: ((player: Player, target: number, name: string) => void) | null;
+    /** Greys it out while it holds - a name from addRestriction, "ADMIN" or "FLAG_<letters>". */
     restriction?: string;
+    /** Shown beside it while it is greyed out; "" is the restriction's own message. */
     restrictionMessage?: string;
     /** Its place among the items; -1 is the end. */
     at?: number;
+    /** Blank lines before it. */
     spaceBefore?: number;
+    /** Blank lines after it. */
     spaceAfter?: number;
 }

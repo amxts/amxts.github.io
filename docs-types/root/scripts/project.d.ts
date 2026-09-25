@@ -41,6 +41,11 @@ export interface ModulePackage {
     natives: string | null;
     /** The Pawn include the natives implement. */
     include: string | null;
+    /**
+     * `"contract": true`: the include is the original's, kept as it is - the
+     * build checks the natives against it instead of writing it.
+     */
+    contract: boolean;
     version: string;
     description: string;
     definition: ModuleDefinition;
@@ -120,6 +125,8 @@ export declare class Sources {
     private target;
     /** Every place in the tree a source reaches through its imports, itself included. */
     reach(path: string, seen?: Set<string>): Set<string>;
+    /** The include a plugin's natives must match: its package's, when the package says `"contract": true`. */
+    contractOf(entry: string): string | null;
     /** Where a plugin's `include: "x.inc"` may be: beside it, its package's include, the plugins folders, includes/. */
     includeCandidates(entry: string, file: string): string[];
 }
