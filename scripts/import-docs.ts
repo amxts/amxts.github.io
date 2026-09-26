@@ -20,7 +20,8 @@
 // - the space (or line break) before a dash becomes a non-breaking one, so a
 //   wrapped line never starts with a dash;
 // - a TypeScript example gets `twoslash`, so the site shows its types on
-//   hover; the declarations it needs (docs/api/types) go to docs-types/.
+//   hover; the declarations it needs (docs/api/types) go to docs-types/;
+// - an official module's page is its README (see below).
 // index.md is VitePress' home page; the site's landing (content/*/index.md)
 // replaces it.
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -251,6 +252,63 @@ for (const { code, dir } of locales) {
   }
 
   console.log(`${code}: ${files.length} pages -> ${out}`)
+}
+
+// A module's page is its README (../amxts-modules/<name>/README{,.ru}.md),
+// replacing the framework's own page about it: the header block gives the
+// title and description, repository links point at GitHub, alerts become
+// callouts, TypeScript examples get hovers.
+const modulesSource = resolve(process.argv[3] ?? '../amxts-modules')
+const alerts: Record<string, string> = { NOTE: 'note', TIP: 'tip', IMPORTANT: 'note', WARNING: 'warning', CAUTION: 'caution' }
+
+function readme(markdown: string, name: string, locale: 'en' | 'ru') {
+  let text = markdown.replace(/\r\n/g, '\n')
+  let title = name
+  let description = ''
+  const header = text.match(/^<div align="center">\n([\s\S]*?)\n<\/div>\n/)
+  if (header) {
+    title = header[1]!.match(/^# (.+)$/m)?.[1]?.trim() ?? name
+    description = header[1]!.match(/^\*([^*\n]+)\*$/m)?.[1]?.trim() ?? ''
+    text = text.slice(header[0].length)
+  }
+
+  const repository = `https://github.com/amxts/${name}/blob/main/`
+  const body = splitFences(text.trim()).map((part, i) => {
+    if (i % 2 === 1)
+      return twoslash(part, locale === 'ru' ? 'ru' : undefined)
+    return part
+      // a link into the repository (PAWN.md, LICENSE, include/...) opens on GitHub
+      .replace(/\]\((?!https?:|#|\/)([^)\s]+)\)/g, (_, path: string) => `](${repository}${path})`)
+      // > [!WARNING] + quoted lines -> ::warning ... ::
+      .replace(/^> \[!(\w+)\]\n((?:>.*(?:\n|$))+)/gm, (match, kind: string, quoted: string) => {
+        const callout = alerts[kind.toUpperCase()]
+        if (!callout)
+          return match
+        const lines = quoted.trimEnd().split('\n').map(line => line.replace(/^> ?/, ''))
+        return `::${callout}\n${lines.join('\n')}\n::\n`
+      })
+  }).join('\n')
+
+  const frontmatter = ['---', `title: ${JSON.stringify(title)}`]
+  if (description)
+    frontmatter.push(`description: ${JSON.stringify(description)}`)
+  frontmatter.push('---')
+  return `${frontmatter.join('\n')}\n\n${body.trim()}\n`
+}
+
+if (existsSync(modulesSource)) {
+  for (const name of readdirSync(modulesSource)) {
+    for (const [locale, file] of [['en', 'README.md'], ['ru', 'README.ru.md']] as const) {
+      const path = join(modulesSource, name, file)
+      if (!existsSync(path))
+        continue
+      writeFileSync(join(target, locale, 'modules', `${name}.md`), readme(readFileSync(path, 'utf8'), name, locale))
+    }
+    console.log(`module: ${name} <- ${join(modulesSource, name)}`)
+  }
+}
+else {
+  console.warn(`modules: ${modulesSource} is missing, the module pages come from the framework's docs`)
 }
 
 // The framework's declarations: English (docs-types/, the docs' hovers and the

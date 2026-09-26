@@ -1,125 +1,121 @@
 ---
-title: "Меню: menu-core"
-navigation:
-  title: "menu-core"
+title: "Menu Core"
+description: "Удобный способ создавать меню для серверов Counter-Strike 1.6"
 ---
 
-Меню из ini-файла или из кода: показывается через `show_menu`, клавиши
-приходят через `register_menucmd`. Это menu_core на TypeScript: модуль, который
-TS-плагин импортирует, и плагин, который отдаёт Pawn-плагинам нативы `mc_*`
-menu_core.
+Опишите меню один раз — в ini-файле или в коде, — а остальное Menu Core сделает сам: страницы, клавиши, возврат назад, обратный отсчёт и пункты, которые появляются, скрываются или становятся серыми в зависимости от того, кто смотрит. Это модуль [amxts](https://amxts.github.io/), написанный на TypeScript. Он же отдаёт нативы оригинального `menu_core.amxx`, так что существующие Pawn-плагины продолжают работать.
 
 ::warning
-**В работе**<br>
-menu-core ещё доделывается. В игре его пробовали пока один раз, и поведение
-может измениться.
+**В работе.** В игре Menu Core пробовали всего несколько раз, и API ещё может измениться.
 ::
 
-## Из TypeScript
+## Возможности
+
+- **Меню из файла или из кода.** Админ правит `menu.ini`, не трогая плагин; плагины добавляют свои пункты на ходу.
+- **Условия и ограничения.** Пункт показывается, только когда он уместен (`IS_ALIVE`, `!IS_SPECTATOR`), или становится серым с причиной (`ADMIN`, `FLAG_abc`).
+- **Подстановки.** `%hp%`, `%name%`, `%time%` и любые свои значения подставляются при каждой отрисовке.
+- **Меню-списки.** Строка на каждого игрока или на каждый элемент своего списка, с фильтрами и сообщением, если никого не осталось.
+- **Варианты.** `SPECTATE|JOIN` показывает тот вариант, чьё условие выполняется.
+- **Отсчёт и блокировка.** Меню с таймером — свой у каждого игрока или один на всех — и меню, которое нельзя закрыть или заменить.
+- **Один экземпляр на сервер.** Все плагины, на TypeScript и на Pawn, наполняют и открывают одни и те же меню.
+- **Без ограничений Pawn.** Длинные названия, сколько угодно пунктов, меню на кириллице длиннее 500 байт.
+
+## Установка
+
+```bash
+npm install @amxts/menu-core
+```
+
+И добавьте его в `amxts.config.ts` проекта:
 
 ```ts twoslash locale-ru
-import { Player } from "~/facade";
+import { hostIndex, handled, outcome, floatCell, rounded, cellFloat, ret, publicFor, nativeFn, arg, argText, argc, caller, setArg, setArgText, argString, cellsToString, stringToCells, cells, out, text, arrayOf, cell, putCell, noOrigin, hasModule, readText, playerIds, accessOf, paint, print, cmd, cmdWide, setTimeout, sleep, setInterval, clearTimeout, clearInterval, hook, ham, plugin, defineModule, createCellArray, destroyCellArray, cellArrayRows, pushCellArrayRow, cellsText, textCells, showMenu, Handler, WideHandler, Float, CellArray, CellBuffer, TEXT_MAX, Team, WeaponName, ItemName, PlayerFilter, ModuleName, KillOptions, Client, Player, CommandHandler, CommandOptions, ServerCommandHandler, HudOptions, HudEffect, HudLine, FadeDirection, FadeOptions, ShakeOptions, StatusIconState, Screen, CvarChangeEvent, CvarListener, Cvar, Server, server, Game, RoundWinner, EndRoundOptions, game, Variant, VariantName, Flag, Entity, Weapon, WeaponKind, weaponKindOf, Target, swapTeam, cvar, TimerHandler, SleepOptions, Call, PluginInfo, ModuleOptions, ForwardStop, NoArgument, Forward, Storage, EntityFilter, PawnFunction, PawnCall, addServerListener, removeServerListener, PluginInitEvent, PluginPauseEvent, PluginUnpauseEvent, ServerChangelevelEvent, PluginCfgEvent, PluginEndEvent, PluginLogEvent, PluginPrecacheEvent, ClientInfochangedEvent, ClientConnectEvent, ClientConnectexEvent, ClientAuthorizedEvent, ClientDisconnectEvent, ClientDisconnectedEvent, ClientRemoveEvent, ClientCommandEvent, ClientPutinserverEvent, InconsistentFileEvent, PluginModulesEvent, OnConfigsExecutedEvent, OnAutoConfigsBufferedEvent, CS_InternalCommandEvent, CS_OnBuyAttemptEvent, CS_OnBuyEvent, PfnTouchEvent, ServerFrameEvent, ClientKillEvent, Client_PreThinkEvent, Client_PostThinkEvent, ClientImpulseEvent, ClientCmdStartEvent, PfnThinkEvent, PfnPlaybackeventEvent, PfnKeyvalueEvent, PfnSpawnEvent, ServerEventMap, flagList, FlagFamily, FlagStore, EntvarFlags, MemberFlags, FlagList, HideHud, HIDE_HUD, Button, BUTTON, Effect, EFFECT, EntityFlag, ENTITY_FLAG, Damage, DAMAGE, Access, ACCESS, addGameListener, removeGameListener, HookEvent, HookEntry, RewardReason, ResourceType, TeamChoice, ItemRestriction, BotEvent, RoundEndReason, DeathMessageFlag, KillRarity, VguiMenu, ActivateServerEvent, AddAccountEvent, AddMultiDamageEvent, AddPlayerItemEvent, AddPointsEvent, AddPointsToTeamEvent, AddResourceEvent, AirAccelerateEvent, AirMoveEvent, AllocEvent, AllowPhysentEvent, ApplyMultiDamageEvent, BalanceTeamsEvent, BasePlayerDuckEvent, BasePlayerJumpEvent, BasePlayerSpawnEvent, BlindEvent, BounceGibTouchEvent, BuyGunAmmoEvent, BuyItemEvent, BuyWeaponByWeaponIdEvent, CanDeployEvent, CanHavePlayerItemEvent, CanPlayerHearPlayerEvent, CanSwitchTeamEvent, ChangeLevelEvent, CheckMapConditionsEvent, CheckTimeBasedDamageEvent, CheckUserInfoEvent, CheckWaterJumpEvent, CheckWinConditionsEvent, ChooseAppearanceEvent, ChooseTeamEvent, ClassifyEvent, CleanUpMapEvent, ClearMultiDamageEvent, ClientConnectedEvent, ClientPrintfEvent, ClientUserInfoChangedEvent, ConnectClientEvent, CreateWeaponBoxEvent, DeadPlayerWeaponsEvent, DeathNoticeEvent, DeathSoundEvent, DefaultDeployEvent, DefaultReloadEvent, DefaultShotgunReloadEvent, DefuseBombEndEvent, DefuseBombStartEvent, DirectSetEvent, DisappearEvent, DropClientEvent, DropIdlePlayerEvent, DropPlayerItemEvent, DropShieldEvent, EmitPingsEvent, EntSelectSpawnPointEvent, ExecuteServerStringCmdEvent, ExplodeBombEvent, ExplodeFlashbangEvent, ExplodeHeGrenadeEvent, ExplodeSmokeGrenadeEvent, FPlayerCanRespawnEvent, FPlayerCanTakeDamageEvent, FShouldSwitchWeaponEvent, FireBuckshotsEvent, FireBulletsEvent, FireBullets3Event, FlPlayerFallDamageEvent, FreeEvent, GetEntityInitEvent, GetForceCameraEvent, GetIntoGameEvent, GetNextBestWeaponEvent, GetPlayerSpawnSpotEvent, GibSpawnEvent, GiveAmmoEvent, GiveC4Event, GiveDefaultItemsEvent, GiveNamedItemEvent, GiveShieldEvent, GoToIntermissionEvent, HasRestrictItemEvent, HintMessageExEvent, ImpulseCommandsEvent, IsPenetrableEntityEvent, ItemPostFrameEvent, JoiningThinkEvent, KickBackEvent, KilledEvent, LadderMoveEvent, MakeBomberEvent, MakeVipEvent, MoveEvent, ObjectCapsEvent, ObserverFindNextPlayerEvent, ObserverIsValidTargetEvent, ObserverSetModeEvent, ObserverThinkEvent, OnEventEvent, OnRoundFreezeEndEvent, OnSpawnEquipEvent, PainEvent, PlantBombEvent, PlayStepSoundEvent, PlayerBlindEvent, PlayerDeathThinkEvent, PlayerGotWeaponEvent, PlayerKilledEvent, PlayerSpawnEvent, PmDuckEvent, PmJumpEvent, PostThinkEvent, PreThinkEvent, PrecacheEvent, PrecacheGenericIEvent, PrecacheModelIEvent, PrecacheSoundIEvent, PrintfEvent, RadioEvent, RemoveAllItemsEvent, RemoveGunsEvent, RemovePlayerItemEvent, RemoveSpawnProtectionEvent, ResetMaxSpeedEvent, ResetSequenceInfoEvent, RestartRoundEvent, RoundEndEvent, RoundRespawnEvent, SendDeathMessageEvent, SendResourcesEvent, SendWeaponAnimEvent, ServerDeactivateEvent, SetAnimationEvent, SetClientUserInfoModelEvent, SetClientUserInfoNameEvent, SetModelEvent, SetSpawnProtectionEvent, ShowMenuEvent, ShowVguiMenuEvent, SpawnHeadGibEvent, SpawnRandomGibsEvent, StartDeathCamEvent, StartObserverEvent, StartSoundEvent, SwitchTeamEvent, TakeDamageEvent, TakeHealthEvent, TeamFullEvent, TeamStackedEvent, ThinkEvent, ThrowFlashbangEvent, ThrowGrenadeEvent, ThrowHeGrenadeEvent, ThrowSmokeGrenadeEvent, TraceAttackEvent, TraceLineEvent, UnDuckEvent, UpdateClientDataEvent, UseEmptyEvent, WaitTillLandEvent, WaterJumpEvent, WriteFullClientUpdateEvent, GameEventMap, GameAnswerMap, Vector } from "~/facade";
+// ---cut---
+export default defineConfig({
+	modules: ["@amxts/menu-core"],
+	menus: {
+		file: "myserver/menu",   // configs/myserver/menu.ini
+		fallback: "menu",        // configs/menu.ini, если в первом нет меню
+	},
+});
+```
+
+Menu Core читает меню через [Config Core](https://github.com/amxts/config-core). Пакетный менеджер ставит его вместе с Menu Core, а сборка загружает первым, так что для него ничего добавлять не нужно.
+
+| Опция | По умолчанию | Что делает |
+| --- | --- | --- |
+| `file` | `"menu"` | Файл меню в `configs/`, без `.ini`. |
+| `fallback` | `""` | Читается вместо `file`, если в нём нет меню; `""` — без запасного. |
+
+## Использование
+
+```ts twoslash locale-ru
+import { server } from "@amxts/core";
 import * as menus from "@amxts/menu-core";
 
 menus.addCondition("IS_HURT", (player) => player.health < 100);
 menus.addPlaceholder("hp", (player) => `${player.health}`);
-menus.addAction("RESET_SCORE", resetScore);
 
 const shop = menus.create("SHOP", "Магазин");
-menus.addItem(shop, "Лечение (%hp% HP)", { condition: "IS_HURT", onSelect: heal });
-menus.addItem(shop, "Сбросить счёт", { action: "RESET_SCORE" });
+menus.addItem(shop, "Лечение (%hp% HP)", {
+	condition: "IS_HURT",
+	onSelect: (player) => {
+		player.health = 100;
+	},
+});
+menus.addItem(shop, "Сбросить счёт", {
+	onSelect: (player) => {
+		player.frags = 0;
+	},
+});
 menus.addItem(shop, "Закрыть", { action: "CLOSE_MENU", spaceBefore: 1 });
 
-function heal(player: Player) {
-	player.health = 100;
-}
-
-function resetScore(player: Player) {
-	player.frags = 0;
-}
-
-menus.show(player, "SHOP");
-menus.show(player, "LIST_KICK", { target: victim.id, time: 10 });
-```
-
-Меню — обычный объект (`Menu`): его поля — `hideExit`, `locked`, `time` —
-меняются напрямую. Всё остальное — функции модуля, как у `fs`.
-
-- `create(name, title)` — меню из кода; если имя занято — то, что уже есть.
-  Имя на `LIST_` — меню-список.
-- `addItem(menu, name, options)` / `addFixedItem(menu, slot, name, options)` —
-  опции: `placeholder`, `condition`, `action` или `onSelect`, `restriction`,
-  `restrictionMessage`, `at`, `spaceBefore`, `spaceAfter`.
-- `addCondition`, `addAction`, `addPlaceholder`, `addRestriction`,
-  `addActionCheck`, `addConditionFilter`, `setListSource` — то, что меню
-  называют по имени, отвечают функции.
-- `addEventListener("open" | "close" | "show", listener)` — "show" приходит
-  до открытия; `event.preventDefault()` его отменяет.
-- `show(player, name, options)` — false, если меню не открылось; опции:
-  `time`, `target`, `resetHistory`, `force`, `skipHistory`.
-- `close(player)`, `refresh("A B")`, `conditionChanged(name)`,
-  `lock(player)`, `setTimer(menu, seconds)`, `cancelTimer(menu)`.
-
-Клавиши: 1-7 — выбор, 8 — следующая страница, 9 — предыдущая или назад, в
-меню, откуда пришли, 0 — закрыть.
-
-## Из любого плагина: один menu-core на сервер
-
-На сервере один экземпляр `@amxts/menu-core` — плагина menu-core. Любой
-ваш плагин, который его импортирует, вызывает этот экземпляр, с теми же
-функциями и типами (см. [Общие модули](/ru/docs/shared-modules)). Поэтому меню,
-которое наполняют несколько плагинов, — главное меню, куда Pawn-плагины
-добавляют пункты через `mc_*`, — это одно меню, а у игрока одно открытое
-меню, кто бы его ни открыл.
-
-```ts twoslash locale-ru
-import { hostIndex, handled, outcome, floatCell, rounded, cellFloat, ret, publicFor, nativeFn, arg, argText, argc, caller, setArg, setArgText, argString, cellsToString, stringToCells, cells, out, text, arrayOf, cell, putCell, noOrigin, hasModule, readText, playerIds, accessOf, paint, print, cmd, cmdWide, setTimeout, sleep, setInterval, clearTimeout, clearInterval, hook, ham, plugin, defineModule, createCellArray, destroyCellArray, cellArrayRows, pushCellArrayRow, cellsText, textCells, showMenu, Handler, WideHandler, Float, CellArray, CellBuffer, TEXT_MAX, Team, WeaponName, ItemName, PlayerFilter, ModuleName, KillOptions, Client, Player, CommandHandler, CommandOptions, ServerCommandHandler, HudOptions, HudEffect, HudLine, FadeDirection, FadeOptions, ShakeOptions, StatusIconState, Screen, CvarChangeEvent, CvarListener, Cvar, Server, server, Game, RoundWinner, EndRoundOptions, game, Variant, VariantName, Flag, Entity, Weapon, WeaponKind, weaponKindOf, Target, swapTeam, cvar, TimerHandler, SleepOptions, Call, PluginInfo, ModuleOptions, ForwardStop, NoArgument, Forward, Storage, EntityFilter, PawnFunction, PawnCall, addServerListener, removeServerListener, PluginInitEvent, PluginPauseEvent, PluginUnpauseEvent, ServerChangelevelEvent, PluginCfgEvent, PluginEndEvent, PluginLogEvent, PluginPrecacheEvent, ClientInfochangedEvent, ClientConnectEvent, ClientConnectexEvent, ClientAuthorizedEvent, ClientDisconnectEvent, ClientDisconnectedEvent, ClientRemoveEvent, ClientCommandEvent, ClientPutinserverEvent, InconsistentFileEvent, PluginModulesEvent, OnConfigsExecutedEvent, OnAutoConfigsBufferedEvent, CS_InternalCommandEvent, CS_OnBuyAttemptEvent, CS_OnBuyEvent, PfnTouchEvent, ServerFrameEvent, ClientKillEvent, Client_PreThinkEvent, Client_PostThinkEvent, ClientImpulseEvent, ClientCmdStartEvent, PfnThinkEvent, PfnPlaybackeventEvent, PfnKeyvalueEvent, PfnSpawnEvent, ServerEventMap, flagList, FlagFamily, FlagStore, EntvarFlags, MemberFlags, FlagList, HideHud, HIDE_HUD, Button, BUTTON, Effect, EFFECT, EntityFlag, ENTITY_FLAG, Damage, DAMAGE, Access, ACCESS, addGameListener, removeGameListener, HookEvent, HookEntry, RewardReason, ResourceType, TeamChoice, ItemRestriction, BotEvent, RoundEndReason, DeathMessageFlag, KillRarity, VguiMenu, ActivateServerEvent, AddAccountEvent, AddMultiDamageEvent, AddPlayerItemEvent, AddPointsEvent, AddPointsToTeamEvent, AddResourceEvent, AirAccelerateEvent, AirMoveEvent, AllocEvent, AllowPhysentEvent, ApplyMultiDamageEvent, BalanceTeamsEvent, BasePlayerDuckEvent, BasePlayerJumpEvent, BasePlayerSpawnEvent, BlindEvent, BounceGibTouchEvent, BuyGunAmmoEvent, BuyItemEvent, BuyWeaponByWeaponIdEvent, CanDeployEvent, CanHavePlayerItemEvent, CanPlayerHearPlayerEvent, CanSwitchTeamEvent, ChangeLevelEvent, CheckMapConditionsEvent, CheckTimeBasedDamageEvent, CheckUserInfoEvent, CheckWaterJumpEvent, CheckWinConditionsEvent, ChooseAppearanceEvent, ChooseTeamEvent, ClassifyEvent, CleanUpMapEvent, ClearMultiDamageEvent, ClientConnectedEvent, ClientPrintfEvent, ClientUserInfoChangedEvent, ConnectClientEvent, CreateWeaponBoxEvent, DeadPlayerWeaponsEvent, DeathNoticeEvent, DeathSoundEvent, DefaultDeployEvent, DefaultReloadEvent, DefaultShotgunReloadEvent, DefuseBombEndEvent, DefuseBombStartEvent, DirectSetEvent, DisappearEvent, DropClientEvent, DropIdlePlayerEvent, DropPlayerItemEvent, DropShieldEvent, EmitPingsEvent, EntSelectSpawnPointEvent, ExecuteServerStringCmdEvent, ExplodeBombEvent, ExplodeFlashbangEvent, ExplodeHeGrenadeEvent, ExplodeSmokeGrenadeEvent, FPlayerCanRespawnEvent, FPlayerCanTakeDamageEvent, FShouldSwitchWeaponEvent, FireBuckshotsEvent, FireBulletsEvent, FireBullets3Event, FlPlayerFallDamageEvent, FreeEvent, GetEntityInitEvent, GetForceCameraEvent, GetIntoGameEvent, GetNextBestWeaponEvent, GetPlayerSpawnSpotEvent, GibSpawnEvent, GiveAmmoEvent, GiveC4Event, GiveDefaultItemsEvent, GiveNamedItemEvent, GiveShieldEvent, GoToIntermissionEvent, HasRestrictItemEvent, HintMessageExEvent, ImpulseCommandsEvent, IsPenetrableEntityEvent, ItemPostFrameEvent, JoiningThinkEvent, KickBackEvent, KilledEvent, LadderMoveEvent, MakeBomberEvent, MakeVipEvent, MoveEvent, ObjectCapsEvent, ObserverFindNextPlayerEvent, ObserverIsValidTargetEvent, ObserverSetModeEvent, ObserverThinkEvent, OnEventEvent, OnRoundFreezeEndEvent, OnSpawnEquipEvent, PainEvent, PlantBombEvent, PlayStepSoundEvent, PlayerBlindEvent, PlayerDeathThinkEvent, PlayerGotWeaponEvent, PlayerKilledEvent, PlayerSpawnEvent, PmDuckEvent, PmJumpEvent, PostThinkEvent, PreThinkEvent, PrecacheEvent, PrecacheGenericIEvent, PrecacheModelIEvent, PrecacheSoundIEvent, PrintfEvent, RadioEvent, RemoveAllItemsEvent, RemoveGunsEvent, RemovePlayerItemEvent, RemoveSpawnProtectionEvent, ResetMaxSpeedEvent, ResetSequenceInfoEvent, RestartRoundEvent, RoundEndEvent, RoundRespawnEvent, SendDeathMessageEvent, SendResourcesEvent, SendWeaponAnimEvent, ServerDeactivateEvent, SetAnimationEvent, SetClientUserInfoModelEvent, SetClientUserInfoNameEvent, SetModelEvent, SetSpawnProtectionEvent, ShowMenuEvent, ShowVguiMenuEvent, SpawnHeadGibEvent, SpawnRandomGibsEvent, StartDeathCamEvent, StartObserverEvent, StartSoundEvent, SwitchTeamEvent, TakeDamageEvent, TakeHealthEvent, TeamFullEvent, TeamStackedEvent, ThinkEvent, ThrowFlashbangEvent, ThrowGrenadeEvent, ThrowHeGrenadeEvent, ThrowSmokeGrenadeEvent, TraceAttackEvent, TraceLineEvent, UnDuckEvent, UpdateClientDataEvent, UseEmptyEvent, WaitTillLandEvent, WaterJumpEvent, WriteFullClientUpdateEvent, GameEventMap, GameAnswerMap, Vector } from "~/facade";
-// ---cut---
-import * as menus from "@amxts/menu-core";
-
-menus.register("MAIN_MENU");
-menus.addCondition("IS_ALIVE", (player) => player.isAlive);
-menus.addAction("RESET_SCORE", resetScore);
-menus.setListSource("LIST_FPS_CHECK", rows);   // rows(viewer) возвращает строки menus.listRow(target, text)
-menus.show(player, "MAIN_MENU", { resetHistory: true });
-```
-
-Проект перечисляет menu-core в `amxts.config.ts`, а с ним и
-config-core: меню menu-core читает через `@amxts/config-core` —
-плагина config-core. Сборка ставит оба плагина в `plugins.ini`,
-config-core первым.
-
-```ts twoslash locale-ru
-import { hostIndex, handled, outcome, floatCell, rounded, cellFloat, ret, publicFor, nativeFn, arg, argText, argc, caller, setArg, setArgText, argString, cellsToString, stringToCells, cells, out, text, arrayOf, cell, putCell, noOrigin, hasModule, readText, playerIds, accessOf, paint, print, cmd, cmdWide, setTimeout, sleep, setInterval, clearTimeout, clearInterval, hook, ham, plugin, defineModule, createCellArray, destroyCellArray, cellArrayRows, pushCellArrayRow, cellsText, textCells, showMenu, Handler, WideHandler, Float, CellArray, CellBuffer, TEXT_MAX, Team, WeaponName, ItemName, PlayerFilter, ModuleName, KillOptions, Client, Player, CommandHandler, CommandOptions, ServerCommandHandler, HudOptions, HudEffect, HudLine, FadeDirection, FadeOptions, ShakeOptions, StatusIconState, Screen, CvarChangeEvent, CvarListener, Cvar, Server, server, Game, RoundWinner, EndRoundOptions, game, Variant, VariantName, Flag, Entity, Weapon, WeaponKind, weaponKindOf, Target, swapTeam, cvar, TimerHandler, SleepOptions, Call, PluginInfo, ModuleOptions, ForwardStop, NoArgument, Forward, Storage, EntityFilter, PawnFunction, PawnCall, addServerListener, removeServerListener, PluginInitEvent, PluginPauseEvent, PluginUnpauseEvent, ServerChangelevelEvent, PluginCfgEvent, PluginEndEvent, PluginLogEvent, PluginPrecacheEvent, ClientInfochangedEvent, ClientConnectEvent, ClientConnectexEvent, ClientAuthorizedEvent, ClientDisconnectEvent, ClientDisconnectedEvent, ClientRemoveEvent, ClientCommandEvent, ClientPutinserverEvent, InconsistentFileEvent, PluginModulesEvent, OnConfigsExecutedEvent, OnAutoConfigsBufferedEvent, CS_InternalCommandEvent, CS_OnBuyAttemptEvent, CS_OnBuyEvent, PfnTouchEvent, ServerFrameEvent, ClientKillEvent, Client_PreThinkEvent, Client_PostThinkEvent, ClientImpulseEvent, ClientCmdStartEvent, PfnThinkEvent, PfnPlaybackeventEvent, PfnKeyvalueEvent, PfnSpawnEvent, ServerEventMap, flagList, FlagFamily, FlagStore, EntvarFlags, MemberFlags, FlagList, HideHud, HIDE_HUD, Button, BUTTON, Effect, EFFECT, EntityFlag, ENTITY_FLAG, Damage, DAMAGE, Access, ACCESS, addGameListener, removeGameListener, HookEvent, HookEntry, RewardReason, ResourceType, TeamChoice, ItemRestriction, BotEvent, RoundEndReason, DeathMessageFlag, KillRarity, VguiMenu, ActivateServerEvent, AddAccountEvent, AddMultiDamageEvent, AddPlayerItemEvent, AddPointsEvent, AddPointsToTeamEvent, AddResourceEvent, AirAccelerateEvent, AirMoveEvent, AllocEvent, AllowPhysentEvent, ApplyMultiDamageEvent, BalanceTeamsEvent, BasePlayerDuckEvent, BasePlayerJumpEvent, BasePlayerSpawnEvent, BlindEvent, BounceGibTouchEvent, BuyGunAmmoEvent, BuyItemEvent, BuyWeaponByWeaponIdEvent, CanDeployEvent, CanHavePlayerItemEvent, CanPlayerHearPlayerEvent, CanSwitchTeamEvent, ChangeLevelEvent, CheckMapConditionsEvent, CheckTimeBasedDamageEvent, CheckUserInfoEvent, CheckWaterJumpEvent, CheckWinConditionsEvent, ChooseAppearanceEvent, ChooseTeamEvent, ClassifyEvent, CleanUpMapEvent, ClearMultiDamageEvent, ClientConnectedEvent, ClientPrintfEvent, ClientUserInfoChangedEvent, ConnectClientEvent, CreateWeaponBoxEvent, DeadPlayerWeaponsEvent, DeathNoticeEvent, DeathSoundEvent, DefaultDeployEvent, DefaultReloadEvent, DefaultShotgunReloadEvent, DefuseBombEndEvent, DefuseBombStartEvent, DirectSetEvent, DisappearEvent, DropClientEvent, DropIdlePlayerEvent, DropPlayerItemEvent, DropShieldEvent, EmitPingsEvent, EntSelectSpawnPointEvent, ExecuteServerStringCmdEvent, ExplodeBombEvent, ExplodeFlashbangEvent, ExplodeHeGrenadeEvent, ExplodeSmokeGrenadeEvent, FPlayerCanRespawnEvent, FPlayerCanTakeDamageEvent, FShouldSwitchWeaponEvent, FireBuckshotsEvent, FireBulletsEvent, FireBullets3Event, FlPlayerFallDamageEvent, FreeEvent, GetEntityInitEvent, GetForceCameraEvent, GetIntoGameEvent, GetNextBestWeaponEvent, GetPlayerSpawnSpotEvent, GibSpawnEvent, GiveAmmoEvent, GiveC4Event, GiveDefaultItemsEvent, GiveNamedItemEvent, GiveShieldEvent, GoToIntermissionEvent, HasRestrictItemEvent, HintMessageExEvent, ImpulseCommandsEvent, IsPenetrableEntityEvent, ItemPostFrameEvent, JoiningThinkEvent, KickBackEvent, KilledEvent, LadderMoveEvent, MakeBomberEvent, MakeVipEvent, MoveEvent, ObjectCapsEvent, ObserverFindNextPlayerEvent, ObserverIsValidTargetEvent, ObserverSetModeEvent, ObserverThinkEvent, OnEventEvent, OnRoundFreezeEndEvent, OnSpawnEquipEvent, PainEvent, PlantBombEvent, PlayStepSoundEvent, PlayerBlindEvent, PlayerDeathThinkEvent, PlayerGotWeaponEvent, PlayerKilledEvent, PlayerSpawnEvent, PmDuckEvent, PmJumpEvent, PostThinkEvent, PreThinkEvent, PrecacheEvent, PrecacheGenericIEvent, PrecacheModelIEvent, PrecacheSoundIEvent, PrintfEvent, RadioEvent, RemoveAllItemsEvent, RemoveGunsEvent, RemovePlayerItemEvent, RemoveSpawnProtectionEvent, ResetMaxSpeedEvent, ResetSequenceInfoEvent, RestartRoundEvent, RoundEndEvent, RoundRespawnEvent, SendDeathMessageEvent, SendResourcesEvent, SendWeaponAnimEvent, ServerDeactivateEvent, SetAnimationEvent, SetClientUserInfoModelEvent, SetClientUserInfoNameEvent, SetModelEvent, SetSpawnProtectionEvent, ShowMenuEvent, ShowVguiMenuEvent, SpawnHeadGibEvent, SpawnRandomGibsEvent, StartDeathCamEvent, StartObserverEvent, StartSoundEvent, SwitchTeamEvent, TakeDamageEvent, TakeHealthEvent, TeamFullEvent, TeamStackedEvent, ThinkEvent, ThrowFlashbangEvent, ThrowGrenadeEvent, ThrowHeGrenadeEvent, ThrowSmokeGrenadeEvent, TraceAttackEvent, TraceLineEvent, UnDuckEvent, UpdateClientDataEvent, UseEmptyEvent, WaitTillLandEvent, WaterJumpEvent, WriteFullClientUpdateEvent, GameEventMap, GameAnswerMap, Vector } from "~/facade";
-// ---cut---
-// amxts.config.ts
-export default defineConfig({
-	modules: ["@amxts/config-core", "@amxts/menu-core"],
-	menus: { file: "myplugin/menu" },     // configs/myplugin/menu.ini
+server.addCommand("/shop", (player) => {
+	menus.show(player, "SHOP");
 });
 ```
 
+Клавиши: **1–7** выбирают, **8** — следующая страница, **9** — предыдущая страница или назад, в меню, из которого открыли это, **0** закрывает.
+
+Цвета в тексте пишутся метками: `!y` жёлтый, `!r` красный, `!w` белый, `!d` серый, `!R` выравнивание вправо.
+
+### API
+
+| Функция | Что делает |
+| --- | --- |
+| `create(name, title)` | Меню в коде или уже существующее с таким именем. Имя с `LIST_` делает меню-список. |
+| `register(name)` | Заранее загружает меню из файла. |
+| `addItem(menu, name, options?)` | Добавляет пункт. Опции: `placeholder`, `condition`, `action` или `onSelect`, `restriction`, `restrictionMessage`, `at`, `spaceBefore`, `spaceAfter`. |
+| `addFixedItem(menu, slot, name, options?)` | Пункт, который на каждой странице занимает слот 1–7. |
+| `addCondition(name, test)` | Когда пункт показывается. |
+| `addAction(name, handler)` | Что делает пункт, названный в файле. |
+| `addPlaceholder(name, value)` | Во что превращается `%name%`. |
+| `addRestriction(name, test, message?)` | Когда пункт серый и почему. |
+| `setListSource(name, rows)` | Строки меню-списка: `listRow(target, text)`, `textRow(text)`. |
+| `addEventListener("open" \| "close" \| "show", listener)` | `"show"` приходит до открытия меню; `event.preventDefault()` его отменяет. |
+| `show(player, name, options?)` | Открывает меню; `false`, если оно не открылось. Опции: `time`, `target`, `resetHistory`, `force`, `skipHistory`. |
+| `close(player)` · `refresh("A B")` · `conditionChanged(name)` | Закрыть, перерисовать названные меню, перерисовать то, что зависит от условия. |
+| `lock(player)` · `setTimer(menu, seconds)` · `cancelTimer(menu)` | Блокировка и отсчёт. |
+
+Меню — обычный объект `Menu`: поля вроде `hideExit`, `locked` и `time` задаются напрямую.
+
 ## Меню в файле
 
-Меню читаются из файла, который называет `menus.file`, — под `configs/` и
-без `.ini`: `"menu"`, то есть `configs/menu.ini`, если проект не сказал иначе.
-Плагин может указать другой файл сам: `setConfigFile("myplugin/menu")` читает
-`configs/myplugin/menu.ini`. Файл читается, когда меню понадобится впервые
-(`register(name)` или `show` незнакомого имени).
+Меню читается из файла, когда его впервые запрашивают: через `register(name)` или через `show` с именем, которого Menu Core ещё не знает.
 
 ```ini
 [MAIN]
-PREFIX = MYPLUGIN_CHAT_PREFIX       ; префикс сообщения "в списке никого"
+PREFIX = MYPLUGIN_CHAT_PREFIX       ; префикс в чате для сообщения «некого показать»
 KEY = {
-	EXIT = MYPLUGIN_MENU_EXIT       ; кнопки: ключ перевода или сам текст
-	NUMBER = MYPLUGIN_MENU_NUMBER   ; "\y[%d]\w", если словарь не говорит иначе
+	EXIT = MYPLUGIN_MENU_EXIT       ; кнопки: ключ словаря или сам текст
+	NUMBER = MYPLUGIN_MENU_NUMBER   ; "!y[%d]!w", если словарь не говорит иначе
 }
 
 [MAIN_MENU]
 TITLE = MYPLUGIN_MENU_MAIN_TITLE
 HIDE_BACK = YES
 ITEMS = {
-	; имя | плейсхолдер | условие | действие | ограничение | сообщение | отступ
+	; название | подстановка | условие | действие | ограничение | сообщение | отступ
 	"MYPLUGIN_MENU_MAIN_ADMIN" "" "IS_ADMIN" "SHOW_ADMIN_MENU" "ADMIN" "" ""
 	"MYPLUGIN_MENU_MAIN_SPECTATE|MYPLUGIN_MENU_MAIN_JOIN" "" "!IS_SPECTATOR|IS_SPECTATOR" "JOIN_SPECTATE|JOIN_TEAM" "" "" ""
 }
@@ -131,98 +127,46 @@ FILTER = {
 	"IS_SPECTATOR" "MYPLUGIN_CHAT_NO_SPECTATORS"
 }
 VIEW = {
-	; имя | условие | действие | ограничение | сообщение
+	; название | условие | действие | ограничение | сообщение
 	"%name%" "" "SWAP_WITH_SPECTATOR" "" ""
 }
 ```
 
-- `TITLE`, `ACTIVE_ON` (меню открывается, только пока условие выполнено),
-  `HIDE_BACK`, `HIDE_EXIT`, `TIME` (таймер в секундах), `ON_TIMEOUT`
-  (действие, когда он кончился), `LOCKED`, `GLOBAL` (один таймер на всех).
-- `A|B` в имени, условии или действии — варианты: показывается первый, чьё
-  условие выполнено. `!NAME` переворачивает условие; несколько имён через
-  пробел должны выполняться все.
-- Условие, ограничение или действие, которое никто не зарегистрировал:
-  `ADMIN` и `FLAG_<буквы>` проверяются по доступу игрока; любое другое
-  условие не выполнено.
-- Встроенные действия: `SHOW_<МЕНЮ>` открывает меню, `CLOSE_MENU` закрывает;
-  в строке действий их может быть несколько.
-- Плейсхолдеры: `%name%` (текст строки списка), `%target%`, `%time%` и любой
-  зарегистрированный.
-- Меню-список рисует строку `VIEW` на каждого игрока — или на каждую строку
-  своего источника, — пропуская тех, кто не прошёл `FILTER`. Если не осталось
-  никого, меню не открывается, а игрок получает сообщение фильтра.
+- **Ключи меню:** `TITLE`, `ACTIVE_ON` (меню открывается, только пока условие выполняется), `HIDE_BACK`, `HIDE_EXIT`, `TIME` (отсчёт в секундах), `ON_TIMEOUT` (действие, когда он закончился), `LOCKED`, `GLOBAL` (один отсчёт на всех).
+- **Варианты:** `A|B` в названии, условии или действии; показывается первый, чьё условие выполняется.
+- **Условия:** `!NAME` переворачивает условие; несколько имён через пробел должны выполняться все. `ADMIN` и `FLAG_<буквы>`, если их никто не зарегистрировал, проверяются по правам игрока; любое другое незнакомое условие не выполняется.
+- **Встроенные действия:** `SHOW_<MENU>` открывает это меню, `CLOSE_MENU` закрывает; в строке действия их может быть несколько.
+- **Подстановки:** `%name%` (текст строки списка), `%target%`, `%time%` и любые зарегистрированные.
+- **Меню-список** рисует строку `VIEW` на каждого игрока или на каждую строку своего источника и пропускает те, что не прошли `FILTER`. Если никого не осталось, меню не открывается, а игрок получает сообщение фильтра.
 
-## Для Pawn-плагинов
+::tip
+Цветовые коды из меню для Pawn (`\y`, `\r`) по-прежнему работают, так что существующий `menu.ini` подойдёт без правок.
+::
 
-Плагин menu-core отдаёт Pawn-плагинам 29 нативов menu_core —
-`mc_register_action`, `mc_show_menu`, `mc_add_menu_item` и остальные — с
-сигнатурами оригинального `menu_core.inc`, поэтому скомпилированные `.amxx`
-работают с ним без изменений. Он заменяет menu_core.amxx: тот закомментировать
-в `plugins.ini`; `amxts_host.amxx` остаётся на своём месте, последним. Меню он
-читает через `@amxts/config-core`, поэтому в `plugins.ini` amxts
-config-core стоит раньше — его туда ставит сборка.
+## Pawn-плагины
 
-Pawn-плагин называет свои обработчики именем public, и menu-core зовёт их
-через callfunc; id плагина берётся из вызова натива.
-
-Сгенерированный `menu_core.inc` (при выкладке он копируется в
-`addons/amxmodx/scripting/include` сервера) отличается от оригинала только
-записью, а не тем, что передаёт скомпилированный плагин:
-
-| оригинал | сгенерированный |
-| --- | --- |
-| `#define MP_LOCKED 0` ... `MP_FILTER 7` | `enum MenuProperty { MP_LOCKED = 0, ... }` |
-| `property` в трёх нативах свойств | `MenuProperty:property` |
-| `mc_get_menu_property_string(menuIdx, property, value[], len)` | `..., out[], len)` |
-| `mc_add_list_text(Array:aItems, ...)` | `mc_add_list_text(aItems, ...)` |
-| — | `mc_get_menu_text(id, out[], len)`: что показывает меню игрока, добавлено в amxts для тестов и логов |
-
-Плагин, собранный с новым include, получит предупреждение о теге на голое
-число там, где ждут `MenuProperty:`, и на `Array:` в `mc_add_list_text`.
-
-## Чем отличается от оригинала
-
-- Нет ограничений Pawn: имена, заголовки и плейсхолдеры любой длины, меню
-  держит все пункты, путь назад любой длины, меню длиннее 500 байт (кириллица
-  доходит до них быстро) приходит целиком.
-- `mc_get_menu_property_string(idx, MP_SECTION)` работает: оригинал сравнивал
-  `MP_SECTION` из include (5) с 4.
-- Фильтр условия работает везде, где условие спрашивают, как написано в
-  `menu_core.inc`; оригинал применял его только к ограничениям.
-- `message` ограничения (`mc_register_restriction`) показывается у пункта,
-  который оно гасит, если у пункта нет своего сообщения; оригинал хранил его и
-  не показывал.
-- Когда меню закрывается, потому что поверх открылось другое, обработчики
-  закрытия получают его имя; оригинал передавал "".
-- Заблокированное меню гасит пункты любого меню; оригинал гасил только строки
-  списков.
-- `mc_show_menu` секции, которую никто не зарегистрировал, читает её из файла.
-- `isCritical` у `mc_register_action` принимается и ничего не делает, как в
-  оригинале.
+Существующие Pawn-плагины продолжают работать: Menu Core отдаёт 29 нативов `mc_*` оригинального `menu_core.amxx` с теми же сигнатурами, а в пакете лежит `include/menu_core.inc`. Замените им `menu_core.amxx` в `plugins.ini`. Подробности и отличия от оригинала — в [PAWN.ru.md](https://github.com/amxts/menu-core/blob/main/PAWN.ru.md).
 
 ## Тесты
 
-`installMenus(server)` из той же библиотеки для тестов, что и `loadPlugin`
-([Тесты](/ru/docs/testing)), вызванный до загрузки плагинов, даёт поддельному
-серверу меню, клавиши, поддельные Pawn-плагины и словарь:
+`installMenus(server)` из тестовой библиотеки amxts даёт фейковому серверу меню, клавиши, фейковые Pawn-плагины и словарь. Вызывается до загрузки плагинов:
 
 ```ts twoslash locale-ru
 import { hostIndex, handled, outcome, floatCell, rounded, cellFloat, ret, publicFor, nativeFn, arg, argText, argc, caller, setArg, setArgText, argString, cellsToString, stringToCells, cells, out, text, arrayOf, cell, putCell, noOrigin, hasModule, readText, playerIds, accessOf, paint, print, cmd, cmdWide, setTimeout, sleep, setInterval, clearTimeout, clearInterval, hook, ham, plugin, defineModule, createCellArray, destroyCellArray, cellArrayRows, pushCellArrayRow, cellsText, textCells, showMenu, Handler, WideHandler, Float, CellArray, CellBuffer, TEXT_MAX, Team, WeaponName, ItemName, PlayerFilter, ModuleName, KillOptions, Client, Player, CommandHandler, CommandOptions, ServerCommandHandler, HudOptions, HudEffect, HudLine, FadeDirection, FadeOptions, ShakeOptions, StatusIconState, Screen, CvarChangeEvent, CvarListener, Cvar, Server, server, Game, RoundWinner, EndRoundOptions, game, Variant, VariantName, Flag, Entity, Weapon, WeaponKind, weaponKindOf, Target, swapTeam, cvar, TimerHandler, SleepOptions, Call, PluginInfo, ModuleOptions, ForwardStop, NoArgument, Forward, Storage, EntityFilter, PawnFunction, PawnCall, addServerListener, removeServerListener, PluginInitEvent, PluginPauseEvent, PluginUnpauseEvent, ServerChangelevelEvent, PluginCfgEvent, PluginEndEvent, PluginLogEvent, PluginPrecacheEvent, ClientInfochangedEvent, ClientConnectEvent, ClientConnectexEvent, ClientAuthorizedEvent, ClientDisconnectEvent, ClientDisconnectedEvent, ClientRemoveEvent, ClientCommandEvent, ClientPutinserverEvent, InconsistentFileEvent, PluginModulesEvent, OnConfigsExecutedEvent, OnAutoConfigsBufferedEvent, CS_InternalCommandEvent, CS_OnBuyAttemptEvent, CS_OnBuyEvent, PfnTouchEvent, ServerFrameEvent, ClientKillEvent, Client_PreThinkEvent, Client_PostThinkEvent, ClientImpulseEvent, ClientCmdStartEvent, PfnThinkEvent, PfnPlaybackeventEvent, PfnKeyvalueEvent, PfnSpawnEvent, ServerEventMap, flagList, FlagFamily, FlagStore, EntvarFlags, MemberFlags, FlagList, HideHud, HIDE_HUD, Button, BUTTON, Effect, EFFECT, EntityFlag, ENTITY_FLAG, Damage, DAMAGE, Access, ACCESS, addGameListener, removeGameListener, HookEvent, HookEntry, RewardReason, ResourceType, TeamChoice, ItemRestriction, BotEvent, RoundEndReason, DeathMessageFlag, KillRarity, VguiMenu, ActivateServerEvent, AddAccountEvent, AddMultiDamageEvent, AddPlayerItemEvent, AddPointsEvent, AddPointsToTeamEvent, AddResourceEvent, AirAccelerateEvent, AirMoveEvent, AllocEvent, AllowPhysentEvent, ApplyMultiDamageEvent, BalanceTeamsEvent, BasePlayerDuckEvent, BasePlayerJumpEvent, BasePlayerSpawnEvent, BlindEvent, BounceGibTouchEvent, BuyGunAmmoEvent, BuyItemEvent, BuyWeaponByWeaponIdEvent, CanDeployEvent, CanHavePlayerItemEvent, CanPlayerHearPlayerEvent, CanSwitchTeamEvent, ChangeLevelEvent, CheckMapConditionsEvent, CheckTimeBasedDamageEvent, CheckUserInfoEvent, CheckWaterJumpEvent, CheckWinConditionsEvent, ChooseAppearanceEvent, ChooseTeamEvent, ClassifyEvent, CleanUpMapEvent, ClearMultiDamageEvent, ClientConnectedEvent, ClientPrintfEvent, ClientUserInfoChangedEvent, ConnectClientEvent, CreateWeaponBoxEvent, DeadPlayerWeaponsEvent, DeathNoticeEvent, DeathSoundEvent, DefaultDeployEvent, DefaultReloadEvent, DefaultShotgunReloadEvent, DefuseBombEndEvent, DefuseBombStartEvent, DirectSetEvent, DisappearEvent, DropClientEvent, DropIdlePlayerEvent, DropPlayerItemEvent, DropShieldEvent, EmitPingsEvent, EntSelectSpawnPointEvent, ExecuteServerStringCmdEvent, ExplodeBombEvent, ExplodeFlashbangEvent, ExplodeHeGrenadeEvent, ExplodeSmokeGrenadeEvent, FPlayerCanRespawnEvent, FPlayerCanTakeDamageEvent, FShouldSwitchWeaponEvent, FireBuckshotsEvent, FireBulletsEvent, FireBullets3Event, FlPlayerFallDamageEvent, FreeEvent, GetEntityInitEvent, GetForceCameraEvent, GetIntoGameEvent, GetNextBestWeaponEvent, GetPlayerSpawnSpotEvent, GibSpawnEvent, GiveAmmoEvent, GiveC4Event, GiveDefaultItemsEvent, GiveNamedItemEvent, GiveShieldEvent, GoToIntermissionEvent, HasRestrictItemEvent, HintMessageExEvent, ImpulseCommandsEvent, IsPenetrableEntityEvent, ItemPostFrameEvent, JoiningThinkEvent, KickBackEvent, KilledEvent, LadderMoveEvent, MakeBomberEvent, MakeVipEvent, MoveEvent, ObjectCapsEvent, ObserverFindNextPlayerEvent, ObserverIsValidTargetEvent, ObserverSetModeEvent, ObserverThinkEvent, OnEventEvent, OnRoundFreezeEndEvent, OnSpawnEquipEvent, PainEvent, PlantBombEvent, PlayStepSoundEvent, PlayerBlindEvent, PlayerDeathThinkEvent, PlayerGotWeaponEvent, PlayerKilledEvent, PlayerSpawnEvent, PmDuckEvent, PmJumpEvent, PostThinkEvent, PreThinkEvent, PrecacheEvent, PrecacheGenericIEvent, PrecacheModelIEvent, PrecacheSoundIEvent, PrintfEvent, RadioEvent, RemoveAllItemsEvent, RemoveGunsEvent, RemovePlayerItemEvent, RemoveSpawnProtectionEvent, ResetMaxSpeedEvent, ResetSequenceInfoEvent, RestartRoundEvent, RoundEndEvent, RoundRespawnEvent, SendDeathMessageEvent, SendResourcesEvent, SendWeaponAnimEvent, ServerDeactivateEvent, SetAnimationEvent, SetClientUserInfoModelEvent, SetClientUserInfoNameEvent, SetModelEvent, SetSpawnProtectionEvent, ShowMenuEvent, ShowVguiMenuEvent, SpawnHeadGibEvent, SpawnRandomGibsEvent, StartDeathCamEvent, StartObserverEvent, StartSoundEvent, SwitchTeamEvent, TakeDamageEvent, TakeHealthEvent, TeamFullEvent, TeamStackedEvent, ThinkEvent, ThrowFlashbangEvent, ThrowGrenadeEvent, ThrowHeGrenadeEvent, ThrowSmokeGrenadeEvent, TraceAttackEvent, TraceLineEvent, UnDuckEvent, UpdateClientDataEvent, UseEmptyEvent, WaitTillLandEvent, WaterJumpEvent, WriteFullClientUpdateEvent, GameEventMap, GameAnswerMap, Vector } from "~/facade";
 // ---cut---
+import { FakeServer, installMenus } from "@amxts/core/src/testing";
+
 const server = new FakeServer({ files });
 const menus = installMenus(server);
 const admin = menus.pawnPlugin("admin.amxx", {
 	OnKick: (_id: number, target: number) => kicked.push(target),
-	Hp: (_id: number, _target: number, value: PawnArray) => value.set("100"),
 });
 await server.load("@amxts/config-core");
 await server.load("@amxts/menu-core");
 server.start();
 
-admin.native("mc_register_action", "KICK", "OnKick");      // вызов из admin.amxx
+admin.native("mc_register_action", "KICK", "OnKick");
 admin.native("mc_show_menu", player.id, "LIST_KICK");
-menus.screen(player)?.text;                                  // что он видит, и клавиши
+menus.screen(player)?.text;   // что видит игрок
 menus.press(player, 1);
-menus.translate({ MYPLUGIN_MENU_EXIT: "Выход" });
 ```
