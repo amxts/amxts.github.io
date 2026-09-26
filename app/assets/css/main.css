@@ -286,7 +286,13 @@ html:root {
    height (up to half the popup, then it scrolls), the description scrolls. */
 .twoslash-floating .twoslash-popup-container code.twoslash-popup-code {
   flex-shrink: 0;
-  max-height: 50%;
+  /* a % of a max-height resolves to nothing: a fixed cap, the type scrolls in it */
+  max-height: min(18rem, 45vh);
+}
+
+/* and when the two still do not fit the room floating-vue gives, all scrolls */
+.twoslash-floating .twoslash-popup-container {
+  overflow-y: auto;
 }
 
 .twoslash-floating .twoslash-popup-container .twoslash-popup-docs {

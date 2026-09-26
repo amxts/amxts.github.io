@@ -70,6 +70,7 @@ export default defineNuxtConfig({
       paths: {
         '~/*': [declarations('amxts/*')],
         '@amxts/core': [declarations('amxts/facade.d.ts')],
+        '@amxts/core/test-utils': [declarations('root/src/testing/index.d.ts')],
         '@amxts/*': [declarations('packages/*/index.d.ts')],
       },
     },

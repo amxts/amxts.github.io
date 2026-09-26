@@ -32,6 +32,8 @@ import { docPages, docsPrefix, modulePages, pageTitles } from '../shared/docs'
 
 const source = resolve(process.argv[2] ?? '../ts2pawn/docs/api')
 const target = resolve('content')
+// the official modules' repositories, whose READMEs are their pages
+const modulesSource = resolve(process.argv[3] ?? '../amxts-modules')
 
 const known = new Set([...docPages, ...Object.keys(modulePages)])
 const locales = [
@@ -99,6 +101,10 @@ function facadeExports() {
 
 const facade = facadeExports()
 
+/** Every TypeScript example written, for the check at the end; `importing` names the page being converted. */
+const snippets: { from: string, locale: string, code: string }[] = []
+let importing = ''
+
 /** `locale`: a translated page's blocks read that language's declarations (`locale-ru`). */
 function twoslash(block: string, locale?: string) {
   if (!/^```ts\s/.test(block))
@@ -113,7 +119,52 @@ function twoslash(block: string, locale?: string) {
   if (/\bplayer\b/.test(code) && !/(?:\b(?:const|let|var)\s+|[(,]\s*)player\b/.test(code))
     hidden.push('declare const player: import("~/facade").Player;')
   const prelude = hidden.length ? [...hidden, '// ---cut---'] : []
+  snippets.push({ from: importing, locale: locale ?? 'en', code: [...prelude, ...rest.slice(0, -1)].join('\n') })
   return [fence!.replace(/^```ts/, locale ? `\`\`\`ts twoslash locale-${locale}` : '```ts twoslash'), ...prelude, ...rest].join('\n')
+}
+
+/** The diagnostics that mean `any` on hover: an untyped parameter, a module not found - the test runner's own aside (the site does not carry vitest's or bun's types). */
+function untyped(diagnostics: readonly ts.Diagnostic[]) {
+  return diagnostics
+    .filter(diagnostic => [7006, 7031, 2307].includes(diagnostic.code))
+    .map(diagnostic => ({ start: diagnostic.start ?? 0, text: ts.flattenDiagnosticMessageText(diagnostic.messageText, ' ') }))
+    .filter(({ text }) => !/'(?:vitest|bun:test)'/.test(text))
+}
+
+/**
+ * A hover that says `any` is a broken hover: the import fails when an example
+ * has a parameter TypeScript cannot type (7006, 7031) or a module it cannot
+ * find (2307), under the site's own compiler setup - one program for all.
+ */
+function checkSnippets() {
+  const problems: string[] = []
+  for (const locale of ['en', 'ru']) {
+    const types = resolve(locale === 'en' ? 'docs-types' : `docs-types-${locale}`).replaceAll('\\', '/')
+    const files = new Map(snippets.filter(snippet => snippet.locale === locale).map((snippet, i) => [`/snippets/${i}.ts`, snippet]))
+    const options: ts.CompilerOptions = {
+      lib: ['lib.esnext.d.ts'],
+      strict: true,
+      noEmit: true,
+      types: [],
+      paths: { '~/*': [`${types}/amxts/*`], '@amxts/core': [`${types}/amxts/facade.d.ts`], '@amxts/core/test-utils': [`${types}/root/src/testing/index.d.ts`], '@amxts/*': [`${types}/packages/*/index.d.ts`] },
+    }
+    const host: ts.LanguageServiceHost = {
+      getScriptFileNames: () => [...files.keys(), `${types}/as-types.d.ts`],
+      getScriptVersion: () => '1',
+      getScriptSnapshot: file => ts.ScriptSnapshot.fromString(files.get(file)?.code ?? ts.sys.readFile(file) ?? ''),
+      getCurrentDirectory: () => '/',
+      getCompilationSettings: () => options,
+      getDefaultLibFileName: settings => ts.getDefaultLibFilePath(settings),
+      fileExists: file => files.has(file) || ts.sys.fileExists(file),
+      readFile: file => files.get(file)?.code ?? ts.sys.readFile(file),
+    }
+    const service = ts.createLanguageService(host)
+    for (const [file, snippet] of files) {
+      for (const { start, text } of untyped(service.getSemanticDiagnostics(file)))
+        problems.push(`${snippet.from} (${locale}), example line ${snippet.code.slice(0, start).split('\n').length}: ${text}`)
+    }
+  }
+  return problems
 }
 
 interface Page {
@@ -225,8 +276,12 @@ for (const { code, dir } of locales) {
 
   const files = readdirSync(dir).filter(file => file.endsWith('.md') && file !== 'index.md')
   for (const file of files) {
+    importing = `${code}/${file}`
     const page = file.slice(0, -3)
     const module = modulePages[page]
+    // a module's own README replaces the framework's page about it
+    if (module && existsSync(join(modulesSource, module, 'README.md')))
+      continue
     if (module) {
       const markdown = readFileSync(join(dir, file), 'utf8')
       writeFileSync(join(modulesOut, `${module}.md`), convert({ markdown, prefix: docsPrefix(code), titles, navigation: module }))
@@ -258,7 +313,6 @@ for (const { code, dir } of locales) {
 // replacing the framework's own page about it: the header block gives the
 // title and description, repository links point at GitHub, alerts become
 // callouts, TypeScript examples get hovers.
-const modulesSource = resolve(process.argv[3] ?? '../amxts-modules')
 const alerts: Record<string, string> = { NOTE: 'note', TIP: 'tip', IMPORTANT: 'note', WARNING: 'warning', CAUTION: 'caution' }
 
 function readme(markdown: string, name: string, locale: 'en' | 'ru') {
@@ -323,6 +377,7 @@ if (existsSync(modulesSource)) {
       const path = join(modulesSource, name, file)
       if (!existsSync(path))
         continue
+      importing = `${name}/${file}`
       const page = readme(readFileSync(path, 'utf8'), name, locale)
       writeFileSync(join(target, locale, 'modules', `${name}.md`), page.page)
       title[locale] = page.title
@@ -372,4 +427,13 @@ for (const [from, to] of [['types', 'docs-types'], ['types-ru', 'docs-types-ru']
     writeFileSync(path, `/// <reference path="${up}/as-types.d.ts" />\n${readFileSync(path, 'utf8')}`)
   }
   console.log(`types: ${types} -> ${to}`)
+}
+
+const problems = checkSnippets()
+if (problems.length) {
+  console.error(`${problems.length} example(s) would show \`any\` on hover:\n${problems.map(problem => `  ${problem}`).join('\n')}`)
+  process.exitCode = 1
+}
+else {
+  console.log(`examples: ${snippets.length} typed`)
 }

@@ -19,9 +19,9 @@ let editor: Monaco.editor.IStandaloneCodeEditor | undefined
 // packages/<name>/ an official module's @amxts/<name>, as-types.d.ts is the
 // AssemblyScript prelude they reference.
 const declarations = {
-  en: import.meta.glob(['../../../docs-types/as-types.d.ts', '../../../docs-types/amxts/**/*.d.ts', '../../../docs-types/packages/**/*.d.ts'], { query: '?raw', import: 'default' }),
+  en: import.meta.glob(['../../../docs-types/as-types.d.ts', '../../../docs-types/amxts/**/*.d.ts', '../../../docs-types/packages/**/*.d.ts', '../../../docs-types/root/**/*.d.ts'], { query: '?raw', import: 'default' }),
   // the same declarations with Russian descriptions, for /ru/playground
-  ru: import.meta.glob(['../../../docs-types-ru/as-types.d.ts', '../../../docs-types-ru/amxts/**/*.d.ts', '../../../docs-types-ru/packages/**/*.d.ts'], { query: '?raw', import: 'default' }),
+  ru: import.meta.glob(['../../../docs-types-ru/as-types.d.ts', '../../../docs-types-ru/amxts/**/*.d.ts', '../../../docs-types-ru/packages/**/*.d.ts', '../../../docs-types-ru/root/**/*.d.ts'], { query: '?raw', import: 'default' }),
 }
 const locale = useSiteLocale()
 
@@ -60,6 +60,7 @@ async function mount() {
     paths: {
       '~/*': ['types/amxts/*'],
       '@amxts/core': ['types/amxts/facade.d.ts'],
+      '@amxts/core/test-utils': ['types/root/src/testing/index.d.ts'],
       '@amxts/*': ['types/packages/*/index.d.ts'],
     },
   })

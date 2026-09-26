@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui'
 import type { AmxtsModule } from '#shared/modules'
 import { createReusableTemplate, useClipboard } from '@vueuse/core'
 import { categoryIcons, isOfficial } from '#shared/modules'
@@ -43,15 +42,11 @@ const breadcrumb = computed(() => [
   { label: module.value.package },
 ])
 
-// "Install this module": each package manager's command, copied on a click.
-const install = computed<DropdownMenuItem[]>(() => packageManagers.map(manager => ({
-  label: `${manager.add} ${module.value.package}`,
-  icon: manager.icon,
-  onSelect: () => {
-    copy(`${manager.add} ${module.value.package}`)
-    toast.add({ title: t('modules.copied'), icon: 'i-lucide-copy-check' })
-  },
-})))
+// "Install this module": a package manager picked, its command copied.
+function install(manager: typeof packageManagers[number]) {
+  copy(`${manager.add} ${module.value.package}`)
+  toast.add({ title: t('modules.copied'), description: `${manager.add} ${module.value.package}`, icon: 'i-lucide-copy-check' })
+}
 
 const links = computed(() => [
   module.value.repository && {
@@ -139,14 +134,30 @@ useSeoMeta({
         </template>
 
         <template #links>
-          <UDropdownMenu :items="install" :content="{ align: 'end' }" :ui="{ content: 'min-w-72', itemLabel: 'font-mono text-xs' }">
+          <UPopover :content="{ align: 'end' }">
             <UButton
               :label="t('modules.installThis')"
               icon="i-lucide-square-terminal"
               trailing-icon="i-lucide-chevron-down"
               color="neutral"
             />
-          </UDropdownMenu>
+
+            <template #content="{ close }">
+              <div class="grid w-64 grid-cols-2 gap-2 p-2">
+                <button
+                  v-for="manager in packageManagers"
+                  :key="manager.name"
+                  type="button"
+                  class="flex cursor-pointer flex-col items-center gap-2 rounded-lg p-3 ring ring-default transition-colors hover:bg-elevated hover:ring-accented"
+                  @click="install(manager); close()"
+                >
+                  <UIcon :name="manager.icon" class="size-7" />
+
+                  <span class="text-sm font-medium text-highlighted">{{ manager.name }}</span>
+                </button>
+              </div>
+            </template>
+          </UPopover>
         </template>
 
         <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
