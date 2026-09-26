@@ -293,19 +293,53 @@ function readme(markdown: string, name: string, locale: 'en' | 'ru') {
   if (description)
     frontmatter.push(`description: ${JSON.stringify(description)}`)
   frontmatter.push('---')
-  return `${frontmatter.join('\n')}\n\n${body.trim()}\n`
+  return { page: `${frontmatter.join('\n')}\n\n${body.trim()}\n`, title, description }
+}
+
+/** What the catalog shows about an official module, as the module says it (shared/official-modules.json). */
+interface OfficialModule {
+  package: string
+  title: Record<'en' | 'ru', string>
+  description: Record<'en' | 'ru', string>
+  author: string
+  repository: string | null
+  keywords: string[]
+  requires: string[]
 }
 
 if (existsSync(modulesSource)) {
+  const official: OfficialModule[] = []
   for (const name of readdirSync(modulesSource)) {
+    const manifest = join(modulesSource, name, 'package.json')
+    if (!existsSync(manifest))
+      continue
+    const pkg = JSON.parse(readFileSync(manifest, 'utf8'))
+    const title = { en: name, ru: name }
+    const description = { en: pkg.description ?? '', ru: pkg.description ?? '' }
     for (const [locale, file] of [['en', 'README.md'], ['ru', 'README.ru.md']] as const) {
       const path = join(modulesSource, name, file)
       if (!existsSync(path))
         continue
-      writeFileSync(join(target, locale, 'modules', `${name}.md`), readme(readFileSync(path, 'utf8'), name, locale))
+      const page = readme(readFileSync(path, 'utf8'), name, locale)
+      writeFileSync(join(target, locale, 'modules', `${name}.md`), page.page)
+      title[locale] = page.title
+      if (page.description)
+        description[locale] = page.description
     }
+    const repositoryUrl: string | undefined = typeof pkg.repository === 'string' ? pkg.repository : pkg.repository?.url
+    official.push({
+      package: pkg.name,
+      title,
+      description,
+      author: typeof pkg.author === 'string' ? pkg.author : pkg.author?.name ?? '',
+      repository: repositoryUrl?.replace(/^git\+/, '').replace(/\.git$/, '') ?? null,
+      keywords: pkg.keywords ?? [],
+      // the other official modules it needs on the server (the core itself goes without saying)
+      requires: Object.keys(pkg.peerDependencies ?? {}).filter(dep => dep.startsWith('@amxts/') && dep !== '@amxts/core').map(dep => dep.slice('@amxts/'.length)),
+    })
     console.log(`module: ${name} <- ${join(modulesSource, name)}`)
   }
+  writeFileSync(resolve('shared/official-modules.json'), `${JSON.stringify(official, null, 2)}\n`)
 }
 else {
   console.warn(`modules: ${modulesSource} is missing, the module pages come from the framework's docs`)

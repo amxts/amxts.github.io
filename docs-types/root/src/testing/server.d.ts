@@ -1,4 +1,5 @@
 import type { PluginNative } from '../../scripts/plugin-natives';
+import type { Native } from './natives';
 import type { HookShape } from './tables';
 import { Coroutines } from './coroutines';
 import { Memory } from './memory';
@@ -20,7 +21,7 @@ export declare class Pointer {
     constructor(plugin: PluginInstance, at: number);
 }
 /** What `server.native()` gives back: the result decoded the way Pawn would read it. */
-export type NativeResult = number | boolean | string | number[] | null | undefined;
+export type NativeResult = number | boolean | string | number[] | string[] | null | undefined;
 /** A path as AMX Mod X takes it, relative to the game folder: `a/b/c.txt`. */
 export declare function normalizePath(path: string): string;
 /** A wasm function the server calls back, and how. */
@@ -392,7 +393,26 @@ export declare class FakeServer {
     private hookHandles;
     private entityIds;
     constructor(options?: ServerOptions);
-    /** Loads a plugin: its top level runs now, its init when start() is called. */
+    /**
+     * The test kits of the module packages loaded here, by package name: what
+     * each kit's install() gave back (defineTestKit). @internal
+     */
+    readonly kits: Map<string, unknown>;
+    /** Natives a test kit answers on this server, over the fake's own. */
+    private readonly ownNatives;
+    /**
+     * Answers a native on this server - for a module's test kit, which adds
+     * what its plugin calls (a menu's show_menu, callfunc into Pawn). Before
+     * the plugins load: a plugin is given its natives as it loads.
+     */
+    defineNative(name: string, native: Native): void;
+    /** Whether a native is answered here: by a test kit, or by the fake itself. @internal */
+    hasNative(name: string): boolean;
+    /**
+     * Loads a plugin: its top level runs now, its init when start() is called.
+     * A module package by name - "@amxts/menu-core" - is its plugin, and its
+     * test kit, when it has one, is installed first.
+     */
     load(source: string): Promise<PluginInstance>;
     /** plugin_init and plugin_cfg, as a map start sends them. */
     start(): void;

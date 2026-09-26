@@ -2,13 +2,13 @@
 /** Три числа, x y z, и вся математика над ними, которая нужна плагину. */
 export declare class Vector extends Array<number> {
     constructor(x?: number, y?: number, z?: number);
-    /** Первое число, `vector[0]`. */
+    /** Координата x, `vector[0]`. */
     get x(): number;
     set x(value: number);
-    /** Второе число, `vector[1]`. */
+    /** Координата y, `vector[1]`. */
     get y(): number;
     set y(value: number);
-    /** Третье число, `vector[2]`. */
+    /** Координата z, `vector[2]`. */
     get z(): number;
     set z(value: number);
     /** Новый вектор: этот плюс `other`, число к числу. */
@@ -23,6 +23,6 @@ export declare class Vector extends Array<number> {
     magnitude(): number;
     /** Расстояние от этой точки до `other`, в игровых единицах. */
     distanceTo(other: number[]): number;
-    /** То же направление, длиной в единицу; нулевой вектор так и остаётся нулевым. */
+    /** Новый вектор того же направления, длиной в единицу; нулевой вектор так и остаётся нулевым. */
     normalize(): Vector;
 }

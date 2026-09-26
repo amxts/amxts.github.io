@@ -1,7 +1,7 @@
 /// <reference path="../as-types.d.ts" />
 import "./promise";
 /**
- * Весь файл как текст или null, если его не удалось открыть.
+ * Читает весь файл как текст; null, если его не удалось открыть.
  *
  * ```ts
  * const text = fs.readFileSync("addons/amxmodx/configs/myplugin.ini");
@@ -10,6 +10,8 @@ import "./promise";
  *
  * Путь считается от папки игры (cstrike/), как у любого плагина AMX Mod X.
  * Файл в UTF-8; он читается целиком, какого бы размера ни был.
+ *
+ * Pawn: `fopen`, `fread_blocks`
  */
 export declare function readFileSync(path: string): string | null;
 /**
@@ -19,23 +21,35 @@ export declare function readFileSync(path: string): string | null;
  * ```ts
  * fs.writeFileSync("addons/amxmodx/data/last-map.txt", server.map);
  * ```
+ *
+ * Pawn: `fopen`, `fputs`
  */
 export declare function writeFileSync(path: string, data: string): boolean;
-/** Дописывает текст в конец файла, создавая его, если файла нет; false, если его не удалось открыть. */
+/**
+ * Дописывает текст в конец файла, создавая его, если файла нет; false, если его не удалось открыть.
+ *
+ * Pawn: `fopen(path, "a")`, `fputs`
+ */
 export declare function appendFileSync(path: string, data: string): boolean;
-/** Есть ли такой файл или папка. */
+/**
+ * `true`, если такой файл или папка есть.
+ *
+ * Pawn: `file_exists`, `dir_exists`
+ */
 export declare function existsSync(path: string): boolean;
 /**
- * Имена в папке, без `.` и `..`; null, если такой папки нет.
+ * Возвращает имена в папке, без `.` и `..`; null, если такой папки нет.
  *
  * ```ts
  * const maps = fs.readdirSync("maps");
  * ```
+ *
+ * Pawn: `open_dir`, `next_file`
  */
 export declare function readdirSync(path: string): string[] | null;
-/** Что принимает mkdirSync: `{ recursive: true }` создаёт и недостающие папки выше. */
+/** Настройки mkdirSync: `{ recursive: true }` создаёт и недостающие папки выше. */
 export declare class MakeDirectoryOptions {
-    /** Создать и все недостающие папки по пути; по умолчанию false. */
+    /** `true` — создать и все недостающие папки по пути; по умолчанию `false`. */
     recursive: boolean;
 }
 /**
@@ -48,6 +62,8 @@ export declare class MakeDirectoryOptions {
  *
  * С `{ recursive: true }` создаются все недостающие папки по пути, а уже
  * существующая папка — не ошибка, как в Node.
+ *
+ * Pawn: `mkdir`
  */
 export declare function mkdirSync(path: string, options?: MakeDirectoryOptions): boolean;
 /** mkdirSync в виде промиса; отклоняется, если папку не удалось создать. */

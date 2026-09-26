@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import type { ButtonProps } from '@nuxt/ui'
+import type { DropdownMenuItem } from '@nuxt/ui'
 import type { AmxtsModule } from '#shared/modules'
+import { useClipboard } from '@vueuse/core'
+import { categoryIcons, isOfficial } from '#shared/modules'
 
 const route = useRoute()
 const { t } = useI18n()
 const localePath = useLocalePath()
 const locale = useSiteLocale()
+const toast = useToast()
+const { copy } = useClipboard()
 
 const slug = computed(() => String(route.params.slug))
 
@@ -19,44 +23,48 @@ if (error.value || !data.value) {
 
 const module = computed(() => data.value!.module)
 
-// The framework's own page about an official module (menus, INI configs),
-// imported with the docs: shown here, the way a package shows its README.
+// An official module's page is its README (the importer brings it into
+// content/*/modules); a package from npm shows its npm README.
 const content = useLocaleContent()
 const { data: doc } = await useAsyncData(
   () => `module-doc-${content.value.locale}-${slug.value}`,
   () => queryCollection(content.value.moduleDocs).path(`${content.value.prefix.slice(0, -'/docs'.length)}/modules/${slug.value}`).first(),
 )
+
+const title = computed(() => module.value.title?.[locale.value] || module.value.package)
 const description = computed(() => module.value.description[locale.value] || module.value.description.en)
 
-const links = computed(() => {
-  const links: ButtonProps[] = []
-  if (module.value.docs)
-    links.push({ label: t('modules.docs'), icon: 'i-lucide-book-open', to: localePath(module.value.docs) })
-  if (module.value.repository) {
-    links.push({
-      label: t('modules.repository'),
-      icon: module.value.repository.includes('gitlab') ? 'i-simple-icons-gitlab' : 'i-simple-icons-github',
-      to: module.value.repository,
-      target: '_blank',
-      color: 'neutral',
-      variant: 'subtle',
-    })
-  }
-  if (module.value.published) {
-    links.push({
-      label: t('modules.npm'),
-      icon: 'i-simple-icons-npm',
-      to: `https://www.npmjs.com/package/${module.value.package}`,
-      target: '_blank',
-      color: 'neutral',
-      variant: 'subtle',
-    })
-  }
-  return links
-})
+const breadcrumb = computed(() => [
+  { label: t('modules.title'), to: localePath('/modules') },
+  { label: t(`modules.categories.${module.value.category}`), to: localePath({ path: '/modules', query: { category: module.value.category } }) },
+  { label: module.value.package },
+])
+
+// "Install this module": each package manager's command, copied on a click.
+const install = computed<DropdownMenuItem[]>(() => packageManagers.map(manager => ({
+  label: `${manager.add} ${module.value.package}`,
+  icon: manager.icon,
+  onSelect: () => {
+    copy(`${manager.add} ${module.value.package}`)
+    toast.add({ title: t('modules.copied'), icon: 'i-lucide-copy-check' })
+  },
+})))
+
+const links = computed(() => [
+  module.value.repository && {
+    label: module.value.repository.replace(/^https:\/\/(github|gitlab)\.com\//, ''),
+    icon: module.value.repository.includes('gitlab') ? 'i-simple-icons-gitlab' : 'i-simple-icons-github',
+    to: module.value.repository,
+  },
+  module.value.published && {
+    label: module.value.package,
+    icon: 'i-simple-icons-npm',
+    to: `https://www.npmjs.com/package/${module.value.package}`,
+  },
+].filter(link => !!link))
 
 useSeoMeta({
-  title: () => module.value.slug,
+  title: () => title.value,
   description: () => description.value,
 })
 </script>
@@ -64,91 +72,112 @@ useSeoMeta({
 <template>
   <UContainer>
     <UPage>
-      <UPageHeader :title="module.slug" :description="description" :links="links">
+      <UPageHeader :description="description" :ui="{ headline: 'mb-4' }">
         <template #headline>
-          <ULink :to="localePath('/modules')" class="inline-flex items-center gap-1 text-sm">
-            <UIcon name="i-lucide-arrow-left" class="size-4" />
-            {{ t('modules.back') }}
-          </ULink>
+          <UBreadcrumb :items="breadcrumb" />
         </template>
+
+        <template #title>
+          <span class="flex items-center gap-3">
+            <LogoMark v-if="isOfficial(module.package)" class="size-9 shrink-0 text-primary" />
+
+            <UIcon v-else :name="categoryIcons[module.category]" class="size-9 shrink-0 text-primary" />
+
+            {{ title }}
+
+            <UTooltip v-if="isOfficial(module.package)" :text="t('modules.official')">
+              <UIcon name="i-lucide-badge-check" class="size-6 shrink-0 text-primary" />
+            </UTooltip>
+          </span>
+        </template>
+
+        <template #links>
+          <UDropdownMenu :items="install" :content="{ align: 'end' }" :ui="{ content: 'min-w-72', itemLabel: 'font-mono text-xs' }">
+            <UButton
+              :label="t('modules.installThis')"
+              icon="i-lucide-square-terminal"
+              trailing-icon="i-lucide-chevron-down"
+              color="neutral"
+            />
+          </UDropdownMenu>
+        </template>
+
+        <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
+          <span v-if="module.version" class="inline-flex items-center gap-1">
+            <UIcon name="i-lucide-tag" class="size-4" />
+
+            v{{ module.version }}
+          </span>
+
+          <UBadge v-else :label="t('modules.unpublished')" color="warning" variant="subtle" />
+
+          <span v-if="module.author" class="inline-flex items-center gap-1">
+            <UIcon name="i-lucide-user" class="size-4" />
+
+            {{ module.author }}
+          </span>
+        </div>
       </UPageHeader>
 
       <UPageBody>
-        <ModuleInstall :package="module.package" class="max-w-md" />
-
-        <UAlert
-          v-if="!module.published"
-          icon="i-lucide-package-open"
-          color="warning"
-          variant="subtle"
-          :title="t('modules.unpublished')"
-          :description="t('modules.unpublishedHint')"
-        />
-
         <ContentRenderer v-if="doc" :value="doc" />
 
         <MDC v-else-if="data?.readme" :value="data.readme" tag="article" />
 
-        <p v-else-if="module.published" class="text-muted">
+        <p v-else class="text-muted">
           {{ t('modules.noReadme') }}
         </p>
       </UPageBody>
 
       <template #right>
         <UPageAside>
-          <dl class="flex flex-col gap-4 text-sm">
-            <div>
-              <dt class="text-muted">
-                {{ t('modules.package') }}
-              </dt>
+          <UContentToc
+            v-if="doc?.body?.toc?.links?.length"
+            :title="t('docs.toc')"
+            :links="doc.body.toc.links"
+          />
 
-              <dd class="font-mono text-highlighted break-all">
-                {{ module.package }}
-              </dd>
+          <div v-if="links.length" class="mt-6 flex flex-col gap-2 text-sm">
+            <p class="font-semibold text-highlighted">
+              {{ t('modules.links') }}
+            </p>
+
+            <ULink
+              v-for="link in links"
+              :key="link.to"
+              :to="link.to"
+              target="_blank"
+              class="inline-flex items-center gap-1.5 text-muted hover:text-highlighted"
+            >
+              <UIcon :name="link.icon" class="size-4 shrink-0" />
+
+              {{ link.label }}
+
+              <UIcon name="i-lucide-arrow-up-right" class="size-3 shrink-0" />
+            </ULink>
+          </div>
+
+          <USeparator class="my-6" type="dashed" />
+
+          <div class="flex flex-col gap-2 text-sm">
+            <p class="font-semibold text-highlighted">
+              {{ t('modules.details') }}
+            </p>
+
+            <p class="inline-flex items-center gap-1.5 text-muted">
+              <UIcon :name="categoryIcons[module.category]" class="size-4 shrink-0" />
+
+              {{ t(`modules.categories.${module.category}`) }}
+            </p>
+
+            <div v-if="module.requires.length" class="flex flex-wrap items-center gap-1.5 text-muted">
+              <UIcon name="i-lucide-plug" class="size-4 shrink-0" />
+
+              {{ t('modules.requires') }}:
+
+              <UBadge v-for="name in module.requires" :key="name" :label="name" color="neutral" variant="outline" size="sm" />
             </div>
-
-            <div>
-              <dt class="text-muted">
-                {{ t('modules.category') }}
-              </dt>
-
-              <dd class="text-highlighted">
-                <ULink :to="localePath({ path: '/modules', query: { category: module.category } })">
-                  {{ t(`modules.categories.${module.category}`) }}
-                </ULink>
-              </dd>
-            </div>
-
-            <div v-if="module.author">
-              <dt class="text-muted">
-                {{ t('modules.author') }}
-              </dt>
-
-              <dd class="text-highlighted">
-                {{ module.author }}
-              </dd>
-            </div>
-
-            <div v-if="module.version">
-              <dt class="text-muted">
-                {{ t('modules.version') }}
-              </dt>
-
-              <dd class="font-mono text-highlighted">
-                {{ module.version }}
-              </dd>
-            </div>
-
-            <div v-if="module.requires.length">
-              <dt class="text-muted">
-                {{ t('modules.requires') }}
-              </dt>
-
-              <dd class="flex flex-wrap gap-1 pt-1">
-                <UBadge v-for="name in module.requires" :key="name" :label="name" color="neutral" variant="outline" />
-              </dd>
-            </div>
-          </dl>
+          </div>
         </UPageAside>
       </template>
     </UPage>

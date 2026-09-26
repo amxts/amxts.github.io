@@ -58,7 +58,7 @@ declare class PromiseBase {
     __react(job: __Job): void;
     private __flush;
 }
-/** Всё, у чего есть `then`, — то, что `await` принимает в редакторе. В плагине `await` ждёт Promise. */
+/** Всё, у чего есть `then`: тип, который `await` принимает в редакторе. В плагине `await` ждёт Promise. */
 interface PromiseLike<T> {
     /** Вызывает `onFulfilled` со значением, когда оно появится. */
     then(onFulfilled: (value: T) => void): void;
@@ -149,21 +149,21 @@ declare class __AllJob<T> extends __Job {
 }
 /** @hidden Promise.all: every value, in order, once all are; rejected with the first rejection. */
 declare function __co_all<T>(values: Promise<T>[]): Promise<T[]>;
-/** Как завершился промис: то, что Promise.allSettled даёт для каждого. */
+/** Итог промиса — то, что Promise.allSettled даёт для каждого. */
 declare class PromiseSettledResult<T> {
-    /** "fulfilled" или "rejected". */
+    /** Итог промиса, либо "fulfilled", либо "rejected". */
     status: "fulfilled" | "rejected";
-    /** Значение, если промис выполнен. */
+    /** Значение промиса, если он выполнен. */
     value: T;
-    /** Причина, если промис отклонён. */
+    /** Причина отказа, если промис отклонён. */
     reason: Error;
     /** @hidden made by allSettled, field by field: the constructor never runs. */
     constructor(
-    /** "fulfilled" or "rejected". */
+    /** The promise's outcome, either "fulfilled" or "rejected". */
     status: "fulfilled" | "rejected", 
-    /** The value, when fulfilled. */
+    /** The promise's value, when fulfilled. */
     value: T, 
-    /** Why, when rejected. */
+    /** The rejection's reason, when rejected. */
     reason: Error);
 }
 /**
@@ -195,12 +195,12 @@ declare class __RaceJob extends __Job {
 declare function __co_race<T>(values: PromiseBase[]): Promise<T>;
 /** @hidden Promise.race of a list. */
 declare function __co_raceList<T>(values: Promise<T>[]): Promise<T>;
-/** То, с чем отклоняется Promise.any, когда отклонены все промисы: их причины лежат в `errors`. */
+/** Ошибка, с которой отклоняется Promise.any, когда отклонены все промисы; их причины лежат в `errors`. */
 declare class AggregateError extends Error {
     /** Причины отказа каждого промиса, в том порядке, в каком промисы переданы. */
     errors: Error[];
     constructor(
-    /** Why each promise was rejected, in the order they were given. */
+    /** The reason each promise was rejected, in the order the promises were given. */
     errors: Error[], message?: string);
 }
 declare class __AnyState {
@@ -446,29 +446,29 @@ declare function __co_park(id: i32, lo: usize, hi: usize): void;
 declare function __co_parked(id: i32): usize;
 /** @hidden */
 declare function __co_unpark(id: i32, lo: usize): void;
-/** То, что получает обработчик отмены. */
+/** Событие, которое получает обработчик отмены. */
 declare class Event {
-    /** Что произошло: "abort". */
+    /** Тип события; здесь он всегда "abort". */
     type: string;
     constructor(
-    /** What happened: "abort". */
+    /** The event's type; the only one here is "abort". */
     type: string);
 }
 /** @hidden something the hood does when a signal aborts. */
 declare class __AbortWatch {
     run(reason: Error): void;
 }
-/** Говорит, когда что-то пора бросить: запрос, таймер, всё, что начал игрок. */
+/** Сигнал бросить начатое: запрос, таймер, всё, что начал игрок. */
 declare class AbortSignal {
     private __aborted;
     private __reason;
     private __listeners;
     private __watches;
-    /** Сработала ли отмена. */
+    /** `true`, если сигнал уже сработал. */
     get aborted(): bool;
-    /** Причина: Error с именем "AbortError", если в abort() не передали свою. */
+    /** Причина отмены: Error с именем "AbortError", если в abort() не передали свою. */
     get reason(): Error | null;
-    /** Вызывает `listener` при отмене. */
+    /** Вызывает `listener`, когда сигнал срабатывает. */
     addEventListener(type: "abort", listener: (event: Event) => void): void;
     /** Убирает `listener`, переданный в addEventListener: он больше не вызывается. */
     removeEventListener(type: "abort", listener: (event: Event) => void): void;
@@ -485,9 +485,9 @@ declare class AbortSignal {
     /** @hidden */
     __unwatch(watch: __AbortWatch): void;
 }
-/** Отменяет свой `signal` по команде: `controller.abort()`. */
+/** Контроллер, который отменяет свой `signal` по команде: `controller.abort()`. */
 declare class AbortController {
-    /** Сигнал, который он отменяет: передайте его в fetch, sleep или куда угодно ещё, где принимают сигнал. */
+    /** Сигнал контроллера: передайте его в fetch, sleep или куда угодно ещё, где принимают сигнал. */
     readonly signal: AbortSignal;
     /** Отменяет сигнал с причиной `reason` или с Error с именем "AbortError". */
     abort(reason?: Error | null): void;

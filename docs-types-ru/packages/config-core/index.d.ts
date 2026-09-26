@@ -2,7 +2,7 @@ import { ContentKind, EntryKind, Section, SectionDump, SectionEntry, Config, Con
 export * from "./types";
 declare const _default: AmxtsModule<ConfigCoreOptions>;
 export default _default;
-/** Папка внутри configs/, от которой считаются имена файлов: "" — сама configs/. */
+/** Задаёт папку внутри configs/, от которой считаются имена файлов, например "myserver"; "" — сама configs/. */
 export declare function setBaseDir(dir: string): void;
 /**
  * Загружает `configs/<baseDir>/<name>`; ".ini" добавляется, если в имени его нет.
@@ -21,7 +21,7 @@ export declare function createSection(config: Config, name: string): Section;
 export declare function save(config: Config, name: string): boolean;
 /** Записывает одну секцию в `configs/<baseDir>/<name>`; `save()` пишет все. */
 export declare function writeSection(written: Section, name: string): boolean;
-/** То, что печатает `dump_config`: все секции всех конфигов с их записями. */
+/** Дамп всех загруженных конфигов — каждая секция с записями, как их печатает `dump_config`. */
 export declare function dump(): SectionDump[];
 /** Значение номер `index` в строке ключа, без кавычек; null, если его нет. Ключ с "/" — путь. */
 export declare function getValue(section: Section, key: string, index?: number): string | null;
@@ -35,7 +35,7 @@ export declare function getValueByPath(section: Section, path: string, index?: n
 export declare function getInt(section: Section, key: string, index?: number): number;
 /** Число; 0, если его нет. */
 export declare function getNumber(section: Section, key: string, index?: number): number;
-/** true для целого числа, отличного от 0: "1", "2"; "true" — это false. */
+/** Значение как булево: true для целого числа, отличного от 0, например "1" или "2"; false для всего остального, включая "true". */
 export declare function getBoolean(section: Section, key: string, index?: number): boolean;
 /**
  * Слова строки ключа — строки номер `index`, если ключ встречается несколько
@@ -52,9 +52,9 @@ export declare function keys(section: Section): string[];
 /** Все записи: ключ и, если это строка, её значения. */
 export declare function entries(section: Section): SectionEntry[];
 /**
- * Сколько: значений в строке, строк в блоке или — для ключа, который
- * встречается несколько раз, — сколько раз он встречается. Путь считает то,
- * к чему ведёт.
+ * Число значений в строке, строк в блоке или — для ключа, который
+ * встречается несколько раз, — число его повторов. Путь считает то, к чему
+ * ведёт.
  */
 export declare function size(section: Section, key: string): number;
 /** Есть ли в секции такой ключ. Ключ с "/" здесь не путь. */

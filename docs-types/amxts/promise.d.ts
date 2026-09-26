@@ -35,7 +35,7 @@ declare function __co_wake_up(): void;
 declare const __PENDING: i32;
 declare const __FULFILLED: i32;
 declare const __REJECTED: i32;
-/** What every Promise is, whatever its value's type: a plugin uses Promise<T>. */
+/** The base of every Promise, whatever its value's type; a plugin uses Promise<T>. */
 declare class PromiseBase {
     /** @hidden */ __state: i32;
     /** @hidden settled with a value, not with nothing - an async listener's answer. */
@@ -58,7 +58,7 @@ declare class PromiseBase {
     __react(job: __Job): void;
     private __flush;
 }
-/** Anything with a `then` - what `await` takes in the editor. In a plugin, `await` a Promise. */
+/** Anything with a `then`: the type `await` takes in the editor. In a plugin, `await` a Promise. */
 interface PromiseLike<T> {
     /** Calls `onFulfilled` with the value once there is one. */
     then(onFulfilled: (value: T) => void): void;
@@ -85,7 +85,7 @@ declare class Promise<T> extends PromiseBase {
     then<U = void>(onFulfilled: (value: T) => U, onRejected?: ((reason: Error) => U) | null): Promise<U>;
     /**
      * Calls `onRejected` with the reason if this is rejected. What it returns
-     * is the value instead - `readFile(path).catch(() => "")` - or nothing, when
+     * is the value instead: `readFile(path).catch(() => "")` - or nothing, when
      * it only logs.
      */
     catch<R = void>(onRejected: (reason: Error) => R): Promise<T>;
@@ -149,21 +149,21 @@ declare class __AllJob<T> extends __Job {
 }
 /** @hidden Promise.all: every value, in order, once all are; rejected with the first rejection. */
 declare function __co_all<T>(values: Promise<T>[]): Promise<T[]>;
-/** How a promise settled: what Promise.allSettled gives for each. */
+/** A promise's outcome, as Promise.allSettled gives it for each. */
 declare class PromiseSettledResult<T> {
-    /** "fulfilled" or "rejected". */
+    /** The promise's outcome, either "fulfilled" or "rejected". */
     status: "fulfilled" | "rejected";
-    /** The value, when fulfilled. */
+    /** The promise's value, when fulfilled. */
     value: T;
-    /** Why, when rejected. */
+    /** The rejection's reason, when rejected. */
     reason: Error;
     /** @hidden made by allSettled, field by field: the constructor never runs. */
     constructor(
-    /** "fulfilled" or "rejected". */
+    /** The promise's outcome, either "fulfilled" or "rejected". */
     status: "fulfilled" | "rejected", 
-    /** The value, when fulfilled. */
+    /** The promise's value, when fulfilled. */
     value: T, 
-    /** Why, when rejected. */
+    /** The rejection's reason, when rejected. */
     reason: Error);
 }
 /**
@@ -195,12 +195,12 @@ declare class __RaceJob extends __Job {
 declare function __co_race<T>(values: PromiseBase[]): Promise<T>;
 /** @hidden Promise.race of a list. */
 declare function __co_raceList<T>(values: Promise<T>[]): Promise<T>;
-/** What Promise.any is rejected with when every promise is: their reasons are in `errors`. */
+/** The error Promise.any rejects with when every promise is rejected; their reasons are in `errors`. */
 declare class AggregateError extends Error {
-    /** Why each promise was rejected, in the order they were given. */
+    /** The reason each promise was rejected, in the order the promises were given. */
     errors: Error[];
     constructor(
-    /** Why each promise was rejected, in the order they were given. */
+    /** The reason each promise was rejected, in the order the promises were given. */
     errors: Error[], message?: string);
 }
 declare class __AnyState {
@@ -446,29 +446,29 @@ declare function __co_park(id: i32, lo: usize, hi: usize): void;
 declare function __co_parked(id: i32): usize;
 /** @hidden */
 declare function __co_unpark(id: i32, lo: usize): void;
-/** What an abort listener is handed. */
+/** The event an abort listener gets. */
 declare class Event {
-    /** What happened: "abort". */
+    /** The event's type; the only one here is "abort". */
     type: string;
     constructor(
-    /** What happened: "abort". */
+    /** The event's type; the only one here is "abort". */
     type: string);
 }
 /** @hidden something the hood does when a signal aborts. */
 declare class __AbortWatch {
     run(reason: Error): void;
 }
-/** Says when to give something up: a request, a timer, everything a player started. */
+/** A signal to give something up: a request, a timer, everything a player started. */
 declare class AbortSignal {
     private __aborted;
     private __reason;
     private __listeners;
     private __watches;
-    /** Whether it has aborted. */
+    /** `true` once the signal has aborted. */
     get aborted(): bool;
-    /** Why: an Error named "AbortError" unless abort() was given one. */
+    /** The abort's reason: an Error named "AbortError" unless abort() was given one. */
     get reason(): Error | null;
-    /** Calls `listener` when it aborts. */
+    /** Calls `listener` when the signal aborts. */
     addEventListener(type: "abort", listener: (event: Event) => void): void;
     /** Takes back a `listener` given to addEventListener: it is not called any more. */
     removeEventListener(type: "abort", listener: (event: Event) => void): void;
@@ -485,9 +485,9 @@ declare class AbortSignal {
     /** @hidden */
     __unwatch(watch: __AbortWatch): void;
 }
-/** Aborts its `signal` on demand: `controller.abort()`. */
+/** A controller that aborts its `signal` on demand: `controller.abort()`. */
 declare class AbortController {
-    /** The signal it aborts: hand it to fetch, sleep or anything else that takes one. */
+    /** The controller's signal: hand it to fetch, sleep or anything else that takes one. */
     readonly signal: AbortSignal;
     /** Aborts the signal, with `reason` or an Error named "AbortError". */
     abort(reason?: Error | null): void;

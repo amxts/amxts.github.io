@@ -12,22 +12,22 @@ import { Player } from "~/facade";
  * ```
  */
 export declare class Checks {
-    /** What the checks are about: every log line starts with it, `[cvar]`. */
+    /** The checks' tag: every log line starts with it, `[cvar]`. */
     tag: string;
-    /** Who ran the checks, when a player did: the total is printed to him too. */
+    /** The player who ran the checks, if any: the total is printed to him too. */
     player?: Player | undefined;
-    /** How many checks have passed so far. */
+    /** The number of checks passed so far. */
     passed: number;
-    /** How many checks have failed so far. */
+    /** The number of checks failed so far. */
     failed: number;
     constructor(
-    /** What the checks are about: every log line starts with it, `[cvar]`. */
+    /** The checks' tag: every log line starts with it, `[cvar]`. */
     tag: string, 
-    /** Who ran the checks, when a player did: the total is printed to him too. */
+    /** The player who ran the checks, if any: the total is printed to him too. */
     player?: Player | undefined);
-    /** What came back, and what it is, for the log. */
+    /** Starts a check of a value; `what` names it in the log: `check.expect(player.gravity, "gravity")`. */
     expect<T>(got: T, what?: string): Expectation<T>;
-    /** The total, in the log and to the player. */
+    /** Prints the total, to the log and to the player. */
     done(): void;
     /** @hidden */
     record(what: string, ok: boolean, got: string, expected: string): void;
@@ -38,8 +38,8 @@ export declare class Expectation<T> {
     private got;
     private what;
     constructor(checks: Checks, got: T, what: string);
-    /** Equal: the same number, text or boolean. */
+    /** Checks the value equals `expected`: the same number, text or boolean. */
     toBe(expected: T): void;
-    /** A number close enough - a float crosses as 32 bits and comes back rounded. */
+    /** Checks the number is within 0.001 of `expected`: a value the game stores comes back rounded (0.5 as 0.49999). */
     toBeCloseTo(expected: number): void;
 }

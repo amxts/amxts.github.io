@@ -1,31 +1,31 @@
 /// <reference path="../../as-types.d.ts" />
-/** What a request sends besides its URL. Every field is optional. */
+/** A request's options besides its URL. Every field is optional. */
 export declare class RequestInit {
-    /** GET by default; POST, PUT, PATCH and DELETE are what easy_http has. */
+    /** The request's method, one of "GET" (the default), "POST", "PUT", "PATCH", "DELETE". */
     method?: string;
     /** The text sent with the request, such as JSON for a POST; empty by default. */
     body?: string;
-    /** Pairs, as the Fetch standard's HeadersInit: `[["Content-Type", "application/json"]]`. */
+    /** The request's headers, as pairs: `[["Content-Type", "application/json"]]`. */
     headers?: string[][];
     /**
-     * Cancels the request when it aborts; the promise then rejects with its
-     * reason, an Error named "AbortError". Inside an async command handler or
-     * player event, the player leaving cancels it too.
+     * A signal that cancels the request; the promise then rejects with an
+     * Error named "AbortError". In an async command handler or player event,
+     * the player leaving cancels the request too.
      */
     signal?: AbortSignal | null;
 }
-/** What came back. */
+/** The server's response to a request. */
 export declare class Response {
-    /** The HTTP status: 200, 404, ... */
+    /** The response's HTTP status: 200, 404, ... */
     status: number;
-    /** The body, as text. */
+    /** The response's body, as text. */
     text: string;
     constructor(
-    /** The HTTP status: 200, 404, ... */
+    /** The response's HTTP status: 200, 404, ... */
     status: number, 
-    /** The body, as text. */
+    /** The response's body, as text. */
     text: string);
-    /** A 2xx status. */
+    /** `true` for a 2xx status. */
     get ok(): boolean;
 }
 /**
@@ -33,5 +33,7 @@ export declare class Response {
  * frame, and rejected when there is none - no connection, a bad URL, a
  * timeout, no easy_http, or an abort. An HTTP error such as 404 is a
  * response, as in fetch: check `response.ok`.
+ *
+ * Pawn: `ezhttp_get`, `ezhttp_post` (easy_http)
  */
 export declare function fetch(url: string, init?: RequestInit): Promise<Response>;

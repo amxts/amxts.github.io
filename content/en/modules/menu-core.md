@@ -53,25 +53,24 @@ Menu Core reads its menus through [Config Core](https://github.com/amxts/config-
 import { server } from "@amxts/core";
 import * as menus from "@amxts/menu-core";
 
-menus.addCondition("IS_HURT", (player) => player.health < 100);
-menus.addPlaceholder("hp", (player) => `${player.health}`);
+const shop = menus.create("SHOP", { title: "Shop" });
+shop.addPlaceholder("hp", (player) => `${player.health}`);
 
-const shop = menus.create("SHOP", "Shop");
-menus.addItem(shop, "Heal (%hp% HP)", {
-	condition: "IS_HURT",
+shop.addItem("Heal (%hp% HP)", {
+	visible: (player) => player.health < 100,
 	onSelect: (player) => {
 		player.health = 100;
 	},
 });
-menus.addItem(shop, "Reset score", {
+shop.addItem("Reset score", {
 	onSelect: (player) => {
 		player.frags = 0;
 	},
 });
-menus.addItem(shop, "Close", { action: "CLOSE_MENU", spaceBefore: 1 });
+shop.addItem("Close", { action: "CLOSE_MENU", spaceBefore: 1 });
 
 server.addCommand("/shop", (player) => {
-	menus.show(player, "SHOP");
+	shop.show(player);
 });
 ```
 
@@ -81,23 +80,29 @@ Text colours are written as tags: `!y` yellow, `!r` red, `!w` white, `!d` grey, 
 
 ### API
 
+A menu is an object: `menus.create()` makes one, and its methods fill and open it.
+
+| Method | What it does |
+| --- | --- |
+| `menu.addItem(text, options?)` | Adds an item. Options: `onSelect`, `visible` (left out while it says no), `enabled` (greyed out while it says no) with `message`, `at`, `spaceBefore`, `spaceAfter` — and the menu.ini names `condition`, `action`, `restriction`, `restrictionMessage`, `placeholder`. |
+| `menu.addFixedItem(slot, text, options?)` | An item that keeps slot 1–7 on every page. |
+| `menu.addPlaceholder(name, value)` | What `%name%` becomes in this menu. |
+| `menu.addFilter(test, message?)` | A list menu leaves out the rows `test` says no to. |
+| `menu.setListSource(rows)` | A list menu's own rows: `listRow(target, text)`, `textRow(text)`. |
+| `menu.addEventListener("open" \| "close" \| "show", listener)` | This menu's events; `"show"` comes before it opens, `event.preventDefault()` stops it. |
+| `menu.show(player, options?)` | Opens the menu; `false` when it does not open. Options: `time`, `target`, `resetHistory`, `force`, `skipHistory`. |
+| `menu.refresh()` · `menu.close()` · `menu.clearItems()` | Redraw it or close it for whoever looks at it; remove its items. |
+| `menu.setTimer(seconds)` · `menu.cancelTimer()` | The countdown everyone looking at it shares. |
+
+Its fields — `title`, `time`, `hideBack`, `hideExit`, `locked`, `sharedTimer` — are set directly; `name`, `kind` and `countdown` are read.
+
 | Function | What it does |
 | --- | --- |
-| `create(name, title)` | A menu in code, or the existing one with that name. A name starting with `LIST_` makes a list menu. |
-| `register(name)` | Loads a menu from the file ahead of time. |
-| `addItem(menu, name, options?)` | Adds an item. Options: `placeholder`, `condition`, `action` or `onSelect`, `restriction`, `restrictionMessage`, `at`, `spaceBefore`, `spaceAfter`. |
-| `addFixedItem(menu, slot, name, options?)` | An item that keeps slot 1–7 on every page. |
-| `addCondition(name, test)` | When an item is shown. |
-| `addAction(name, handler)` | What an item named in the file does. |
-| `addPlaceholder(name, value)` | What `%name%` becomes. |
-| `addRestriction(name, test, message?)` | When an item is greyed out, and why. |
-| `setListSource(name, rows)` | The rows of a list menu: `listRow(target, text)`, `textRow(text)`. |
-| `addEventListener("open" \| "close" \| "show", listener)` | `"show"` comes before a menu opens; `event.preventDefault()` stops it. |
-| `show(player, name, options?)` | Opens a menu; `false` when it does not open. Options: `time`, `target`, `resetHistory`, `force`, `skipHistory`. |
-| `close(player)` · `refresh("A B")` · `conditionChanged(name)` | Close, redraw the named menus, redraw what depends on a condition. |
-| `lock(player)` · `setTimer(menu, seconds)` · `cancelTimer(menu)` | Locks and countdowns. |
-
-A menu is a plain `Menu` object: fields such as `hideExit`, `locked` and `time` are set directly.
+| `create(name, options?)` | A menu in code, or the existing one with that name. A name starting with `LIST_` makes a list menu. Options: `title`, `time`, `hideBack`, `hideExit`, `locked`, `activeWhen`. |
+| `find(name)` · `register(name)` | A menu by its name; `register` reads it from the file ahead of time. |
+| `show(player, name, options?)` · `close(player)` · `activeMenu(player)` · `lock(player)` | The player's menu, whichever it is. |
+| `addCondition(name, test)` · `addAction(name, handler)` · `addPlaceholder(name, value)` · `addRestriction(name, test, message?)` | What menu.ini and Pawn plugins name, answered by functions. |
+| `setListSource(name, rows)` · `refresh("A B")` · `conditionChanged(name)` · `addEventListener(type, listener)` | The same for menus by name, and every menu's events. |
 
 ## Menus in a file
 
@@ -149,24 +154,24 @@ Existing Pawn plugins keep working: Menu Core serves the 29 `mc_*` natives of th
 
 ## Testing
 
-`installMenus(server)` from the amxts testing library gives the fake server menus, keys, fake Pawn plugins and a dictionary. Call it before the plugins load:
+Menu Core ships a test kit for the amxts fake server: `setup()` from `@amxts/core/test-utils` installs it, and `menusOf(server)` gives what the player's menu shows, the keys he presses, fake Pawn plugins and a dictionary:
 
 ```ts twoslash
 import { hostIndex, handled, outcome, floatCell, rounded, cellFloat, ret, publicFor, nativeFn, arg, argText, argc, caller, setArg, setArgText, argString, cellsToString, stringToCells, cells, out, text, arrayOf, cell, putCell, noOrigin, hasModule, readText, playerIds, accessOf, paint, print, cmd, cmdWide, setTimeout, sleep, setInterval, clearTimeout, clearInterval, hook, ham, plugin, defineModule, createCellArray, destroyCellArray, cellArrayRows, pushCellArrayRow, cellsText, textCells, showMenu, Handler, WideHandler, Float, CellArray, CellBuffer, TEXT_MAX, Team, WeaponName, ItemName, PlayerFilter, ModuleName, KillOptions, Client, Player, CommandHandler, CommandOptions, ServerCommandHandler, HudOptions, HudEffect, HudLine, FadeDirection, FadeOptions, ShakeOptions, StatusIconState, Screen, CvarChangeEvent, CvarListener, Cvar, Server, server, Game, RoundWinner, EndRoundOptions, game, Variant, VariantName, Flag, Entity, Weapon, WeaponKind, weaponKindOf, Target, swapTeam, cvar, TimerHandler, SleepOptions, Call, PluginInfo, ModuleOptions, ForwardStop, NoArgument, Forward, Storage, EntityFilter, PawnFunction, PawnCall, addServerListener, removeServerListener, PluginInitEvent, PluginPauseEvent, PluginUnpauseEvent, ServerChangelevelEvent, PluginCfgEvent, PluginEndEvent, PluginLogEvent, PluginPrecacheEvent, ClientInfochangedEvent, ClientConnectEvent, ClientConnectexEvent, ClientAuthorizedEvent, ClientDisconnectEvent, ClientDisconnectedEvent, ClientRemoveEvent, ClientCommandEvent, ClientPutinserverEvent, InconsistentFileEvent, PluginModulesEvent, OnConfigsExecutedEvent, OnAutoConfigsBufferedEvent, CS_InternalCommandEvent, CS_OnBuyAttemptEvent, CS_OnBuyEvent, PfnTouchEvent, ServerFrameEvent, ClientKillEvent, Client_PreThinkEvent, Client_PostThinkEvent, ClientImpulseEvent, ClientCmdStartEvent, PfnThinkEvent, PfnPlaybackeventEvent, PfnKeyvalueEvent, PfnSpawnEvent, ServerEventMap, flagList, FlagFamily, FlagStore, EntvarFlags, MemberFlags, FlagList, HideHud, HIDE_HUD, Button, BUTTON, Effect, EFFECT, EntityFlag, ENTITY_FLAG, Damage, DAMAGE, Access, ACCESS, addGameListener, removeGameListener, HookEvent, HookEntry, RewardReason, ResourceType, TeamChoice, ItemRestriction, BotEvent, RoundEndReason, DeathMessageFlag, KillRarity, VguiMenu, ActivateServerEvent, AddAccountEvent, AddMultiDamageEvent, AddPlayerItemEvent, AddPointsEvent, AddPointsToTeamEvent, AddResourceEvent, AirAccelerateEvent, AirMoveEvent, AllocEvent, AllowPhysentEvent, ApplyMultiDamageEvent, BalanceTeamsEvent, BasePlayerDuckEvent, BasePlayerJumpEvent, BasePlayerSpawnEvent, BlindEvent, BounceGibTouchEvent, BuyGunAmmoEvent, BuyItemEvent, BuyWeaponByWeaponIdEvent, CanDeployEvent, CanHavePlayerItemEvent, CanPlayerHearPlayerEvent, CanSwitchTeamEvent, ChangeLevelEvent, CheckMapConditionsEvent, CheckTimeBasedDamageEvent, CheckUserInfoEvent, CheckWaterJumpEvent, CheckWinConditionsEvent, ChooseAppearanceEvent, ChooseTeamEvent, ClassifyEvent, CleanUpMapEvent, ClearMultiDamageEvent, ClientConnectedEvent, ClientPrintfEvent, ClientUserInfoChangedEvent, ConnectClientEvent, CreateWeaponBoxEvent, DeadPlayerWeaponsEvent, DeathNoticeEvent, DeathSoundEvent, DefaultDeployEvent, DefaultReloadEvent, DefaultShotgunReloadEvent, DefuseBombEndEvent, DefuseBombStartEvent, DirectSetEvent, DisappearEvent, DropClientEvent, DropIdlePlayerEvent, DropPlayerItemEvent, DropShieldEvent, EmitPingsEvent, EntSelectSpawnPointEvent, ExecuteServerStringCmdEvent, ExplodeBombEvent, ExplodeFlashbangEvent, ExplodeHeGrenadeEvent, ExplodeSmokeGrenadeEvent, FPlayerCanRespawnEvent, FPlayerCanTakeDamageEvent, FShouldSwitchWeaponEvent, FireBuckshotsEvent, FireBulletsEvent, FireBullets3Event, FlPlayerFallDamageEvent, FreeEvent, GetEntityInitEvent, GetForceCameraEvent, GetIntoGameEvent, GetNextBestWeaponEvent, GetPlayerSpawnSpotEvent, GibSpawnEvent, GiveAmmoEvent, GiveC4Event, GiveDefaultItemsEvent, GiveNamedItemEvent, GiveShieldEvent, GoToIntermissionEvent, HasRestrictItemEvent, HintMessageExEvent, ImpulseCommandsEvent, IsPenetrableEntityEvent, ItemPostFrameEvent, JoiningThinkEvent, KickBackEvent, KilledEvent, LadderMoveEvent, MakeBomberEvent, MakeVipEvent, MoveEvent, ObjectCapsEvent, ObserverFindNextPlayerEvent, ObserverIsValidTargetEvent, ObserverSetModeEvent, ObserverThinkEvent, OnEventEvent, OnRoundFreezeEndEvent, OnSpawnEquipEvent, PainEvent, PlantBombEvent, PlayStepSoundEvent, PlayerBlindEvent, PlayerDeathThinkEvent, PlayerGotWeaponEvent, PlayerKilledEvent, PlayerSpawnEvent, PmDuckEvent, PmJumpEvent, PostThinkEvent, PreThinkEvent, PrecacheEvent, PrecacheGenericIEvent, PrecacheModelIEvent, PrecacheSoundIEvent, PrintfEvent, RadioEvent, RemoveAllItemsEvent, RemoveGunsEvent, RemovePlayerItemEvent, RemoveSpawnProtectionEvent, ResetMaxSpeedEvent, ResetSequenceInfoEvent, RestartRoundEvent, RoundEndEvent, RoundRespawnEvent, SendDeathMessageEvent, SendResourcesEvent, SendWeaponAnimEvent, ServerDeactivateEvent, SetAnimationEvent, SetClientUserInfoModelEvent, SetClientUserInfoNameEvent, SetModelEvent, SetSpawnProtectionEvent, ShowMenuEvent, ShowVguiMenuEvent, SpawnHeadGibEvent, SpawnRandomGibsEvent, StartDeathCamEvent, StartObserverEvent, StartSoundEvent, SwitchTeamEvent, TakeDamageEvent, TakeHealthEvent, TeamFullEvent, TeamStackedEvent, ThinkEvent, ThrowFlashbangEvent, ThrowGrenadeEvent, ThrowHeGrenadeEvent, ThrowSmokeGrenadeEvent, TraceAttackEvent, TraceLineEvent, UnDuckEvent, UpdateClientDataEvent, UseEmptyEvent, WaitTillLandEvent, WaterJumpEvent, WriteFullClientUpdateEvent, GameEventMap, GameAnswerMap, Vector } from "~/facade";
 // ---cut---
-import { FakeServer, installMenus } from "@amxts/core/src/testing";
+import { setup } from "@amxts/core/test-utils";
+import { menusOf } from "@amxts/menu-core/testing";
 
-const server = new FakeServer({ files });
-const menus = installMenus(server);
+const server = await setup({ files });
+const menus = menusOf(server);
 const admin = menus.pawnPlugin("admin.amxx", {
 	OnKick: (_id: number, target: number) => kicked.push(target),
 });
-await server.load("@amxts/config-core");
-await server.load("@amxts/menu-core");
-server.start();
 
 admin.native("mc_register_action", "KICK", "OnKick");
 admin.native("mc_show_menu", player.id, "LIST_KICK");
 menus.screen(player)?.text;   // what the player sees
 menus.press(player, 1);
 ```
+
+The module's own tests are in `test/` (`npm test`); `playground/` is a project with Menu Core in it, which they load too.

@@ -1,8 +1,13 @@
 import type { ServerOptions } from './server';
 import { FakeServer } from './server';
-export { bitsFloat, floatBits } from './memory';
+export { defineTestKit } from './kits';
+export type { TestKit } from './kits';
+export { bitsFloat, floatBits, Memory } from './memory';
+export type { Native, NativeCall } from './natives';
 export { FakeEntity, FakePlayer, FakeServer, FakeWeapon, PluginInstance } from './server';
-export type { HookResult, JoinOptions, Message, SentForward, ServerOptions, TeamName, UserMessage, Value } from './server';
+export type { ArgValue, HookResult, JoinOptions, Message, NativeResult, SentForward, ServerOptions, TeamName, UserMessage, Value } from './server';
+export { setup } from './setup';
+export type { SetupOptions } from './setup';
 export { constant } from './tables';
 /**
  * Compiles a plugin (once per test run), loads it into a new fake server and

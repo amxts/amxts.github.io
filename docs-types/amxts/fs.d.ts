@@ -1,7 +1,7 @@
 /// <reference path="../as-types.d.ts" />
 import "./promise";
 /**
- * A whole file as text, or null when it cannot be opened.
+ * Reads a whole file as text; null when it cannot be opened.
  *
  * ```ts
  * const text = fs.readFileSync("addons/amxmodx/configs/myplugin.ini");
@@ -10,6 +10,8 @@ import "./promise";
  *
  * The path is relative to the game folder (cstrike/), as for any AMX Mod X
  * plugin. The file is UTF-8; it is read whole, whatever its size.
+ *
+ * Pawn: `fopen`, `fread_blocks`
  */
 export declare function readFileSync(path: string): string | null;
 /**
@@ -19,24 +21,36 @@ export declare function readFileSync(path: string): string | null;
  * ```ts
  * fs.writeFileSync("addons/amxmodx/data/last-map.txt", server.map);
  * ```
+ *
+ * Pawn: `fopen`, `fputs`
  */
 export declare function writeFileSync(path: string, data: string): boolean;
-/** Adds text to the end of a file, making it if there is none; false when it cannot be opened. */
+/**
+ * Adds text to the end of a file, making it if there is none; false when it cannot be opened.
+ *
+ * Pawn: `fopen(path, "a")`, `fputs`
+ */
 export declare function appendFileSync(path: string, data: string): boolean;
-/** Whether a file or a folder is there. */
+/**
+ * `true` when the file or folder exists.
+ *
+ * Pawn: `file_exists`, `dir_exists`
+ */
 export declare function existsSync(path: string): boolean;
 /**
- * The names in a folder, without `.` and `..`; null when there is no such
- * folder.
+ * Lists the names in a folder, without `.` and `..`; null when there is no
+ * such folder.
  *
  * ```ts
  * const maps = fs.readdirSync("maps");
  * ```
+ *
+ * Pawn: `open_dir`, `next_file`
  */
 export declare function readdirSync(path: string): string[] | null;
-/** What mkdirSync takes: `{ recursive: true }` makes the missing folders above it too. */
+/** The options of mkdirSync: `{ recursive: true }` makes the missing folders above too. */
 export declare class MakeDirectoryOptions {
-    /** Make every missing folder on the way too; false by default. */
+    /** `true` to make every missing folder on the way too; `false` by default. */
     recursive: boolean;
 }
 /**
@@ -49,6 +63,8 @@ export declare class MakeDirectoryOptions {
  *
  * With `{ recursive: true }` every missing folder on the way is made, and a
  * folder that is already there is fine, as in Node.
+ *
+ * Pawn: `mkdir`
  */
 export declare function mkdirSync(path: string, options?: MakeDirectoryOptions): boolean;
 /** mkdirSync as a promise, rejected when the folder cannot be made. */

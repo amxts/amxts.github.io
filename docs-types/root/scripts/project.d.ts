@@ -46,6 +46,12 @@ export interface ModulePackage {
      * build checks the natives against it instead of writing it.
      */
     contract: boolean;
+    /**
+     * Its test kit - `"amxts": { "testing": "testing/index.ts" }` - a file for
+     * the test runner whose default export extends the fake server with what
+     * the module needs there (defineTestKit in @amxts/core/test-utils).
+     */
+    testing: string | null;
     version: string;
     description: string;
     definition: ModuleDefinition;
@@ -88,6 +94,17 @@ export declare function loadProject(dir?: string): Project;
 export declare function mergeOptions(defaults: Options, given: unknown): Options;
 /** The options a module's setup gets in this project. */
 export declare function optionsOf(project: Project, definition: ModuleDefinition): Options;
+/**
+ * Everything in the core's as/ that is not a plugin: the facade a plugin
+ * imports, the kit a module imports and the generated native layer under them.
+ */
+export declare const NOT_PLUGINS: Set<string>;
+/**
+ * The project's own plugins: the .ts files at the top of its plugins folder.
+ * A module's own folder, without a plugins folder, has none - only the core's
+ * repository builds the core's as/.
+ */
+export declare function projectPlugins(project: Project): string[];
 /** plugins.ini: the modules' owners in load order, then the project's plugins. */
 export declare function pluginList(project: Project, plugins: string[]): string[];
 /**

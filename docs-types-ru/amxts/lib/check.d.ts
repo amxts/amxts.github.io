@@ -12,22 +12,22 @@ import { Player } from "~/facade";
  * ```
  */
 export declare class Checks {
-    /** О чём эти проверки: с него начинается каждая строка лога, `[cvar]`. */
+    /** Тег проверок: с него начинается каждая строка лога, `[cvar]`. */
     tag: string;
-    /** Кто запустил проверки, если это игрок: итог выводится и ему. */
+    /** Игрок, запустивший проверки, если их запустил игрок: итог выводится и ему. */
     player?: Player | undefined;
-    /** Сколько проверок уже прошло. */
+    /** Число пройденных проверок. */
     passed: number;
-    /** Сколько проверок уже провалилось. */
+    /** Число проваленных проверок. */
     failed: number;
     constructor(
-    /** What the checks are about: every log line starts with it, `[cvar]`. */
+    /** The checks' tag: every log line starts with it, `[cvar]`. */
     tag: string, 
-    /** Who ran the checks, when a player did: the total is printed to him too. */
+    /** The player who ran the checks, if any: the total is printed to him too. */
     player?: Player | undefined);
-    /** То, что вернулось, и что это такое — для лога. */
+    /** Начинает проверку значения; `what` — его имя в логе: `check.expect(player.gravity, "gravity")`. */
     expect<T>(got: T, what?: string): Expectation<T>;
-    /** Итог — в лог и игроку. */
+    /** Выводит итог — в лог и игроку. */
     done(): void;
     /** @hidden Записывает одну проверку в лог и в итог. */
     record(what: string, ok: boolean, got: string, expected: string): void;
@@ -38,8 +38,8 @@ export declare class Expectation<T> {
     private got;
     private what;
     constructor(checks: Checks, got: T, what: string);
-    /** Равно: то же число, текст или boolean. */
+    /** Проверяет, что значение равно `expected`: то же число, текст или boolean. */
     toBe(expected: T): void;
-    /** Достаточно близкое число: float передаётся как 32 бита и возвращается округлённым. */
+    /** Проверяет, что число отличается от `expected` меньше чем на 0.001: значение, которое хранит игра, возвращается округлённым (0.5 как 0.49999). */
     toBeCloseTo(expected: number): void;
 }

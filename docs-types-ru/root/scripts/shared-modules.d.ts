@@ -46,9 +46,12 @@ interface ClassInfo {
         name: string;
         wire: Wire;
         optional?: boolean;
+        readonly?: boolean;
     }[];
-    /** It has methods: it goes back after a call, as the other side left it. */
+    /** It has methods: a record goes back after a call, as the other side left it. */
     methods: boolean;
+    /** A handle's public methods, which the proxy calls on the owner's object. */
+    calls: ExportedFunction[];
     /** Import alias for a class the module does not declare. */
     alias: string;
 }

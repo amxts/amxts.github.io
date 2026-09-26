@@ -5,21 +5,21 @@ import { Client, Player } from "./facade";
  *
  * Note: Top-level code in the plugin file runs at the same moment, so most plugins never need this event.
  *
- * AMX Mod X: `plugin_init()`
+ * Pawn: `plugin_init()`
  */
 export declare class PluginInitEvent {
 }
 /**
  * An admin paused this plugin.
  *
- * AMX Mod X: `plugin_pause()`
+ * Pawn: `plugin_pause()`
  */
 export declare class PluginPauseEvent {
 }
 /**
  * An admin resumed this plugin.
  *
- * AMX Mod X: `plugin_unpause()`
+ * Pawn: `plugin_unpause()`
  */
 export declare class PluginUnpauseEvent {
 }
@@ -29,19 +29,23 @@ export declare class PluginUnpauseEvent {
  * Note: This is *only* called if the mod itself handles the map change. The server command "changelevel", which is used by many plugins, will not trigger this forward. Unfortunately, this means that in practice this forward can be unreliable and will not be called in many situations.
  * Note: AMXX 1.8.3 has added the engine_changelevel() function, which will utilize the correct engine function to change the map, and therefore trigger this forward.
  *
- * AMX Mod X: `server_changelevel(map)`
+ * Pawn: `server_changelevel(map)`
  */
 export declare class ServerChangelevelEvent {
-    /** The map it changes to. */
+    /**
+     * The map the server changes to, e.g. "de_dust2".
+     *
+     * Pawn: `map`
+     */
     map: string;
     constructor(map: string);
 }
 /**
- * Every config has been read and every plugin is loaded - the moment to read cvars and to create forwards other plugins listen to.
+ * Every config has been read and every plugin is loaded: the moment to read cvars and to create forwards other plugins listen to.
  *
  * Note: When this forward is called, most plugins should have registered their cvars and commands already.
  *
- * AMX Mod X: `plugin_cfg()`
+ * Pawn: `plugin_cfg()`
  */
 export declare class PluginCfgEvent {
 }
@@ -50,7 +54,7 @@ export declare class PluginCfgEvent {
  *
  * Note: The plugin is required to manually free Handles it has acquired, such as those from dynamic data structures. Failing to do that will result in the plugin and AMXX leaking memory.
  *
- * AMX Mod X: `plugin_end()`
+ * Pawn: `plugin_end()`
  */
 export declare class PluginEndEvent {
 }
@@ -59,101 +63,149 @@ export declare class PluginEndEvent {
  *
  * Note: Message data and information can be retrieved using the read_log* set of functions.
  *
- * AMX Mod X: `plugin_log()`
+ * Pawn: `plugin_log()`
  */
 export declare class PluginLogEvent {
 }
 /**
  * The map is loading: the only moment models, sounds and sprites can be precached.
  *
- * Note: A hot reload of the plugin does not run it again - precaching needs a map change.
+ * Note: A hot reload of the plugin does not run it again: precaching needs a map change.
  *
- * AMX Mod X: `plugin_precache()`
+ * Pawn: `plugin_precache()`
  */
 export declare class PluginPrecacheEvent {
 }
 /**
- * A player changed his info - usually his name.
+ * A player changed his info, usually the name.
  *
- * AMX Mod X: `client_infochanged(id)`
+ * Pawn: `client_infochanged(id)`
  */
 export declare class ClientInfochangedEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
 /**
- * A player started connecting. He is not in the game yet - wait for "putinserver" to show him anything.
+ * A player started connecting. The player is not in the game yet: show him anything after "putinserver".
  *
  * Note: This forward is called too early to do anything that directly affects the client.
  *
- * AMX Mod X: `client_connect(id)`
+ * Pawn: `client_connect(id)`
  */
 export declare class ClientConnectEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Client;
     constructor(player: Client);
 }
 /**
- * A player started connecting, with his name and address - the place to turn him away.
+ * A player started connecting, with a name and an address: the place to turn him away.
  *
  * Note: This forward is called too early to do anything that directly affects the client.
  *
- * AMX Mod X: `client_connectex(id, name, ip, reason)`
+ * Pawn: `client_connectex(id, name, ip, reason)`
  */
 export declare class ClientConnectexEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Client;
-    /** The name he connects with. */
+    /**
+     * The name the player connects with.
+     *
+     * Pawn: `name`
+     */
     name: string;
-    /** His address, with the port. */
+    /**
+     * The player's address with the port, e.g. "192.168.0.5:27005".
+     *
+     * Pawn: `ip`
+     */
     ip: string;
-    /** What he is shown if he is turned away. */
+    /**
+     * The message the player sees if he is turned away.
+     *
+     * Pawn: `reason`
+     */
     reason: string;
     constructor(player: Client, name: string, ip: string, reason: string);
 }
 /**
- * A player's SteamID is known. It may come before or after "putinserver".
+ * A player's SteamID is known. May come before or after "putinserver".
  *
  * Note: A bot's SteamID is "BOT".
  *
- * AMX Mod X: `client_authorized(id, authid)`
+ * Pawn: `client_authorized(id, authid)`
  */
 export declare class ClientAuthorizedEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Client;
-    /** His SteamID. */
+    /**
+     * The player's SteamID, e.g. "STEAM_0:1:12345". A bot has "BOT", HLTV has "HLTV"; on a LAN server it is "STEAM_ID_LAN".
+     *
+     * Pawn: `authid`
+     */
     authid: string;
     constructor(player: Client, authid: string);
 }
 /**
- * Old form of "disconnected" that misses some cases - use "disconnected".
+ * Old form of "disconnected" that misses some cases: use "disconnected".
  *
- * AMX Mod X: `client_disconnect(id)`
+ * Pawn: `client_disconnect(id)`
  */
 export declare class ClientDisconnectEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
 /**
- * A player left the server - quit, timed out or was kicked.
+ * A player left the server: quit, timed out or was kicked.
  *
- * Note: He can still be read here (name, team), but nothing reaches his screen any more.
+ * Note: The player can still be read here (name, team), but nothing reaches his screen any more.
+ *
+ * Pawn: `client_disconnected(id, bool:drop, message, maxlen)`
  *
  * @example
  * server.addEventListener("disconnected", (event) => {
  * 	console.log(`${event.player.name} left: ${event.reason}`);
  * });
- *
- * AMX Mod X: `client_disconnected(id, bool:drop, message, maxlen)`
  */
 export declare class ClientDisconnectedEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
-    /** True if the server dropped him (kick, timeout) rather than him leaving. */
+    /**
+     * `true` when the server dropped the player (kick, timeout) rather than he left.
+     *
+     * Pawn: `bool:drop`
+     */
     dropped: boolean;
-    /** Why he left, as the server says it; empty when he just quit. */
+    /**
+     * The reason the server gives for the leave; empty when the player just quit.
+     *
+     * Pawn: `message`
+     */
     reason: string;
     constructor(player: Player, dropped: boolean, reason: string);
 }
@@ -162,64 +214,96 @@ export declare class ClientDisconnectedEvent {
  *
  * Note: This fires after the client_disconnected() forward, when the player entity has been removed (e.g. is_user_connected(id) will return false).
  *
- * AMX Mod X: `client_remove(id, bool:drop, message)`
+ * Pawn: `client_remove(id, bool:drop, message)`
  */
 export declare class ClientRemoveEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
-    /** True if the server dropped him. */
+    /**
+     * `true` when the server dropped the player.
+     *
+     * Pawn: `bool:drop`
+     */
     dropped: boolean;
-    /** Why he left. */
+    /**
+     * The reason the player left.
+     *
+     * Pawn: `message`
+     */
     reason: string;
     constructor(player: Player, dropped: boolean, reason: string);
 }
 /**
- * A player sent a console command. For one command, `cmd("name", handler)` is simpler.
+ * A player sent a console command. For one command, `server.addCommand("name", handler)` is simpler.
  *
  * Note: The command and its arguments can be read using the read_arg* set of functions.
  *
- * AMX Mod X: `client_command(id)`
+ * Pawn: `client_command(id)`
  */
 export declare class ClientCommandEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
 /**
- * A player has joined and is in the game - the moment to greet him.
+ * A player has joined and is in the game: the moment to greet him.
  *
  * Note: It is not defined whether the client already has a SteamID when this forward is called. client_authorized may occur either before or after this.
+ *
+ * Pawn: `client_putinserver(id)`
  *
  * @example
  * server.addEventListener("putinserver", (event) => {
  * 	print(event.player, "Welcome!");
  * });
- *
- * AMX Mod X: `client_putinserver(id)`
  */
 export declare class ClientPutinserverEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Client;
     constructor(player: Client);
 }
 /**
  * Called when an inconsistent file is encountered by the engine.
  *
- * AMX Mod X: `inconsistent_file(id, filename, reason)`
+ * Pawn: `inconsistent_file(id, filename, reason)`
  */
 export declare class InconsistentFileEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
-    /** Detected file */
+    /**
+     * Detected file
+     *
+     * Pawn: `filename`
+     */
     filename: string;
-    /** Buffer storing the disconnect reason (can be overwritten) */
+    /**
+     * Buffer storing the disconnect reason (can be overwritten)
+     *
+     * Pawn: `reason`
+     */
     reason: string;
     constructor(player: Player, filename: string, reason: string);
 }
 /**
  * Allows plugins to declare module dependencies using require_module()
  *
- * AMX Mod X: `plugin_modules()`
+ * Pawn: `plugin_modules()`
  */
 export declare class PluginModulesEvent {
 }
@@ -229,7 +313,7 @@ export declare class PluginModulesEvent {
  * Note: This is best place to initialize plugin functions which are based on cvar data.
  * Note: This will always be called once and only once per map. It will be called few seconds after plugin_cfg().
  *
- * AMX Mod X: `OnConfigsExecuted()`
+ * Pawn: `OnConfigsExecuted()`
  */
 export declare class OnConfigsExecutedEvent {
 }
@@ -238,7 +322,7 @@ export declare class OnConfigsExecutedEvent {
  *
  * Note: This will always be called once and only once per map.
  *
- * AMX Mod X: `OnAutoConfigsBuffered()`
+ * Pawn: `OnAutoConfigsBuffered()`
  */
 export declare class OnAutoConfigsBufferedEvent {
 }
@@ -247,12 +331,20 @@ export declare class OnAutoConfigsBufferedEvent {
  *
  * Note: This is most notably used by the rebuy/autobuy functionality, Condition Zero also uses this to pass commands to bots internally.
  *
- * AMX Mod X: `CS_InternalCommand(id, cmd)`
+ * Pawn: `CS_InternalCommand(id, cmd)`
  */
 export declare class CS_InternalCommandEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
-    /** Command string */
+    /**
+     * Command string
+     *
+     * Pawn: `cmd`
+     */
     cmd: string;
     constructor(player: Player, cmd: string);
 }
@@ -262,12 +354,20 @@ export declare class CS_InternalCommandEvent {
  * Note: This is called immediately when the client issues a buy command. The game has not yet checked if the client can actually buy the weapon.
  * Note: For a list of possible item ids see the CSI_* constants.
  *
- * AMX Mod X: `CS_OnBuyAttempt(index, item)`
+ * Pawn: `CS_OnBuyAttempt(index, item)`
  */
 export declare class CS_OnBuyAttemptEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `index`
+     */
     player: Player;
-    /** Item id */
+    /**
+     * Item id
+     *
+     * Pawn: `item`
+     */
     item: number;
     constructor(player: Player, item: number);
 }
@@ -277,43 +377,63 @@ export declare class CS_OnBuyAttemptEvent {
  * Note: This is called right before the user receives the item and before the money is deducted from their cash reserves.
  * Note: For a list of possible item ids see the CSI_* constants.
  *
- * AMX Mod X: `CS_OnBuy(index, item)`
+ * Pawn: `CS_OnBuy(index, item)`
  */
 export declare class CS_OnBuyEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `index`
+     */
     player: Player;
-    /** Item id */
+    /**
+     * Item id
+     *
+     * Pawn: `item`
+     */
     item: number;
     constructor(player: Player, item: number);
 }
 /**
  * Two entities touched.
  *
- * AMX Mod X: `pfn_touch(ptr, ptd)`
+ * Pawn: `pfn_touch(ptr, ptd)`
  */
 export declare class PfnTouchEvent {
-    /** The entity that moved into the other. */
+    /**
+     * The entity that moved into the other.
+     *
+     * Pawn: `ptr`
+     */
     toucher: number;
-    /** The entity it touched. */
+    /**
+     * The entity that was touched.
+     *
+     * Pawn: `ptd`
+     */
     touched: number;
     constructor(toucher: number, touched: number);
 }
 /**
- * Every server frame - hundreds of times a second. Keep the listener tiny, or use setInterval.
+ * A server frame, hundreds of times a second. Keep the listener tiny, or use setInterval.
  *
  * Note: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
  *
- * AMX Mod X: `server_frame()`
+ * Pawn: `server_frame()`
  */
 export declare class ServerFrameEvent {
 }
 /**
  * A player typed "kill" in the console to kill himself.
  *
- * AMX Mod X: `client_kill(id)`
+ * Pawn: `client_kill(id)`
  */
 export declare class ClientKillEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
@@ -322,10 +442,14 @@ export declare class ClientKillEvent {
  *
  * Note: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
  *
- * AMX Mod X: `client_PreThink(id)`
+ * Pawn: `client_PreThink(id)`
  */
 export declare class Client_PreThinkEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
@@ -334,22 +458,34 @@ export declare class Client_PreThinkEvent {
  *
  * Note: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
  *
- * AMX Mod X: `client_PostThink(id)`
+ * Pawn: `client_PostThink(id)`
  */
 export declare class Client_PostThinkEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
 /**
  * A player sent an impulse: 100 is the flashlight, 201 the spray.
  *
- * AMX Mod X: `client_impulse(id, impulse)`
+ * Pawn: `client_impulse(id, impulse)`
  */
 export declare class ClientImpulseEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
-    /** The impulse number. */
+    /**
+     * The impulse number: 100, 201.
+     *
+     * Pawn: `impulse`
+     */
     impulse: number;
     constructor(player: Player, impulse: number);
 }
@@ -358,36 +494,60 @@ export declare class ClientImpulseEvent {
  *
  * Note: Use [get|set]_usercmd() to read and modify information in the usercmd struct.
  *
- * AMX Mod X: `client_cmdStart(id)`
+ * Pawn: `client_cmdStart(id)`
  */
 export declare class ClientCmdStartEvent {
-    /** The player the event is about. */
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
 /**
- * An entity thinks - its scheduled update.
+ * An entity thinks: its scheduled update has come.
  *
- * AMX Mod X: `pfn_think(entid)`
+ * Pawn: `pfn_think(entid)`
  */
 export declare class PfnThinkEvent {
-    /** The entity. */
+    /**
+     * The entity that thinks.
+     *
+     * Pawn: `entid`
+     */
     entity: number;
     constructor(entity: number);
 }
 /**
  * Called when an event is played.
  *
- * AMX Mod X: `pfn_playbackevent(flags, entid, eventid, Float:delay)`
+ * Pawn: `pfn_playbackevent(flags, entid, eventid, Float:delay)`
  */
 export declare class PfnPlaybackeventEvent {
-    /** Event flags */
+    /**
+     * Event flags
+     *
+     * Pawn: `flags`
+     */
     flags: number;
-    /** Index of entity to invoke event on */
+    /**
+     * Index of entity to invoke event on
+     *
+     * Pawn: `entid`
+     */
     entity: number;
-    /** Index of event in the precache table */
+    /**
+     * Index of event in the precache table
+     *
+     * Pawn: `eventid`
+     */
     eventid: number;
-    /** Time until the event is played */
+    /**
+     * Time until the event is played
+     *
+     * Pawn: `Float:delay`
+     */
     delay: number;
     constructor(flags: number, entity: number, eventid: number, delay: number);
 }
@@ -396,154 +556,422 @@ export declare class PfnPlaybackeventEvent {
  *
  * Note: Use copy_keyvalue() to retrieve the keyvalue information, and DispatchKeyVaue() to modify it.
  *
- * AMX Mod X: `pfn_keyvalue(entid)`
+ * Pawn: `pfn_keyvalue(entid)`
  */
 export declare class PfnKeyvalueEvent {
-    /** Entity index */
+    /**
+     * Entity index
+     *
+     * Pawn: `entid`
+     */
     entity: number;
     constructor(entity: number);
 }
 /**
  * An entity is being spawned on the map.
  *
- * AMX Mod X: `pfn_spawn(entid)`
+ * Pawn: `pfn_spawn(entid)`
  */
 export declare class PfnSpawnEvent {
-    /** The entity. */
+    /**
+     * The entity being spawned.
+     *
+     * Pawn: `entid`
+     */
     entity: number;
     constructor(entity: number);
 }
 /** Every event a server raises, by name: the short one and the Pawn one. */
 export interface ServerEventMap {
-    /** The plugin has loaded: register commands, events and hooks here. */
+    /**
+     * The plugin has loaded: register commands, events and hooks here.
+     *
+     * Pawn: `plugin_init`
+     */
     init: PluginInitEvent;
-    /** The plugin has loaded: register commands, events and hooks here. */
+    /**
+     * The plugin has loaded: register commands, events and hooks here.
+     *
+     * Pawn: `plugin_init`
+     */
     plugin_init: PluginInitEvent;
-    /** An admin paused this plugin. */
+    /**
+     * An admin paused this plugin.
+     *
+     * Pawn: `plugin_pause`
+     */
     pause: PluginPauseEvent;
-    /** An admin paused this plugin. */
+    /**
+     * An admin paused this plugin.
+     *
+     * Pawn: `plugin_pause`
+     */
     plugin_pause: PluginPauseEvent;
-    /** An admin resumed this plugin. */
+    /**
+     * An admin resumed this plugin.
+     *
+     * Pawn: `plugin_unpause`
+     */
     unpause: PluginUnpauseEvent;
-    /** An admin resumed this plugin. */
+    /**
+     * An admin resumed this plugin.
+     *
+     * Pawn: `plugin_unpause`
+     */
     plugin_unpause: PluginUnpauseEvent;
-    /** The server is about to change the map. */
+    /**
+     * The server is about to change the map.
+     *
+     * Pawn: `server_changelevel`
+     */
     changelevel: ServerChangelevelEvent;
-    /** The server is about to change the map. */
+    /**
+     * The server is about to change the map.
+     *
+     * Pawn: `server_changelevel`
+     */
     server_changelevel: ServerChangelevelEvent;
-    /** Every config has been read and every plugin is loaded - the moment to read cvars and to create forwards other plugins listen to. */
+    /**
+     * Every config has been read and every plugin is loaded: the moment to read cvars and to create forwards other plugins listen to.
+     *
+     * Pawn: `plugin_cfg`
+     */
     cfg: PluginCfgEvent;
-    /** Every config has been read and every plugin is loaded - the moment to read cvars and to create forwards other plugins listen to. */
+    /**
+     * Every config has been read and every plugin is loaded: the moment to read cvars and to create forwards other plugins listen to.
+     *
+     * Pawn: `plugin_cfg`
+     */
     plugin_cfg: PluginCfgEvent;
-    /** The map is ending or the server is shutting down: save what has to survive. */
+    /**
+     * The map is ending or the server is shutting down: save what has to survive.
+     *
+     * Pawn: `plugin_end`
+     */
     end: PluginEndEvent;
-    /** The map is ending or the server is shutting down: save what has to survive. */
+    /**
+     * The map is ending or the server is shutting down: save what has to survive.
+     *
+     * Pawn: `plugin_end`
+     */
     plugin_end: PluginEndEvent;
-    /** Called when a message is about to be logged. */
+    /**
+     * Called when a message is about to be logged.
+     *
+     * Pawn: `plugin_log`
+     */
     log: PluginLogEvent;
-    /** Called when a message is about to be logged. */
+    /**
+     * Called when a message is about to be logged.
+     *
+     * Pawn: `plugin_log`
+     */
     plugin_log: PluginLogEvent;
-    /** The map is loading: the only moment models, sounds and sprites can be precached. */
+    /**
+     * The map is loading: the only moment models, sounds and sprites can be precached.
+     *
+     * Pawn: `plugin_precache`
+     */
     precache: PluginPrecacheEvent;
-    /** The map is loading: the only moment models, sounds and sprites can be precached. */
+    /**
+     * The map is loading: the only moment models, sounds and sprites can be precached.
+     *
+     * Pawn: `plugin_precache`
+     */
     plugin_precache: PluginPrecacheEvent;
-    /** A player changed his info - usually his name. */
+    /**
+     * A player changed his info, usually the name.
+     *
+     * Pawn: `client_infochanged`
+     */
     infochanged: ClientInfochangedEvent;
-    /** A player changed his info - usually his name. */
+    /**
+     * A player changed his info, usually the name.
+     *
+     * Pawn: `client_infochanged`
+     */
     client_infochanged: ClientInfochangedEvent;
-    /** A player started connecting. He is not in the game yet - wait for "putinserver" to show him anything. */
+    /**
+     * A player started connecting. The player is not in the game yet: show him anything after "putinserver".
+     *
+     * Pawn: `client_connect`
+     */
     connect: ClientConnectEvent;
-    /** A player started connecting. He is not in the game yet - wait for "putinserver" to show him anything. */
+    /**
+     * A player started connecting. The player is not in the game yet: show him anything after "putinserver".
+     *
+     * Pawn: `client_connect`
+     */
     client_connect: ClientConnectEvent;
-    /** A player started connecting, with his name and address - the place to turn him away. */
+    /**
+     * A player started connecting, with a name and an address: the place to turn him away.
+     *
+     * Pawn: `client_connectex`
+     */
     connectex: ClientConnectexEvent;
-    /** A player started connecting, with his name and address - the place to turn him away. */
+    /**
+     * A player started connecting, with a name and an address: the place to turn him away.
+     *
+     * Pawn: `client_connectex`
+     */
     client_connectex: ClientConnectexEvent;
-    /** A player's SteamID is known. It may come before or after "putinserver". */
+    /**
+     * A player's SteamID is known. May come before or after "putinserver".
+     *
+     * Pawn: `client_authorized`
+     */
     authorized: ClientAuthorizedEvent;
-    /** A player's SteamID is known. It may come before or after "putinserver". */
+    /**
+     * A player's SteamID is known. May come before or after "putinserver".
+     *
+     * Pawn: `client_authorized`
+     */
     client_authorized: ClientAuthorizedEvent;
-    /** Old form of "disconnected" that misses some cases - use "disconnected". */
+    /**
+     * Old form of "disconnected" that misses some cases: use "disconnected".
+     *
+     * Pawn: `client_disconnect`
+     */
     disconnect: ClientDisconnectEvent;
-    /** Old form of "disconnected" that misses some cases - use "disconnected". */
+    /**
+     * Old form of "disconnected" that misses some cases: use "disconnected".
+     *
+     * Pawn: `client_disconnect`
+     */
     client_disconnect: ClientDisconnectEvent;
-    /** A player left the server - quit, timed out or was kicked. */
+    /**
+     * A player left the server: quit, timed out or was kicked.
+     *
+     * Pawn: `client_disconnected`
+     */
     disconnected: ClientDisconnectedEvent;
-    /** A player left the server - quit, timed out or was kicked. */
+    /**
+     * A player left the server: quit, timed out or was kicked.
+     *
+     * Pawn: `client_disconnected`
+     */
     client_disconnected: ClientDisconnectedEvent;
-    /** A player's slot is being freed, after "disconnected". */
+    /**
+     * A player's slot is being freed, after "disconnected".
+     *
+     * Pawn: `client_remove`
+     */
     remove: ClientRemoveEvent;
-    /** A player's slot is being freed, after "disconnected". */
+    /**
+     * A player's slot is being freed, after "disconnected".
+     *
+     * Pawn: `client_remove`
+     */
     client_remove: ClientRemoveEvent;
-    /** A player sent a console command. For one command, `cmd("name", handler)` is simpler. */
+    /**
+     * A player sent a console command. For one command, `server.addCommand("name", handler)` is simpler.
+     *
+     * Pawn: `client_command`
+     */
     command: ClientCommandEvent;
-    /** A player sent a console command. For one command, `cmd("name", handler)` is simpler. */
+    /**
+     * A player sent a console command. For one command, `server.addCommand("name", handler)` is simpler.
+     *
+     * Pawn: `client_command`
+     */
     client_command: ClientCommandEvent;
-    /** A player has joined and is in the game - the moment to greet him. */
+    /**
+     * A player has joined and is in the game: the moment to greet him.
+     *
+     * Pawn: `client_putinserver`
+     */
     putinserver: ClientPutinserverEvent;
-    /** A player has joined and is in the game - the moment to greet him. */
+    /**
+     * A player has joined and is in the game: the moment to greet him.
+     *
+     * Pawn: `client_putinserver`
+     */
     client_putinserver: ClientPutinserverEvent;
-    /** Called when an inconsistent file is encountered by the engine. */
+    /**
+     * Called when an inconsistent file is encountered by the engine.
+     *
+     * Pawn: `inconsistent_file`
+     */
     inconsistentFile: InconsistentFileEvent;
-    /** Called when an inconsistent file is encountered by the engine. */
+    /**
+     * Called when an inconsistent file is encountered by the engine.
+     *
+     * Pawn: `inconsistent_file`
+     */
     inconsistent_file: InconsistentFileEvent;
-    /** Allows plugins to declare module dependencies using require_module() */
+    /**
+     * Allows plugins to declare module dependencies using require_module()
+     *
+     * Pawn: `plugin_modules`
+     */
     modules: PluginModulesEvent;
-    /** Allows plugins to declare module dependencies using require_module() */
+    /**
+     * Allows plugins to declare module dependencies using require_module()
+     *
+     * Pawn: `plugin_modules`
+     */
     plugin_modules: PluginModulesEvent;
-    /** Called when the map has loaded, and all configs are done executing. This includes servercfgfile (server.cfg), amxx.cfg, plugin's config, and per-map config. */
+    /**
+     * Called when the map has loaded, and all configs are done executing. This includes servercfgfile (server.cfg), amxx.cfg, plugin's config, and per-map config.
+     *
+     * Pawn: `OnConfigsExecuted`
+     */
     OnConfigsExecuted: OnConfigsExecutedEvent;
-    /** Called when the map has loaded, right after plugin_cfg() but any time before OnConfigsExecuted. It's called after amxx.cfg and all AutoExecConfig() exec commands have been added to the server command buffer. */
+    /**
+     * Called when the map has loaded, right after plugin_cfg() but any time before OnConfigsExecuted. It's called after amxx.cfg and all AutoExecConfig() exec commands have been added to the server command buffer.
+     *
+     * Pawn: `OnAutoConfigsBuffered`
+     */
     OnAutoConfigsBuffered: OnAutoConfigsBufferedEvent;
-    /** Called when CS internally fires a command to a player. */
+    /**
+     * Called when CS internally fires a command to a player.
+     *
+     * Pawn: `CS_InternalCommand`
+     */
     CS_InternalCommand: CS_InternalCommandEvent;
-    /** Called when a client attempts to purchase an item. */
+    /**
+     * Called when a client attempts to purchase an item.
+     *
+     * Pawn: `CS_OnBuyAttempt`
+     */
     CS_OnBuyAttempt: CS_OnBuyAttemptEvent;
-    /** Called when a client purchases an item. */
+    /**
+     * Called when a client purchases an item.
+     *
+     * Pawn: `CS_OnBuy`
+     */
     CS_OnBuy: CS_OnBuyEvent;
-    /** Two entities touched. */
+    /**
+     * Two entities touched.
+     *
+     * Pawn: `pfn_touch`
+     */
     pfnTouch: PfnTouchEvent;
-    /** Two entities touched. */
+    /**
+     * Two entities touched.
+     *
+     * Pawn: `pfn_touch`
+     */
     pfn_touch: PfnTouchEvent;
-    /** Every server frame - hundreds of times a second. Keep the listener tiny, or use setInterval. */
+    /**
+     * A server frame, hundreds of times a second. Keep the listener tiny, or use setInterval.
+     *
+     * Pawn: `server_frame`
+     */
     frame: ServerFrameEvent;
-    /** Every server frame - hundreds of times a second. Keep the listener tiny, or use setInterval. */
+    /**
+     * A server frame, hundreds of times a second. Keep the listener tiny, or use setInterval.
+     *
+     * Pawn: `server_frame`
+     */
     server_frame: ServerFrameEvent;
-    /** A player typed "kill" in the console to kill himself. */
+    /**
+     * A player typed "kill" in the console to kill himself.
+     *
+     * Pawn: `client_kill`
+     */
     kill: ClientKillEvent;
-    /** A player typed "kill" in the console to kill himself. */
+    /**
+     * A player typed "kill" in the console to kill himself.
+     *
+     * Pawn: `client_kill`
+     */
     client_kill: ClientKillEvent;
-    /** Called at the start of each client think. */
+    /**
+     * Called at the start of each client think.
+     *
+     * Pawn: `client_PreThink`
+     */
     PreThink: Client_PreThinkEvent;
-    /** Called at the start of each client think. */
+    /**
+     * Called at the start of each client think.
+     *
+     * Pawn: `client_PreThink`
+     */
     client_PreThink: Client_PreThinkEvent;
-    /** Called after each client think. */
+    /**
+     * Called after each client think.
+     *
+     * Pawn: `client_PostThink`
+     */
     PostThink: Client_PostThinkEvent;
-    /** Called after each client think. */
+    /**
+     * Called after each client think.
+     *
+     * Pawn: `client_PostThink`
+     */
     client_PostThink: Client_PostThinkEvent;
-    /** A player sent an impulse: 100 is the flashlight, 201 the spray. */
+    /**
+     * A player sent an impulse: 100 is the flashlight, 201 the spray.
+     *
+     * Pawn: `client_impulse`
+     */
     impulse: ClientImpulseEvent;
-    /** A player sent an impulse: 100 is the flashlight, 201 the spray. */
+    /**
+     * A player sent an impulse: 100 is the flashlight, 201 the spray.
+     *
+     * Pawn: `client_impulse`
+     */
     client_impulse: ClientImpulseEvent;
-    /** Called for CmdStart() on a client. */
+    /**
+     * Called for CmdStart() on a client.
+     *
+     * Pawn: `client_cmdStart`
+     */
     cmdStart: ClientCmdStartEvent;
-    /** Called for CmdStart() on a client. */
+    /**
+     * Called for CmdStart() on a client.
+     *
+     * Pawn: `client_cmdStart`
+     */
     client_cmdStart: ClientCmdStartEvent;
-    /** An entity thinks - its scheduled update. */
+    /**
+     * An entity thinks: its scheduled update has come.
+     *
+     * Pawn: `pfn_think`
+     */
     pfnThink: PfnThinkEvent;
-    /** An entity thinks - its scheduled update. */
+    /**
+     * An entity thinks: its scheduled update has come.
+     *
+     * Pawn: `pfn_think`
+     */
     pfn_think: PfnThinkEvent;
-    /** Called when an event is played. */
+    /**
+     * Called when an event is played.
+     *
+     * Pawn: `pfn_playbackevent`
+     */
     pfnPlaybackevent: PfnPlaybackeventEvent;
-    /** Called when an event is played. */
+    /**
+     * Called when an event is played.
+     *
+     * Pawn: `pfn_playbackevent`
+     */
     pfn_playbackevent: PfnPlaybackeventEvent;
-    /** Called when a keyvalue pair is sent to an entity. */
+    /**
+     * Called when a keyvalue pair is sent to an entity.
+     *
+     * Pawn: `pfn_keyvalue`
+     */
     pfnKeyvalue: PfnKeyvalueEvent;
-    /** Called when a keyvalue pair is sent to an entity. */
+    /**
+     * Called when a keyvalue pair is sent to an entity.
+     *
+     * Pawn: `pfn_keyvalue`
+     */
     pfn_keyvalue: PfnKeyvalueEvent;
-    /** An entity is being spawned on the map. */
+    /**
+     * An entity is being spawned on the map.
+     *
+     * Pawn: `pfn_spawn`
+     */
     pfnSpawn: PfnSpawnEvent;
-    /** An entity is being spawned on the map. */
+    /**
+     * An entity is being spawned on the map.
+     *
+     * Pawn: `pfn_spawn`
+     */
     pfn_spawn: PfnSpawnEvent;
 }
 /** Adds a listener for the event E - server.addEventListener's hood. */

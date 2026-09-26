@@ -5,21 +5,21 @@ import { Client, Player } from "./facade";
  *
  * Важно: Код на верхнем уровне файла плагина выполняется в тот же момент, поэтому большинству плагинов это событие не нужно.
  *
- * AMX Mod X: `plugin_init()`
+ * Pawn: `plugin_init()`
  */
 export declare class PluginInitEvent {
 }
 /**
  * Админ поставил плагин на паузу.
  *
- * AMX Mod X: `plugin_pause()`
+ * Pawn: `plugin_pause()`
  */
 export declare class PluginPauseEvent {
 }
 /**
  * Админ снял плагин с паузы.
  *
- * AMX Mod X: `plugin_unpause()`
+ * Pawn: `plugin_unpause()`
  */
 export declare class PluginUnpauseEvent {
 }
@@ -29,19 +29,23 @@ export declare class PluginUnpauseEvent {
  * Важно: This is *only* called if the mod itself handles the map change. The server command "changelevel", which is used by many plugins, will not trigger this forward. Unfortunately, this means that in practice this forward can be unreliable and will not be called in many situations.
  * Важно: AMXX 1.8.3 has added the engine_changelevel() function, which will utilize the correct engine function to change the map, and therefore trigger this forward.
  *
- * AMX Mod X: `server_changelevel(map)`
+ * Pawn: `server_changelevel(map)`
  */
 export declare class ServerChangelevelEvent {
-    /** Карта, на которую он переходит. */
+    /**
+     * Карта, на которую переходит сервер, например "de_dust2".
+     *
+     * Pawn: `map`
+     */
     map: string;
     constructor(map: string);
 }
 /**
- * Все конфиги прочитаны и все плагины загружены - момент читать квары и создавать форварды для других плагинов.
+ * Все конфиги прочитаны, все плагины загружены: момент читать квары и создавать форварды для других плагинов.
  *
  * Важно: When this forward is called, most plugins should have registered their cvars and commands already.
  *
- * AMX Mod X: `plugin_cfg()`
+ * Pawn: `plugin_cfg()`
  */
 export declare class PluginCfgEvent {
 }
@@ -50,7 +54,7 @@ export declare class PluginCfgEvent {
  *
  * Важно: The plugin is required to manually free Handles it has acquired, such as those from dynamic data structures. Failing to do that will result in the plugin and AMXX leaking memory.
  *
- * AMX Mod X: `plugin_end()`
+ * Pawn: `plugin_end()`
  */
 export declare class PluginEndEvent {
 }
@@ -59,101 +63,149 @@ export declare class PluginEndEvent {
  *
  * Важно: Message data and information can be retrieved using the read_log* set of functions.
  *
- * AMX Mod X: `plugin_log()`
+ * Pawn: `plugin_log()`
  */
 export declare class PluginLogEvent {
 }
 /**
- * Карта загружается: единственный момент, когда можно подгрузить модели, звуки и спрайты (precache).
+ * Карта загружается: единственный момент, когда можно подгрузить (precache) модели, звуки и спрайты.
  *
- * Важно: При горячей перезагрузке плагина не повторяется: для precache нужна смена карты.
+ * Важно: Горячая перезагрузка плагина его не повторяет: для precache нужна смена карты.
  *
- * AMX Mod X: `plugin_precache()`
+ * Pawn: `plugin_precache()`
  */
 export declare class PluginPrecacheEvent {
 }
 /**
- * Игрок поменял свои данные - обычно ник.
+ * Игрок поменял свои данные, обычно ник.
  *
- * AMX Mod X: `client_infochanged(id)`
+ * Pawn: `client_infochanged(id)`
  */
 export declare class ClientInfochangedEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
 /**
- * Игрок начал подключаться. Он ещё не в игре - показывать ему что-то можно после "putinserver".
+ * Игрок начал подключаться. В игре его ещё нет: показывать ему что-то можно после "putinserver".
  *
  * Важно: This forward is called too early to do anything that directly affects the client.
  *
- * AMX Mod X: `client_connect(id)`
+ * Pawn: `client_connect(id)`
  */
 export declare class ClientConnectEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Client;
     constructor(player: Client);
 }
 /**
- * Игрок начал подключаться, с именем и адресом - здесь его можно не пустить.
+ * Игрок начал подключаться, уже с именем и адресом: здесь его можно не пустить.
  *
  * Важно: This forward is called too early to do anything that directly affects the client.
  *
- * AMX Mod X: `client_connectex(id, name, ip, reason)`
+ * Pawn: `client_connectex(id, name, ip, reason)`
  */
 export declare class ClientConnectexEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Client;
-    /** Имя, с которым он заходит. */
+    /**
+     * Имя, с которым игрок заходит.
+     *
+     * Pawn: `name`
+     */
     name: string;
-    /** Его адрес вместе с портом. */
+    /**
+     * Адрес игрока с портом, например "192.168.0.5:27005".
+     *
+     * Pawn: `ip`
+     */
     ip: string;
-    /** Что ему покажут, если его не пустят. */
+    /**
+     * Сообщение, которое игрок увидит, если его не пустят.
+     *
+     * Pawn: `reason`
+     */
     reason: string;
     constructor(player: Client, name: string, ip: string, reason: string);
 }
 /**
  * Стал известен SteamID игрока. Может прийти до или после "putinserver".
  *
- * Важно: У бота SteamID - "BOT".
+ * Важно: SteamID бота — "BOT".
  *
- * AMX Mod X: `client_authorized(id, authid)`
+ * Pawn: `client_authorized(id, authid)`
  */
 export declare class ClientAuthorizedEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Client;
-    /** Его SteamID. */
+    /**
+     * SteamID игрока, например "STEAM_0:1:12345". У бота — "BOT", у HLTV — "HLTV"; на LAN-сервере — "STEAM_ID_LAN".
+     *
+     * Pawn: `authid`
+     */
     authid: string;
     constructor(player: Client, authid: string);
 }
 /**
- * Старая форма "disconnected", пропускающая часть случаев - используйте "disconnected".
+ * Старая форма "disconnected", которая пропускает часть случаев: используйте "disconnected".
  *
- * AMX Mod X: `client_disconnect(id)`
+ * Pawn: `client_disconnect(id)`
  */
 export declare class ClientDisconnectEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
 /**
- * Игрок покинул сервер - вышел сам, отвалился или был кикнут.
+ * Игрок покинул сервер: вышел сам, отвалился или был кикнут.
  *
- * Важно: Его ещё можно прочитать (имя, команду), но на его экран уже ничего не дойдёт.
+ * Важно: Игрока здесь ещё можно прочитать (имя, команду), но на экран ему уже ничего не дойдёт.
+ *
+ * Pawn: `client_disconnected(id, bool:drop, message, maxlen)`
  *
  * @example
  * server.addEventListener("disconnected", (event) => {
  * 	console.log(`${event.player.name} left: ${event.reason}`);
  * });
- *
- * AMX Mod X: `client_disconnected(id, bool:drop, message, maxlen)`
  */
 export declare class ClientDisconnectedEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
-    /** true, если его отключил сервер (кик, таймаут), а не он вышел сам. */
+    /**
+     * `true`, если игрока отключил сервер (кик, таймаут), а не он вышел сам.
+     *
+     * Pawn: `bool:drop`
+     */
     dropped: boolean;
-    /** Причина выхода, как её сообщает сервер; пусто, если он просто вышел. */
+    /**
+     * Причина выхода, как её сообщает сервер; пусто, если игрок просто вышел.
+     *
+     * Pawn: `message`
+     */
     reason: string;
     constructor(player: Player, dropped: boolean, reason: string);
 }
@@ -162,64 +214,96 @@ export declare class ClientDisconnectedEvent {
  *
  * Важно: This fires after the client_disconnected() forward, when the player entity has been removed (e.g. is_user_connected(id) will return false).
  *
- * AMX Mod X: `client_remove(id, bool:drop, message)`
+ * Pawn: `client_remove(id, bool:drop, message)`
  */
 export declare class ClientRemoveEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
-    /** true, если его отключил сервер. */
+    /**
+     * `true`, если игрока отключил сервер.
+     *
+     * Pawn: `bool:drop`
+     */
     dropped: boolean;
-    /** Причина выхода. */
+    /**
+     * Причина выхода игрока.
+     *
+     * Pawn: `message`
+     */
     reason: string;
     constructor(player: Player, dropped: boolean, reason: string);
 }
 /**
- * Игрок отправил консольную команду. Для одной команды проще `cmd("name", handler)`.
+ * Игрок отправил консольную команду. Для одной команды проще `server.addCommand("name", handler)`.
  *
  * Важно: The command and its arguments can be read using the read_arg* set of functions.
  *
- * AMX Mod X: `client_command(id)`
+ * Pawn: `client_command(id)`
  */
 export declare class ClientCommandEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
 /**
- * Игрок зашёл и уже в игре - момент поприветствовать его.
+ * Игрок зашёл и уже в игре: момент поприветствовать его.
  *
  * Важно: It is not defined whether the client already has a SteamID when this forward is called. client_authorized may occur either before or after this.
+ *
+ * Pawn: `client_putinserver(id)`
  *
  * @example
  * server.addEventListener("putinserver", (event) => {
  * 	print(event.player, "Welcome!");
  * });
- *
- * AMX Mod X: `client_putinserver(id)`
  */
 export declare class ClientPutinserverEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Client;
     constructor(player: Client);
 }
 /**
  * Called when an inconsistent file is encountered by the engine.
  *
- * AMX Mod X: `inconsistent_file(id, filename, reason)`
+ * Pawn: `inconsistent_file(id, filename, reason)`
  */
 export declare class InconsistentFileEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
-    /** Detected file */
+    /**
+     * Detected file
+     *
+     * Pawn: `filename`
+     */
     filename: string;
-    /** Buffer storing the disconnect reason (can be overwritten) */
+    /**
+     * Buffer storing the disconnect reason (can be overwritten)
+     *
+     * Pawn: `reason`
+     */
     reason: string;
     constructor(player: Player, filename: string, reason: string);
 }
 /**
  * Allows plugins to declare module dependencies using require_module()
  *
- * AMX Mod X: `plugin_modules()`
+ * Pawn: `plugin_modules()`
  */
 export declare class PluginModulesEvent {
 }
@@ -229,7 +313,7 @@ export declare class PluginModulesEvent {
  * Важно: This is best place to initialize plugin functions which are based on cvar data.
  * Важно: This will always be called once and only once per map. It will be called few seconds after plugin_cfg().
  *
- * AMX Mod X: `OnConfigsExecuted()`
+ * Pawn: `OnConfigsExecuted()`
  */
 export declare class OnConfigsExecutedEvent {
 }
@@ -238,7 +322,7 @@ export declare class OnConfigsExecutedEvent {
  *
  * Важно: This will always be called once and only once per map.
  *
- * AMX Mod X: `OnAutoConfigsBuffered()`
+ * Pawn: `OnAutoConfigsBuffered()`
  */
 export declare class OnAutoConfigsBufferedEvent {
 }
@@ -247,12 +331,20 @@ export declare class OnAutoConfigsBufferedEvent {
  *
  * Важно: This is most notably used by the rebuy/autobuy functionality, Condition Zero also uses this to pass commands to bots internally.
  *
- * AMX Mod X: `CS_InternalCommand(id, cmd)`
+ * Pawn: `CS_InternalCommand(id, cmd)`
  */
 export declare class CS_InternalCommandEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
-    /** Command string */
+    /**
+     * Command string
+     *
+     * Pawn: `cmd`
+     */
     cmd: string;
     constructor(player: Player, cmd: string);
 }
@@ -262,12 +354,20 @@ export declare class CS_InternalCommandEvent {
  * Важно: This is called immediately when the client issues a buy command. The game has not yet checked if the client can actually buy the weapon.
  * Важно: For a list of possible item ids see the CSI_* constants.
  *
- * AMX Mod X: `CS_OnBuyAttempt(index, item)`
+ * Pawn: `CS_OnBuyAttempt(index, item)`
  */
 export declare class CS_OnBuyAttemptEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `index`
+     */
     player: Player;
-    /** Item id */
+    /**
+     * Item id
+     *
+     * Pawn: `item`
+     */
     item: number;
     constructor(player: Player, item: number);
 }
@@ -277,43 +377,63 @@ export declare class CS_OnBuyAttemptEvent {
  * Важно: This is called right before the user receives the item and before the money is deducted from their cash reserves.
  * Важно: For a list of possible item ids see the CSI_* constants.
  *
- * AMX Mod X: `CS_OnBuy(index, item)`
+ * Pawn: `CS_OnBuy(index, item)`
  */
 export declare class CS_OnBuyEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `index`
+     */
     player: Player;
-    /** Item id */
+    /**
+     * Item id
+     *
+     * Pawn: `item`
+     */
     item: number;
     constructor(player: Player, item: number);
 }
 /**
  * Две сущности коснулись друг друга.
  *
- * AMX Mod X: `pfn_touch(ptr, ptd)`
+ * Pawn: `pfn_touch(ptr, ptd)`
  */
 export declare class PfnTouchEvent {
-    /** Сущность, которая налетела на другую. */
+    /**
+     * Сущность, которая налетела на другую.
+     *
+     * Pawn: `ptr`
+     */
     toucher: number;
-    /** Сущность, которой коснулись. */
+    /**
+     * Сущность, которой коснулись.
+     *
+     * Pawn: `ptd`
+     */
     touched: number;
     constructor(toucher: number, touched: number);
 }
 /**
- * Каждый кадр сервера - сотни раз в секунду. Обработчик должен быть очень лёгким, или используйте setInterval.
+ * Кадр сервера, сотни раз в секунду. Обработчик должен быть очень лёгким, иначе используйте setInterval.
  *
  * Важно: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
  *
- * AMX Mod X: `server_frame()`
+ * Pawn: `server_frame()`
  */
 export declare class ServerFrameEvent {
 }
 /**
  * Игрок написал "kill" в консоли, чтобы убить себя.
  *
- * AMX Mod X: `client_kill(id)`
+ * Pawn: `client_kill(id)`
  */
 export declare class ClientKillEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
@@ -322,10 +442,14 @@ export declare class ClientKillEvent {
  *
  * Важно: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
  *
- * AMX Mod X: `client_PreThink(id)`
+ * Pawn: `client_PreThink(id)`
  */
 export declare class Client_PreThinkEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
@@ -334,22 +458,34 @@ export declare class Client_PreThinkEvent {
  *
  * Важно: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
  *
- * AMX Mod X: `client_PostThink(id)`
+ * Pawn: `client_PostThink(id)`
  */
 export declare class Client_PostThinkEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
 /**
- * Игрок отправил impulse: 100 - фонарик, 201 - спрей.
+ * Игрок отправил impulse: 100 — фонарик, 201 — спрей.
  *
- * AMX Mod X: `client_impulse(id, impulse)`
+ * Pawn: `client_impulse(id, impulse)`
  */
 export declare class ClientImpulseEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
-    /** Номер impulse. */
+    /**
+     * Номер impulse: 100, 201.
+     *
+     * Pawn: `impulse`
+     */
     impulse: number;
     constructor(player: Player, impulse: number);
 }
@@ -358,36 +494,60 @@ export declare class ClientImpulseEvent {
  *
  * Важно: Use [get|set]_usercmd() to read and modify information in the usercmd struct.
  *
- * AMX Mod X: `client_cmdStart(id)`
+ * Pawn: `client_cmdStart(id)`
  */
 export declare class ClientCmdStartEvent {
-    /** Игрок, о котором событие. */
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `id`
+     */
     player: Player;
     constructor(player: Player);
 }
 /**
- * Сущность «думает» - её запланированное обновление.
+ * Сущность «думает»: пришло её запланированное обновление.
  *
- * AMX Mod X: `pfn_think(entid)`
+ * Pawn: `pfn_think(entid)`
  */
 export declare class PfnThinkEvent {
-    /** Сущность. */
+    /**
+     * Сущность, которая «думает».
+     *
+     * Pawn: `entid`
+     */
     entity: number;
     constructor(entity: number);
 }
 /**
  * Called when an event is played.
  *
- * AMX Mod X: `pfn_playbackevent(flags, entid, eventid, Float:delay)`
+ * Pawn: `pfn_playbackevent(flags, entid, eventid, Float:delay)`
  */
 export declare class PfnPlaybackeventEvent {
-    /** Event flags */
+    /**
+     * Event flags
+     *
+     * Pawn: `flags`
+     */
     flags: number;
-    /** Index of entity to invoke event on */
+    /**
+     * Index of entity to invoke event on
+     *
+     * Pawn: `entid`
+     */
     entity: number;
-    /** Index of event in the precache table */
+    /**
+     * Index of event in the precache table
+     *
+     * Pawn: `eventid`
+     */
     eventid: number;
-    /** Time until the event is played */
+    /**
+     * Time until the event is played
+     *
+     * Pawn: `Float:delay`
+     */
     delay: number;
     constructor(flags: number, entity: number, eventid: number, delay: number);
 }
@@ -396,154 +556,422 @@ export declare class PfnPlaybackeventEvent {
  *
  * Важно: Use copy_keyvalue() to retrieve the keyvalue information, and DispatchKeyVaue() to modify it.
  *
- * AMX Mod X: `pfn_keyvalue(entid)`
+ * Pawn: `pfn_keyvalue(entid)`
  */
 export declare class PfnKeyvalueEvent {
-    /** Entity index */
+    /**
+     * Entity index
+     *
+     * Pawn: `entid`
+     */
     entity: number;
     constructor(entity: number);
 }
 /**
  * На карте появляется сущность.
  *
- * AMX Mod X: `pfn_spawn(entid)`
+ * Pawn: `pfn_spawn(entid)`
  */
 export declare class PfnSpawnEvent {
-    /** Сущность. */
+    /**
+     * Сущность, которая появляется.
+     *
+     * Pawn: `entid`
+     */
     entity: number;
     constructor(entity: number);
 }
 /** Every event a server raises, by name: the short one and the Pawn one. */
 export interface ServerEventMap {
-    /** Плагин загрузился: здесь регистрируют команды, события и хуки. */
+    /**
+     * Плагин загрузился: здесь регистрируют команды, события и хуки.
+     *
+     * Pawn: `plugin_init`
+     */
     init: PluginInitEvent;
-    /** Плагин загрузился: здесь регистрируют команды, события и хуки. */
+    /**
+     * Плагин загрузился: здесь регистрируют команды, события и хуки.
+     *
+     * Pawn: `plugin_init`
+     */
     plugin_init: PluginInitEvent;
-    /** Админ поставил плагин на паузу. */
+    /**
+     * Админ поставил плагин на паузу.
+     *
+     * Pawn: `plugin_pause`
+     */
     pause: PluginPauseEvent;
-    /** Админ поставил плагин на паузу. */
+    /**
+     * Админ поставил плагин на паузу.
+     *
+     * Pawn: `plugin_pause`
+     */
     plugin_pause: PluginPauseEvent;
-    /** Админ снял плагин с паузы. */
+    /**
+     * Админ снял плагин с паузы.
+     *
+     * Pawn: `plugin_unpause`
+     */
     unpause: PluginUnpauseEvent;
-    /** Админ снял плагин с паузы. */
+    /**
+     * Админ снял плагин с паузы.
+     *
+     * Pawn: `plugin_unpause`
+     */
     plugin_unpause: PluginUnpauseEvent;
-    /** Сервер сейчас сменит карту. */
+    /**
+     * Сервер сейчас сменит карту.
+     *
+     * Pawn: `server_changelevel`
+     */
     changelevel: ServerChangelevelEvent;
-    /** Сервер сейчас сменит карту. */
+    /**
+     * Сервер сейчас сменит карту.
+     *
+     * Pawn: `server_changelevel`
+     */
     server_changelevel: ServerChangelevelEvent;
-    /** Все конфиги прочитаны и все плагины загружены - момент читать квары и создавать форварды для других плагинов. */
+    /**
+     * Все конфиги прочитаны, все плагины загружены: момент читать квары и создавать форварды для других плагинов.
+     *
+     * Pawn: `plugin_cfg`
+     */
     cfg: PluginCfgEvent;
-    /** Все конфиги прочитаны и все плагины загружены - момент читать квары и создавать форварды для других плагинов. */
+    /**
+     * Все конфиги прочитаны, все плагины загружены: момент читать квары и создавать форварды для других плагинов.
+     *
+     * Pawn: `plugin_cfg`
+     */
     plugin_cfg: PluginCfgEvent;
-    /** Карта заканчивается или сервер выключается: сохраните то, что должно пережить смену карты. */
+    /**
+     * Карта заканчивается или сервер выключается: сохраните то, что должно пережить смену карты.
+     *
+     * Pawn: `plugin_end`
+     */
     end: PluginEndEvent;
-    /** Карта заканчивается или сервер выключается: сохраните то, что должно пережить смену карты. */
+    /**
+     * Карта заканчивается или сервер выключается: сохраните то, что должно пережить смену карты.
+     *
+     * Pawn: `plugin_end`
+     */
     plugin_end: PluginEndEvent;
-    /** Called when a message is about to be logged. */
+    /**
+     * Called when a message is about to be logged.
+     *
+     * Pawn: `plugin_log`
+     */
     log: PluginLogEvent;
-    /** Called when a message is about to be logged. */
+    /**
+     * Called when a message is about to be logged.
+     *
+     * Pawn: `plugin_log`
+     */
     plugin_log: PluginLogEvent;
-    /** Карта загружается: единственный момент, когда можно подгрузить модели, звуки и спрайты (precache). */
+    /**
+     * Карта загружается: единственный момент, когда можно подгрузить (precache) модели, звуки и спрайты.
+     *
+     * Pawn: `plugin_precache`
+     */
     precache: PluginPrecacheEvent;
-    /** Карта загружается: единственный момент, когда можно подгрузить модели, звуки и спрайты (precache). */
+    /**
+     * Карта загружается: единственный момент, когда можно подгрузить (precache) модели, звуки и спрайты.
+     *
+     * Pawn: `plugin_precache`
+     */
     plugin_precache: PluginPrecacheEvent;
-    /** Игрок поменял свои данные - обычно ник. */
+    /**
+     * Игрок поменял свои данные, обычно ник.
+     *
+     * Pawn: `client_infochanged`
+     */
     infochanged: ClientInfochangedEvent;
-    /** Игрок поменял свои данные - обычно ник. */
+    /**
+     * Игрок поменял свои данные, обычно ник.
+     *
+     * Pawn: `client_infochanged`
+     */
     client_infochanged: ClientInfochangedEvent;
-    /** Игрок начал подключаться. Он ещё не в игре - показывать ему что-то можно после "putinserver". */
+    /**
+     * Игрок начал подключаться. В игре его ещё нет: показывать ему что-то можно после "putinserver".
+     *
+     * Pawn: `client_connect`
+     */
     connect: ClientConnectEvent;
-    /** Игрок начал подключаться. Он ещё не в игре - показывать ему что-то можно после "putinserver". */
+    /**
+     * Игрок начал подключаться. В игре его ещё нет: показывать ему что-то можно после "putinserver".
+     *
+     * Pawn: `client_connect`
+     */
     client_connect: ClientConnectEvent;
-    /** Игрок начал подключаться, с именем и адресом - здесь его можно не пустить. */
+    /**
+     * Игрок начал подключаться, уже с именем и адресом: здесь его можно не пустить.
+     *
+     * Pawn: `client_connectex`
+     */
     connectex: ClientConnectexEvent;
-    /** Игрок начал подключаться, с именем и адресом - здесь его можно не пустить. */
+    /**
+     * Игрок начал подключаться, уже с именем и адресом: здесь его можно не пустить.
+     *
+     * Pawn: `client_connectex`
+     */
     client_connectex: ClientConnectexEvent;
-    /** Стал известен SteamID игрока. Может прийти до или после "putinserver". */
+    /**
+     * Стал известен SteamID игрока. Может прийти до или после "putinserver".
+     *
+     * Pawn: `client_authorized`
+     */
     authorized: ClientAuthorizedEvent;
-    /** Стал известен SteamID игрока. Может прийти до или после "putinserver". */
+    /**
+     * Стал известен SteamID игрока. Может прийти до или после "putinserver".
+     *
+     * Pawn: `client_authorized`
+     */
     client_authorized: ClientAuthorizedEvent;
-    /** Старая форма "disconnected", пропускающая часть случаев - используйте "disconnected". */
+    /**
+     * Старая форма "disconnected", которая пропускает часть случаев: используйте "disconnected".
+     *
+     * Pawn: `client_disconnect`
+     */
     disconnect: ClientDisconnectEvent;
-    /** Старая форма "disconnected", пропускающая часть случаев - используйте "disconnected". */
+    /**
+     * Старая форма "disconnected", которая пропускает часть случаев: используйте "disconnected".
+     *
+     * Pawn: `client_disconnect`
+     */
     client_disconnect: ClientDisconnectEvent;
-    /** Игрок покинул сервер - вышел сам, отвалился или был кикнут. */
+    /**
+     * Игрок покинул сервер: вышел сам, отвалился или был кикнут.
+     *
+     * Pawn: `client_disconnected`
+     */
     disconnected: ClientDisconnectedEvent;
-    /** Игрок покинул сервер - вышел сам, отвалился или был кикнут. */
+    /**
+     * Игрок покинул сервер: вышел сам, отвалился или был кикнут.
+     *
+     * Pawn: `client_disconnected`
+     */
     client_disconnected: ClientDisconnectedEvent;
-    /** Слот игрока освобождается, после "disconnected". */
+    /**
+     * Слот игрока освобождается, после "disconnected".
+     *
+     * Pawn: `client_remove`
+     */
     remove: ClientRemoveEvent;
-    /** Слот игрока освобождается, после "disconnected". */
+    /**
+     * Слот игрока освобождается, после "disconnected".
+     *
+     * Pawn: `client_remove`
+     */
     client_remove: ClientRemoveEvent;
-    /** Игрок отправил консольную команду. Для одной команды проще `cmd("name", handler)`. */
+    /**
+     * Игрок отправил консольную команду. Для одной команды проще `server.addCommand("name", handler)`.
+     *
+     * Pawn: `client_command`
+     */
     command: ClientCommandEvent;
-    /** Игрок отправил консольную команду. Для одной команды проще `cmd("name", handler)`. */
+    /**
+     * Игрок отправил консольную команду. Для одной команды проще `server.addCommand("name", handler)`.
+     *
+     * Pawn: `client_command`
+     */
     client_command: ClientCommandEvent;
-    /** Игрок зашёл и уже в игре - момент поприветствовать его. */
+    /**
+     * Игрок зашёл и уже в игре: момент поприветствовать его.
+     *
+     * Pawn: `client_putinserver`
+     */
     putinserver: ClientPutinserverEvent;
-    /** Игрок зашёл и уже в игре - момент поприветствовать его. */
+    /**
+     * Игрок зашёл и уже в игре: момент поприветствовать его.
+     *
+     * Pawn: `client_putinserver`
+     */
     client_putinserver: ClientPutinserverEvent;
-    /** Called when an inconsistent file is encountered by the engine. */
+    /**
+     * Called when an inconsistent file is encountered by the engine.
+     *
+     * Pawn: `inconsistent_file`
+     */
     inconsistentFile: InconsistentFileEvent;
-    /** Called when an inconsistent file is encountered by the engine. */
+    /**
+     * Called when an inconsistent file is encountered by the engine.
+     *
+     * Pawn: `inconsistent_file`
+     */
     inconsistent_file: InconsistentFileEvent;
-    /** Allows plugins to declare module dependencies using require_module() */
+    /**
+     * Allows plugins to declare module dependencies using require_module()
+     *
+     * Pawn: `plugin_modules`
+     */
     modules: PluginModulesEvent;
-    /** Allows plugins to declare module dependencies using require_module() */
+    /**
+     * Allows plugins to declare module dependencies using require_module()
+     *
+     * Pawn: `plugin_modules`
+     */
     plugin_modules: PluginModulesEvent;
-    /** Called when the map has loaded, and all configs are done executing. This includes servercfgfile (server.cfg), amxx.cfg, plugin's config, and per-map config. */
+    /**
+     * Called when the map has loaded, and all configs are done executing. This includes servercfgfile (server.cfg), amxx.cfg, plugin's config, and per-map config.
+     *
+     * Pawn: `OnConfigsExecuted`
+     */
     OnConfigsExecuted: OnConfigsExecutedEvent;
-    /** Called when the map has loaded, right after plugin_cfg() but any time before OnConfigsExecuted. It's called after amxx.cfg and all AutoExecConfig() exec commands have been added to the server command buffer. */
+    /**
+     * Called when the map has loaded, right after plugin_cfg() but any time before OnConfigsExecuted. It's called after amxx.cfg and all AutoExecConfig() exec commands have been added to the server command buffer.
+     *
+     * Pawn: `OnAutoConfigsBuffered`
+     */
     OnAutoConfigsBuffered: OnAutoConfigsBufferedEvent;
-    /** Called when CS internally fires a command to a player. */
+    /**
+     * Called when CS internally fires a command to a player.
+     *
+     * Pawn: `CS_InternalCommand`
+     */
     CS_InternalCommand: CS_InternalCommandEvent;
-    /** Called when a client attempts to purchase an item. */
+    /**
+     * Called when a client attempts to purchase an item.
+     *
+     * Pawn: `CS_OnBuyAttempt`
+     */
     CS_OnBuyAttempt: CS_OnBuyAttemptEvent;
-    /** Called when a client purchases an item. */
+    /**
+     * Called when a client purchases an item.
+     *
+     * Pawn: `CS_OnBuy`
+     */
     CS_OnBuy: CS_OnBuyEvent;
-    /** Две сущности коснулись друг друга. */
+    /**
+     * Две сущности коснулись друг друга.
+     *
+     * Pawn: `pfn_touch`
+     */
     pfnTouch: PfnTouchEvent;
-    /** Две сущности коснулись друг друга. */
+    /**
+     * Две сущности коснулись друг друга.
+     *
+     * Pawn: `pfn_touch`
+     */
     pfn_touch: PfnTouchEvent;
-    /** Каждый кадр сервера - сотни раз в секунду. Обработчик должен быть очень лёгким, или используйте setInterval. */
+    /**
+     * Кадр сервера, сотни раз в секунду. Обработчик должен быть очень лёгким, иначе используйте setInterval.
+     *
+     * Pawn: `server_frame`
+     */
     frame: ServerFrameEvent;
-    /** Каждый кадр сервера - сотни раз в секунду. Обработчик должен быть очень лёгким, или используйте setInterval. */
+    /**
+     * Кадр сервера, сотни раз в секунду. Обработчик должен быть очень лёгким, иначе используйте setInterval.
+     *
+     * Pawn: `server_frame`
+     */
     server_frame: ServerFrameEvent;
-    /** Игрок написал "kill" в консоли, чтобы убить себя. */
+    /**
+     * Игрок написал "kill" в консоли, чтобы убить себя.
+     *
+     * Pawn: `client_kill`
+     */
     kill: ClientKillEvent;
-    /** Игрок написал "kill" в консоли, чтобы убить себя. */
+    /**
+     * Игрок написал "kill" в консоли, чтобы убить себя.
+     *
+     * Pawn: `client_kill`
+     */
     client_kill: ClientKillEvent;
-    /** Called at the start of each client think. */
+    /**
+     * Called at the start of each client think.
+     *
+     * Pawn: `client_PreThink`
+     */
     PreThink: Client_PreThinkEvent;
-    /** Called at the start of each client think. */
+    /**
+     * Called at the start of each client think.
+     *
+     * Pawn: `client_PreThink`
+     */
     client_PreThink: Client_PreThinkEvent;
-    /** Called after each client think. */
+    /**
+     * Called after each client think.
+     *
+     * Pawn: `client_PostThink`
+     */
     PostThink: Client_PostThinkEvent;
-    /** Called after each client think. */
+    /**
+     * Called after each client think.
+     *
+     * Pawn: `client_PostThink`
+     */
     client_PostThink: Client_PostThinkEvent;
-    /** Игрок отправил impulse: 100 - фонарик, 201 - спрей. */
+    /**
+     * Игрок отправил impulse: 100 — фонарик, 201 — спрей.
+     *
+     * Pawn: `client_impulse`
+     */
     impulse: ClientImpulseEvent;
-    /** Игрок отправил impulse: 100 - фонарик, 201 - спрей. */
+    /**
+     * Игрок отправил impulse: 100 — фонарик, 201 — спрей.
+     *
+     * Pawn: `client_impulse`
+     */
     client_impulse: ClientImpulseEvent;
-    /** Called for CmdStart() on a client. */
+    /**
+     * Called for CmdStart() on a client.
+     *
+     * Pawn: `client_cmdStart`
+     */
     cmdStart: ClientCmdStartEvent;
-    /** Called for CmdStart() on a client. */
+    /**
+     * Called for CmdStart() on a client.
+     *
+     * Pawn: `client_cmdStart`
+     */
     client_cmdStart: ClientCmdStartEvent;
-    /** Сущность «думает» - её запланированное обновление. */
+    /**
+     * Сущность «думает»: пришло её запланированное обновление.
+     *
+     * Pawn: `pfn_think`
+     */
     pfnThink: PfnThinkEvent;
-    /** Сущность «думает» - её запланированное обновление. */
+    /**
+     * Сущность «думает»: пришло её запланированное обновление.
+     *
+     * Pawn: `pfn_think`
+     */
     pfn_think: PfnThinkEvent;
-    /** Called when an event is played. */
+    /**
+     * Called when an event is played.
+     *
+     * Pawn: `pfn_playbackevent`
+     */
     pfnPlaybackevent: PfnPlaybackeventEvent;
-    /** Called when an event is played. */
+    /**
+     * Called when an event is played.
+     *
+     * Pawn: `pfn_playbackevent`
+     */
     pfn_playbackevent: PfnPlaybackeventEvent;
-    /** Called when a keyvalue pair is sent to an entity. */
+    /**
+     * Called when a keyvalue pair is sent to an entity.
+     *
+     * Pawn: `pfn_keyvalue`
+     */
     pfnKeyvalue: PfnKeyvalueEvent;
-    /** Called when a keyvalue pair is sent to an entity. */
+    /**
+     * Called when a keyvalue pair is sent to an entity.
+     *
+     * Pawn: `pfn_keyvalue`
+     */
     pfn_keyvalue: PfnKeyvalueEvent;
-    /** На карте появляется сущность. */
+    /**
+     * На карте появляется сущность.
+     *
+     * Pawn: `pfn_spawn`
+     */
     pfnSpawn: PfnSpawnEvent;
-    /** На карте появляется сущность. */
+    /**
+     * На карте появляется сущность.
+     *
+     * Pawn: `pfn_spawn`
+     */
     pfn_spawn: PfnSpawnEvent;
 }
 /** Adds a listener for the event E - server.addEventListener's hood. */

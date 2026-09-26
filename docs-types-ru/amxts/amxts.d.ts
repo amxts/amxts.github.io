@@ -8,42 +8,42 @@
 import type { ModuleOptions } from "./facade";
 
 declare global {
-	/** Кто такой модуль. */
+	/** Имя модуля и ключ его настроек. */
 	interface AmxtsModuleMeta {
-		/** Имя пакета без scope: "menu-core" для @amxts/menu-core. */
+		/** Имя пакета без scope, например "menu-core" для @amxts/menu-core. */
 		name: string;
-		/** Ключ, под которым лежат его настройки в amxts.config.ts: "menus". */
+		/** Ключ настроек модуля в amxts.config.ts, например "menus". */
 		configKey?: string;
 	}
 
-	/** Что принимает `defineModule`: meta модуля, от чего он зависит, его настройки и setup. */
+	/** Описание модуля для `defineModule`: meta, модули, от которых он зависит, настройки и setup. */
 	interface AmxtsModule<T> {
-		/** Кто такой модуль: его name и configKey. */
+		/** Имя модуля и его configKey. */
 		meta: AmxtsModuleMeta;
-		/** Пакеты модулей, которые тоже должны быть указаны в amxts.config.ts, — они загружаются раньше этого. */
+		/** Пакеты модулей, от которых зависит этот, например "@amxts/config-core". Они тоже должны быть в amxts.config.ts и загружаются раньше. */
 		requires?: string[];
-		/** Значение каждой настройки, если amxts.config.ts её не задаёт. */
+		/** Настройки модуля по умолчанию: значения, если amxts.config.ts их не задаёт. */
 		defaults?: T;
 		/**
-		 * Выполняется один раз, в плагине модуля, когда сервер его загружает, — с
-		 * defaults, поверх которых наложено то, что amxts.config.ts задаёт под
-		 * configKey.
+		 * Выполняется один раз, в плагине модуля, когда сервер его загружает.
+		 * Получает defaults, поверх которых наложено то, что amxts.config.ts
+		 * задаёт под configKey.
 		 */
 		setup?: (options: T) => void;
 	}
 
-	/** Что экспортирует amxts.config.ts: модули, которые использует проект, и их настройки. */
+	/** Настройки проекта, которые экспортирует amxts.config.ts: модули проекта и их настройки. */
 	interface AmxtsConfig extends ModuleOptions {
-		/** Пакеты модулей по имени: "@amxts/menu-core". Сборка загружает каждый после тех, от которых он зависит. */
+		/** Пакеты модулей проекта по имени, например "@amxts/menu-core". Сборка загружает каждый после тех, от которых он зависит. */
 		modules?: string[];
-		/** Где лежат плагины проекта: "plugins". */
+		/** Папка с плагинами проекта; по умолчанию "plugins". */
 		pluginsDir?: string;
-		/** Куда сборка пишет файлы .aot и plugins.ini: "dist". */
+		/** Папка, куда сборка пишет файлы .aot и plugins.ini; по умолчанию "dist". */
 		outDir?: string;
 	}
 
 	/**
-	 * Модуль, в его файле модуля:
+	 * Описывает модуль в его файле модуля:
 	 *
 	 * ```ts
 	 * export default defineModule<MenuCoreOptions>({
@@ -57,7 +57,7 @@ declare global {
 	function defineModule<T = Record<string, never>>(definition: AmxtsModule<T>): AmxtsModule<T>;
 
 	/**
-	 * amxts.config.ts проекта:
+	 * Описывает настройки проекта в amxts.config.ts:
 	 *
 	 * ```ts
 	 * export default defineConfig({

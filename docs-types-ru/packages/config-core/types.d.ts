@@ -3,7 +3,7 @@
  */
 /** Строка `key = value` или блок `key = { ... }`. */
 export type EntryKind = "value" | "block";
-/** Что хранит блок: одно значение, строку из нескольких значений или строки. */
+/** Содержимое блока, одно из: одно значение, строка из нескольких значений или строки. */
 export type ContentKind = "value" | "strings" | "entries";
 /** Строка секции или строка блока. */
 export interface Entry {
@@ -11,9 +11,9 @@ export interface Entry {
     key: string;
     /** "value" для `key = value`, "block" для `key = { ... }`. */
     kind: EntryKind;
-    /** Что хранит запись: одно значение, строку из нескольких значений или строки. */
+    /** Содержимое записи, одно из: одно значение, строка из нескольких значений или строки. */
     content: ContentKind;
-    /** Её значения по порядку; пусто для блока из строк. */
+    /** Значения записи по порядку; пусто для блока из строк. */
     values: string[];
     /** Строки блока; в остальных случаях пусто. */
     rows: Entry[];
@@ -26,7 +26,7 @@ export interface Section {
     name: string;
     /** Комментарий и пустые строки, прочитанные перед ней; null для секции, созданной во время работы. */
     comments: string[] | null;
-    /** Её строки в порядке файла. */
+    /** Строки секции в порядке файла. */
     entries: Entry[];
 }
 /** Загруженный файл конфига. */
@@ -45,16 +45,16 @@ export interface SectionEntry {
     /** Блок ли это `key = { ... }`. */
     block: boolean;
 }
-/** То, что `dump_config` печатает для одной секции: заголовок, затем её записи. */
+/** Дамп одной секции — заголовок, затем записи, — как его печатает `dump_config`. */
 export interface SectionDump {
     /** Заголовок вида "Section 0: NAME". */
     heading: string;
-    /** Её записи, по строке на каждую. */
+    /** Записи секции, по строке на каждую. */
     lines: string[];
 }
 /** Настройки Config Core: `configs` в amxts.config.ts. */
 export interface ConfigCoreOptions {
-    /** Папка внутри configs/, из которой загружаются файлы по имени: "" — сама configs/. */
+    /** Папка внутри configs/, из которой загружаются файлы по имени, например "myserver"; "" — сама configs/. */
     baseDir: string;
 }
 declare module "@amxts/core" {

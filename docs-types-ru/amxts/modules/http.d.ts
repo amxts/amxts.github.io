@@ -1,31 +1,31 @@
 /// <reference path="../../as-types.d.ts" />
-/** Что запрос отправляет помимо URL. Все поля необязательны. */
+/** Настройки запроса помимо URL. Все поля необязательны. */
 export declare class RequestInit {
-    /** По умолчанию GET; из остальных easy_http умеет POST, PUT, PATCH и DELETE. */
+    /** Метод запроса, одно из "GET" (по умолчанию), "POST", "PUT", "PATCH", "DELETE". */
     method?: string;
     /** Текст, который уходит с запросом, например JSON для POST; по умолчанию пустой. */
     body?: string;
-    /** Пары, как HeadersInit из стандарта Fetch: `[["Content-Type", "application/json"]]`. */
+    /** Заголовки запроса, парами: `[["Content-Type", "application/json"]]`. */
     headers?: string[][];
     /**
-     * Отменяет запрос, когда срабатывает; промис тогда отклоняется с его
-     * причиной — Error с именем "AbortError". Внутри async-обработчика команды
-     * или события игрока запрос отменяется и тогда, когда игрок выходит.
+     * Сигнал, который отменяет запрос; промис тогда отклоняется с Error с
+     * именем "AbortError". В async-обработчике команды или события игрока
+     * запрос отменяется и тогда, когда игрок выходит.
      */
     signal?: AbortSignal | null;
 }
-/** То, что пришло в ответ. */
+/** Ответ сервера на запрос. */
 export declare class Response {
-    /** HTTP-статус: 200, 404, ... */
+    /** HTTP-статус ответа: 200, 404, ... */
     status: number;
     /** Тело ответа, текстом. */
     text: string;
     constructor(
-    /** The HTTP status: 200, 404, ... */
+    /** The response's HTTP status: 200, 404, ... */
     status: number, 
-    /** The body, as text. */
+    /** The response's body, as text. */
     text: string);
-    /** Статус 2xx. */
+    /** `true` при статусе 2xx. */
     get ok(): boolean;
 }
 /**
@@ -33,5 +33,7 @@ export declare class Response {
  * кадров и отклоняется, если ответа нет: нет соединения, плохой URL,
  * таймаут, нет easy_http или отмена. HTTP-ошибка вроде 404 — это ответ,
  * как и в fetch: проверяйте `response.ok`.
+ *
+ * Pawn: `ezhttp_get`, `ezhttp_post` (easy_http)
  */
 export declare function fetch(url: string, init?: RequestInit): Promise<Response>;

@@ -8,41 +8,41 @@
 import type { ModuleOptions } from "./facade";
 
 declare global {
-	/** Who a module is. */
+	/** A module's name and config key. */
 	interface AmxtsModuleMeta {
-		/** The package's name without its scope: "menu-core" for @amxts/menu-core. */
+		/** The package's name without its scope, e.g. "menu-core" for @amxts/menu-core. */
 		name: string;
-		/** The key its options go under in amxts.config.ts: "menus". */
+		/** The key the module's options go under in amxts.config.ts, e.g. "menus". */
 		configKey?: string;
 	}
 
-	/** What `defineModule` takes: the module's meta, what it requires, its options and its setup. */
+	/** A module's definition for `defineModule`: its meta, the modules it requires, its options and its setup. */
 	interface AmxtsModule<T> {
-		/** Who the module is: its name and configKey. */
+		/** The module's name and configKey. */
 		meta: AmxtsModuleMeta;
-		/** Module packages that must be listed in amxts.config.ts too - loaded before this one. */
+		/** The module packages this one needs, e.g. "@amxts/config-core". They must be in amxts.config.ts too, and load first. */
 		requires?: string[];
-		/** Every option's value when amxts.config.ts does not set it. */
+		/** The module's default options: the values used when amxts.config.ts does not set them. */
 		defaults?: T;
 		/**
-		 * Runs once, in the module's plugin, when the server loads it - with the
-		 * defaults and, over them, what amxts.config.ts sets under configKey.
+		 * Runs once, in the module's plugin, when the server loads it. Gets the
+		 * defaults with what amxts.config.ts sets under configKey on top.
 		 */
 		setup?: (options: T) => void;
 	}
 
-	/** What amxts.config.ts exports: the modules the project uses, and their options. */
+	/** The project's settings, exported by amxts.config.ts: the modules it uses and their options. */
 	interface AmxtsConfig extends ModuleOptions {
-		/** Module packages, by name: "@amxts/menu-core". The build loads each after what it requires. */
+		/** The project's module packages, by name, e.g. "@amxts/menu-core". The build loads each after the ones it requires. */
 		modules?: string[];
-		/** Where the project's plugins are: "plugins". */
+		/** The folder with the project's plugins; "plugins" by default. */
 		pluginsDir?: string;
-		/** Where the build writes the .aot files and plugins.ini: "dist". */
+		/** The folder the build writes the .aot files and plugins.ini to; "dist" by default. */
 		outDir?: string;
 	}
 
 	/**
-	 * A module, in its module file:
+	 * Defines a module, in its module file:
 	 *
 	 * ```ts
 	 * export default defineModule<MenuCoreOptions>({
@@ -56,7 +56,7 @@ declare global {
 	function defineModule<T = Record<string, never>>(definition: AmxtsModule<T>): AmxtsModule<T>;
 
 	/**
-	 * A project's amxts.config.ts:
+	 * Defines the project's settings, in amxts.config.ts:
 	 *
 	 * ```ts
 	 * export default defineConfig({

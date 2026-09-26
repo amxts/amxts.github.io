@@ -1,5 +1,6 @@
 import type { SiteLocale } from './docs'
-import { officialScope, repository } from './site'
+import officialModules from './official-modules.json'
+import { officialScope } from './site'
 
 export const moduleCategories = ['menus', 'config', 'network', 'other'] as const
 export type ModuleCategory = typeof moduleCategories[number]
@@ -16,6 +17,8 @@ export interface AmxtsModule {
   slug: string
   /** The npm package: what `bun add` installs. */
   package: string
+  /** Its name for people ("Menu Core"), from its README; null: the package name. */
+  title: Record<SiteLocale, string> | null
   description: Record<SiteLocale, string>
   author: string
   repository: string | null
@@ -57,51 +60,41 @@ export function categoryFromKeywords(keywords: string[] = []): ModuleCategory {
   return 'other'
 }
 
-/** `hasRepository`: whether github.com/amxts/<name> exists yet. */
-function official(name: string, module: Omit<AmxtsModule, 'slug' | 'package' | 'author' | 'repository' | 'published' | 'version'>, hasRepository = true): AmxtsModule {
-  const packageName = `${officialScope}/${name}`
-  return {
-    ...module,
-    slug: moduleSlug(packageName),
-    package: packageName,
-    author: 'amxts',
-    repository: hasRepository ? `${repository.url}/${name}` : null,
-    published: false,
-    version: null,
-  }
-}
-
 /**
- * The modules that ship with the framework (as/modules/ in the amxts
- * repository) and are not on npm yet. A package on npm with the same name
- * replaces its entry here.
+ * The official modules, as each says it about itself: its README's title and
+ * tagline and its package.json (author, repository, keywords, peer modules),
+ * written by `bun run docs:import` into official-modules.json. Not on npm yet:
+ * a package on npm with the same name replaces its entry here.
  */
 export const fallbackModules: AmxtsModule[] = [
-  official('menu-core', {
-    category: 'menus',
+  ...officialModules.map(module => ({
+    slug: moduleSlug(module.package),
+    package: module.package,
+    title: module.title,
+    description: module.description,
+    author: module.author,
+    repository: module.repository,
+    category: categoryFromKeywords(module.keywords),
     docs: null,
-    requires: ['config-core'],
-    description: {
-      en: 'Menus described in an .ini file or built in code: items with conditions, actions, placeholders and restrictions, list menus with a row per player, countdowns and pages. The menu-core plugin gives Pawn plugins menu_core\'s 29 mc_* natives, so compiled .amxx plugins work against it unchanged.',
-      ru: 'Меню из .ini-файла или из кода: пункты с условиями, действиями, плейсхолдерами и ограничениями, меню-списки со строкой на игрока, таймеры и страницы. Плагин menu-core даёт Pawn-плагинам 29 нативов mc_* из menu_core, и скомпилированные .amxx работают с ним без изменений.',
-    },
-  }),
-  official('config-core', {
-    category: 'config',
-    docs: null,
-    requires: [],
-    description: {
-      en: 'INI configs: [sections], key = value lines, lines of several values and key = { ... } blocks. Typed values (getInt, getNumber, getBoolean, getWords), paths into blocks, and saving that keeps comments and blank lines. The plugin gives Pawn plugins universal_config\'s 28 cfg_* natives.',
-      ru: 'INI-конфиги: [секции], строки key = value, строки из нескольких значений и блоки key = { ... }. Типизированные значения (getInt, getNumber, getBoolean, getWords), пути внутрь блоков и сохранение с комментариями и пустыми строками. Плагин даёт Pawn-плагинам 28 нативов cfg_* из universal_config.',
-    },
-  }),
-  official('http', {
-    category: 'network',
-    docs: null,
-    requires: ['easy_http'],
+    requires: module.requires,
+    published: false,
+    version: null,
+  })),
+  // http is not a module of its own yet: the framework's page is its page
+  {
+    slug: 'http',
+    package: `${officialScope}/http`,
+    title: null,
     description: {
       en: 'fetch() for plugins over the easy_http module: a real Promise<Response> to await or give .then and .catch, GET, POST, PUT, PATCH and DELETE, headers, and cancelling with an AbortSignal.',
       ru: 'fetch() для плагинов поверх модуля easy_http: настоящий Promise<Response>, который можно ждать через await или .then и .catch, GET, POST, PUT, PATCH и DELETE, заголовки и отмена через AbortSignal.',
     },
-  }, false),
+    author: 'amxts',
+    repository: null,
+    category: 'network',
+    docs: null,
+    requires: ['easy_http'],
+    published: false,
+    version: null,
+  },
 ]

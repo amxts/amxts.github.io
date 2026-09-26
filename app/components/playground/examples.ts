@@ -73,7 +73,7 @@ function countdown(player: Player) {
   },
   {
     key: 'menu',
-    code: `import { Player, plugin, server } from "~/facade";
+    code: `import { plugin, server } from "@amxts/core";
 import * as menus from "@amxts/menu-core";
 
 plugin({
@@ -83,22 +83,25 @@ plugin({
 \tdescription: "A menu built in code with menu-core",
 });
 
-menus.addCondition("IS_HURT", (player) => player.health < 100);
-menus.addPlaceholder("hp", (player) => \`\${player.health}\`);
-menus.addAction("RESET_SCORE", (player) => {
-\tplayer.frags = 0;
+const shop = menus.create("SHOP", { title: "Shop" });
+shop.addPlaceholder("hp", (player) => \`\${player.health}\`);
+
+shop.addItem("Heal (%hp% HP)", {
+\tvisible: (player) => player.health < 100,
+\tonSelect: (player) => {
+\t\tplayer.health = 100;
+\t},
 });
+shop.addItem("Reset score", {
+\tonSelect: (player) => {
+\t\tplayer.frags = 0;
+\t},
+});
+shop.addItem("Close", { action: "CLOSE_MENU", spaceBefore: 1 });
 
-const shop = menus.create("SHOP", "Shop");
-menus.addItem(shop, "Heal (%hp% HP)", { condition: "IS_HURT", onSelect: heal });
-menus.addItem(shop, "Reset score", { action: "RESET_SCORE" });
-menus.addItem(shop, "Close", { action: "CLOSE_MENU", spaceBefore: 1 });
-
-server.addCommand("/shop", (player) => menus.show(player, "SHOP"));
-
-function heal(player: Player) {
-\tplayer.health = 100;
-}
+server.addCommand("/shop", (player) => {
+\tshop.show(player);
+});
 `,
   },
   {

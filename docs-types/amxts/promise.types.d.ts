@@ -16,7 +16,7 @@ type __PromiseValue<T> = T extends Promise<infer U> ? U : T;
 /** The statics that take a list of promises: all, allSettled, race and any. */
 declare namespace Promise {
 	/**
-	 * Fulfilled with every value, in order, once all are; rejected with the
+	 * Waits for every promise and gives their values in order; rejects with the
 	 * first rejection. Promises of different types give a tuple:
 	 *
 	 * ```ts
@@ -26,8 +26,8 @@ declare namespace Promise {
 	function all<T extends readonly unknown[] | []>(values: T): Promise<{ -readonly [P in keyof T]: __PromiseValue<T[P]> }>;
 
 	/**
-	 * Fulfilled once every promise has settled, either way, with how each
-	 * did: `status` is "fulfilled" with `value`, or "rejected" with `reason`.
+	 * Waits for every promise to settle, either way, and tells how each did:
+	 * `status` is "fulfilled" with `value`, or "rejected" with `reason`.
 	 */
 	function allSettled<T extends readonly unknown[] | []>(values: T): Promise<{ -readonly [P in keyof T]: PromiseSettledResult<__PromiseValue<T[P]>> }>;
 
@@ -39,8 +39,8 @@ declare namespace Promise {
 	function race<T extends readonly unknown[] | []>(values: T): Promise<__PromiseValue<T[number]>>;
 
 	/**
-	 * Fulfilled with the first value; rejected with an AggregateError, whose
-	 * `errors` hold every reason, once all promises are rejected.
+	 * Gives the first value to arrive; once all promises are rejected, rejects
+	 * with an AggregateError whose `errors` hold every reason.
 	 */
 	function any<T extends readonly unknown[] | []>(values: T): Promise<__PromiseValue<T[number]>>;
 }

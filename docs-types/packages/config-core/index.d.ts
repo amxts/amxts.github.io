@@ -2,7 +2,7 @@ import { ContentKind, EntryKind, Section, SectionDump, SectionEntry, Config, Con
 export * from "./types";
 declare const _default: AmxtsModule<ConfigCoreOptions>;
 export default _default;
-/** The folder under configs/ that file names are relative to: "" is configs/ itself. */
+/** Sets the folder under configs/ that file names are relative to, e.g. "myserver"; "" is configs/ itself. */
 export declare function setBaseDir(dir: string): void;
 /**
  * Loads `configs/<baseDir>/<name>`; ".ini" is added when the name has none.
@@ -21,7 +21,7 @@ export declare function createSection(config: Config, name: string): Section;
 export declare function save(config: Config, name: string): boolean;
 /** Writes one section alone to `configs/<baseDir>/<name>`; `save()` writes them all. */
 export declare function writeSection(written: Section, name: string): boolean;
-/** What `dump_config` prints: every section of every config with its entries. */
+/** A dump of every loaded config - each section with its entries, as `dump_config` prints them. */
 export declare function dump(): SectionDump[];
 /** The `index`-th value of a key's line, without its quotes; null when there is none. A key with "/" is a path. */
 export declare function getValue(section: Section, key: string, index?: number): string | null;
@@ -35,7 +35,7 @@ export declare function getValueByPath(section: Section, path: string, index?: n
 export declare function getInt(section: Section, key: string, index?: number): number;
 /** A number; 0 when there is none. */
 export declare function getNumber(section: Section, key: string, index?: number): number;
-/** True for a whole number other than 0: "1", "2"; "true" is false. */
+/** A value as a boolean: true for a whole number other than 0, e.g. "1" or "2"; false for anything else, "true" included. */
 export declare function getBoolean(section: Section, key: string, index?: number): boolean;
 /**
  * The words of a key's line - of its `index`-th line when the key is there
@@ -52,8 +52,8 @@ export declare function keys(section: Section): string[];
 /** Every entry: its key, and its values when it is a line. */
 export declare function entries(section: Section): SectionEntry[];
 /**
- * How many: values in a line, rows in a block, or - for a key that is there
- * more than once - how many times it is. A path counts what it leads to.
+ * The number of values in a line, of rows in a block, or - for a key that is
+ * there more than once - of times it is there. A path counts what it leads to.
  */
 export declare function size(section: Section, key: string): number;
 /** Whether the section has the key. A key with "/" is not a path here. */
@@ -83,11 +83,11 @@ export declare function setKind(section: Section, key: string, kind: EntryKind):
 export declare function setContent(section: Section, key: string, content: ContentKind): void;
 /** The comment written before row `row` of the block `key`; "" removes it. False when there is no such row. */
 export declare function setRowComment(section: Section, key: string, row: number, comment: string): boolean;
-/** How a Pawn plugin knows a config: its place among the loaded ones; -1 for none. */
+/** A config's handle for Pawn plugins: its number among the loaded ones; -1 for none. */
 export declare function configHandle(config: Config): number;
 /** The config a Pawn plugin's handle stands for; null for none. */
 export declare function configByHandle(handle: number): Config | null;
-/** How a Pawn plugin knows a section: its place among every loaded one; -1 for none. */
+/** A section's handle for Pawn plugins: its number among every loaded one; -1 for none. */
 export declare function sectionHandle(found: Section): number;
 /** The section a Pawn plugin's handle stands for; null for none. */
 export declare function sectionByHandle(handle: number): Section | null;

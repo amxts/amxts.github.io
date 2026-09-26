@@ -31,7 +31,6 @@
     "copied": "Copied",
     "official": "Official",
     "unpublished": "Not on npm yet",
-    "unpublishedHint": "Ships with the framework for now; the package name is not final.",
     "docs": "Documentation",
     "repository": "Repository",
     "npm": "npm",
@@ -42,7 +41,6 @@
     "requires": "Needs on the server",
     "readme": "README",
     "noReadme": "This module has no README on npm yet.",
-    "back": "All modules",
     "addYours": "Add your module",
     "addYoursHint": "Publish it to npm with the amxts-module keyword in package.json; a second keyword (amxts-menus, amxts-config, amxts-network) picks its category.",
     "categories": {
@@ -52,7 +50,10 @@
       "other": "Other"
     },
     "browseNpm": "Browse on npm",
-    "create": "Create your own module"
+    "create": "Create your own module",
+    "installThis": "Install this module",
+    "links": "Links",
+    "details": "Details"
   },
   "page": {
     "copy": "Copy page",

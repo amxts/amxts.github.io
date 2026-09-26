@@ -31,7 +31,6 @@
     "copied": "Скопировано",
     "official": "Официальный",
     "unpublished": "Ещё не на npm",
-    "unpublishedHint": "Пока поставляется с фреймворком; имя пакета не окончательное.",
     "docs": "Документация",
     "repository": "Репозиторий",
     "npm": "npm",
@@ -42,7 +41,6 @@
     "requires": "Нужно на сервере",
     "readme": "README",
     "noReadme": "У этого модуля пока нет README на npm.",
-    "back": "Все модули",
     "addYours": "Добавить свой модуль",
     "addYoursHint": "Опубликуйте его на npm с ключевым словом amxts-module в package.json; второе ключевое слово (amxts-menus, amxts-config, amxts-network) задаёт категорию.",
     "categories": {
@@ -52,7 +50,10 @@
       "other": "Другое"
     },
     "browseNpm": "Смотреть на npm",
-    "create": "Создать свой модуль"
+    "create": "Создать свой модуль",
+    "installThis": "Установить модуль",
+    "links": "Ссылки",
+    "details": "Подробности"
   },
   "page": {
     "copy": "Копировать страницу",
