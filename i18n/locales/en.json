@@ -1,7 +1,10 @@
 {
   "nav": {
     "docs": "Docs",
-    "modules": "Modules"
+    "modules": "Modules",
+    "playground": "Playground",
+    "home": "Home",
+    "sections": "Sections"
   },
   "header": {
     "language": "Language",
@@ -72,5 +75,18 @@
     "othersHint": "reapi, hamsandwich, cstrike, your .amxx",
     "build": "Build",
     "loaded": "loaded"
+  },
+  "playground": {
+    "title": "Playground",
+    "description": "Write an amxts plugin in the browser, with the framework's types.",
+    "example": "Example",
+    "examples": {
+      "hello": "Hello: /hp",
+      "timer": "Timers",
+      "menu": "A menu (menu-core)",
+      "events": "Events"
+    },
+    "loading": "Loading the editor and the amxts types…",
+    "failed": "The editor did not load. Reload the page."
   }
 }

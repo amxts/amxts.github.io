@@ -1,7 +1,10 @@
 {
   "nav": {
     "docs": "Документация",
-    "modules": "Модули"
+    "modules": "Модули",
+    "playground": "Песочница",
+    "home": "Главная",
+    "sections": "Разделы"
   },
   "header": {
     "language": "Язык",
@@ -72,5 +75,18 @@
     "othersHint": "reapi, hamsandwich, cstrike, ваши .amxx",
     "build": "Сборка",
     "loaded": "загружен"
+  },
+  "playground": {
+    "title": "Песочница",
+    "description": "Пишите плагин amxts прямо в браузере, с типами фреймворка.",
+    "example": "Пример",
+    "examples": {
+      "hello": "Hello: /hp",
+      "timer": "Таймеры",
+      "menu": "Меню (menu-core)",
+      "events": "События"
+    },
+    "loading": "Загружаем редактор и типы amxts…",
+    "failed": "Редактор не загрузился. Обновите страницу."
   }
 }
