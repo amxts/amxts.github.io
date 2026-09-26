@@ -48,7 +48,7 @@ orientation: horizontal
 
 #default
   :::code-panel{height="26.5rem"}
-  ```ts twoslash [say-hp.ts]
+  ```ts twoslash locale-ru [say-hp.ts]
   import { Player, plugin, print, server } from "~/facade";
 
   plugin({
@@ -70,7 +70,7 @@ orientation: horizontal
   }
   ```
 
-  ```ts twoslash [say-hp.test.ts]
+  ```ts twoslash locale-ru [say-hp.test.ts]
   import { expect, test } from "vitest"; // или "bun:test"
   import { loadPlugin } from "../src/testing";
 
@@ -246,7 +246,7 @@ Pawn-плагины вызывают TypeScript
 
 #default
   :::code-panel{height="6.5rem"}
-  ```ts twoslash [my-plugin.ts]
+  ```ts twoslash locale-ru [my-plugin.ts]
   /** A value from a config file, or false when the key is not there. */
   export function cfg_get_value(file: string, section: string, key: string) {
     return lookup(file, section, key);   // string | null

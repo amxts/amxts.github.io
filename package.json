@@ -26,6 +26,7 @@
     "@takumi-rs/core": "^2.14.0",
     "@vueuse/core": "^14.4.0",
     "minimark": "^0.2.0",
+    "monaco-editor": "^0.57.0",
     "nuxt": "^4.5.2",
     "nuxt-content-twoslash": "0.4.0",
     "nuxt-llms": "0.2.0",
@@ -48,6 +49,7 @@
   },
   "patchedDependencies": {
     "twoslash@0.3.9": "patches/twoslash@0.3.9.patch",
-    "@shikijs/twoslash@4.4.3": "patches/@shikijs%2Ftwoslash@4.4.3.patch"
+    "@shikijs/twoslash@4.4.3": "patches/@shikijs%2Ftwoslash@4.4.3.patch",
+    "nuxt-content-twoslash@0.4.0": "patches/nuxt-content-twoslash@0.4.0.patch"
   }
 }

@@ -98,7 +98,8 @@ function facadeExports() {
 
 const facade = facadeExports()
 
-function twoslash(block: string) {
+/** `locale`: a translated page's blocks read that language's declarations (`locale-ru`). */
+function twoslash(block: string, locale?: string) {
   if (!/^```ts\s/.test(block))
     return block
   const [fence, ...rest] = block.split('\n')
@@ -111,7 +112,7 @@ function twoslash(block: string) {
   if (/\bplayer\b/.test(code) && !/(?:\b(?:const|let|var)\s+|[(,]\s*)player\b/.test(code))
     hidden.push('declare const player: import("~/facade").Player;')
   const prelude = hidden.length ? [...hidden, '// ---cut---'] : []
-  return [fence!.replace(/^```ts/, '```ts twoslash'), ...prelude, ...rest].join('\n')
+  return [fence!.replace(/^```ts/, locale ? `\`\`\`ts twoslash locale-${locale}` : '```ts twoslash'), ...prelude, ...rest].join('\n')
 }
 
 interface Page {
@@ -180,7 +181,7 @@ function convert({ markdown, prefix, titles, navigation }: Page) {
 
   const body = splitFences(lines.join('\n').trim()).map((part, i) => {
     if (i % 2 === 1)
-      return twoslash(packageManagers(part))
+      return twoslash(packageManagers(part), prefix.startsWith('/ru/') ? 'ru' : undefined)
 
     const linked = part.replace(
       /\[([^\]]*)\]\((?:\.\/)?([a-z-]+)(?:\.md)?(#[^)]*)?\)/g,

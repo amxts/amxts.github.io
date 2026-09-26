@@ -1,0 +1,53 @@
+diff --git a/dist/runtime/mdc-config.js b/dist/runtime/mdc-config.js
+index b37099e..11a8935 100644
+--- a/dist/runtime/mdc-config.js
++++ b/dist/runtime/mdc-config.js
+@@ -46,6 +46,20 @@ function resolveFileContext(filename, contextConfigs) {
+   return undefined
+ }
+ 
++/**
++ * xen-site: the module's options with every `paths` target moved to a
++ * locale's declarations: `.../docs-types/x` becomes `.../docs-types-ru/x`.
++ * @param {any} moduleOptions
++ * @param {string} locale
++ */
++function localized(moduleOptions, locale) {
++  const paths = Object.fromEntries(Object.entries(moduleOptions.compilerOptions?.paths ?? {}).map(([key, targets]) => [
++    key,
++    /** @type {string[]} */ (targets).map(target => target.replace(/\/docs-types\//, `/docs-types-${locale}/`)),
++  ]))
++  return { ...moduleOptions, compilerOptions: { ...moduleOptions.compilerOptions, paths } }
++}
++
+ /** @type {Record<string, import('shiki/core').ShikiTransformer>} */
+ const transformerCache = {}
+ 
+@@ -99,8 +113,15 @@ export default defineConfig({
+           cleanMeta = options.meta.replace(filenameMatch[0], '').trim()
+         }
+ 
++        // xen-site: a code block of a translated page carries `locale-<code>` in
++        // its meta; it gets a transformer of its own, whose `paths` point at the
++        // declarations in that language - the folder beside the default one,
++        // named <folder>-<code> (docs-types-ru beside docs-types)
++        const localeMatch = options.meta.match(/\blocale-(\w+)\b/)
++        const locale = localeMatch?.[1]
++
+         // Determine which context to use
+-        let cacheKey = 'default'
++        let cacheKey = locale ? `default-${locale}` : 'default'
+         if (hasProjectRefs && filename && contextConfigs) {
+           const context = resolveFileContext(filename, contextConfigs)
+           if (context)
+@@ -128,8 +149,8 @@ export default defineConfig({
+         }
+ 
+         // Fallback: use legacy single transformer
+-        const transformer = await createTransformer(rootDir, moduleOptions, typeDecorations, compilerOptions)
+-        transformerCache.default = transformer
++        const transformer = await createTransformer(rootDir, locale ? localized(moduleOptions, locale) : moduleOptions, typeDecorations, compilerOptions)
++        transformerCache[cacheKey] = transformer
+         if (filename) {
+           return [wrapTransformerWithCleanMeta(transformer, cleanMeta)]
+         }

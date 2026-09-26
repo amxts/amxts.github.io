@@ -60,8 +60,10 @@ setup })`, listed in the project's config file - not built yet.
 - bun is the package manager. English EN at `/docs/...`, Russian at
   `/ru/docs/...`.
 - Types on hover (Twoslash) are shaped by patches in `patches/` (twoslash,
-  @shikijs/twoslash): members as an interface, a local function without a
-  hover, the first line colored as TypeScript. `bun patch --commit` and
+  @shikijs/twoslash, nuxt-content-twoslash): members as an interface, a local
+  function without a hover, the first line colored as TypeScript. A /ru page's
+  code blocks carry `locale-ru` (the importer adds it; the landing has it by
+  hand) and read docs-types-ru/, the Russian declarations. `bun patch --commit` and
   `bun install` run `nuxt prepare` and break a running dev server - stop it
   first; after a change to the hovers, restart dev with `.data` removed.
 
