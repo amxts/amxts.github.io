@@ -113,7 +113,7 @@ useSeoMeta({
       </div>
     </DefineAside>
 
-    <UPage :ui="{ center: 'lg:col-span-7', right: 'lg:col-span-3' }">
+    <UPage :ui="{ center: 'lg:col-span-7', right: 'lg:col-span-3 lg:self-start' }">
       <UPageHeader :description="description" :ui="{ headline: 'mb-4' }">
         <template #headline>
           <UBreadcrumb :items="breadcrumb" />
