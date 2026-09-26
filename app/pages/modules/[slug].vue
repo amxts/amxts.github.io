@@ -13,7 +13,7 @@ const { copy } = useClipboard()
 
 const slug = computed(() => String(route.params.slug))
 
-// the links and details: under the README's contents when it has any, else on their own
+// the links and details, under the README's contents
 const [DefineAside, ReuseAside] = createReusableTemplate()
 
 const { data, error } = await useFetch<{ module: AmxtsModule, readme: string | null }>(
@@ -74,7 +74,51 @@ useSeoMeta({
 
 <template>
   <UContainer>
-    <UPage>
+    <DefineAside>
+      <div v-if="links.length" class="flex flex-col gap-2 text-sm">
+        <p class="font-semibold text-highlighted">
+          {{ t('modules.links') }}
+        </p>
+
+        <ULink
+          v-for="link in links"
+          :key="link.to"
+          :to="link.to"
+          target="_blank"
+          class="inline-flex items-center gap-1.5 text-muted hover:text-highlighted"
+        >
+          <UIcon :name="link.icon" class="size-4 shrink-0" />
+
+          {{ link.label }}
+
+          <UIcon name="i-lucide-arrow-up-right" class="size-3 shrink-0" />
+        </ULink>
+      </div>
+
+      <USeparator class="my-6" type="dashed" />
+
+      <div class="flex flex-col gap-2 text-sm">
+        <p class="font-semibold text-highlighted">
+          {{ t('modules.details') }}
+        </p>
+
+        <p class="inline-flex items-center gap-1.5 text-muted">
+          <UIcon :name="categoryIcons[module.category]" class="size-4 shrink-0" />
+
+          {{ t(`modules.categories.${module.category}`) }}
+        </p>
+
+        <div v-if="module.requires.length" class="flex flex-wrap items-center gap-1.5 text-muted">
+          <UIcon name="i-lucide-plug" class="size-4 shrink-0" />
+
+          {{ t('modules.requires') }}:
+
+          <UBadge v-for="name in module.requires" :key="name" :label="name" color="neutral" variant="outline" size="sm" />
+        </div>
+      </div>
+    </DefineAside>
+
+    <UPage :ui="{ center: 'lg:col-span-7', right: 'lg:col-span-3' }">
       <UPageHeader :description="description" :ui="{ headline: 'mb-4' }">
         <template #headline>
           <UBreadcrumb :items="breadcrumb" />
@@ -140,63 +184,15 @@ useSeoMeta({
       </UPageBody>
 
       <template #right>
-        <DefineAside>
-          <div v-if="links.length" class="flex flex-col gap-2 text-sm">
-            <p class="font-semibold text-highlighted">
-              {{ t('modules.links') }}
-            </p>
+        <UPageAside>
+          <PageToc
+            v-if="doc?.body?.toc?.links?.length"
+            :title="t('docs.toc')"
+            :links="doc.body.toc.links"
+          />
 
-            <ULink
-              v-for="link in links"
-              :key="link.to"
-              :to="link.to"
-              target="_blank"
-              class="inline-flex items-center gap-1.5 text-muted hover:text-highlighted"
-            >
-              <UIcon :name="link.icon" class="size-4 shrink-0" />
+          <USeparator v-if="doc?.body?.toc?.links?.length" class="my-6" type="dashed" />
 
-              {{ link.label }}
-
-              <UIcon name="i-lucide-arrow-up-right" class="size-3 shrink-0" />
-            </ULink>
-          </div>
-
-          <USeparator class="my-6" type="dashed" />
-
-          <div class="flex flex-col gap-2 text-sm">
-            <p class="font-semibold text-highlighted">
-              {{ t('modules.details') }}
-            </p>
-
-            <p class="inline-flex items-center gap-1.5 text-muted">
-              <UIcon :name="categoryIcons[module.category]" class="size-4 shrink-0" />
-
-              {{ t(`modules.categories.${module.category}`) }}
-            </p>
-
-            <div v-if="module.requires.length" class="flex flex-wrap items-center gap-1.5 text-muted">
-              <UIcon name="i-lucide-plug" class="size-4 shrink-0" />
-
-              {{ t('modules.requires') }}:
-
-              <UBadge v-for="name in module.requires" :key="name" :label="name" color="neutral" variant="outline" size="sm" />
-            </div>
-          </div>
-        </DefineAside>
-
-        <UContentToc
-          v-if="doc?.body?.toc?.links?.length"
-          :title="t('docs.toc')"
-          :links="doc.body.toc.links"
-        >
-          <template #bottom>
-            <USeparator class="my-6" type="dashed" />
-
-            <ReuseAside />
-          </template>
-        </UContentToc>
-
-        <UPageAside v-else>
           <ReuseAside />
         </UPageAside>
       </template>

@@ -3,7 +3,7 @@
  * with conditions, placeholders and lists. How to use it: README.md.
  */
 import { Player } from "@amxts/core";
-import { ActionHandler, ActionTest, ConditionFilter, ConditionTest, ListRow, ListSource, MenuCoreOptions, MenuEventType, MenuItemOptions, MenuKind, MenuOptions, MenuShowOptions, PlaceholderValue, RestrictionTest, RowTest } from "./types";
+import { ActionHandler, ActionTest, ConditionFilter, ConditionTest, ListRow, ListSource, MenuCoreOptions, MenuEventType, MenuItemOptions, MenuKind, MenuOptions, MenuShowOptions, MenuText, PlaceholderValue, RestrictionTest, RowTest } from "./types";
 export * from "./types";
 declare const _default: AmxtsModule<MenuCoreOptions>;
 export default _default;
@@ -18,8 +18,8 @@ export default _default;
 export declare class Menu {
     /** Имя меню — его секция в menu.ini, например "MAIN_MENU". */
     readonly name: string;
-    /** Заголовок меню: ключ словаря или сам текст. */
-    title: string;
+    /** Заголовок меню: сам текст — или ключ словаря — либо функция, которая даёт его для игрока, который смотрит. */
+    title: MenuText;
     /** Вид меню, одно из "items" (список пунктов) или "list" (строка на игрока или на строку источника). Имя на LIST_ даёт список. */
     readonly kind: MenuKind;
     /** Скрытие кнопки "Назад": true убирает её. */
@@ -41,20 +41,22 @@ export declare class Menu {
     constructor(
     /** The menu's name - its section in menu.ini, e.g. "MAIN_MENU". */
     name: string, 
-    /** The menu's title: a lang key or the text itself. */
-    title: string);
+    /** The menu's title: the text - a lang key too - or a function that gives it for the player who looks. */
+    title: MenuText);
     /**
-     * Добавляет пункт. "A|B" в тексте, условии или действии — варианты:
-     * показывается первый, чьё условие выполнено. False, если текст не даёт ни одного.
+     * Добавляет пункт: его текст или функцию, которая даёт текст для игрока, —
+     * `target` — цель строки в меню-списке, иначе меню.
+     *
+     *     shop.addItem((player) => `Heal (${player.health} HP)`, { onSelect: heal });
      */
-    addItem(text: string, options?: MenuItemOptions): boolean;
-    /** Добавляет пункт, который на каждой странице занимает один слот: `slot` — его клавиша, от 1 до 7. */
-    addFixedItem(slot: number, text: string, options?: MenuItemOptions): boolean;
+    addItem(text: MenuText, options?: MenuItemOptions): void;
+    /** Добавляет пункт, который на каждой странице занимает один слот: `slot` — его клавиша, от 1 до 7; текст — как у `addItem()`. */
+    addFixedItem(slot: number, text: MenuText, options?: MenuItemOptions): void;
     /** Удаляет все пункты меню, включая фиксированные. */
     clearItems(): void;
     /** Фильтр меню-списка: строки, на которые `test` отвечает «нет», пропускаются, а если не осталось ни одной, игрок получает `message`. */
     addFilter(test: RowTest, message?: string): void;
-    /** Плейсхолдер этого меню: текст, которым заменяется %name%, раньше зарегистрированных через `addPlaceholder()`. */
+    /** Плейсхолдер этого меню — для menu.ini и Pawn-плагинов: текст, которым заменяется %name%, раньше зарегистрированных через `addPlaceholder()`. В коде текст — функция. */
     addPlaceholder(name: string, value: PlaceholderValue): void;
     /** Источник строк этого меню-списка вместо игроков. */
     setListSource(rows: ListSource): void;
@@ -121,7 +123,7 @@ export declare function create(name: string, options?: MenuOptions): Menu;
 export declare function addCondition(name: string, test: ConditionTest): number;
 /** Регистрирует действие по имени — для menu.ini и Pawn-плагинов; SHOW_<MENU> и CLOSE_MENU встроены. */
 export declare function addAction(name: string, run: ActionHandler): number;
-/** Регистрирует плейсхолдер: текст, которым заменяется %name% в заголовках и пунктах. Если имя зарегистрировано дважды, остаётся первое. */
+/** Регистрирует плейсхолдер для menu.ini и Pawn-плагинов: текст, которым заменяется %name% в заголовках и пунктах. Если имя зарегистрировано дважды, остаётся первое. В коде текст — функция. */
 export declare function addPlaceholder(name: string, value: PlaceholderValue): number;
 /** Регистрирует ограничение по имени, которое называют пункты; "*" отвечает за все имена, за которые не отвечает никто другой. */
 export declare function addRestriction(name: string, test: RestrictionTest, message?: string): number;
@@ -163,3 +165,5 @@ export declare function setPage(player: Player, page: number): void;
 export declare function hasAction(name: string): boolean;
 /** Выполняет строку действий: имена действий через пробел, в том числе CLOSE_MENU и SHOW_<MENU>. */
 export declare function runActions(player: Player, line: string, target?: number): void;
+/** Даёт ли имя пункта из menu.ini пункт — например, "A|B" даёт два варианта; "" и "|" не дают ни одного. */
+export declare function hasText(name: string): boolean;

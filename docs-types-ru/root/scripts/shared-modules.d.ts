@@ -47,6 +47,7 @@ interface ClassInfo {
         wire: Wire;
         optional?: boolean;
         readonly?: boolean;
+        declared?: string;
     }[];
     /** It has methods: a record goes back after a call, as the other side left it. */
     methods: boolean;

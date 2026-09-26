@@ -2,12 +2,12 @@
   {
     "package": "@amxts/config-core",
     "title": {
-      "en": "config-core",
-      "ru": "config-core"
+      "en": "Config Core",
+      "ru": "Config Core"
     },
     "description": {
-      "en": "INI configs for amxts plugins: sections, typed values, paths - and the cfg_* natives for Pawn plugins.",
-      "ru": "INI configs for amxts plugins: sections, typed values, paths - and the cfg_* natives for Pawn plugins."
+      "en": "INI configs: sections, typed values, paths into blocks",
+      "ru": "INI-конфиги: секции, типизированные значения, пути в блоки"
     },
     "author": "kukson777",
     "authorUrl": "https://github.com/kukson777",
@@ -28,8 +28,8 @@
       "ru": "Menu Core"
     },
     "description": {
-      "en": "An opinionated way to create menus for Counter-Strike 1.6 servers",
-      "ru": "Удобный способ создавать меню для серверов Counter-Strike 1.6"
+      "en": "An opinionated way to create menus",
+      "ru": "Удобный способ создавать меню"
     },
     "author": "kukson777",
     "authorUrl": "https://github.com/kukson777",

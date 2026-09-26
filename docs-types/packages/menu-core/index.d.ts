@@ -3,7 +3,7 @@
  * with conditions, placeholders and lists. How to use it: README.md.
  */
 import { Player } from "@amxts/core";
-import { ActionHandler, ActionTest, ConditionFilter, ConditionTest, ListRow, ListSource, MenuCoreOptions, MenuEventType, MenuItemOptions, MenuKind, MenuOptions, MenuShowOptions, PlaceholderValue, RestrictionTest, RowTest } from "./types";
+import { ActionHandler, ActionTest, ConditionFilter, ConditionTest, ListRow, ListSource, MenuCoreOptions, MenuEventType, MenuItemOptions, MenuKind, MenuOptions, MenuShowOptions, MenuText, PlaceholderValue, RestrictionTest, RowTest } from "./types";
 export * from "./types";
 declare const _default: AmxtsModule<MenuCoreOptions>;
 export default _default;
@@ -18,8 +18,8 @@ export default _default;
 export declare class Menu {
     /** The menu's name - its section in menu.ini, e.g. "MAIN_MENU". */
     readonly name: string;
-    /** The menu's title: a lang key or the text itself. */
-    title: string;
+    /** The menu's title: the text - a lang key too - or a function that gives it for the player who looks. */
+    title: MenuText;
     /** The menu's kind, one of "items" (a list of items) or "list" (a row per player, or per row of a list source). A name starting with LIST_ makes a list. */
     readonly kind: MenuKind;
     /** Hiding of the "Back" button: true leaves it out. */
@@ -41,20 +41,22 @@ export declare class Menu {
     constructor(
     /** The menu's name - its section in menu.ini, e.g. "MAIN_MENU". */
     name: string, 
-    /** The menu's title: a lang key or the text itself. */
-    title: string);
+    /** The menu's title: the text - a lang key too - or a function that gives it for the player who looks. */
+    title: MenuText);
     /**
-     * Adds an item. "A|B" in the text, a condition or an action are variants:
-     * the first whose condition holds is shown. False when the text gives none.
+     * Adds an item: its text, or a function that gives it for the player -
+     * `target` is the row's in a list menu, else the menu's.
+     *
+     *     shop.addItem((player) => `Heal (${player.health} HP)`, { onSelect: heal });
      */
-    addItem(text: string, options?: MenuItemOptions): boolean;
-    /** Adds an item that takes the same slot on every page: `slot` is its key, 1 to 7. */
-    addFixedItem(slot: number, text: string, options?: MenuItemOptions): boolean;
+    addItem(text: MenuText, options?: MenuItemOptions): void;
+    /** Adds an item that takes the same slot on every page: `slot` is its key, 1 to 7; the text as `addItem()` takes it. */
+    addFixedItem(slot: number, text: MenuText, options?: MenuItemOptions): void;
     /** Removes every item of the menu, fixed ones too. */
     clearItems(): void;
     /** A filter of a list menu: rows `test` says no to are left out, and `message` is said when none is left. */
     addFilter(test: RowTest, message?: string): void;
-    /** A placeholder of this menu: the text %name% stands for, before the ones registered with `addPlaceholder()`. */
+    /** A placeholder of this menu, for menu.ini and Pawn plugins: the text %name% stands for, before the ones registered with `addPlaceholder()`. In code the text is a function instead. */
     addPlaceholder(name: string, value: PlaceholderValue): void;
     /** The source of this list menu's rows, instead of the players. */
     setListSource(rows: ListSource): void;
@@ -121,7 +123,7 @@ export declare function create(name: string, options?: MenuOptions): Menu;
 export declare function addCondition(name: string, test: ConditionTest): number;
 /** Registers an action by name, for menu.ini and Pawn plugins; SHOW_<MENU> and CLOSE_MENU are built in. */
 export declare function addAction(name: string, run: ActionHandler): number;
-/** Registers a placeholder: the text %name% stands for in titles and items. A name registered twice keeps the first. */
+/** Registers a placeholder for menu.ini and Pawn plugins: the text %name% stands for in titles and items. A name registered twice keeps the first. In code the text is a function instead. */
 export declare function addPlaceholder(name: string, value: PlaceholderValue): number;
 /** Registers a restriction by name, for items to name; "*" answers for every name nothing else does. */
 export declare function addRestriction(name: string, test: RestrictionTest, message?: string): number;
@@ -163,3 +165,5 @@ export declare function setPage(player: Player, page: number): void;
 export declare function hasAction(name: string): boolean;
 /** Runs an action line: space-separated action names, CLOSE_MENU and SHOW_<MENU> among them. */
 export declare function runActions(player: Player, line: string, target?: number): void;
+/** Whether a menu.ini item name gives an item - e.g. "A|B" gives two variants; "" and "|" give none. */
+export declare function hasText(name: string): boolean;

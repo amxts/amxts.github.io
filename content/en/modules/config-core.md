@@ -1,12 +1,9 @@
 ---
-title: "config-core"
+title: "Config Core"
+description: "INI configs: sections, typed values, paths into blocks"
 ---
 
-# Config Core: INI configs
-
-INI files with `[sections]`, `key = value` lines, lines of several values and
-`key = { ... }` blocks of rows, read into memory and written back with their
-comments and blank lines.
+INI files with `[sections]`, `key = value` lines, lines of several values and `key = { ... }` blocks of rows, read into memory and written back with their comments and blank lines.
 
 ## From TypeScript
 

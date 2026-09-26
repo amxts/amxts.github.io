@@ -84,9 +84,9 @@ plugin({
 });
 
 const shop = menus.create("SHOP", { title: "Shop" });
-shop.addPlaceholder("hp", (player) => \`\${player.health}\`);
 
-shop.addItem("Heal (%hp% HP)", {
+// An item's text may be a function of the player who sees it.
+shop.addItem((player) => \`Heal (\${player.health} HP)\`, {
 \tvisible: (player) => player.health < 100,
 \tonSelect: (player) => {
 \t\tplayer.health = 100;

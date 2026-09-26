@@ -5,6 +5,14 @@
 import { Player } from "@amxts/core";
 /** Вид меню, одно из "items" (список пунктов) или "list" (строка на игрока или на строку источника). */
 export type MenuKind = "items" | "list";
+/**
+ * Текст меню — заголовок, пункт, сообщение: сам текст или функция, которая
+ * даёт его для игрока, который смотрит; `target` — цель строки в
+ * меню-списке, иначе меню. Ключ словаря переводится в обоих случаях.
+ *
+ *     menus.create("SHOP", { title: (player) => `Shop for ${player.name}` });
+ */
+export type MenuText = string | ((player: Player, target: number) => string);
 /** Строка меню-списка, как её отдаёт источник, — из `listRow()` или `textRow()`. */
 export interface ListRow {
     /** Вид строки, одно из "item" (строка для выбора) или "text" (строка текста, не выбор). */
@@ -26,8 +34,8 @@ export interface ListRow {
  *     menus.create("SHOP", { title: "Shop", time: 30, activeWhen: player => player.isAlive });
  */
 export interface MenuOptions {
-    /** Заголовок меню: ключ словаря или сам текст; если не задан — имя меню. */
-    title?: string;
+    /** Заголовок меню: сам текст — или ключ словаря — либо функция, которая даёт его для игрока; если не задан — имя меню. */
+    title?: MenuText;
     /** Секунды отсчёта при открытии меню, например 10; если не задано — без отсчёта. */
     time?: number;
     /** Скрытие кнопки "Назад": true убирает её. */
@@ -71,9 +79,9 @@ export interface MenuItemOptions {
     visible?: (player: Player, target: number) => boolean;
     /** Проверка, при которой пункт можно выбрать: пока она отвечает «нет», пункт погашен. */
     enabled?: (player: Player, target: number) => boolean;
-    /** Текст рядом с пунктом, пока `enabled` его гасит, например "(full)". */
-    message?: string;
-    /** Текст после имени пункта, с плейсхолдерами, например "%hp%". */
+    /** Текст рядом с пунктом, пока `enabled` его гасит: сам текст, например "(full)", или функция, которая даёт его для игрока. */
+    message?: MenuText;
+    /** Текст после имени пункта — для пунктов menu.ini и Pawn-плагинов, с плейсхолдерами, например "%hp%"; в коде текст пункта — функция. */
     placeholder?: string;
     /** Имена условий из `addCondition()`, без которых пункт погашен; "!NAME" — наоборот; несколько через пробел должны выполняться все. */
     condition?: string;
