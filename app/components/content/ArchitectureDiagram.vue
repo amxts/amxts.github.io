@@ -46,8 +46,8 @@ function state(at: number) {
 
 <template>
   <div ref="root" class="flex flex-col gap-4 rounded-xl bg-default p-4 text-sm ring ring-default sm:p-5">
-    <div class="flex flex-wrap items-center gap-x-2 gap-y-6 pt-4">
-      <span class="me-1 text-xs font-medium text-dimmed uppercase">{{ t('architecture.build') }}</span>
+    <div class="flex flex-col items-start gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2 sm:gap-y-6 sm:pt-4">
+      <span class="mb-1 text-xs font-medium text-dimmed uppercase sm:me-1 sm:mb-0">{{ t('architecture.build') }}</span>
 
       <template v-for="(file, index) in files" :key="file.name">
         <span
@@ -63,9 +63,9 @@ function state(at: number) {
           {{ file.name }}
         </span>
 
-        <span v-if="tools[index]" class="relative flex h-7 w-24 items-center">
+        <span v-if="tools[index]" class="relative ms-3 flex h-10 w-4 flex-col items-center sm:ms-0 sm:h-7 sm:w-24 sm:flex-row">
           <span
-            class="absolute inset-x-0 -top-4 flex justify-center text-[11px] transition-colors duration-300"
+            class="absolute top-1/2 left-full ms-2 flex -translate-y-1/2 text-[11px] whitespace-nowrap transition-colors duration-300 sm:inset-x-0 sm:-top-4 sm:ms-0 sm:translate-y-0 sm:justify-center"
             :class="{ 'text-dimmed': state(tools[index].phase) === 'pending', 'text-primary': state(tools[index].phase) === 'active', 'text-muted': state(tools[index].phase) === 'done' }"
           >
             <span class="relative">
@@ -79,16 +79,16 @@ function state(at: number) {
             </span>
           </span>
 
-          <span class="relative h-0.5 flex-1 overflow-hidden rounded-full bg-accented">
+          <span class="relative w-0.5 flex-1 overflow-hidden rounded-full bg-accented sm:h-0.5 sm:w-auto">
             <span
-              class="absolute inset-y-0 left-0 rounded-full bg-primary"
-              :class="phase >= tools[index].phase ? 'w-full transition-[width] duration-700 ease-out' : 'w-0'"
+              class="absolute top-0 left-0 rounded-full bg-primary"
+              :class="phase >= tools[index].phase ? 'h-full w-full transition-[width,height] duration-700 ease-out' : 'h-0 w-full sm:h-full sm:w-0'"
             />
           </span>
 
           <UIcon
             name="i-lucide-chevron-right"
-            class="-ms-1.5 size-4 shrink-0 transition-colors duration-300"
+            class="-mt-1.5 size-4 shrink-0 rotate-90 transition-colors duration-300 sm:mt-0 sm:-ms-1.5 sm:rotate-0"
             :class="phase > tools[index].phase ? 'text-primary' : 'text-dimmed'"
           />
         </span>

@@ -4,6 +4,8 @@ import * as uiLocales from '@nuxt/ui/locale'
 const { seo } = useAppConfig()
 const content = useLocaleContent()
 const head = useLocaleHead()
+// a page can go without the footer: definePageMeta({ footer: false })
+const route = useRoute()
 
 const { data: navigation } = await useAsyncData(
   () => `navigation-${content.value.locale}`,
@@ -46,7 +48,9 @@ provide('navigation', navigation)
       </NuxtLayout>
     </UMain>
 
-    <AppFooter />
+    <AppFooter v-if="route.meta.footer !== false" />
+
+    <MobileNavigation />
 
     <ClientOnly>
       <LazyUContentSearch

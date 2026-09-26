@@ -17,6 +17,13 @@
   --ui-bg: var(--ui-color-neutral-950);
 }
 
+/* Room at the bottom for the phone's fixed navigation bar (MobileNavigation). */
+@media (width < 64rem) {
+  body {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+}
+
 @layer base {
   button:not(:disabled),
   [role='button']:not([aria-disabled='true']) {
@@ -257,4 +264,14 @@ html:root {
 /* A code block's copy button has no place in a hover. */
 .twoslash-floating .twoslash-popup-container button {
   display: none !important;
+}
+
+/* The theme's z-index belongs to the popup, not to the words that open it:
+   those stay in the page's flow, under the sticky header. */
+.twoslash .v-popper--theme-twoslash:not(.v-popper__popper) {
+  z-index: auto;
+}
+
+.v-popper__popper.v-popper--theme-twoslash {
+  z-index: 60;
 }

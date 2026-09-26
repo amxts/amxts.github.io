@@ -19,6 +19,10 @@ const items = computed<NavigationMenuItem[]>(() => [{
   label: t('nav.modules'),
   to: localePath('/modules'),
   active: route.path.startsWith(localePath('/modules')),
+}, {
+  label: t('nav.playground'),
+  to: localePath('/playground'),
+  active: route.path.startsWith(localePath('/playground')),
 }])
 
 // The same page in the other language: switchLocalePath keeps the path.
@@ -34,7 +38,7 @@ const repositoryLabel = computed(() => repository.url
 </script>
 
 <template>
-  <UHeader :to="localePath('/')">
+  <UHeader :to="localePath('/')" mode="slideover">
     <template #title>
       <AppLogo />
     </template>
@@ -60,7 +64,7 @@ const repositoryLabel = computed(() => repository.url
           item: 'cursor-pointer items-center data-[state=checked]:cursor-default data-[state=checked]:text-highlighted data-[state=checked]:before:bg-elevated!',
           itemTrailing: 'hidden',
         }"
-        class="w-32"
+        class="hidden w-32 sm:inline-flex"
       >
         <template #leading>
           <span class="rounded bg-elevated px-1 py-0.5 text-[10px]/none font-semibold text-highlighted uppercase">{{ locale }}</span>
@@ -70,6 +74,7 @@ const repositoryLabel = computed(() => repository.url
           <span class="rounded bg-elevated px-1 py-0.5 text-[10px]/none font-semibold text-highlighted uppercase">{{ item.code }}</span>
         </template>
       </USelectMenu>
+
       <UColorModeButton />
 
       <UTooltip :text="repositoryLabel">
@@ -81,11 +86,35 @@ const repositoryLabel = computed(() => repository.url
           target="_blank"
           :disabled="!repository.url"
           :aria-label="repositoryLabel"
+          class="hidden sm:inline-flex"
         />
       </UTooltip>
     </template>
 
     <template #body>
+      <div class="mb-4 flex items-center gap-2 sm:hidden">
+        <UButton
+          v-for="item in [en, ru]"
+          :key="item.code"
+          :label="item.name"
+          :to="switchLocalePath(item.code as 'en' | 'ru')"
+          color="neutral"
+          :variant="item.code === locale ? 'soft' : 'ghost'"
+          size="sm"
+        />
+
+        <UButton
+          :icon="repository.provider === 'gitlab' ? 'i-simple-icons-gitlab' : 'i-simple-icons-github'"
+          color="neutral"
+          variant="ghost"
+          size="sm"
+          :to="repository.url || undefined"
+          target="_blank"
+          :aria-label="repositoryLabel"
+          class="ms-auto"
+        />
+      </div>
+
       <UNavigationMenu :items="items" orientation="vertical" class="-mx-2.5" />
 
       <USeparator class="my-4" />

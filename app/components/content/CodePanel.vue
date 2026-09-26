@@ -14,7 +14,7 @@ defineProps<{
       '--code-panel-tint': 'color-mix(in oklab, var(--ui-bg-elevated) 50%, transparent)',
     }"
     :ui="{
-      root: 'my-0 rounded-xl p-2 ring ring-default',
+      root: 'my-0 w-full min-w-0 rounded-xl p-2 ring ring-default',
       list: 'mb-2 rounded-none border-0 bg-transparent p-0',
       indicator: 'inset-y-0 bg-accented/60',
       trigger: 'hover:bg-transparent hover:text-highlighted',
@@ -27,6 +27,10 @@ defineProps<{
 <style scoped>
 :deep(pre) {
   margin: 0;
+  /* a long line scrolls inside the panel instead of widening the page */
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: pre;
   height: var(--code-panel-height, auto);
   border: 0;
   padding: 0.75rem 1rem;
