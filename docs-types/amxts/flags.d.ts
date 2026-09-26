@@ -13,9 +13,8 @@ export declare class FlagFamily {
 /**
  * Where a mask lives: an entvar, a member, a hookchain argument.
  *
- * A FlagList cannot capture the entity and field it came from - a closure that
- * captures is AS100 - so what it holds is one of these, and `push` goes back
- * through it.
+ * A FlagList holds the entity and field it came from as one of these, and
+ * `push` goes back through it.
  */
 export declare abstract class FlagStore {
     abstract read(): i32;

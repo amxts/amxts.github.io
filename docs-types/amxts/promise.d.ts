@@ -74,12 +74,13 @@ interface PromiseLike<T> {
 declare class Promise<T> extends PromiseBase {
     /**
      * Wraps a callback API: `executor` runs at once and is handed the two
-     * functions that settle this promise. AssemblyScript has no closures, so
-     * keep `resolve` in a module-level variable to call it later.
+     * functions that settle this promise, which the callbacks it sets up may
+     * call later.
      *
      * ```ts
-     * let answer: ((value?: string) => void) | null = null;
-     * const asked = new Promise<string>((resolve) => { answer = resolve; });
+     * const later = new Promise<string>((resolve) => {
+     *   setTimeout(() => resolve("done"), 1000);
+     * });
      * ```
      */
     constructor(executor: (resolve: (value?: T) => void, reject: (reason: Error) => void) => void);
@@ -353,7 +354,6 @@ declare function __co_allSettled7<A, B, C, D, E, F, G>(a: Promise<A>, b: Promise
 declare function __co_all8<A, B, C, D, E, F, G, H>(a: Promise<A>, b: Promise<B>, c: Promise<C>, d: Promise<D>, e: Promise<E>, f: Promise<F>, g: Promise<G>, h: Promise<H>): Promise<__Tuple8<A, B, C, D, E, F, G, H>>;
 /** @hidden Promise.allSettled of 8 promises of different types. */
 declare function __co_allSettled8<A, B, C, D, E, F, G, H>(a: Promise<A>, b: Promise<B>, c: Promise<C>, d: Promise<D>, e: Promise<E>, f: Promise<F>, g: Promise<G>, h: Promise<H>): Promise<__Tuple8<PromiseSettledResult<A>, PromiseSettledResult<B>, PromiseSettledResult<C>, PromiseSettledResult<D>, PromiseSettledResult<E>, PromiseSettledResult<F>, PromiseSettledResult<G>, PromiseSettledResult<H>>>;
-declare let __co_env: usize;
 declare function __co_envPromise(): PromiseBase;
 declare function __co_resolveI32(value?: i32): void;
 declare function __co_resolveRef(value?: usize): void;
@@ -363,7 +363,7 @@ declare function __co_resolveF64(value?: f64): void;
 declare function __co_rejectBound(reason: Error): void;
 /**
  * @hidden A function object like `fn`, with `env` in its `_env`; the
- * collector follows `_env`. The function reads it back from __co_env.
+ * collector follows `_env`. The function reads it back from __env.
  */
 declare function __co_bindEnv(fn: usize, env: Object): usize;
 declare function __co_resolver<T>(promise: Promise<T>): (value?: T) => void;

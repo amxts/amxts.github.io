@@ -496,7 +496,42 @@ export interface KillOptions {
     /** Leave the frags alone: no suicide penalty. */
     keepFrags: boolean;
 }
-export declare class Player extends PlayerFields {
+/**
+ * A player as he is while connecting - in "connect", "authorized" and
+ * "putinserver" - before he is in the game: who he is, not health or weapons.
+ * A Player is a Client too, so what takes a Client takes either.
+ *
+ * ```ts
+ * server.addEventListener("putinserver", (event) => {
+ * 	print(event.player, `Welcome, ${event.player.name}!`);
+ * });
+ * ```
+ */
+export interface Client {
+    /** The player's slot, 1 to 32. */
+    readonly id: number;
+    /** The name he plays under. */
+    readonly name: string;
+    /** His address, without the port. */
+    readonly ip: string;
+    /** His SteamID: "STEAM_0:1:12345", or "BOT". It may not be known yet in "putinserver". */
+    readonly authid: string;
+    /** Whether he is a bot. */
+    readonly isBot: boolean;
+    /** Whether he is still on the server. */
+    readonly isConnected: boolean;
+    /** What this admin may do - the letters in users.ini: `client.access.includes("Cvar")`. */
+    readonly access: Access[];
+    /** His team: "UNASSIGNED" until he joins one. Setting it moves him, as `player.team` does. */
+    team: Team;
+    /** Nobody hears him on the voice chat. */
+    muted: boolean;
+    /** Aborts when he leaves the server: `fetch(url, { signal: client.signal })`. */
+    readonly signal: AbortSignal;
+    /** Runs a command in his own console, as if he had typed it there. */
+    command(text: string): void;
+}
+export declare class Player extends PlayerFields implements Client {
     constructor(id: number);
     /**
      * The players on the server, as objects: `Player.all({ alive: true })`.
@@ -618,8 +653,7 @@ export declare class Player extends PlayerFields {
  * A Pawn string is one character per cell, so calling such a native directly
  * means declaring a StaticArray<i32>, passing its address, and decoding it
  * afterwards - three lines of this bridge's plumbing in the middle of a
- * plugin. The native itself is passed in, which works because a plain function
- * is a value in AssemblyScript even though a closure is not.
+ * plugin. The native itself is passed in: a function is a value.
  */
 export declare function readText(fill: (out: number, max: number) => number, max?: number): string;
 /**
@@ -648,9 +682,8 @@ export declare function playerIds(flags?: string, team?: string): number[];
  * (runtime/patches): the name has to be written out as a string literal,
  * because a string held in a variable says nothing about which event it is.
  *
- * A listener must not use a local of the function it is written in:
- * AssemblyScript has no closures, and says so ("Not implemented: Closures").
- * Module-level variables and other functions are fine.
+ * A listener may use the variables of the function it is written in - it is
+ * a closure, as in JavaScript.
  */
 /** What a command handler gets: who typed it and what followed the name. */
 export type CommandHandler = (player: Player, args: string[]) => void;
@@ -943,9 +976,6 @@ export declare const server: Server;
  * returns nothing lets the game decide, and `event.preventDefault()` blocks
  * without an answer. Returning a value of the wrong type - a string where the
  * chain answers true or false - is an editor error and a compile error.
- *
- * A listener must not use a local of the function it is written in:
- * AssemblyScript has no closures ("Not implemented: Closures").
  */
 export declare class Game {
     /**
@@ -1072,7 +1102,7 @@ export declare class Target {
 export declare function paint(text: string): string;
 /** What paint() decided, read by print immediately afterwards. */
 export declare let swapTeam: string;
-export declare function print<T extends Target | Player | number = Target>(to: T, message: string, variant?: VariantName): void;
+export declare function print<T extends Target | Client | number = Target>(to: T, message: string, variant?: VariantName): void;
 export declare namespace cvar {
     function num(name: string): number;
     function setNum(name: string, value: number): void;
@@ -1088,20 +1118,21 @@ export declare function cmd(pattern: string, handler: Handler, flag?: FlagName, 
  * `Continue` lets AMX Mod X pass the command on to whoever else registered it.
  */
 export declare function cmdWide(pattern: string, handler: WideHandler, flag?: FlagName, info?: string): void;
+/** What a timer runs. */
+export type TimerHandler = () => void;
 /**
- * Runs the handler once, after a delay in milliseconds.
+ * Runs the handler once, after a delay in milliseconds, and returns its
+ * handle - as in the browser:
  *
- *   setTimeout(respawn, 3000, id)
+ * ```ts
+ * const handle = setTimeout(() => print(player, "Welcome!"), 2000);
+ * clearTimeout(handle);
+ * ```
  *
- * The same shape as the browser's, including the third argument handed to the
- * handler - which here is also the handle, because AMX Mod X identifies a task
- * by a number the handler is given rather than by anything it returns. Leave
- * it out and one is made up.
- *
- * The delay crosses as the bit pattern of a 32-bit float, because a Pawn
- * native takes cells and every signature in the table is all-i on purpose.
+ * The handler may use the variables around it. A server timer (set_task)
+ * underneath, so it is as fine-grained as a server frame.
  */
-export declare function setTimeout(handler: Handler, ms: number, arg?: number): number;
+export declare function setTimeout(handler: TimerHandler, ms?: number): number;
 /** What sleep() takes besides the time. */
 export declare class SleepOptions {
     /** Gives the wait up when it aborts: the promise rejects with its reason. */
@@ -1120,10 +1151,11 @@ export declare class SleepOptions {
  * that player leaves.
  */
 export declare function sleep(ms: number, options?: SleepOptions): Promise<void>;
-/** The same, firing over and over until clearInterval stops it. */
-export declare function setInterval(handler: Handler, ms: number, arg?: number): number;
+/** The same, firing every `ms` until clearInterval stops it. */
+export declare function setInterval(handler: TimerHandler, ms: number): number;
 /**
- * Stops the task with that handle, and gives its callback slot back.
+ * Stops the timer with that handle, and gives its callback slot back. A
+ * handle that is not armed - fired already, cleared already - is ignored.
  *
  * Not the raw `remove_task`: a task armed here belongs to the host plugin,
  * and remove_task's default is to look only at the plugin asking, so it finds

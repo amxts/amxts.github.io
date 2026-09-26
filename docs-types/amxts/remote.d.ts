@@ -49,11 +49,11 @@ declare class Remote {
 /**
  * A stand-in for function `id` of the plugin that wrote `r`: a copy of
  * `stub` - a function of the same signature that calls back - with the place
- * in its `_env`, where the stub finds it (__co_env, as/promise.ts). The same
+ * in its `_env`, where the stub finds it (__env, the compiler's). The same
  * function is the same stand-in, so it can be compared and removed.
  */
 export declare function receiveFunction(r: Reader, stub: usize): usize;
-/** The first thing a stub does: where it calls. Before any other call, which would change __co_env. */
+/** The first thing a stub does: where it calls. Before any other call, which would change __env. */
 export declare function remoteTarget(): Remote;
 /** A call of the function a stand-in stands for. */
 export declare function beginCallback(target: Remote): Writer;

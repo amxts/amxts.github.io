@@ -1,5 +1,5 @@
 /// <reference path="../as-types.d.ts" />
-import { Player } from "./facade";
+import { Client, Player } from "./facade";
 /**
  * The plugin has loaded: register commands, events and hooks here.
  *
@@ -91,8 +91,8 @@ export declare class ClientInfochangedEvent {
  */
 export declare class ClientConnectEvent {
     /** The player the event is about. */
-    player: Player;
-    constructor(player: Player);
+    player: Client;
+    constructor(player: Client);
 }
 /**
  * A player started connecting, with his name and address - the place to turn him away.
@@ -103,14 +103,14 @@ export declare class ClientConnectEvent {
  */
 export declare class ClientConnectexEvent {
     /** The player the event is about. */
-    player: Player;
+    player: Client;
     /** The name he connects with. */
     name: string;
     /** His address, with the port. */
     ip: string;
     /** What he is shown if he is turned away. */
     reason: string;
-    constructor(player: Player, name: string, ip: string, reason: string);
+    constructor(player: Client, name: string, ip: string, reason: string);
 }
 /**
  * A player's SteamID is known. It may come before or after "putinserver".
@@ -121,10 +121,10 @@ export declare class ClientConnectexEvent {
  */
 export declare class ClientAuthorizedEvent {
     /** The player the event is about. */
-    player: Player;
+    player: Client;
     /** His SteamID. */
     authid: string;
-    constructor(player: Player, authid: string);
+    constructor(player: Client, authid: string);
 }
 /**
  * Old form of "disconnected" that misses some cases - use "disconnected".
@@ -199,8 +199,8 @@ export declare class ClientCommandEvent {
  */
 export declare class ClientPutinserverEvent {
     /** The player the event is about. */
-    player: Player;
-    constructor(player: Player);
+    player: Client;
+    constructor(player: Client);
 }
 /**
  * Called when an inconsistent file is encountered by the engine.
