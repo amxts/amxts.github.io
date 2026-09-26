@@ -38,6 +38,8 @@ const searchNpmCached = defineCachedFunction(async (): Promise<AmxtsModule[]> =>
     slug: moduleSlug(pkg.name),
     package: pkg.name,
     title: null,
+    authorUrl: null,
+    authorAvatar: null,
     description: { en: pkg.description ?? '', ru: pkg.description ?? '' },
     author: pkg.author?.name ?? pkg.publisher?.username ?? '',
     repository: pkg.links?.repository ?? pkg.links?.homepage ?? null,
@@ -83,6 +85,8 @@ export async function listModules(): Promise<AmxtsModule[]> {
       repository: npm.repository ?? fallback.repository,
       category: npm.category === 'other' ? fallback.category : npm.category,
       title: fallback.title,
+      authorUrl: fallback.authorUrl,
+      authorAvatar: fallback.authorAvatar,
       docs: fallback.docs,
       requires: fallback.requires,
     }

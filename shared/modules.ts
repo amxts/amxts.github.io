@@ -21,6 +21,9 @@ export interface AmxtsModule {
   title: Record<SiteLocale, string> | null
   description: Record<SiteLocale, string>
   author: string
+  /** The author's profile and picture, when the package says who they are. */
+  authorUrl: string | null
+  authorAvatar: string | null
   repository: string | null
   category: ModuleCategory
   /** The docs page about it, without the locale prefix (`/docs/menus`). */
@@ -73,6 +76,8 @@ export const fallbackModules: AmxtsModule[] = [
     title: module.title,
     description: module.description,
     author: module.author,
+    authorUrl: module.authorUrl,
+    authorAvatar: module.authorAvatar,
     repository: module.repository,
     category: categoryFromKeywords(module.keywords),
     docs: null,
@@ -90,6 +95,8 @@ export const fallbackModules: AmxtsModule[] = [
       ru: 'fetch() для плагинов поверх модуля easy_http: настоящий Promise<Response>, который можно ждать через await или .then и .catch, GET, POST, PUT, PATCH и DELETE, заголовки и отмена через AbortSignal.',
     },
     author: 'amxts',
+    authorUrl: null,
+    authorAvatar: null,
     repository: null,
     category: 'network',
     docs: null,

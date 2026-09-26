@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 import type { AmxtsModule } from '#shared/modules'
-import { useClipboard } from '@vueuse/core'
+import { createReusableTemplate, useClipboard } from '@vueuse/core'
 import { categoryIcons, isOfficial } from '#shared/modules'
 
 const route = useRoute()
@@ -12,6 +12,9 @@ const toast = useToast()
 const { copy } = useClipboard()
 
 const slug = computed(() => String(route.params.slug))
+
+// the links and details: under the README's contents when it has any, else on their own
+const [DefineAside, ReuseAside] = createReusableTemplate()
 
 const { data, error } = await useFetch<{ module: AmxtsModule, readme: string | null }>(
   () => `/api/modules/${slug.value}`,
@@ -85,7 +88,7 @@ useSeoMeta({
 
             {{ title }}
 
-            <UTooltip v-if="isOfficial(module.package)" :text="t('modules.official')">
+            <UTooltip v-if="isOfficial(module.package)" :text="t('modules.officialModule')">
               <UIcon name="i-lucide-badge-check" class="size-6 shrink-0 text-primary" />
             </UTooltip>
           </span>
@@ -111,11 +114,18 @@ useSeoMeta({
 
           <UBadge v-else :label="t('modules.unpublished')" color="warning" variant="subtle" />
 
-          <span v-if="module.author" class="inline-flex items-center gap-1">
-            <UIcon name="i-lucide-user" class="size-4" />
+          <ULink
+            v-if="module.author"
+            :to="module.authorUrl ?? undefined"
+            target="_blank"
+            class="inline-flex items-center gap-1.5 text-muted hover:text-highlighted"
+          >
+            <UAvatar v-if="module.authorAvatar" :src="module.authorAvatar" :alt="module.author" size="2xs" />
+
+            <UIcon v-else name="i-lucide-user" class="size-4" />
 
             {{ module.author }}
-          </span>
+          </ULink>
         </div>
       </UPageHeader>
 
@@ -130,14 +140,8 @@ useSeoMeta({
       </UPageBody>
 
       <template #right>
-        <UPageAside>
-          <UContentToc
-            v-if="doc?.body?.toc?.links?.length"
-            :title="t('docs.toc')"
-            :links="doc.body.toc.links"
-          />
-
-          <div v-if="links.length" class="mt-6 flex flex-col gap-2 text-sm">
+        <DefineAside>
+          <div v-if="links.length" class="flex flex-col gap-2 text-sm">
             <p class="font-semibold text-highlighted">
               {{ t('modules.links') }}
             </p>
@@ -178,6 +182,22 @@ useSeoMeta({
               <UBadge v-for="name in module.requires" :key="name" :label="name" color="neutral" variant="outline" size="sm" />
             </div>
           </div>
+        </DefineAside>
+
+        <UContentToc
+          v-if="doc?.body?.toc?.links?.length"
+          :title="t('docs.toc')"
+          :links="doc.body.toc.links"
+        >
+          <template #bottom>
+            <USeparator class="my-6" type="dashed" />
+
+            <ReuseAside />
+          </template>
+        </UContentToc>
+
+        <UPageAside v-else>
+          <ReuseAside />
         </UPageAside>
       </template>
     </UPage>

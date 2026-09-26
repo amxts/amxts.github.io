@@ -53,7 +53,8 @@
     "create": "Create your own module",
     "installThis": "Install this module",
     "links": "Links",
-    "details": "Details"
+    "details": "Details",
+    "officialModule": "Official module"
   },
   "page": {
     "copy": "Copy page",

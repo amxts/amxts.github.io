@@ -10,6 +10,8 @@
       "ru": "INI configs for amxts plugins: sections, typed values, paths - and the cfg_* natives for Pawn plugins."
     },
     "author": "kukson777",
+    "authorUrl": "https://github.com/kukson777",
+    "authorAvatar": "https://github.com/kukson777.png?size=64",
     "repository": "https://github.com/amxts/config-core",
     "keywords": [
       "amxts-module",
@@ -30,6 +32,8 @@
       "ru": "Удобный способ создавать меню для серверов Counter-Strike 1.6"
     },
     "author": "kukson777",
+    "authorUrl": "https://github.com/kukson777",
+    "authorAvatar": "https://github.com/kukson777.png?size=64",
     "repository": "https://github.com/amxts/menu-core",
     "keywords": [
       "amxts-module",

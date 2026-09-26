@@ -12,6 +12,12 @@
   --ui-container: var(--container-8xl);
 }
 
+/* Room for the scrollbar is kept whether or not a page scrolls, so nothing
+   fixed (toasts, the header) shifts when it appears or a modal locks it. */
+html {
+  scrollbar-gutter: stable;
+}
+
 /* The landing's sections are neutral-950 in dark mode; the rest of the site matches them. */
 .dark {
   --ui-bg: var(--ui-color-neutral-950);

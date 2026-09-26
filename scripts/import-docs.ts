@@ -302,6 +302,9 @@ interface OfficialModule {
   title: Record<'en' | 'ru', string>
   description: Record<'en' | 'ru', string>
   author: string
+  /** Where the author's name links to, and their picture (GitHub's, when the url is a GitHub profile). */
+  authorUrl: string | null
+  authorAvatar: string | null
   repository: string | null
   keywords: string[]
   requires: string[]
@@ -332,6 +335,8 @@ if (existsSync(modulesSource)) {
       title,
       description,
       author: typeof pkg.author === 'string' ? pkg.author : pkg.author?.name ?? '',
+      authorUrl: pkg.author?.url ?? null,
+      authorAvatar: pkg.author?.url?.match(/^https:\/\/github\.com\/([\w-]+)\/?$/) ? `${pkg.author.url.replace(/\/$/, '')}.png?size=64` : null,
       repository: repositoryUrl?.replace(/^git\+/, '').replace(/\.git$/, '') ?? null,
       keywords: pkg.keywords ?? [],
       // the other official modules it needs on the server (the core itself goes without saying)
