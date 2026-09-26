@@ -56,6 +56,7 @@ export declare function entries(section: Section): SectionEntry[];
  * more than once - how many times it is. A path counts what it leads to.
  */
 export declare function size(section: Section, key: string): number;
+/** Whether the section has the key. A key with "/" is not a path here. */
 export declare function has(section: Section, key: string): boolean;
 /**
  * Sets a value. A key that is not there is made; a value past the end of its
@@ -64,7 +65,9 @@ export declare function has(section: Section, key: string): boolean;
  * way.
  */
 export declare function set(section: Section, key: string, text: string, index?: number, line?: number): boolean;
+/** Sets a whole number; the fraction is dropped: 2.7 is written as 2. */
 export declare function setInt(section: Section, key: string, value: number, index?: number): boolean;
+/** Sets a number, written as is: 2.5, not 2.500000. */
 export declare function setNumber(section: Section, key: string, value: number, index?: number): boolean;
 /** Written as 1 or 0. */
 export declare function setBoolean(section: Section, key: string, value: boolean, index?: number): boolean;
@@ -82,9 +85,11 @@ export declare function setContent(section: Section, key: string, content: Conte
 export declare function setRowComment(section: Section, key: string, row: number, comment: string): boolean;
 /** How a Pawn plugin knows a config: its place among the loaded ones; -1 for none. */
 export declare function configHandle(config: Config): number;
+/** The config a Pawn plugin's handle stands for; null for none. */
 export declare function configByHandle(handle: number): Config | null;
 /** How a Pawn plugin knows a section: its place among every loaded one; -1 for none. */
 export declare function sectionHandle(found: Section): number;
+/** The section a Pawn plugin's handle stands for; null for none. */
 export declare function sectionByHandle(handle: number): Section | null;
 /** A section of that name in any config: the last one loaded. */
 export declare function findSection(name: string): Section | null;

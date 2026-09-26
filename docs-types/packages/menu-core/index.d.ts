@@ -2,8 +2,8 @@
  * Menu Core — an opinionated way to create menus: from an ini file or in code,
  * with conditions, placeholders and lists. How to use it: README.md.
  */
-import { MenuItemOptions, MenuShowOptions, Player } from "~/facade";
-import { ActionHandler, ActionTest, ConditionFilter, ConditionTest, ListRow, ListSource, Menu, MenuCoreOptions, MenuEventType, MenuListener, PlaceholderValue, RestrictionTest } from "./types";
+import { Player } from "~/facade";
+import { ActionHandler, ActionTest, ConditionFilter, ConditionTest, ListRow, ListSource, Menu, MenuCoreOptions, MenuEventType, MenuItemOptions, MenuListener, MenuShowOptions, PlaceholderValue, RestrictionTest } from "./types";
 export * from "./types";
 declare const _default: AmxtsModule<MenuCoreOptions>;
 export default _default;
@@ -16,6 +16,7 @@ export declare function setConfigFile(file: string, fallback?: string): void;
 export declare function find(name: string): Menu | null;
 /** A menu's place among all of them - what mc_get_active_menu gives Pawn; -1 for none. */
 export declare function indexOf(menu: Menu | null): number;
+/** The menu at that place among all of them - the reverse of indexOf(); null when there is none. */
 export declare function menuAt(index: number): Menu | null;
 /** The menu of the file's [name] section, read now if it is not yet; null when it has none or no items. */
 export declare function register(name: string): Menu | null;
@@ -26,8 +27,9 @@ export declare function create(name: string, title: string): Menu;
  * first whose condition holds is shown. False when the name gives none.
  */
 export declare function addItem(menu: Menu, name: string, options?: MenuItemOptions): boolean;
-/** An item that always takes slot 1-7 of every page. */
+/** An item that takes the same slot on every page: `slot` is its key, 1 to 7. */
 export declare function addFixedItem(menu: Menu, slot: number, name: string, options?: MenuItemOptions): boolean;
+/** Removes all items of the menu, fixed ones too. */
 export declare function clearItems(menu: Menu): void;
 /** A list menu leaves out rows that fail `condition`; `message` is said when none is left. */
 export declare function addFilter(menu: Menu, condition: string, message?: string): void;
@@ -47,6 +49,7 @@ export declare function addActionCheck(menu: string, action: string, test: Actio
 export declare function addConditionFilter(name: string, filter: ConditionFilter): number;
 /** The rows of the list menu `menu`, instead of the players; a second source replaces the first. */
 export declare function setListSource(menu: string, rows: ListSource): number;
+/** Calls `listener` on every menu event of `type`: "open", "close", or "show" before a menu opens. */
 export declare function addEventListener(type: MenuEventType, listener: MenuListener): number;
 /** A row for a list source. */
 export declare function listRow(target: number, text: string, action?: string, restriction?: string, restrictionMessage?: string): ListRow;
@@ -69,6 +72,7 @@ export declare function activeMenu(player: Player): Menu | null;
 export declare function shownText(player: Player): string;
 /** Stops the player choosing items - and other menus replacing this one - until unlocked or closed. */
 export declare function lock(player: Player, locked?: boolean): void;
+/** Whether the player's menu is locked - see lock(). */
 export declare function isLocked(player: Player): boolean;
 /** The page the player's menu is drawn at next. */
 export declare function setPage(player: Player, page: number): void;

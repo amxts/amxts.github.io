@@ -18,6 +18,7 @@ declare global {
 
 	/** What `defineModule` takes: the module's meta, what it requires, its options and its setup. */
 	interface AmxtsModule<T> {
+		/** Who the module is: its name and configKey. */
 		meta: AmxtsModuleMeta;
 		/** Module packages that must be listed in amxts.config.ts too - loaded before this one. */
 		requires?: string[];

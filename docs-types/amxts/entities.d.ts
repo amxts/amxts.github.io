@@ -7,12 +7,12 @@ import { EntityFlag, Effect, Button, HideHud, Damage } from "./flags";
  * entity has to match all that are given:
  * `Entity.findAll({ classname: "info_target", near: player.origin, radius: 200 })`.
  */
-export declare class EntityFilter {
+export interface EntityFilter {
     classname?: string;
     /** The model, as the entity has it: "models/w_c4.mdl". */
     model?: string;
     /** Whose it is: a grenade's thrower, a weapon's carrier - `{ owner: player }`. */
-    owner?: Entity | null;
+    owner?: Entity;
     /** Only those whose origin is within `radius` units of here. */
     near?: number[];
     radius?: number;

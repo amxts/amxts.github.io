@@ -151,6 +151,24 @@ function splitFences(text: string) {
   return parts
 }
 
+/**
+ * VitePress' `::: code-group` ... `:::` around code blocks becomes Nuxt UI's
+ * `::code-group` ... `::`, its tabs synced site-wide like the package-manager
+ * ones. The closing line is the first bare `:::` outside a code block.
+ */
+function codeGroups(lines: string[]) {
+  let fenced = false
+  let open = false
+  for (const [i, line] of lines.entries()) {
+    if (line.trimStart().startsWith('```'))
+      fenced = !fenced
+    else if (!fenced && line.trim() === '::: code-group')
+      [lines[i], open] = ['::code-group{sync="pm"}', true]
+    else if (!fenced && open && line.trim() === ':::')
+      [lines[i], open] = ['::', false]
+  }
+}
+
 function convert({ markdown, prefix, titles, navigation }: Page) {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n')
   const h1 = lines.findIndex(line => line.startsWith('# '))
@@ -158,6 +176,7 @@ function convert({ markdown, prefix, titles, navigation }: Page) {
   const title = (h1 >= 0 ? lines[h1]!.slice(2).trim() : navigation).replaceAll('`', '')
   if (h1 >= 0)
     lines.splice(h1, 1)
+  codeGroups(lines)
 
   const body = splitFences(lines.join('\n').trim()).map((part, i) => {
     if (i % 2 === 1)
@@ -233,21 +252,26 @@ for (const { code, dir } of locales) {
   console.log(`${code}: ${files.length} pages -> ${out}`)
 }
 
-const types = join(source, 'types')
-rmSync(resolve('docs-types'), { recursive: true, force: true })
-if (existsSync(types)) {
-  cpSync(types, resolve('docs-types'), { recursive: true })
+// The framework's declarations: English (docs-types/, the docs' hovers and the
+// playground) and Russian (docs-types-ru/, the playground on /ru), when the
+// framework wrote them (`bun run types:site -- --lang ru`).
+for (const [from, to] of [['types', 'docs-types'], ['types-ru', 'docs-types-ru']] as const) {
+  const types = join(source, from)
+  const out = resolve(to)
+  rmSync(out, { recursive: true, force: true })
+  if (!existsSync(types)) {
+    mkdirSync(out)
+    console.warn(`types: ${types} is missing, the examples show no framework types on hover`)
+    continue
+  }
+  cpSync(types, out, { recursive: true })
   // The AssemblyScript prelude (i32, bool...) is global: every declaration
   // file under amxts/ references it, so an example sees it whatever it imports.
-  const framework = resolve('docs-types/amxts')
+  const framework = join(out, 'amxts')
   for (const file of readdirSync(framework, { recursive: true, encoding: 'utf8' }).filter(file => file.endsWith('.d.ts'))) {
     const path = join(framework, file)
-    const up = relative(dirname(path), resolve('docs-types')).replaceAll('\\', '/') || '.'
+    const up = relative(dirname(path), out).replaceAll('\\', '/') || '.'
     writeFileSync(path, `/// <reference path="${up}/as-types.d.ts" />\n${readFileSync(path, 'utf8')}`)
   }
-  console.log(`types: ${types} -> docs-types`)
-}
-else {
-  mkdirSync(resolve('docs-types'))
-  console.warn(`types: ${types} is missing, the examples show no framework types on hover`)
+  console.log(`types: ${types} -> ${to}`)
 }

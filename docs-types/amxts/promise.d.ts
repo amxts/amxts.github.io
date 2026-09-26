@@ -35,11 +35,7 @@ declare function __co_wake_up(): void;
 declare const __PENDING: i32;
 declare const __FULFILLED: i32;
 declare const __REJECTED: i32;
-/**
- * What every Promise<T> is underneath, whatever T: its state, and its value
- * as raw storage - a reference, or the bits of a number - so the host and
- * the compiler can settle one without knowing T.
- */
+/** What every Promise is, whatever its value's type: a plugin uses Promise<T>. */
 declare class PromiseBase {
     /** @hidden */ __state: i32;
     /** @hidden settled with a value, not with nothing - an async listener's answer. */
@@ -62,12 +58,9 @@ declare class PromiseBase {
     __react(job: __Job): void;
     private __flush;
 }
-/**
- * What an editor's `await` looks for - anything with a `then`. Only the
- * editor reads it (TypeScript asks for the global); the compiler awaits a
- * Promise and nothing else.
- */
+/** Anything with a `then` - what `await` takes in the editor. In a plugin, `await` a Promise. */
 interface PromiseLike<T> {
+    /** Calls `onFulfilled` with the value once there is one. */
     then(onFulfilled: (value: T) => void): void;
 }
 /** A value that is not there yet: the result of a request, a timer, an async function. */
@@ -204,8 +197,11 @@ declare function __co_race<T>(values: PromiseBase[]): Promise<T>;
 declare function __co_raceList<T>(values: Promise<T>[]): Promise<T>;
 /** What Promise.any is rejected with when every promise is: their reasons are in `errors`. */
 declare class AggregateError extends Error {
+    /** Why each promise was rejected, in the order they were given. */
     errors: Error[];
-    constructor(errors: Error[], message?: string);
+    constructor(
+    /** Why each promise was rejected, in the order they were given. */
+    errors: Error[], message?: string);
 }
 declare class __AnyState {
     target: PromiseBase;
@@ -452,8 +448,11 @@ declare function __co_parked(id: i32): usize;
 declare function __co_unpark(id: i32, lo: usize): void;
 /** What an abort listener is handed. */
 declare class Event {
+    /** What happened: "abort". */
     type: string;
-    constructor(type: string);
+    constructor(
+    /** What happened: "abort". */
+    type: string);
 }
 /** @hidden something the hood does when a signal aborts. */
 declare class __AbortWatch {
@@ -471,6 +470,7 @@ declare class AbortSignal {
     get reason(): Error | null;
     /** Calls `listener` when it aborts. */
     addEventListener(type: "abort", listener: (event: Event) => void): void;
+    /** Takes back a `listener` given to addEventListener: it is not called any more. */
     removeEventListener(type: "abort", listener: (event: Event) => void): void;
     /** A signal that aborts by itself after `ms`, with an Error named "TimeoutError". */
     static timeout(ms: number): AbortSignal;
@@ -487,6 +487,7 @@ declare class AbortSignal {
 }
 /** Aborts its `signal` on demand: `controller.abort()`. */
 declare class AbortController {
+    /** The signal it aborts: hand it to fetch, sleep or anything else that takes one. */
     readonly signal: AbortSignal;
     /** Aborts the signal, with `reason` or an Error named "AbortError". */
     abort(reason?: Error | null): void;

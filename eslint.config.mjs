@@ -16,7 +16,7 @@ export default antfu(
     // (scripts/import-docs.ts): its pages, whose code blocks are fragments
     // ("..."), and its generated type declarations.
     markdown: false,
-    ignores: ['content/**', 'docs-types/**'],
+    ignores: ['content/**', 'docs-types/**', 'docs-types-ru/**'],
   },
   {
     ...betterTailwindcss.configs['correctness-error'],

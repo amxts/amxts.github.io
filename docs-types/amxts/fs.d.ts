@@ -4,7 +4,7 @@ import "./promise";
  * A whole file as text, or null when it cannot be opened.
  *
  * ```ts
- * const text = fs.readFileSync("addons/amxmodx/configs/hns.ini");
+ * const text = fs.readFileSync("addons/amxmodx/configs/myplugin.ini");
  * if (text == null) return;
  * ```
  *
@@ -36,6 +36,7 @@ export declare function existsSync(path: string): boolean;
 export declare function readdirSync(path: string): string[] | null;
 /** What mkdirSync takes: `{ recursive: true }` makes the missing folders above it too. */
 export declare class MakeDirectoryOptions {
+    /** Make every missing folder on the way too; false by default. */
     recursive: boolean;
 }
 /**
@@ -57,7 +58,7 @@ export declare function mkdir(path: string, options?: MakeDirectoryOptions): Pro
  * cannot be opened, like Node's `fs.promises.readFile`.
  *
  * ```ts
- * const text = await fs.readFile("addons/amxmodx/configs/hns.ini");
+ * const text = await fs.readFile("addons/amxmodx/configs/myplugin.ini");
  * ```
  */
 export declare function readFile(path: string): Promise<string>;

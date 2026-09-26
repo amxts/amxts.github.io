@@ -13,6 +13,7 @@
 /** The value a promise gives, or the value itself. */
 type __PromiseValue<T> = T extends Promise<infer U> ? U : T;
 
+/** The statics that take a list of promises: all, allSettled, race and any. */
 declare namespace Promise {
 	/**
 	 * Fulfilled with every value, in order, once all are; rejected with the

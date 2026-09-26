@@ -28,7 +28,7 @@ export interface MenuItem {
     spaceBefore: number;
     /** Blank lines after it. */
     spaceAfter: number;
-    /** The slot a fixed item always takes, 0-6; -1 for an item in the flow. */
+    /** The slot a fixed item always takes, counted from 0: key 1 is 0, key 7 is 6. -1 for an item in the flow. */
     slot: number;
 }
 /** Rows of a list menu that fail the condition are left out; `message` says so when none is left. */
@@ -84,6 +84,40 @@ export interface ListRow {
     /** Why it is greyed out; "" is the restriction's own message. */
     restrictionMessage: string;
 }
+/** How `menus.show` opens a menu: `menus.show(player, "SHOP", { time: 10 })`. Every field may be left out. */
+export interface MenuShowOptions {
+    /** Seconds on the countdown; left out, the one running goes on, or the menu's TIME starts. */
+    time?: number;
+    /** Who the menu is about: %target%, and the target an action gets; 0 when left out. */
+    target?: number;
+    /** Starts the way back anew. */
+    resetHistory?: boolean;
+    /** Opens over a menu that holds on: a countdown, or locked. */
+    force?: boolean;
+    /** Leaves the menu out of the way back. */
+    skipHistory?: boolean;
+}
+/** What `menus.addItem` takes besides the name. Every field may be left out. */
+export interface MenuItemOptions {
+    /** Text after the name, placeholders and all: "%hp%". */
+    placeholder?: string;
+    /** The condition it is shown under - a name from addCondition, "!NAME" for its opposite, several space-separated must all hold. */
+    condition?: string;
+    /** What choosing it does - a name from addAction, or a built-in: "SHOW_<MENU>", "CLOSE_MENU". */
+    action?: string;
+    /** What choosing it does, instead of naming an action. */
+    onSelect?: (player: Player, target: number, name: string) => void;
+    /** Greys it out while it holds - a name from addRestriction, "ADMIN" or "FLAG_<letters>". */
+    restriction?: string;
+    /** Shown beside it while it is greyed out; left out, the restriction's own message. */
+    restrictionMessage?: string;
+    /** Its place among the items; left out, the end. */
+    at?: number;
+    /** Blank lines before it. */
+    spaceBefore?: number;
+    /** Blank lines after it. */
+    spaceAfter?: number;
+}
 /** Whether a condition holds. In a list menu `player` is the row's player and `viewer` whoever looks. */
 export type ConditionTest = (player: Player, viewer: Player, name: string) => boolean;
 /** What choosing an item does. `target` is the row's in a list menu, else the menu's. */
@@ -98,15 +132,27 @@ export type ActionTest = (player: Player, menu: string, action: string) => boole
 export type ConditionFilter = (player: Player, viewer: Player, name: string, value: boolean) => boolean;
 /** The rows of a list menu; null lists the players instead. */
 export type ListSource = (viewer: Player, menu: string) => ListRow[] | null;
+/** What addEventListener() calls on a menu event. */
 export type MenuListener = (event: MenuEvent) => void;
 /** "open" and "close" as they happen; "show" before a menu opens, to stop it. */
 export type MenuEventType = "open" | "close" | "show";
+/** A menu event: the `player`, the `menu` name, and on "close" whether its `timeout` ran out. */
 export declare class MenuEvent {
+    /** Whose menu it is. */
     player: Player;
+    /** The menu's name. */
     menu: string;
+    /** On "close": the menu closed because its time ran out. */
     timeout: boolean;
+    /** Whether preventDefault() was called. */
     defaultPrevented: boolean;
-    constructor(player: Player, menu: string, timeout: boolean);
+    constructor(
+    /** Whose menu it is. */
+    player: Player, 
+    /** The menu's name. */
+    menu: string, 
+    /** On "close": the menu closed because its time ran out. */
+    timeout: boolean);
     /** On "show": the menu does not open. */
     preventDefault(): void;
 }

@@ -3,6 +3,7 @@
 export declare class RequestInit {
     /** GET by default; POST, PUT, PATCH and DELETE are what easy_http has. */
     method?: string;
+    /** The text sent with the request, such as JSON for a POST; empty by default. */
     body?: string;
     /** Pairs, as the Fetch standard's HeadersInit: `[["Content-Type", "application/json"]]`. */
     headers?: string[][];
@@ -15,9 +16,15 @@ export declare class RequestInit {
 }
 /** What came back. */
 export declare class Response {
+    /** The HTTP status: 200, 404, ... */
     status: number;
+    /** The body, as text. */
     text: string;
-    constructor(status: number, text: string);
+    constructor(
+    /** The HTTP status: 200, 404, ... */
+    status: number, 
+    /** The body, as text. */
+    text: string);
     /** A 2xx status. */
     get ok(): boolean;
 }

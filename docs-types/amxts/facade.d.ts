@@ -1,58 +1,41 @@
 /// <reference path="../as-types.d.ts" />
 import "./promise";
 import { Vector } from "./vector";
-/**
- * The usual handler: a player id, nothing to say back.
- *
- * `call_indirect` checks the type on the module's side, so a handler's shape
- * is fixed at registration and there are exactly two of them. This one covers
- * a player event and a command.
- */
+/** The usual handler: a player id, nothing to say back - what a player event and a command call. */
 export type Handler = (id: number) => void;
 /**
- * The wide handler: up to four cells, and nothing returned.
+ * The wide handler: up to four numbers, nothing returned.
  *
- * A forward carrying more than a player id needs this, and so does a hookchain.
- * String arguments arrive as pointers into this plugin's own memory; read them
- * with `argString`, or use the registrar for that event, which does it for you.
+ * A forward carrying more than a player id needs it, and so does a hookchain.
+ * A string argument arrives as a number: read it with `argString`, or use the
+ * registrar for that event, which reads it for you.
  *
  * To stop AMX Mod X passing the event on, or to block what a hookchain hooks,
- * call handled() - a handler returns nothing at all.
+ * call handled().
  */
 export type WideHandler = (a: number, b: number, c: number, d: number) => void;
+/** @hidden For the hood: what the server calls for `handler`. */
+export declare function hostIndex<T>(handler: T, wide: bool): i32;
 /**
  * Stops the event here: AMX Mod X does not pass it to anyone else, and a
- * hookchain does not call what it hooked.
+ * hookchain does not call what it hooked. It applies to the handler that is
+ * running and to nothing else.
  *
  *   function onSay(id: number): void {
  *     if (muted(id)) handled();
  *   }
- *
- * Said rather than returned, so that the nine handlers in ten which have
- * nothing to say about it end without a line about this bridge. It applies to
- * the handler that is running and to nothing else.
  */
 export declare function handled(): void;
 /** For a native whose answer is not simply 0 or 1 - Ham's, for instance. */
 export declare function outcome(value: number): void;
 /**
- * A float as the cell Pawn carries it in.
- *
- * Every argument and every return crosses as a 32-bit cell, and a float rides
- * in one as its bit pattern. A float literal here is 64-bit, so the narrowing
- * belongs in one place rather than at every call:
+ * A number as Pawn's `Float:`, for a raw native or `ret()`:
  *
  *   ret(floatCell(2.5));
  *   rg_round_end(floatCell(5.0), ...);
  */
 export declare function floatCell(value: f64): number;
-/**
- * A real number as a whole one, rounded rather than chopped.
- *
- * Pawn's floatround, and the thing every count of seconds needs on its way to
- * something that counts in whole ones. `<number>x` truncates, which loses a
- * second off every round time that is not exact.
- */
+/** A number rounded to a whole one, as Pawn's floatround: a round time of 59.6 seconds is 60, not 59. */
 export declare function rounded(value: number): number;
 /** The other way: a cell that holds a float, as a number to work with. */
 export declare function cellFloat(cell: number): f64;
@@ -68,8 +51,8 @@ export declare function ret(value: number): void;
  * if (pub.length > 0) register_message(get_user_msgid("DeathMsg"), pub);
  * ```
  *
- * The `if` is the whole subtlety - and it tests the length, because a string
- * in AssemblyScript is a reference and an empty one is still not null. None of those registrations can be undone,
+ * The `if` is the whole subtlety - and it tests the length, because an
+ * empty string is still not null. None of those registrations can be undone,
  * so after a hot reload the plugin takes its own slot back and the AMXX side
  * is still pointing at it - registering again would fire the handler twice.
  * An empty name means "already registered, leave it alone", and also covers
@@ -80,36 +63,30 @@ export declare function ret(value: number): void;
  * when the handler says nothing - 0 for most things, 1 where the facility
  * expects PLUGIN_HANDLED.
  *
- * **Register from the `plugin_cfg` event, not from the top of the file.** A
- * plugin's top level runs during plugin_natives, which is early enough that a
- * native registering a command with the engine - register_concmd, register_srvcmd -
- * crashes the server when that command is later typed. Measured, not guessed:
- * the same registration moved into `server.addEventListener("cfg", ...)` works. `cmd()` is
- * the exception, because a client command never reaches the engine's table.
+ * **Register from the "cfg" event, not from the top of the file.** A
+ * plugin's top level runs so early that a native registering a command with
+ * the engine - register_concmd, register_srvcmd - crashes the server when
+ * that command is later typed; in `server.addEventListener("cfg", ...)` it
+ * works. `cmd()` is the exception: a client command never reaches the
+ * engine's table.
  */
 export declare function publicFor(handler: WideHandler, key: string, fallback?: number): string;
 /**
  * Exports a native for other plugins - Pawn ones included - to call.
  *
- *   nativeFn("nhnse_get_game_mode", getGameMode)
+ *   nativeFn("myplugin_get_mode", getGameMode)
  *
  *   function getGameMode(a: number, b: number, c: number, d: number) {
  *     ret(mode);
  *   }
  *
- * AMX Mod X implements a native as a public in some plugin, so this lends one
- * of the host plugin's, and the module keeps the name: register_native cannot
- * be undone, so a reload takes the same slot back rather than registering the
- * name twice.
- *
- * The handler gets the first four cells as they are; `arg(i)` and
+ * The handler gets the first four arguments as numbers; `arg(i)` and
  * `argText(i)` read any of them, and `setArg` / `setArgText` write back. The
  * newer way needs none of that: an `export function` of the entry file is a
- * native with its real types - see docs/api/natives.md.
+ * native with its real types (the Natives page of the documentation).
  *
- * It must be exported while the file is read, not later: AMX Mod X asks every
- * plugin for its natives before it starts any of them, which is why plugins
- * are loaded from plugin_natives at all.
+ * Export it while the file is read, at the top level, not later: AMX Mod X
+ * asks every plugin for its natives before it starts any of them.
  */
 export declare function nativeFn(name: string, handler: WideHandler): void;
 /**
@@ -254,9 +231,11 @@ export declare class CellArray {
     static fromFloats(values: number[]): CellArray;
     /** How many items it holds. */
     get length(): number;
+    /** Adds a text item, as UTF-8 a byte a cell; it must fit in `cellSize - 1` bytes. */
     pushString(value: string): void;
     /** A whole number - or another array's handle - as one cell. */
     pushCell(value: number): void;
+    /** Adds a `Float:` item, one cell. */
     pushFloat(value: number): void;
     /** One item of several cells: `[a, b]` into an array made with `new CellArray(2)`. */
     pushCells(values: number[]): void;
@@ -265,10 +244,8 @@ export declare function __strings(): i32;
 /**
  * An argument of the handler that is running, by position.
  *
- * A handler takes four, because the module calls it through one fixed type and
- * four covers nearly everything. A message handler or a hookchain sometimes
- * carries more; they are still there, and this reads them. Index 0 is the same
- * cell the handler got as its first parameter.
+ * A handler gets four; a message handler or a hookchain sometimes carries
+ * more, and this reads them. Index 0 is the handler's first parameter.
  *
  *   function onSomething(a: number, b: number, c: number, d: number) {
  *     const fifth = arg(4);
@@ -276,12 +253,7 @@ export declare function __strings(): i32;
  */
 export declare function arg(index: number): number;
 /**
- * The same argument, read as the string it points at.
- *
- * A string does not cross as text: what arrives is an address in the memory of
- * whoever made the call - the host plugin for a command or a hook, the calling
- * plugin for a native this one exported. The module reads it there and hands
- * back the text.
+ * The same argument, read as the string it stands for.
  *
  * This is for a callback. A forward's strings are decoded for the handler
  * already, by the registrar that named it.
@@ -343,89 +315,70 @@ export declare function __cellText(pointer: usize, max: i32): string;
 export declare function __writeCellText(text: string, cells: StaticArray<i32>, at?: i32): i32;
 /** @hidden Text as a Pawn string in a buffer of its own size. */
 export declare function __cellsOf(text: string): StaticArray<i32>;
-/**
- * A Pawn string is text in cells - a byte of UTF-8 in each - so a plugin that
- * calls the raw layer in as/natives.ts passes an i32 array where a C
- * programmer would pass bytes. These two turn that array into a string and
- * back.
- */
+/** The text in an array a raw native from `~/natives` filled - a byte of UTF-8 an item. stringToCells is the other way. */
 export declare function cellsToString(cells: StaticArray<i32>): string;
+/** Writes text into a cell array as a Pawn string: a byte of UTF-8 a cell, then the terminator. */
 export declare function stringToCells(text: string, cells: StaticArray<i32>): void;
 /**
- * A Pawn string for a raw native, without declaring a buffer for it.
+ * A string for a raw native from `~/natives`, without declaring a buffer for
+ * it:
  *
- *   cfg_set_base_dir(cells("nhnse"));
- *   cfg_get_value(section, cells("CHAT_PREFIX"), changetype<i32>(out), 64);
+ *   cfg_set_base_dir(cells("myplugin"));
  *
- * The natives in `~/natives` take addresses, because that is what Pawn pushes:
- * a string has to be somewhere this plugin owns before its address means
- * anything. This writes it into one of eight buffers in turn, so several in
- * one call do not overwrite each other - eight is the limit, and a ninth in
- * the same expression starts again at the first.
- *
- * Only for arguments going in. A native that writes back needs a buffer of the
- * plugin's own, so that it is still there afterwards to read.
+ * It goes into one of eight buffers in turn, so several in one call do not
+ * overwrite each other - eight is the limit, and a ninth in the same
+ * expression takes the first again. Only for arguments going in: a native
+ * that writes text back needs `out()`.
  */
 export declare function cells(text: string): number;
 /**
- * A buffer for a native to write text into, read back with `text()`.
+ * A buffer for a raw native to write text into, read back with `text()`.
  *
  *   const name = out();
  *   get_user_name(id, name, TEXT_MAX);
  *   console.log(text(name));
  *
- * `cells()` is the other direction - text going in. This one is for the
- * natives that hand something back, which would otherwise mean declaring a
- * StaticArray, changetype-ing it and decoding it by hand at every call. Four
- * buffers in turn, so a couple of reads in one expression do not collide.
- *
- * A number a native writes through a `&reference` also needs one of these;
+ * Four buffers in turn, so a couple of reads in one expression do not
+ * collide. A number a native writes through a `&reference` needs one too;
  * `cell()` reads it back.
  */
 export declare function out(): number;
 /** The text a native wrote into one of those buffers. */
 export declare function text(buffer: number): string;
 /**
- * A row of cells for a native to read from or write into.
- *
- * Pawn hands an array over by its address, and a native that fills one - a
- * vector, a list of players, a line of text - writes into memory the caller
- * owns. This is that memory, used like an ordinary array: `buffer[0]`,
- * `buffer.float(2)`, `buffer.text()`. Its `address` is what a native takes.
+ * A row of numbers for a native to read from or write into: a vector, a list
+ * of players, a line of text. Used like an ordinary array - `buffer[0]`,
+ * `buffer.float(2)`, `buffer.text()` - and its `address` is what the native
+ * takes.
  *
  *   const origin = new CellBuffer(3);
  *   entity_set_origin(cube, origin.address);
- *
- * It exists so that a plugin never has to write changetype or StaticArray:
- * those are how AssemblyScript reaches raw memory, and they belong here.
  */
 export declare class CellBuffer {
     private data;
     constructor(length: number);
     /** Three floats, for a native that takes a vector: an origin, a size, a colour. */
     static vector(x: f64, y: f64, z: f64): CellBuffer;
+    /** How many cells it has. */
     get length(): number;
     /** Where it lives, which is what a native taking an array is given. */
     get address(): number;
+    /** The cell at `index`, as a whole number: `buffer[0]`. */
     get(index: number): number;
+    /** Puts a whole number in the cell at `index`: `buffer[0] = 5`. */
     set(index: number, value: number): void;
     /** A cell that holds a float, as a number. */
     float(index: number): f64;
+    /** Puts a number in the cell at `index` as a float, the way a native reads a `Float:`. */
     setFloat(index: number, value: f64): void;
     /** The text a native wrote into it, up to its terminator or its end. */
     text(): string;
     /** Text written in from `at`, a byte of UTF-8 a cell, terminator included. */
     write(at: number, value: string): void;
+    /** Sets every cell to `value`: `buffer.fill(0)` clears it. */
     fill(value: number): void;
 }
-/**
- * An array of `length` copies of `value`: `arrayOf(33, 0)`.
- *
- * TypeScript would write `Array(33).fill(0)`, and AssemblyScript cannot read
- * that without a type argument it has no way to infer. This is the same thing
- * with the type taken from `value`, which is where a reader looks for it too.
- * For objects, give each slot its own - every slot here is the same `value`.
- */
+/** An array of `length` copies of `value`: `arrayOf(33, 0)`. Every slot is the same `value` - for objects, give each slot its own. */
 export declare function arrayOf<T>(length: number, value: T): T[];
 /** The number a native wrote through one, for a `&reference` argument. */
 export declare function cell(buffer: number): number;
@@ -456,19 +409,13 @@ export type Team = "TERRORIST" | "CT" | "SPECTATOR" | "UNASSIGNED";
  * with 0 and 2 (the unused glock slot) left empty.
  */
 export type WeaponName = "weapon_p228" | "weapon_scout" | "weapon_hegrenade" | "weapon_xm1014" | "weapon_c4" | "weapon_mac10" | "weapon_aug" | "weapon_smokegrenade" | "weapon_elite" | "weapon_fiveseven" | "weapon_ump45" | "weapon_sg550" | "weapon_galil" | "weapon_famas" | "weapon_usp" | "weapon_glock18" | "weapon_awp" | "weapon_mp5navy" | "weapon_m249" | "weapon_m3" | "weapon_m4a1" | "weapon_tmp" | "weapon_g3sg1" | "weapon_flashbang" | "weapon_deagle" | "weapon_sg552" | "weapon_ak47" | "weapon_knife" | "weapon_p90";
-/**
- * What `give` hands over: a weapon, or armour and the defuse kit.
- *
- * Spelled out rather than `WeaponName | "item_kevlar" | ...`: AssemblyScript
- * reads a union of string literals as `string`, but not one that mixes a
- * named type in.
- */
+/** What `give` hands over: a weapon, or armour and the defuse kit. */
 export type ItemName = "weapon_p228" | "weapon_scout" | "weapon_hegrenade" | "weapon_xm1014" | "weapon_c4" | "weapon_mac10" | "weapon_aug" | "weapon_smokegrenade" | "weapon_elite" | "weapon_fiveseven" | "weapon_ump45" | "weapon_sg550" | "weapon_galil" | "weapon_famas" | "weapon_usp" | "weapon_glock18" | "weapon_awp" | "weapon_mp5navy" | "weapon_m249" | "weapon_m3" | "weapon_m4a1" | "weapon_tmp" | "weapon_g3sg1" | "weapon_flashbang" | "weapon_deagle" | "weapon_sg552" | "weapon_ak47" | "weapon_knife" | "weapon_p90" | "item_kevlar" | "item_assaultsuit" | "item_thighpack";
 /**
  * Which players `Player.all` returns. Every field is optional:
  * `Player.all({ alive: true, team: "CT" })`.
  */
-export declare class PlayerFilter {
+export interface PlayerFilter {
     /** Only the living. */
     alive?: boolean;
     /** Only the dead. */
@@ -494,7 +441,7 @@ export declare function hasModule(name: ModuleName): boolean;
 /** How `player.kill()` goes. */
 export interface KillOptions {
     /** Leave the frags alone: no suicide penalty. */
-    keepFrags: boolean;
+    keepFrags?: boolean;
 }
 /**
  * A player as he is while connecting - in "connect", "authorized" and
@@ -531,6 +478,13 @@ export interface Client {
     /** Runs a command in his own console, as if he had typed it there. */
     command(text: string): void;
 }
+/**
+ * A player in the game: everything a Client is, and what he has while he
+ * plays - health, armor, frags, team, weapons, what he sees on screen.
+ *
+ * An event about a player hands one over as `event.player`, and
+ * `Player.all()` lists everyone on the server.
+ */
 export declare class Player extends PlayerFields implements Client {
     constructor(id: number);
     /**
@@ -549,11 +503,15 @@ export declare class Player extends PlayerFields implements Client {
      * once a frame at most. Writing the value already there is no change.
      */
     static revision(field: string): number;
+    /** The name he plays under. */
     get name(): string;
+    /** His health: `100` at spawn. Setting it to 0 or less kills him. */
     get health(): number;
     set health(hp: number);
+    /** His armor points: `100` for a bought vest, `0` without one. */
     get armor(): number;
     set armor(value: number);
+    /** His frags on the scoreboard. */
     get frags(): number;
     set frags(value: number);
     /**
@@ -577,10 +535,15 @@ export declare class Player extends PlayerFields implements Client {
      * win conditions are not checked - the caller decides when that happens.
      */
     set team(value: Team);
+    /** His address, without the port. */
     get ip(): string;
+    /** His SteamID: "STEAM_0:1:12345", or "BOT". It may not be known yet in "putinserver". */
     get authid(): string;
+    /** Whether he is alive. */
     get isAlive(): boolean;
+    /** Whether he is still on the server. */
     get isConnected(): boolean;
+    /** Whether he is a bot. */
     get isBot(): boolean;
     /**
      * Aborts when this player leaves the server, with an Error named
@@ -645,15 +608,11 @@ export declare class Player extends PlayerFields implements Client {
     command(text: string): void;
 }
 /**
- * Reads a native that fills a text buffer, without one being built by hand.
+ * Reads a native that fills a text buffer, without building one by hand. The
+ * native itself is passed in:
  *
  *   readText(get_mapname)                 // "c21_kitty"
  *   readText(get_user_name, 32, id)       // not this one: see Player.name
- *
- * A Pawn string is one character per cell, so calling such a native directly
- * means declaring a StaticArray<i32>, passing its address, and decoding it
- * afterwards - three lines of this bridge's plumbing in the middle of a
- * plugin. The native itself is passed in: a function is a value.
  */
 export declare function readText(fill: (out: number, max: number) => number, max?: number): string;
 /**
@@ -688,9 +647,9 @@ export declare function playerIds(flags?: string, team?: string): number[];
 /** What a command handler gets: who typed it and what followed the name. */
 export type CommandHandler = (player: Player, args: string[]) => void;
 /** How a command is registered: who may use it and what it says in a listing. */
-export declare class CommandOptions {
+export interface CommandOptions {
     /** The admin flag a player needs; everyone when left out. */
-    access?: Access | null;
+    access?: Access;
     /** What `amx_help` and the like show next to it. */
     description?: string;
 }
@@ -705,7 +664,7 @@ export type ServerCommandHandler = (args: string[]) => void;
  * How a HUD message looks. Every field has AMX Mod X's own default, so
  * `{ color: [255, 40, 40] }` is enough.
  */
-export declare class HudOptions {
+export interface HudOptions {
     /** Red, green, blue, 0 to 255. */
     color?: number[];
     /** 0 is the left edge, 1 the right; -1 centres it. */
@@ -730,6 +689,7 @@ export declare class HudOptions {
      */
     large?: boolean;
 }
+/** How a HUD message appears: "fade" in and out, "flicker", or "typewriter" - letter by letter. */
 export type HudEffect = "fade" | "flicker" | "typewriter";
 /**
  * A place on the HUD that holds one message: showing another there replaces
@@ -747,7 +707,9 @@ export type HudEffect = "fade" | "flicker" | "typewriter";
  */
 export declare class HudLine {
     private handle;
+    /** Shows `text` to the player here, replacing what this line showed him before. */
     show(player: Player, text: string, options?: HudOptions): void;
+    /** Takes it off this player's screen before its time is up. */
     clear(player: Player): void;
     /** Takes it off every screen. */
     clearAll(): void;
@@ -755,7 +717,7 @@ export declare class HudLine {
 /** Which way a fade goes: "in" from the colour to a clear view, "out" from a clear view to the colour. */
 export type FadeDirection = "in" | "out";
 /** How `player.screen.fade` colours the screen. Times are seconds. */
-export declare class FadeOptions {
+export interface FadeOptions {
     /** Red, green, blue and alpha, 0 to 255. */
     color?: number[];
     /** Seconds the fade takes. */
@@ -770,7 +732,7 @@ export declare class FadeOptions {
     modulate?: boolean;
 }
 /** How `player.screen.shake` shakes the view. */
-export declare class ShakeOptions {
+export interface ShakeOptions {
     /** How far the view moves, up to 16 units. */
     amplitude?: number;
     /** Seconds it lasts. */
@@ -840,6 +802,7 @@ export declare class CvarChangeEvent {
     /** What it holds now. */
     value: string);
 }
+/** A listener for a cvar's changes: `(event) => ...`, with the old and the new value in `event`. */
 export type CvarListener = (event: CvarChangeEvent) => void;
 /**
  * @hidden The start of every exported native. A Pawn plugin calls one from
@@ -864,13 +827,16 @@ export declare function __nativeCall(): void;
  * way, and a generic would need the kind named twice for nothing.
  */
 export declare class Cvar {
+    /** The cvar's name, as the console knows it: "mp_timelimit". */
     name: string;
     private defaultValue;
     /** The engine's handle for it; 0 when there is no such cvar. */
     pointer: i32;
     private listeners;
     private hooked;
-    constructor(name: string, defaultValue?: string | null);
+    constructor(
+    /** The cvar's name, as the console knows it: "mp_timelimit". */
+    name: string, defaultValue?: string | null);
     /**
      * @internal Finds or creates the cvar and hooks it. A plugin's top level
      * runs during plugin_natives, and create_cvar there takes the server down
@@ -893,9 +859,13 @@ export declare class Cvar {
     addEventListener(type: "change", listener: CvarListener): void;
     /** Stops calling a listener added with addEventListener. */
     removeEventListener(type: "change", listener: CvarListener): void;
-    /** @internal The trampoline's way in. */
+    /** @internal Called by the server when the cvar changes; a plugin listens with addEventListener. */
     dispatch(event: CvarChangeEvent): void;
 }
+/**
+ * The server as a DOM target: its events, its commands, the map, the
+ * folders AMX Mod X keeps. Used through `server`, not made.
+ */
 export declare class Server {
     /** Calls `listener` every time the server raises `type`. */
     addEventListener<K extends keyof ServerEventMap>(type: K, listener: (event: ServerEventMap[K]) => void): void;
@@ -911,7 +881,7 @@ export declare class Server {
      * (`amxx_configsdir`, Pawn's get_configsdir).
      *
      * ```ts
-     * const text = fs.readFileSync(`${server.configsDir}/hns.ini`);
+     * const text = fs.readFileSync(`${server.configsDir}/myplugin.ini`);
      * ```
      */
     get configsDir(): string;
@@ -919,11 +889,8 @@ export declare class Server {
     get dataDir(): string;
     /**
      * Runs a command in the server's console, as if it had been typed there:
-     * `server.command("changelevel " + map)`.
-     *
-     * server_cmd takes a `...` tail, so this goes through the dispatcher - and
-     * passes the text as an argument rather than as the format, because a map
-     * name with a % in it would otherwise be read as a conversion.
+     * `server.command("changelevel " + map)`. The text goes as it is - a `%` in
+     * it is just a `%`.
      */
     command(text: string): void;
     /**
@@ -946,7 +913,7 @@ export declare class Server {
      * run by another plugin's server_cmd. No player types it.
      *
      * ```ts
-     * server.addServerCommand("hns_reset", (args) => reset(args.length > 0 ? args[0] : "all"));
+     * server.addServerCommand("myplugin_reset",(args) => reset(args.length > 0 ? args[0] : "all"));
      * ```
      *
      * `args` are the words after the name, as the engine split them.
@@ -1006,7 +973,7 @@ export declare class Game {
 /** Who wins a round game.endRound ends: a side, a draw, or nobody - a restart. */
 export type RoundWinner = "TERRORIST" | "CT" | "draw" | "none";
 /** How `game.endRound` ends the round. Only `winner` is needed. */
-export declare class EndRoundOptions {
+export interface EndRoundOptions {
     /** Who wins: "TERRORIST", "CT", "draw", or "none" - a restart. */
     winner: RoundWinner;
     /** Seconds until the next round starts. */
@@ -1023,6 +990,7 @@ export declare class EndRoundOptions {
      */
     dispatch?: boolean;
 }
+/** The game this plugin runs in: its events (reapi's hookchains) and `endRound`. */
 export declare const game: Game;
 /**
  * Which kind of message to send a player.
@@ -1037,9 +1005,16 @@ export declare const game: Game;
  * an id nor a variant.
  */
 export declare namespace Variant {
+    /** A line in the chat. */
     const chat: string;
+    /** Text in the middle of the screen. */
     const center: string;
+    /** A line in the player's console. */
     const console: string;
+    /**
+     * A line in his console, sent as a notification: with developer mode on
+     * it also shows in the top-left corner of the screen.
+     */
     const notify: string;
 }
 /** Every name a message's variant accepts, for an editor to complete. */
@@ -1056,41 +1031,12 @@ import { ServerEventMap } from "./events";
  * `id` rather than a Player, because that is what a handler is handed - and
  * what 0 means, which is everyone.
  */
-export declare class Target {
+export interface Target {
     /** The player's id; 0 is everyone. */
     id: number;
     /** Where it shows: "chat", "center", "console" or "notify". */
     variant?: VariantName;
 }
-/**
- * Says something to a player, or to everyone with id 0.
- *
- *   print(id, `${player.name}, your HP: ${player.health}`)
- *   print(id, "middle of the screen", "center")
- *   print(0, "everyone")
- *   print({ id, variant: "center" }, "the same, as an object")
- *
- * Both forms, and both checked. AssemblyScript has no function overloading,
- * and an object literal takes its type from the parameter it is passed to, so
- * accepting either shape means a type parameter - and a type parameter is
- * inferred from whatever arrives, which is how the checking was lost at first.
- * The constraint is what brings it back: TypeScript holds `Target | number`
- * and refuses a string, and refuses a misspelled variant inside the object
- * with the right spelling suggested. AssemblyScript cannot hold a constraint
- * of two types at all - it resolves a generic to one - so runtime/patches
- * lets it read the constraint and leave the enforcement to TypeScript, with
- * the ERROR below as the backstop that survives compilation.
- *
- * Chat is painted: `!g` green, `!y` yellow, `!t` the sender's team colour,
- * `!r` red, `!b` blue, `!w` grey. A `!` that is not one of those is left
- * alone, and the other variants ignore them.
- *
- * **One team colour to a line.** Red, blue, grey and `!t` are all the same
- * byte - what differs is the team the recipient's client is told the sender is
- * on, and that is one swap per message. `!rRed !bBlue` comes out red twice:
- * the first tag wins. Green and yellow are colours of their own and mix with
- * it freely.
- */
 /**
  * Turns the colour tags into the bytes a client reads, and says which team the
  * recipient has to be told the sender is on.
@@ -1102,11 +1048,45 @@ export declare class Target {
 export declare function paint(text: string): string;
 /** What paint() decided, read by print immediately afterwards. */
 export declare let swapTeam: string;
+/**
+ * Says something to a player, or to everyone with 0.
+ *
+ * ```ts
+ * print(player, `${player.name}, your HP: ${player.health}`);
+ * print(0, "Round starts in 5 seconds");
+ * print(player, "Health restored!", "center");
+ * print({ id, variant: "center" }, "the same, as an object");
+ * ```
+ *
+ * The first argument is a Player, his id, or 0 for everyone. The third says
+ * where the line shows: "chat" (the default), "center" - the middle of the
+ * screen, "console" - his console, or "notify".
+ *
+ * Chat is painted: `!g` green, `!y` yellow, `!t` the sender's team colour,
+ * `!r` red, `!b` blue, `!w` grey. A `!` that is not one of those is left
+ * alone, and the other variants ignore the tags.
+ *
+ * One team colour to a line: red, blue, grey and `!t` share one slot, so
+ * `!rRed !bBlue` comes out red twice - the first tag wins. Green and yellow
+ * mix with any of them.
+ *
+ * The server console is `console.log`.
+ */
 export declare function print<T extends Target | Client | number = Target>(to: T, message: string, variant?: VariantName): void;
+/**
+ * Reads and sets a cvar by name, in one call: `cvar.num("mp_freezetime")`.
+ *
+ * `Cvar` is the usual way - it creates a missing cvar, hears its changes and
+ * reads it as text, a number or a switch. This is for a one-off read.
+ */
 export declare namespace cvar {
+    /** The cvar's value as a whole number: `cvar.num("mp_freezetime")`. */
     function num(name: string): number;
+    /** Sets the cvar to a whole number: `cvar.setNum("mp_freezetime", 5)`. */
     function setNum(name: string, value: number): void;
+    /** The cvar's value as text: `cvar.str("hostname")`. */
     function str(name: string): string;
+    /** Sets the cvar's text: `cvar.setStr("hostname", "My Server")`. */
     function setStr(name: string, value: string): void;
 }
 /** Registers a client command. The handler receives the player who typed it. */
@@ -1134,9 +1114,9 @@ export type TimerHandler = () => void;
  */
 export declare function setTimeout(handler: TimerHandler, ms?: number): number;
 /** What sleep() takes besides the time. */
-export declare class SleepOptions {
+export interface SleepOptions {
     /** Gives the wait up when it aborts: the promise rejects with its reason. */
-    signal?: AbortSignal | null;
+    signal?: AbortSignal;
 }
 /**
  * A promise fulfilled after `ms` - the way to wait inside an async function:
@@ -1157,9 +1137,8 @@ export declare function setInterval(handler: TimerHandler, ms: number): number;
  * Stops the timer with that handle, and gives its callback slot back. A
  * handle that is not armed - fired already, cleared already - is ignored.
  *
- * Not the raw `remove_task`: a task armed here belongs to the host plugin,
- * and remove_task's default is to look only at the plugin asking, so it finds
- * nothing. Measured - a repeating task went on firing through it.
+ * Pawn's `remove_task` does not see these timers: they belong to the host
+ * plugin, and a repeating one would go on firing.
  */
 export declare function clearTimeout(handle: number): void;
 /** The same. Two names because a reader expects both. */
@@ -1167,9 +1146,9 @@ export declare function clearInterval(handle: number): void;
 /**
  * A native with a `...` tail, built one argument at a time.
  *
- * WebAssembly fixes an import's arity, so these cannot be declared in
- * as/natives.ts at all — only their ids are. Each argument says what it is,
- * because a tail carries no types and the module cannot infer them:
+ * Such a native has no typed function in ~/natives, only its id
+ * (NATIVE_...). Each argument says what it is, because a tail carries no
+ * types:
  *
  *   new Call(NATIVE_server_print).str("%s").str(text).run();
  *
@@ -1198,8 +1177,13 @@ export declare class Call {
     constructor(id: i32);
     /** A cell as it stands: an entity index, a constant, a count. */
     num(value: number): Call;
-    /** A float, which in Pawn is a cell holding its bit pattern. */
+    /** A number the native reads as a `Float:`. */
     float(value: f64): Call;
+    /**
+     * A string. The native gets the address of a copy held until the call is
+     * done - the same before the `...` and in the tail, since a string is an
+     * address either way.
+     */
     str(text: string): Call;
     /** Cells the native reads and may write back. The length follows it. */
     buffer(cells: CellBuffer, length: number): Call;
@@ -1223,11 +1207,12 @@ export declare class Call {
     ref(value: number): Call;
     /** What the native left in the `ref` argument at that position. */
     out(index: i32): number;
+    /** Calls the native with the arguments given so far; what it returned. */
     run(): number;
 }
 /**
  * Registers a reapi hookchain with a raw, cell-level handler - the hood under
- * game.addEventListener, which is what a plugin uses. as/hooks.ts calls this
+ * game.addEventListener, which is what a plugin uses. The typed events call this
  * once per chain and side; a plugin calling it directly gets the Pawn shape
  * (four cells, HC_* by hand) that the typed events exist to hide.
  *
@@ -1248,22 +1233,18 @@ export declare function hook(name: HookName, handler: WideHandler, post?: bool):
 /** The same for Ham Sandwich: `ham("spawn", "player", onSpawn)`. */
 export declare function ham(name: HamName, entityClass: string, handler: WideHandler, post?: bool): number;
 /**
- * What a plugin says about itself, for `amxts_plugins` in the server console.
- *
- * Every field is spelled out because TypeScript wants a whole object where
- * AssemblyScript would take a piece of one, and a plugin declares itself once.
- * AMX Mod X has one entry per .amxx file and every plugin here shares the
- * host's, so this is the only place their names exist.
+ * What a plugin says about itself: `plugin({ name, version, author, description })`.
+ * `amxts_plugins` in the server console lists it.
  */
-export declare class PluginInfo {
-    /** The plugin's name, as `amx plugins` lists it: "My Plugin". */
+export interface PluginInfo {
+    /** The plugin's name, as `amxts_plugins` lists it: "My Plugin". */
     name: string;
-    /** Its version, as `amx plugins` lists it: "1.0.0". */
+    /** Its version, as `amxts_plugins` lists it: "1.0.0". */
     version: string;
     /** Who wrote it. */
     author: string;
     /** What it does, in a line. */
-    description: string;
+    description?: string;
     /**
      * The Pawn include this plugin's natives implement - `"myplugin.inc"`,
      * from includes/ or beside the plugin. The build reads it: each exported
@@ -1272,6 +1253,16 @@ export declare class PluginInfo {
      */
     include?: string;
 }
+/**
+ * Says who the plugin is: its name, version, author and description, as the
+ * server's plugin list shows them. Called once, at the top level:
+ *
+ * ```ts
+ * plugin({ name: "Hello", version: "1.0.0", author: "you", description: "An example" });
+ * ```
+ *
+ * `include` names the Pawn include the plugin's natives implement.
+ */
 export declare function plugin(info: PluginInfo): void;
 /**
  * What amxts.config.ts sets for each module, under its configKey. Empty here:
@@ -1283,11 +1274,10 @@ export interface ModuleOptions {
 /**
  * A module's definition - `export default defineModule<Options>({ meta,
  * requires, defaults, setup })` in its module file, global like Nuxt's.
- * asc never compiles the call: the build reads meta, requires and defaults
- * from the source and turns setup into a function of the module that its
- * top level calls with the merged options (scripts/project.ts). This is
- * here, and global, so that an explicit `import { defineModule } from
- * "@amxts/core"` resolves too; its types for the editor are in amxts.d.ts.
+ * The build reads meta, requires and defaults from the source, and setup
+ * runs once, when the server loads the module, with the defaults and what
+ * amxts.config.ts sets over them. It is global, and an explicit
+ * `import { defineModule } from "@amxts/core"` works too.
  */
 export declare function defineModule<T>(definition: AmxtsModule<T>): AmxtsModule<T>;
 /**
@@ -1307,19 +1297,19 @@ declare abstract class ForwardListener {
  * its type parameters:
  *
  * ```ts
- * const roundStart = new Forward("nhnse_on_round_start");
- * const roundEnd = new Forward<RoundWinner>("nhnse_on_round_end");
- * const configChanged = new Forward<string, string>("nhnse_on_config_changed");
+ * const roundStart = new Forward("myplugin_on_round_start");
+ * const roundEnd = new Forward<RoundWinner>("myplugin_on_round_end");
+ * const configChanged = new Forward<string, string>("myplugin_on_config_changed");
  *
  * roundStart.emit();
  * roundEnd.emit(winner);
  * configChanged.emit(id, value);
  *
- * const swapped = new Forward<Player, Player>("nhnse_on_player_swapped");
+ * const swapped = new Forward<Player, Player>("myplugin_on_player_swapped");
  * swapped.emit(catcher, caught);              // Pawn gets their ids
  * ```
  *
- * A Pawn plugin hooks it with `public nhnse_on_round_end(winner)`, as it
+ * A Pawn plugin hooks it with `public myplugin_on_round_end(winner)`, as it
  * always has. Which FP_* constant each argument is follows from its type -
  * number, boolean and Player (his id) a cell, string a string - and ET_IGNORE
  * is the default; neither is the plugin's business. A `Team` goes as its
@@ -1334,11 +1324,10 @@ declare abstract class ForwardListener {
  * moment it runs, so it has to wait until they are all loaded (plugin_cfg or
  * later), and runs only once.
  *
- * `subscribe(handler)` - a TypeScript plugin hooking the same forward, typed
- * by the same parameters - is the agreed name and the next step: the host
- * would have to tell a handler which forward called it (docs/API-DESIGN.md).
+ * A TypeScript plugin hooks the same forward with `subscribe(handler)`.
  */
 export declare class Forward<A = NoArgument, B = NoArgument, C = NoArgument> extends ForwardListener {
+    /** The forward's name, as Pawn plugins hook it. */
     name: string;
     private crossing;
     /** Set before the first emit; nobody stops the forward unless told to. */
@@ -1349,9 +1338,11 @@ export declare class Forward<A = NoArgument, B = NoArgument, C = NoArgument> ext
     /**
      * @param name The forward's name, as Pawn plugins hook it.
      * @param crossing @internal Written by the build from the forward's Pawn
-     * declaration - see crossForwards in scripts/plugin-natives.ts.
+     * declaration in an include; a plugin leaves it out.
      */
-    constructor(name: string, crossing?: string);
+    constructor(
+    /** The forward's name, as Pawn plugins hook it. */
+    name: string, crossing?: string);
     private crossingOf;
     /**
      * Calls `handler` each time the forward is emitted - by this plugin, another
@@ -1366,7 +1357,7 @@ export declare class Forward<A = NoArgument, B = NoArgument, C = NoArgument> ext
      * and a named function may take fewer of them.
      *
      * A forward a Pawn plugin creates reaches TypeScript only when it is
-     * declared in an include the host plugin is built from (nhnse_on_* are):
+     * declared in an include the host plugin is built from:
      * AMX Mod X calls a forward by public name, and the host has a public for
      * exactly those. Emitted from TypeScript, any forward reaches every
      * subscriber.
@@ -1374,6 +1365,10 @@ export declare class Forward<A = NoArgument, B = NoArgument, C = NoArgument> ext
     subscribe(handler: (a: A, b: B, c: C) => void): void;
     /** Stops calling a handler subscribe() was given. */
     unsubscribe(handler: (a: A, b: B, c: C) => void): void;
+    /**
+     * Hands the cells the module passed to every handler subscribe() was given,
+     * decoded by the forward's types. Called by the hood, not by a plugin.
+     */
     deliver(a: i32, b: i32, c: i32): void;
     /** Makes the forward now rather than on its first emit. Once; later calls do nothing. */
     create(): void;
@@ -1396,13 +1391,19 @@ export declare class Forward<A = NoArgument, B = NoArgument, C = NoArgument> ext
  * goes in through toString() and comes out through parseInt.
  */
 export declare class Storage {
+    /** The storage's name: the nVault file it lives in. */
     name: string;
     private vault;
-    constructor(name: string);
+    constructor(
+    /** The storage's name: the nVault file it lives in. */
+    name: string);
     /** The value under `key`, or null when there is none. */
     get(key: string): string | null;
+    /** Puts `value` under `key`, replacing what was there. */
     set(key: string, value: string): void;
+    /** Whether there is a value under `key`. */
     has(key: string): boolean;
+    /** Removes `key` and its value; a key that is not there is ignored. */
     delete(key: string): void;
     private open;
 }
@@ -1425,22 +1426,27 @@ export { EntityFilter } from "./entities";
  * ```
  */
 export declare class PawnFunction {
+    /** The id of the plugin the function is in. */
     readonly plugin: i32;
+    /** The function's index in that plugin, as get_func_id gives it. */
     readonly index: i32;
-    constructor(plugin: i32, index: i32);
+    constructor(
+    /** The id of the plugin the function is in. */
+    plugin: i32, 
+    /** The function's index in that plugin, as get_func_id gives it. */
+    index: i32);
     /** `name` in the plugin with that id - a native's caller(); null when it has no such public. */
     static find(plugin: number, name: string): PawnFunction | null;
+    /** Starts a call of the function: its arguments in order, then run(). */
     call(): PawnCall;
 }
 /**
  * One call of a PawnFunction: its arguments in order, then run().
  *
- * callfunc_begin_i and callfunc_push_int as they are; a string and an array
- * go through the module's callfunc_text / callfunc_buffer, which keep them on
- * the host heap until callfunc_finish (callfunc_end) and copy the array back
- * here. callfunc_push_str / callfunc_push_array could not: each put its
- * argument at the same address for the length of that one native, and AMX Mod
- * X took the second for the first (runtime/src/module.cpp).
+ * A call takes any number of strings and arrays, and what the function
+ * writes into a buffer() is read back afterwards with `bufferText` - which
+ * Pawn's own callfunc_push_str and callfunc_push_array could not do with more
+ * than one of them.
  */
 export declare class PawnCall {
     private fn;
@@ -1451,8 +1457,11 @@ export declare class PawnCall {
     /** What the function wrote into its buffer(), once run() is over. */
     bufferText: string;
     constructor(fn: PawnFunction);
+    /** A number argument, passed as a cell. */
     int(value: number): PawnCall;
+    /** A boolean argument, passed as 1 or 0. */
     bool(value: boolean): PawnCall;
+    /** A string argument, which the function gets as a Pawn string. */
     text(value: string): PawnCall;
     /** An array the function fills - `value[]` - of `size` cells. One per call. */
     buffer(size: number): PawnCall;
@@ -1462,6 +1471,7 @@ export declare class PawnCall {
 }
 /** A new AMX Mod X `Array:` of `cellSize` cells an item; its handle. */
 export declare function createCellArray(cellSize: number): number;
+/** Frees an `Array:` createCellArray made; the handle is no good afterwards. */
 export declare function destroyCellArray(handle: number): void;
 /** Every item of an `Array:` of `cellSize` cells an item, each as its cells. */
 export declare function cellArrayRows(handle: number, cellSize: number): number[][];
@@ -1482,44 +1492,3 @@ export declare function textCells(text: string, count: number): number[];
  * (`\y`, as an old menu.ini has them) pass as they are.
  */
 export declare function showMenu(id: number, keys: number, text: string, title: string): void;
-/**
- * How `menus.show` (~/modules/menu-core) opens a menu - an object literal,
- * each field with its default: `menus.show(player, "SHOP", { time: 10 })`.
- *
- * A class, like PlayerFilter, and here rather than beside the menus: a
- * TypeScript interface with optional fields is what it should be, and
- * AssemblyScript does not take one yet (AS219) - docs/API-DESIGN.md.
- */
-export declare class MenuShowOptions {
-    /** Seconds on the countdown; -1 keeps the one running, or takes the menu's TIME. */
-    time?: number;
-    /** Who the menu is about: %target%, and the target an action gets. */
-    target?: number;
-    /** Starts the way back anew. */
-    resetHistory?: boolean;
-    /** Opens over a menu that holds on: a countdown, or locked. */
-    force?: boolean;
-    /** Leaves the menu out of the way back. */
-    skipHistory?: boolean;
-}
-/** What `menus.addItem` (~/modules/menu-core) takes besides the name - see MenuShowOptions for why a class. */
-export declare class MenuItemOptions {
-    /** Text after the name, placeholders and all: "%hp%". */
-    placeholder?: string;
-    /** The condition it is shown under - a name from addCondition, "!NAME" for its opposite, several space-separated must all hold. */
-    condition?: string;
-    /** What choosing it does - a name from addAction, or a built-in: "SHOW_<MENU>", "CLOSE_MENU". */
-    action?: string;
-    /** What choosing it does, instead of naming an action. */
-    onSelect?: ((player: Player, target: number, name: string) => void) | null;
-    /** Greys it out while it holds - a name from addRestriction, "ADMIN" or "FLAG_<letters>". */
-    restriction?: string;
-    /** Shown beside it while it is greyed out; "" is the restriction's own message. */
-    restrictionMessage?: string;
-    /** Its place among the items; -1 is the end. */
-    at?: number;
-    /** Blank lines before it. */
-    spaceBefore?: number;
-    /** Blank lines after it. */
-    spaceAfter?: number;
-}
