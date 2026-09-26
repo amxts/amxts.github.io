@@ -3,8 +3,7 @@ import type { TocLink } from '@nuxt/content'
 import { useEventListener, useResizeObserver } from '@vueuse/core'
 
 // A page's contents with the section being read always marked: the last
-// heading that has scrolled up to where a click on its link would put it
-// (its scroll-margin under the header). One line slides to the marked link.
+// heading in the upper third of the screen. One line slides to the marked link.
 
 const props = defineProps<{
   title: string
@@ -18,13 +17,19 @@ const active = ref(flat.value[0]?.id)
 // back while it runs.
 let clickedAt = 0
 
+// A heading marks its section once it is in the upper third of the screen,
+// or at least where a click on its link puts it (its scroll-margin).
+function line(heading: HTMLElement) {
+  return Math.max(Number.parseFloat(getComputedStyle(heading).scrollMarginTop || '0') + 8, window.innerHeight / 3)
+}
+
 function update() {
   if (Date.now() - clickedAt < 1000)
     return
   let current = flat.value[0]?.id
   for (const link of flat.value) {
     const heading = document.getElementById(link.id)
-    if (heading && heading.getBoundingClientRect().top <= Number.parseFloat(getComputedStyle(heading).scrollMarginTop || '0') + 8)
+    if (heading && heading.getBoundingClientRect().top <= line(heading))
       current = link.id
   }
   // the page's end: its last sections cannot scroll up that far
