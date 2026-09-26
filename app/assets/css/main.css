@@ -275,3 +275,17 @@ html:root {
 .v-popper__popper.v-popper--theme-twoslash {
   z-index: 60;
 }
+
+/* A long description does not squeeze the type away: the type keeps its
+   height (up to half the popup, then it scrolls), the description scrolls. */
+.twoslash-floating .twoslash-popup-container code.twoslash-popup-code {
+  flex-shrink: 0;
+  max-height: 50%;
+}
+
+.twoslash-floating .twoslash-popup-container .twoslash-popup-docs {
+  flex-shrink: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
