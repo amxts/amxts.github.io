@@ -67,6 +67,17 @@ export interface Contract {
 }
 /** The include these natives implement, when the plugin named one. */
 export declare function nativeContract(natives: PluginNative[]): Contract | undefined;
+/** What a compile keeps beside its natives, as data: for a cache to store with them. */
+export interface NativesBeside {
+    enums: PluginEnum[];
+    contract: {
+        file: string;
+        text: string;
+    } | null;
+}
+export declare function nativesBeside(natives: PluginNative[]): NativesBeside;
+/** Natives read back from a cache get their enums and contract beside them again. */
+export declare function setNativesBeside(natives: PluginNative[], beside: NativesBeside): void;
 /**
  * A Pawn call's arguments in order: each parameter, and the result's buffer.
  * A contract native also has `output`s - the arguments it writes through, in

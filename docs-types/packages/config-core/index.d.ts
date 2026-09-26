@@ -1,6 +1,6 @@
-import { ContentKind, EntryKind, Section, SectionDump, SectionEntry, Config, UniversalConfigOptions } from "./types";
+import { ContentKind, EntryKind, Section, SectionDump, SectionEntry, Config, ConfigCoreOptions } from "./types";
 export * from "./types";
-declare const _default: AmxtsModule<UniversalConfigOptions>;
+declare const _default: AmxtsModule<ConfigCoreOptions>;
 export default _default;
 /** The folder under configs/ that file names are relative to: "" is configs/ itself. */
 export declare function setBaseDir(dir: string): void;

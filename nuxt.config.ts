@@ -101,8 +101,11 @@ export default defineNuxtConfig({
     // module pages moved from the docs to the modules' catalog pages
     '/docs/menus': { redirect: to('/modules/menu-core') },
     '/ru/docs/menus': { redirect: to('/ru/modules/menu-core') },
-    '/docs/universal-config': { redirect: to('/modules/universal-config') },
-    '/ru/docs/universal-config': { redirect: to('/ru/modules/universal-config') },
+    '/docs/universal-config': { redirect: to('/modules/config-core') },
+    '/ru/docs/universal-config': { redirect: to('/ru/modules/config-core') },
+    // universal-config is config-core now
+    '/modules/universal-config': { redirect: to('/modules/config-core') },
+    '/ru/modules/universal-config': { redirect: to('/ru/modules/config-core') },
     '/docs/extensions': { redirect: to('/modules/http') },
     '/ru/docs/extensions': { redirect: to('/ru/modules/http') },
   },

@@ -20,10 +20,15 @@ export declare const HOOD_EXPORTS = "__amxts_exports.ts";
 export declare const ASYNC_EXPORTS: string;
 /** The import a coroutine parks in - the one Asyncify unwinds from. */
 export declare const SUSPEND_IMPORT = "env.co_suspend";
-/** Where compilePlugin writes the Pawn include for a plugin's own natives. */
-export declare function includePath(output: string): string;
-/** What went wrong, or null when the plugin compiled. */
-export declare function compilePlugin(plugin: Plugin): Promise<string | null>;
+/**
+ * Where compilePlugin writes the Pawn include for a plugin's natives: beside
+ * the .aot, named after the plugin - or, for a plugin that implements an
+ * include (a contract), under that include's own name, so Pawn plugins keep
+ * their `#include <universal_config>` whatever the module is called.
+ */
+export declare function includePath(output: string, natives?: PluginNative[]): string;
+/** What went wrong, or null when the plugin compiled. `natives` gets the plugin's natives. */
+export declare function compilePlugin(plugin: Plugin, natives?: PluginNative[]): Promise<string | null>;
 /**
  * The first half of compilePlugin: the plugin's .ts to `wasm`, ready for
  * wamrc. Tests run the result as it is; with `names` it keeps its function

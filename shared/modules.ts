@@ -80,13 +80,13 @@ export const fallbackModules: AmxtsModule[] = [
   official('menu-core', {
     category: 'menus',
     docs: null,
-    requires: ['universal-config'],
+    requires: ['config-core'],
     description: {
       en: 'Menus described in an .ini file or built in code: items with conditions, actions, placeholders and restrictions, list menus with a row per player, countdowns and pages. The menu-core plugin gives Pawn plugins menu_core\'s 29 mc_* natives, so compiled .amxx plugins work against it unchanged.',
       ru: 'Меню из .ini-файла или из кода: пункты с условиями, действиями, плейсхолдерами и ограничениями, меню-списки со строкой на игрока, таймеры и страницы. Плагин menu-core даёт Pawn-плагинам 29 нативов mc_* из menu_core, и скомпилированные .amxx работают с ним без изменений.',
     },
   }),
-  official('universal-config', {
+  official('config-core', {
     category: 'config',
     docs: null,
     requires: [],

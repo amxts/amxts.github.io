@@ -26,7 +26,7 @@ export const docPages: string[] = docGroups.flatMap(group => group.pages)
  */
 export const modulePages: Record<string, string> = {
   'menus': 'menu-core',
-  'universal-config': 'universal-config',
+  'config-core': 'config-core',
   'http': 'http',
 }
 

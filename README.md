@@ -87,7 +87,7 @@ API (`keywords:amxts-module`) on the server and caches the answer for an hour
 (`server/utils/modules.ts`); a module's page shows its npm README.
 
 Modules that ship with the framework and are not on npm yet - menu-core,
-universal-config, http - are listed from `shared/modules.ts`. When a package
+config-core, http - are listed from `shared/modules.ts`. When a package
 of the same name is published, it takes their place.
 
 ## Not decided yet

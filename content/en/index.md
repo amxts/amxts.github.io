@@ -232,7 +232,7 @@ reverse: true
 Pawn plugins can call TypeScript
 
 #description
-Every `export function` of a plugin is an AMX Mod X native with its real types, and the build writes the `.inc` a Pawn plugin includes. menu-core and universal-config replace their Pawn originals this way: compiled `.amxx` plugins work against them unchanged.
+Every `export function` of a plugin is an AMX Mod X native with its real types, and the build writes the `.inc` a Pawn plugin includes. menu-core and config-core replace their Pawn originals (menu_core, universal_config) this way: compiled `.amxx` plugins work against them unchanged.
 
 #links
   :::u-button
@@ -270,7 +270,7 @@ Every `export function` of a plugin is an AMX Mod X native with its real types, 
       to: '/modules'
       variant: subtle
   title: Menus, configs and HTTP are modules
-  description: menu-core, universal-config and http ship with the framework, and every package on npm with the amxts-module keyword joins the catalog.
+  description: menu-core, config-core and http ship with the framework, and every package on npm with the amxts-module keyword joins the catalog.
   class: dark:bg-neutral-950
   ---
 

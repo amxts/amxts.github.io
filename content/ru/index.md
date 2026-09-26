@@ -232,7 +232,7 @@ reverse: true
 Pawn-плагины вызывают TypeScript
 
 #description
-Каждая `export function` плагина — это натив AMX Mod X с настоящими типами, а сборка пишет `.inc`, который подключает Pawn-плагин. Так menu-core и universal-config заменяют свои оригиналы на Pawn: скомпилированные `.amxx` работают с ними без изменений.
+Каждая `export function` плагина — это натив AMX Mod X с настоящими типами, а сборка пишет `.inc`, который подключает Pawn-плагин. Так menu-core и config-core заменяют свои оригиналы на Pawn (menu_core, universal_config): скомпилированные `.amxx` работают с ними без изменений.
 
 #links
   :::u-button
@@ -270,7 +270,7 @@ Pawn-плагины вызывают TypeScript
       to: '/ru/modules'
       variant: subtle
   title: Меню, конфиги и HTTP — это модули
-  description: menu-core, universal-config и http поставляются с фреймворком, а каждый пакет на npm с ключевым словом amxts-module попадает в каталог.
+  description: menu-core, config-core и http поставляются с фреймворком, а каждый пакет на npm с ключевым словом amxts-module попадает в каталог.
   class: dark:bg-neutral-950
   ---
 

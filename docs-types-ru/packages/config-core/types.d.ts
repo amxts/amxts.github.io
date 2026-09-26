@@ -1,5 +1,5 @@
 /**
- * The types of Universal Config's API: configs, sections and their entries.
+ * The types of Config Core's API: configs, sections and their entries.
  */
 /** Строка `key = value` или блок `key = { ... }`. */
 export type EntryKind = "value" | "block";
@@ -52,13 +52,13 @@ export interface SectionDump {
     /** Её записи, по строке на каждую. */
     lines: string[];
 }
-/** Настройки Universal Config: `configs` в amxts.config.ts. */
-export interface UniversalConfigOptions {
+/** Настройки Config Core: `configs` в amxts.config.ts. */
+export interface ConfigCoreOptions {
     /** Папка внутри configs/, из которой загружаются файлы по имени: "" — сама configs/. */
     baseDir: string;
 }
 declare module "@amxts/core" {
     interface ModuleOptions {
-        configs?: Partial<UniversalConfigOptions>;
+        configs?: Partial<ConfigCoreOptions>;
     }
 }
