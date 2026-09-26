@@ -111,8 +111,10 @@ function twoslash(block: string, locale?: string) {
     return block
   const [fence, ...rest] = block.split('\n')
   const code = rest.join('\n')
+  // what the example declares itself stays its own: `const text` is not the facade's text
+  const declared = new Set([...code.matchAll(/\b(?:const|let|var|function|class|interface|type|enum)\s+(\w+)/g)].map(match => match[1]))
   const hidden = facade.length && !/from "(?:~\/facade|@amxts\/core)"/.test(block)
-    ? [`import { ${facade.join(', ')} } from "~/facade";`]
+    ? [`import { ${facade.filter(name => !declared.has(name)).join(', ')} } from "~/facade";`]
     : []
   // An example that talks about `player` without declaring it gets one, so
   // what it reads from the player has its types too.
@@ -121,6 +123,24 @@ function twoslash(block: string, locale?: string) {
   const prelude = hidden.length ? [...hidden, '// ---cut---'] : []
   snippets.push({ from: importing, locale: locale ?? 'en', code: [...prelude, ...rest.slice(0, -1)].join('\n') })
   return [fence!.replace(/^```ts/, locale ? `\`\`\`ts twoslash locale-${locale}` : '```ts twoslash'), ...prelude, ...rest].join('\n')
+}
+
+/**
+ * An example's files: Twoslash's `// @filename: x.ts` lines split one block
+ * into several (a module and what imports it), each in the example's folder.
+ */
+function filesOf(snippet: { from: string, code: string }, index: number) {
+  const parts: { name: string, lines: string[] }[] = [{ name: 'example.ts', lines: [] }]
+  for (const line of snippet.code.split('\n')) {
+    const file = line.match(/^\/\/ @filename: (\S+)/)?.[1]
+    if (file)
+      parts.push({ name: file, lines: [] })
+    else
+      parts.at(-1)!.lines.push(line)
+  }
+  return parts
+    .filter(part => part.lines.some(line => line.trim()))
+    .map(part => [`/snippets/${index}/${part.name}`, { from: snippet.from, name: part.name, code: part.lines.join('\n') }] as const)
 }
 
 /** The diagnostics that mean `any` on hover: an untyped parameter, a module not found - the test runner's own aside (the site does not carry vitest's or bun's types). */
@@ -140,13 +160,13 @@ function checkSnippets() {
   const problems: string[] = []
   for (const locale of ['en', 'ru']) {
     const types = resolve(locale === 'en' ? 'docs-types' : `docs-types-${locale}`).replaceAll('\\', '/')
-    const files = new Map(snippets.filter(snippet => snippet.locale === locale).map((snippet, i) => [`/snippets/${i}.ts`, snippet]))
+    const files = new Map(snippets.filter(snippet => snippet.locale === locale).flatMap((snippet, i) => filesOf(snippet, i)))
     const options: ts.CompilerOptions = {
       lib: ['lib.esnext.d.ts'],
       strict: true,
       noEmit: true,
       types: [],
-      paths: { '~/*': [`${types}/amxts/*`], '@amxts/core': [`${types}/amxts/facade.d.ts`], '@amxts/core/test-utils': [`${types}/root/src/testing/index.d.ts`], '@amxts/*': [`${types}/packages/*/index.d.ts`] },
+      paths: { '~/*': [`${types}/amxts/*`], '@amxts/core': [`${types}/amxts/facade.d.ts`], '@amxts/core/test-utils': [`${types}/root/src/testing/index.d.ts`], '@amxts/core/*': [`${types}/amxts/*`], '@amxts/*': [`${types}/packages/*/index.d.ts`] },
     }
     const host: ts.LanguageServiceHost = {
       getScriptFileNames: () => [...files.keys(), `${types}/as-types.d.ts`],
@@ -161,7 +181,7 @@ function checkSnippets() {
     const service = ts.createLanguageService(host)
     for (const [file, snippet] of files) {
       for (const { start, text } of untyped(service.getSemanticDiagnostics(file)))
-        problems.push(`${snippet.from} (${locale}), example line ${snippet.code.slice(0, start).split('\n').length}: ${text}`)
+        problems.push(`${snippet.from} (${locale}), ${snippet.name} line ${snippet.code.slice(0, start).split('\n').length}: ${text}`)
     }
   }
   return problems

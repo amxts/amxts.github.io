@@ -1,4 +1,5 @@
 /// <reference path="../as-types.d.ts" />
+/// <reference path="./amxts.d.ts" />
 import "./promise";
 import { Vector } from "./vector";
 /** Обработчик, который получает id игрока и ничего не возвращает, — так вызываются события игрока и команды. */

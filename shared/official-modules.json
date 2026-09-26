@@ -7,7 +7,7 @@
     },
     "description": {
       "en": "INI configs: sections, typed values, paths into blocks",
-      "ru": "INI-конфиги: секции, типизированные значения, пути в блоки"
+      "ru": "INI-конфиги: секции, типизированные значения, пути внутрь блоков"
     },
     "author": "kukson777",
     "authorUrl": "https://github.com/kukson777",

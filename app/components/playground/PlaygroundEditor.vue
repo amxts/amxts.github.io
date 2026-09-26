@@ -61,6 +61,7 @@ async function mount() {
       '~/*': ['types/amxts/*'],
       '@amxts/core': ['types/amxts/facade.d.ts'],
       '@amxts/core/test-utils': ['types/root/src/testing/index.d.ts'],
+      '@amxts/core/*': ['types/amxts/*'],
       '@amxts/*': ['types/packages/*/index.d.ts'],
     },
   })

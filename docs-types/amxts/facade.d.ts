@@ -1,4 +1,5 @@
 /// <reference path="../as-types.d.ts" />
+/// <reference path="./amxts.d.ts" />
 import "./promise";
 import { Vector } from "./vector";
 /** A handler that takes a player id and returns nothing — what player events and commands call. */
