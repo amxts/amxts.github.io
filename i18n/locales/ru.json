@@ -1,0 +1,98 @@
+{
+  "nav": {
+    "docs": "Документация",
+    "modules": "Модули",
+    "playground": "Песочница",
+    "home": "Главная",
+    "sections": "Разделы"
+  },
+  "header": {
+    "language": "Язык",
+    "repository": "Исходный код на {provider}",
+    "repositoryUnset": "Ссылка на репозиторий ещё не опубликована"
+  },
+  "footer": {
+    "tagline": "Плагины AMX Mod X для Counter-Strike 1.6 на TypeScript."
+  },
+  "docs": {
+    "toc": "На странице",
+    "notFound": "Такой страницы нет."
+  },
+  "modules": {
+    "title": "Модули",
+    "description": "Библиотеки для плагинов amxts: меню, конфиги, HTTP и другое.",
+    "search": "Поиск модулей",
+    "all": "Все",
+    "count": "Модулей: {n}",
+    "empty": "Ни один модуль не подходит под поиск.",
+    "clear": "Сбросить фильтры",
+    "install": "Установка",
+    "copy": "Скопировать команду установки",
+    "copied": "Скопировано",
+    "official": "Официальный",
+    "community": "Сообщество",
+    "unpublished": "Ещё не на npm",
+    "docs": "Документация",
+    "repository": "Репозиторий",
+    "npm": "npm",
+    "package": "Пакет",
+    "author": "Автор",
+    "category": "Категория",
+    "version": "Версия",
+    "requires": "Нужно на сервере",
+    "readme": "README",
+    "noReadme": "У этого модуля пока нет README.",
+    "addYours": "Добавить свой модуль",
+    "addYoursHint": "Откройте пул-реквест в amxts/modules с YAML-файлом модуля: CI его проверит, и модуль появится здесь.",
+    "categories": {
+      "ui": "Интерфейс",
+      "gameplay": "Геймплей",
+      "admin": "Администрирование",
+      "config": "Конфигурация",
+      "data": "Данные",
+      "network": "Сеть",
+      "tools": "Инструменты"
+    },
+    "addYoursLink": "Как добавить модуль",
+    "create": "Создать свой модуль",
+    "installThis": "Установить модуль",
+    "links": "Ссылки",
+    "details": "Подробности",
+    "officialModule": "Официальный модуль"
+  },
+  "page": {
+    "copy": "Копировать страницу",
+    "copyLink": "Копировать ссылку на Markdown",
+    "copied": "Скопировано",
+    "viewMarkdown": "Открыть как Markdown",
+    "openIn": "Открыть в {app}",
+    "prompt": "Прочитай {url}, чтобы я мог задавать по нему вопросы.",
+    "more": "Другие способы скопировать страницу",
+    "notFound": "Страница не найдена",
+    "notFoundDescription": "Такой страницы нет."
+  },
+  "architecture": {
+    "server": "Сервер CS 1.6",
+    "amxx": "AMX Mod X",
+    "module": "запускает ваши плагины .aot через WAMR",
+    "host": "сгенерирован, без логики",
+    "natives": "нативы по имени",
+    "others": "Модули и Pawn-плагины",
+    "othersHint": "reapi, hamsandwich, cstrike, ваши .amxx",
+    "build": "Сборка",
+    "loaded": "загружен"
+  },
+  "playground": {
+    "title": "Песочница",
+    "description": "Пишите плагин amxts прямо в браузере, с типами фреймворка.",
+    "example": "Пример",
+    "examples": {
+      "hello": "Hello: /hp",
+      "timer": "Таймеры",
+      "menu": "Меню (menu-core)",
+      "events": "События"
+    },
+    "loading": "Загружаем редактор и типы amxts…",
+    "failed": "Редактор не загрузился. Обновите страницу."
+  }
+}

@@ -1,0 +1,45 @@
+diff --git a/dist/core-BNNwO1ON.mjs b/dist/core-BNNwO1ON.mjs
+index d931217..303fbdc 100644
+--- a/dist/core-BNNwO1ON.mjs
++++ b/dist/core-BNNwO1ON.mjs
+@@ -526,17 +526,33 @@ function rendererRich(options = {}) {
+ 		let lang = this.options.lang;
+ 		if (lang === "jsx") lang = "tsx";
+ 		else if (lang === "js" || lang === "javascript") lang = "ts";
++		// xen-site: a member line (`name: string`, `method(args): void`) is
++		// highlighted inside a type, so its name and its type get their colors;
++		// the wrapper's two lines are dropped from the result
++		const [first, ...rest] = content.split("\n");
++		const member = !/^(?:const|let|var|function|class|interface|type|enum|namespace|module|declare)\b/.test(first);
++		const source = member ? [`interface __ {`, first, `}`, ...rest].join("\n") : content;
++		const highlighted = this.codeToHast(source, {
++			...this.options,
++			meta: {},
++			transformers: [],
++			lang,
++			structure: member || content.trim().includes("\n") ? "classic" : "inline"
++		}).children;
++		if (member) {
++			const code = highlighted[0]?.children?.find((node) => node.tagName === "code");
++			if (code) {
++				const lines = code.children.filter((node) => node.type === "element");
++				lines.splice(2, 1);
++				lines.splice(0, 1);
++				code.children = lines.flatMap((line, index) => index === 0 ? [line] : [{ type: "text", value: "\n" }, line]);
++			}
++		}
+ 		const typeCode = {
+ 			type: "element",
+ 			tagName: "code",
+ 			properties: {},
+-			children: this.codeToHast(content, {
+-				...this.options,
+-				meta: {},
+-				transformers: [],
+-				lang,
+-				structure: content.trim().includes("\n") ? "classic" : "inline"
+-			}).children
++			children: highlighted
+ 		};
+ 		typeCode.properties.class = "twoslash-popup-code";
+ 		popupContents.push(extend(hast?.popupTypes, typeCode));
