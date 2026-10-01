@@ -75,6 +75,19 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  // Icons come with the site's JS, not from the Iconify API at runtime: every
+  // icon named in its code and content (and Nuxt UI's own) is bundled.
+  icon: {
+    clientBundle: {
+      scan: {
+        globInclude: ['app/**/*.{vue,ts}', 'shared/**/*.ts', 'content/**/*.md'],
+      },
+      // the docs' sidebar groups: their icons are in the framework's
+      // docs/*/.navigation.yml, which is not in this repository
+      icons: ['lucide:rocket', 'lucide:zap', 'lucide:gamepad-2', 'lucide:database', 'lucide:package', 'lucide:plug', 'lucide:flask-conical'],
+    },
+  },
+
   // The framework's declarations for the hovers: thousands of files that
   // `docs:types` rewrites and Twoslash reads itself, so dev does not watch them.
   ignore: ['docs-types', 'docs-types-ru'],
