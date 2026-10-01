@@ -4,7 +4,8 @@
     "modules": "Modules",
     "playground": "Playground",
     "home": "Home",
-    "sections": "Sections"
+    "sections": "Sections",
+    "changelog": "Changelog"
   },
   "header": {
     "language": "Language",
@@ -94,5 +95,12 @@
     },
     "loading": "Loading the editor and the amxts types…",
     "failed": "The editor did not load. Reload the page."
+  },
+  "changelog": {
+    "title": "Changelog",
+    "description": "Every release of amxts: the framework, the CLI, the official modules and the editor extension.",
+    "all": "All",
+    "onGitHub": "On GitHub",
+    "empty": "No releases yet."
   }
 }

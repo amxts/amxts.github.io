@@ -13,6 +13,8 @@ const localePath = useLocalePath()
       <UButton :to="localePath('/docs/getting-started/quick-start')" :label="t('nav.docs')" color="neutral" variant="link" />
 
       <UButton :to="localePath('/modules')" :label="t('nav.modules')" color="neutral" variant="link" />
+
+      <UButton :to="localePath('/changelog')" :label="t('nav.changelog')" color="neutral" variant="link" />
     </template>
   </UFooter>
 </template>

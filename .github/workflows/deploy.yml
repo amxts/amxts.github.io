@@ -57,6 +57,9 @@ jobs:
           NUXT_APP_BASE_URL: ${{ steps.pages.outputs.base_path }}/
           # the origin only: the site's modules add the base path themselves
           NUXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.origin }}
+          # the changelog reads the releases from GitHub's API; with the
+          # workflow's token its rate limit is not the anonymous one
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Upload
         uses: actions/upload-pages-artifact@v5

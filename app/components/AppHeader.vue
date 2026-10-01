@@ -23,6 +23,10 @@ const items = computed<NavigationMenuItem[]>(() => [{
   label: t('nav.playground'),
   to: localePath('/playground'),
   active: route.path.startsWith(localePath('/playground')),
+}, {
+  label: t('nav.changelog'),
+  to: localePath('/changelog'),
+  active: route.path.startsWith(localePath('/changelog')),
 }])
 
 // The search shortcut: Nuxt UI learns the system only after the page loads,

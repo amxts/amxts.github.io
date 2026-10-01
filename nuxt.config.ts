@@ -167,13 +167,17 @@ export default defineNuxtConfig({
 
   nitro: {
     prerender: {
-      // /api/modules as a JSON file (each docs page adds its markdown itself)
+      // /api/modules and /api/changelog as JSON files (each docs page adds its
+      // markdown itself)
       routes: [
         '/',
         '/ru',
         '/modules',
         '/ru/modules',
         '/api/modules',
+        '/changelog',
+        '/ru/changelog',
+        '/api/changelog',
       ],
       crawlLinks: true,
     },
