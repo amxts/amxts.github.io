@@ -336,6 +336,12 @@ html:root {
   background: var(--ui-bg-elevated);
 }
 
+/* and drops it at once when the indicator comes: a fade would show the two
+   backgrounds over each other for a moment */
+[role='tablist'] > [role='tab'][data-state='active'] {
+  transition-property: color;
+}
+
 /* The shortcut's modifier key: Ctrl, or ⌘ on a Mac (the head script marks it). */
 .kbd-meta::before {
   content: 'Ctrl';
