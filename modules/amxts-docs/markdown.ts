@@ -19,7 +19,7 @@
 // - a module's README (its repository) becomes its catalog page:
 //   the header block gives the title and description, links into the
 //   repository open on GitHub, alerts become callouts.
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as ts from 'typescript'
@@ -209,6 +209,30 @@ function facadeExports() {
   return facade = module ? checker.getExportsOfModule(module).map(symbol => symbol.name).filter(name => !name.startsWith('__')) : []
 }
 
+let modules: { name: string, from: string, line: string }[] | undefined
+
+/**
+ * What the official modules give a plugin without an import (`menus`,
+ * `semiclip`), read from the framework's declarations (docs-types/amxts/imports.d.ts,
+ * as a project's .amxts/imports.d.ts has it): an example that uses one
+ * gets a hidden import of it, as of the facade's names. Read once.
+ */
+function moduleImports() {
+  if (modules)
+    return modules
+  const file = fileURLToPath(new URL('../../docs-types/amxts/imports.d.ts', import.meta.url))
+  if (!existsSync(file))
+    return modules = []
+  const text = readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
+  const sources = new Map([...text.matchAll(/^import \* as (\w+) from "([^"]+)";$/gm)].map(([, alias, from]) => [alias!, from!]))
+  return modules = [...text.matchAll(/^\texport import (\w+) = (\w+)(?:\.(\w+))?;$/gm)]
+    .map(([, name, alias, member]) => {
+      const from = sources.get(alias!)!
+      return { name: name!, from, line: member ? `import { ${name} } from "${from}";` : `import * as ${name} from "${from}";` }
+    })
+    .filter(each => each.from !== '@amxts/core')
+}
+
 /** A TypeScript example with hovers: a Russian page's blocks read the Russian declarations (`locale-ru`). */
 function twoslash(block: string, locale: Locale) {
   if (!/^```ts\s/.test(block))
@@ -221,6 +245,10 @@ function twoslash(block: string, locale: Locale) {
   const hidden = names.length && !/from "(?:~\/facade|@amxts\/core)"/.test(block)
     ? [`import { ${names.filter(name => !declared.has(name)).join(', ')} } from "~/facade";`]
     : []
+  for (const each of moduleImports()) {
+    if (new RegExp(`\\b${each.name}\\b`).test(code) && !declared.has(each.name) && !block.includes(`from "${each.from}"`))
+      hidden.push(each.line)
+  }
   // An example that talks about `player` without declaring it gets one, so
   // what it reads from the player has its types too.
   if (/\bplayer\b/.test(code) && !/(?:\b(?:const|let|var)\s+|[(,]\s*)player\b/.test(code))
