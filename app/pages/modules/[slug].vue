@@ -123,7 +123,7 @@ useSeoMeta({
 
         <template #title>
           <span class="flex items-center gap-3">
-            <img v-if="module.logo" :src="module.logo" alt="" width="36" height="36" class="size-9 shrink-0 object-contain">
+            <img v-if="module.logo" :src="module.logo" alt="" width="36" height="36" class="size-9 shrink-0 rounded-[22%] object-contain dark:ring-1 dark:ring-white/15">
 
             <LogoMark v-else-if="official" class="size-9 shrink-0 text-primary" />
 

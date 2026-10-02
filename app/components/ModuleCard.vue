@@ -26,7 +26,7 @@ const { command } = usePackageManager(() => props.module.package)
   >
     <template #leading>
       <div class="flex w-full items-start justify-between gap-2">
-        <img v-if="module.logo" :src="module.logo" alt="" width="32" height="32" loading="lazy" class="size-8 object-contain">
+        <img v-if="module.logo" :src="module.logo" alt="" width="32" height="32" loading="lazy" class="size-8 rounded-[22%] object-contain dark:ring-1 dark:ring-white/15">
 
         <LogoMark v-else-if="module.type === 'official'" class="size-8 text-primary" />
 
