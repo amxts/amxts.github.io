@@ -1,5 +1,5 @@
 /// <reference path="../../as-types.d.ts" />
-import { Player } from "~/facade";
+import { Player } from "../facade";
 /**
  * Checks of one piece of the API on a live server. Each goes to the server
  * console with the tag, as `[tag] ok ...` or `[tag] FAIL ...`; the player

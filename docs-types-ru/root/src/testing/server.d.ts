@@ -3,6 +3,7 @@ import type { Native } from './natives';
 import type { HookShape } from './tables';
 import { Coroutines } from './coroutines';
 import { Memory } from './memory';
+import { FakeNetwork } from './network';
 /** What a test hands the plugin: a cell, a flag, or text. */
 export type Value = number | boolean | string;
 /**
@@ -33,6 +34,11 @@ interface Handler {
     shape: number;
     /** A closure's number: fn is then the plugin's dispatcher, called with it first (Handler.tag in module.cpp). */
     tag?: number;
+    /** on_cell's filter: the handler hears the forward only when this argument is `value`. */
+    where?: {
+        arg: number;
+        value: number;
+    };
 }
 /** A host public standing in for a handler: `__amxts_cb<index>`. */
 interface Slot extends Handler {
@@ -59,7 +65,7 @@ interface Cvar {
 export interface Chain {
     shape: HookShape;
     answer: Value;
-    args: Value[];
+    args: HookArg[];
     /** SetHookChainReturn ran: reapi lets a chain that answers be stopped only then. */
     answered?: boolean;
 }
@@ -70,8 +76,10 @@ export interface HookResult {
     /** The chain's answer after every listener: a number, a boolean or text, by the chain. */
     result: Value;
     /** The arguments as the listeners left them (`event.damage = 10`). */
-    args: Value[];
+    args: HookArg[];
 }
+/** A hookchain's argument: a number, a boolean, text, or a vector as `[x, y, z]`. */
+export type HookArg = Value | number[];
 /** A user message a plugin sent: ScreenFade, StatusIcon, ... */
 export interface UserMessage {
     name: string;
@@ -79,11 +87,47 @@ export interface UserMessage {
     player: number;
     /** What was written, in order: bytes, shorts and longs as numbers, strings as text. */
     args: (number | string)[];
+    /** For a temporary effect (`SVC_TEMPENTITY`): who it went to, as `MSG_*` - `0` everyone, `4` those who see `origin`, `8` one player. */
+    dest?: number;
+    /** For a temporary effect: the point it is seen from, with `dest` `4`. */
+    origin?: number[];
 }
 /** A forward a plugin sent out through ExecuteForward. */
 export interface SentForward {
     name: string;
-    args: Value[];
+    /** Each argument as Pawn got it: a cell, a Float, text, or an array's cells. */
+    args: (Value | number[])[];
+}
+/** A menu of AMX Mod X's own, made by menu_create, as the fake keeps it. */
+export interface FakeMenu {
+    id: number;
+    title: string;
+    /** The public menu_create was given: called with (player, menu, item). */
+    handler: Slot;
+    /** Each item's name and its callback's number from menu_makecallback, or -1. */
+    items: {
+        name: string;
+        callback: number;
+    }[];
+    /** MPROP_PERPAGE: `0` is one page, without Back and More. */
+    perPage: number;
+    /** MPROP_EXIT is not MEXIT_NEVER. */
+    exit: boolean;
+    back: string;
+    next: string;
+    exitName: string;
+    numberColor: string;
+}
+/** A menu of AMX Mod X's own on a player's screen, as menu_display drew it. */
+export interface MenuScreen {
+    menu: number;
+    page: number;
+    /** What he sees, with the game's colour codes: `\r1.\w Armor`. */
+    text: string;
+    /** The keys that answer: 1-9 and 0. */
+    keys: number[];
+    /** The keys of the items drawn grey, which do nothing. */
+    disabled: number[];
 }
 /** One line a player was shown. */
 export interface Message {
@@ -95,17 +139,19 @@ export interface ServerOptions {
     map?: string;
     /** 32 unless said. */
     maxPlayers?: number;
-    /** The modules hasModule() finds. All of reapi, cstrike, fun, hamsandwich, engine, fakemeta, nvault unless said. */
+    /** The modules hasModule() finds. All of reapi, cstrike, fun, hamsandwich, engine, fakemeta, nvault, resemiclip unless said. */
     modules?: string[];
     /** Cvars the server has before the plugin loads: `{ mp_freezetime: "5" }`. */
     cvars?: Record<string, string>;
     /** Files in the game folder before the plugin loads, by path: `{ "addons/amxmodx/configs/x.ini": "..." }`. */
     files?: Record<string, string>;
     /**
-     * The system the server runs on, as `~/os` finds it: "win32" puts the amxts
+     * The system the server runs on, as `@amxts/core/os` finds it: "win32" puts the amxts
      * module's amxts_amxx.dll in the modules folder. "linux" unless said.
      */
     platform?: 'win32' | 'linux';
+    /** The server's time zone, what Date's local getters read: "Asia/Yerevan". This machine's unless said. */
+    timeZone?: string;
 }
 export type TeamName = 'UNASSIGNED' | 'TERRORIST' | 'CT' | 'SPECTATOR';
 export declare const TEAMS: TeamName[];
@@ -167,6 +213,10 @@ export declare class FakePlayer extends FakeEntity {
     readonly commands: string[];
     /** His userinfo keys - `lang` says his language. */
     readonly info: Map<string, string>;
+    /** The menu of AMX Mod X's own on his screen (menu_display), or null; `menuselect <key>` answers it. */
+    menu: MenuScreen | null;
+    /** His userid, the number `#12` names him by in a command: the server counts them up as players come. */
+    readonly userid: number;
     constructor(server: FakeServer, id: number, name: string, options: JoinOptions);
     get health(): number;
     set health(value: number);
@@ -205,7 +255,10 @@ export declare class FakePlayer extends FakeEntity {
     /** `say_team <text>`. */
     sayTeam(text: string): boolean;
     private chatLine;
-    /** A console command, split the way the engine splits it: `amx_slap "Some One" 5`. True if handled. */
+    /**
+     * A console command, split the way the engine splits it: `amx_slap "Some One" 5`.
+     * `menuselect <key>` goes to his menu first, as AMX Mod X takes it. True if handled.
+     */
     command(line: string): boolean;
     /** Leaves the server: the disconnect events, then the slot is free. */
     disconnect(options?: {
@@ -213,15 +266,22 @@ export declare class FakePlayer extends FakeEntity {
         reason?: string;
     }): void;
 }
-/** A loaded plugin: its instance, its memory, and where it takes strings. */
+/** A line a plugin prints to the server's console, into the log. */
+declare function logLine(this: FakeServer, plugin: PluginInstance, message: number): void;
+/** users.ini letters as AMX Mod X reads them: `a` is bit 0, `b` bit 1 ... */
+export declare function flagBits(letters: string): number;
+/**
+ * A log line split as AMX Mod X splits it for read_logargv: a quoted part
+ * and a part in brackets each one argument, the text between them another.
+ */
+export declare function splitLog(line: string): string[];
+/** A loaded plugin: its instance and its memory. */
 export declare class PluginInstance {
     readonly server: FakeServer;
     readonly source: string;
     readonly natives: PluginNative[];
     instance: any;
     memory: Memory;
-    /** The buffer __strings() lends: where an event's text is copied. */
-    strings: number;
     /** What plugin() said about it. */
     info: {
         name: string;
@@ -229,19 +289,14 @@ export declare class PluginInstance {
         author: string;
         description: string;
     };
+    /** Taken off the server (FakeServer.unload): its slots answer nothing until the same file takes them back. */
+    unloaded: boolean;
     /** The coroutine scheduler, for a plugin that awaits; null for one that does not. */
     readonly coroutines: Coroutines | null;
     constructor(server: FakeServer, source: string, module: any, natives?: PluginNative[], binary?: Uint8Array);
-    /** Runs the file's top level, then asks for the string buffer - the module's order. */
+    /** Runs the file's top level. */
     start(): void;
     get table(): any;
-    /**
-     * Copies text into the plugin's string buffer, a cell a character, as
-     * CopyStringToPlugin does. `offset` counts cells and moves past it.
-     */
-    copyString(text: string, offset: {
-        cells: number;
-    }): number;
     private importFor;
 }
 /**
@@ -262,6 +317,8 @@ export declare class FakeServer {
     time: number;
     /** Date.now() when the map started. */
     readonly startedAt: number;
+    /** The server's time zone; this machine's when undefined. */
+    readonly timeZone: string | undefined;
     readonly plugins: PluginInstance[];
     /** Players by slot, 1 to maxPlayers; weapons and other entities after them. */
     readonly entities: Map<number, FakeEntity>;
@@ -309,6 +366,7 @@ export declare class FakeServer {
     }[]>;
     readonly slots: Slot[];
     readonly clientCommands: Map<string, Slot[]>;
+    readonly serverCommands: Map<string, Slot[]>;
     readonly hookchains: Map<string, {
         pre: Slot[];
         post: Slot[];
@@ -330,6 +388,8 @@ export declare class FakeServer {
     };
     /** The game rules' members a plugin set (set_member_game), by member. */
     readonly rules: Map<number, number>;
+    /** The members plugins asked member_slot for, by slot: each one's reapi constant. */
+    private readonly memberSlots;
     /** Rounds a plugin ended with rg_round_end, in order. */
     readonly roundEnds: {
         status: number;
@@ -339,7 +399,7 @@ export declare class FakeServer {
         sound: string;
         trigger: boolean;
     }[];
-    /** Sounds played: from an entity (rh_emit_sound2), or sent to a player (rg_send_audio). */
+    /** Sounds played: from an entity (emit_sound, rh_emit_sound2), or to a player alone (SendAudio, rg_send_audio). */
     readonly sounds: {
         entity: number;
         sample: string;
@@ -357,18 +417,73 @@ export declare class FakeServer {
     readonly messageListeners: ((message: UserMessage) => void)[];
     /** resemiclip's masks, by player: bit N set - player N+1 is not solid to him. */
     readonly semiclipMasks: Map<number, number>;
+    /** Whether a plugin took resemiclip's rules over (resemiclip_take_control). */
+    semiclipControlled: boolean;
     /** The progress bar each player was last shown (rg_send_bartime), in seconds. */
     readonly bartimes: Map<number, number>;
     /** RegisterHam's callbacks, by `<function id>:<class>:pre|post`. */
     readonly hams: Map<string, Slot[]>;
+    /**
+     * The entity functions plugins ran - `weapon.deploy()`, `entity.use(...)` -
+     * in order: the Ham_* constant's number, the entity, the arguments after it
+     * as cells, and whether every plugin's listeners ran on it (ExecuteHamB).
+     */
+    readonly hamCalls: {
+        fn: number;
+        entity: number;
+        args: number[];
+        hooks: boolean;
+    }[];
+    /** register_message's callbacks, by the message's id. */
+    readonly messageHooks: Map<number, Slot[]>;
+    /** The message register_message's callbacks are reading and writing: its arguments and their ARG_* types. @internal */
+    hookedMessage: {
+        args: (number | string)[];
+        types: number[];
+    } | null;
     /** register_touch's callbacks. */
-    readonly touches: Slot[];
+    readonly touches: {
+        touched: string;
+        toucher: string;
+        slot: Slot;
+    }[];
+    /** register_logevent's callbacks: the number of arguments a line has, and the filters it passes. @internal */
+    readonly logEvents: {
+        argc: number;
+        filters: string[];
+        slot: Slot;
+    }[];
+    /** The log line logevent callbacks are reading, as AMX Mod X splits it. @internal */
+    logArgs: string[];
+    /** That line whole, as read_logdata reads it. @internal */
+    logLine: string;
+    /** register_event's callbacks, by the message's name, with their conditions ("1=0"). @internal */
+    readonly messageEvents: {
+        name: string;
+        conditions: string[];
+        slot: Slot;
+    }[];
+    /** register_forward's callbacks, by `<FM_* number>:pre|post`. */
+    readonly fakemetaForwards: Map<string, Slot[]>;
+    /** What a fakemeta callback answered with forward_return, and what get_orig_retval reads. @internal */
+    forwardAnswer: number | string | null;
+    origRetval: number;
+    /** The engine's EngFunc_SetClientListening calls plugins made: listener, sender, whether he hears. */
+    readonly listening: number[][];
     /** query_client_cvar's questions, waiting for answerCvar(). */
     readonly cvarQueries: {
         player: number;
         cvar: string;
         slot: Slot;
     }[];
+    /** The menus menu_create made and menu_destroy has not taken away, by id. */
+    readonly menus: Map<number, FakeMenu>;
+    /** menu_makecallback's publics, by the number it gave. @internal */
+    readonly menuCallbacks: Slot[];
+    private menuIds;
+    private userids;
+    /** A userid for a player who comes: one more than the last. @internal */
+    nextUserid(): number;
     /** What precache_model and precache_sound were asked for, in order: the index is the place + 1. */
     readonly precached: string[];
     /**
@@ -379,8 +494,22 @@ export declare class FakeServer {
     readonly playerData: Map<number, Map<string, string | number>>;
     /** Which of those texts are lists of player ids ("3,5"), by `slot:key`: a player who leaves goes from them. */
     readonly playerLists: Set<string>;
-    /** How often each field changed on anyone, by the name before the first dot (Player.revision). */
-    readonly playerRevisions: Map<string, number>;
+    /**
+     * The playerchange listeners, as the module keeps them: per plugin, the
+     * fields it hears ("" for every one) and the trampoline that hands a change
+     * to its listeners.
+     */
+    readonly fieldListeners: {
+        plugin: PluginInstance;
+        fn: number;
+        fields: string[];
+    }[];
+    /** The change being told, which the player_change_* imports read. @internal */
+    fieldChange: {
+        key: string;
+        previous: number | string | undefined;
+        value: number | string;
+    } | null;
     /** The arguments of the callback that is running, for arg() and arg_text(). */
     callArgs: ArgValue[] | null;
     /** The command being handled, for read_argv. */
@@ -400,6 +529,8 @@ export declare class FakeServer {
     readonly kits: Map<string, unknown>;
     /** Natives a test kit answers on this server, over the fake's own. */
     private readonly ownNatives;
+    /** The `export function` natives of the loaded plugins, by name: the first plugin's where two export one. */
+    private readonly pluginNatives;
     /**
      * Answers a native on this server - for a module's test kit, which adds
      * what its plugin calls (a menu's show_menu, callfunc into Pawn). Before
@@ -414,7 +545,7 @@ export declare class FakeServer {
      * test kit, when it has one, is installed first.
      */
     load(source: string): Promise<PluginInstance>;
-    /** plugin_init and plugin_cfg, as a map start sends them. */
+    /** plugin_precache, plugin_init and plugin_cfg, as a map start sends them. */
     start(): void;
     /** Everything logged, one line a line. */
     get log(): string;
@@ -429,6 +560,36 @@ export declare class FakeServer {
     file(path: string): string | undefined;
     /** Puts a file in the game folder, as UTF-8. */
     writeFile(path: string, text: string): void;
+    /** The dictionaries' lines by language, then key: what register_dictionary loaded and translate() added. */
+    readonly dictionary: Map<string, Map<string, string>>;
+    /** Every key in the order it came, as GetLangTransKey numbers them. */
+    private readonly langKeys;
+    /**
+     * Lines as a dictionary file writes them - `^n` a line break, `^4` chat's
+     * green, `\y` a menu's yellow: `server.translate({ MYPLUGIN_HELLO: "Hello, %s" })`,
+     * `server.translate({ ... }, "ru")`.
+     */
+    translate(lines: Record<string, string>, language?: string): void;
+    /**
+     * Reads `addons/amxmodx/data/lang/<file>` as register_dictionary does:
+     * `[en]` sections of `KEY = text` lines. False when there is no such file.
+     */
+    loadDictionary(file: string): boolean;
+    /**
+     * The key's line for a player (`0`: the server), as LookupLangKey finds
+     * it: in the player's language, then the server's, then English.
+     */
+    lookupLang(key: string, id: number): string | undefined;
+    /**
+     * The language AMX Mod X reads a player's text in (playerlang): his `lang`
+     * setinfo while `amx_client_languages` is on and it starts with a letter,
+     * `amx_language` otherwise.
+     */
+    languageOf(id: number): string;
+    /** The key's number, as GetLangTransKey gives it; -1 when no dictionary has it. */
+    langKey(key: string): number;
+    /** One line, with the escapes AMX Mod X turns into characters as it loads a file. */
+    private addLangLine;
     /** Whether a folder is there: named in `folders`, or holding a file. */
     folderExists(path: string): boolean;
     /** ArrayCreate. @internal */
@@ -441,6 +602,20 @@ export declare class FakeServer {
     vault(name: string): Map<string, string>;
     /** A player connects: client_connect, client_authorized, client_putinserver. */
     join(name: string, options?: JoinOptions): FakePlayer;
+    /** The module's network client: the requests plugins sent with fetch. @internal */
+    readonly network: FakeNetwork;
+    /**
+     * Waits for the responses to the requests the plugins sent with `fetch`,
+     * and hands each to its plugin as the server's next frame would; a
+     * request sent on the way is waited for too. A timer between two tries
+     * waits for `advance()`.
+     *
+     * ```ts
+     * player.say("/weather");
+     * await server.responses();
+     * ```
+     */
+    responses(): Promise<void>;
     /**
      * Moves the clock forward and runs every timer that comes due on the way,
      * in order - a repeating one as many times as it fits.
@@ -450,9 +625,13 @@ export declare class FakeServer {
      * Raises a forward the host plugin relays - "client_putinserver",
      * "plugin_cfg" - or one a Pawn plugin sends: every handler and every
      * Forward.subscribe() of that name hears it. Text arrives as text, a
-     * boolean as 1 or 0. Returns the highest answer, as the module does.
+     * boolean as 1 or 0, an array as its cells (a Float's as its bits). As in
+     * the module, a listener reads every argument from the call's context and
+     * is handed the first cell. Returns the highest answer, as the module does.
      */
-    fire(name: string, ...args: Value[]): number;
+    fire(name: string, ...args: ArgValue[]): number;
+    /** Every Forward.subscribe() of a forward, called with its tag; the arguments are the context's. */
+    private deliver;
     /**
      * Runs a reapi hookchain the way the game would: the pre listeners, then
      * the game's own function unless one of them stopped it, then the post
@@ -460,25 +639,69 @@ export declare class FakeServer {
      *
      * ```ts
      * server.fireHook("takeDamage", [victim.id, 0, attacker.id, 30.0, 2]);
-     * server.fireHook("flPlayerFallDamage", [player.id], { result: 40 });
+     * server.fireHook("fallDamage", [player.id], { result: 40 });
      * ```
      *
      * `event` is the name game.addEventListener takes, or reapi's short one
      * ("take_damage"). `args` are the chain's arguments in order; a float is
-     * written as a number and goes as one. `result` is what the game's own
+     * written as a number and goes as one, a vector as `[x, y, z]`. `result` is what the game's own
      * function answers when it runs - what a post listener reads as
      * event.result.
      */
-    fireHook(event: string, args?: Value[], options?: {
+    fireHook(event: string, args?: HookArg[], options?: {
         result?: Value;
     }): HookResult;
+    /**
+     * Sends a message to a client the way the game would, through the
+     * register_message callbacks of its name: they read and change its
+     * arguments, and may stop it.
+     *
+     * ```ts
+     * server.sendMessage("TextMsg", [3, "#Round_Draw"], { player: alice });
+     * const sent = server.sendMessage("RoundTime", [120]);   // sent.args: [90] with a listener that writes 90
+     * ```
+     *
+     * A text argument is a string; a whole number is written as a byte, a
+     * fraction as a coordinate, unless `types` gives each argument's ARG_*.
+     * Returns whether a callback stopped it, and the arguments as they left.
+     */
+    sendMessage(name: string, args: (number | string)[], options?: {
+        player?: FakePlayer;
+        types?: number[];
+    }): {
+        prevented: boolean;
+        args: (number | string)[];
+    };
+    /**
+     * Runs one entity's function the way the game would, through the Ham
+     * Sandwich hooks registered for its class: the pre listeners, then the
+     * game's own function unless one of them blocked it, then the post
+     * listeners.
+     *
+     * ```ts
+     * server.fireHam("primaryAttack", knife);
+     * server.fireHam("takeDamage", box, [0, alice.id, 30.0, 2], { result: 1 });
+     * ```
+     *
+     * `event` is the name game.addEventListener takes; `args` are the
+     * function's arguments after the entity, a float as a number and a vector
+     * as an array of three.
+     */
+    fireHam(event: string, entity: FakeEntity | number, args?: HookArg[], options?: {
+        result?: Value;
+    }): HookResult;
+    /**
+     * fireHam's work, and ExecuteHamB's: `args` without the entity.
+     * @internal
+     */
+    runHam(shape: HookShape, id: number, args: HookArg[], result?: Value): HookResult;
     /**
      * One of the module's own natives for Pawn plugins, as a Pawn plugin calls
      * it: the amxts_*_player_data natives over the fields plugins add to Player
      * (runtime/host/amxts.inc).
      *
      * ```ts
-     * server.amxtsNative("amxts_get_player_data", bot.id, "ghost");       // 1
+     * server.amxtsNative("amxts_get_player_data", bot.id, "spawnProtected");   // 1
      * server.amxtsNative("amxts_set_player_data_string", bot.id, "tag", "x");
      * ```
      *
@@ -490,11 +713,12 @@ export declare class FakeServer {
     playerNumber(id: number, key: string): number;
     /** A Player field's text: "" when never written, or a number. @internal */
     playerText(id: number, key: string): string;
-    /** Writes a Player field, as the module does: only for a slot. @internal */
+    /** Writes a Player field, as the module does: only for a slot, and a change is told. @internal */
     setPlayerData(id: number, key: string, value: number | string, players?: boolean): void;
-    /** A player left: his fields go, and he goes from everyone's lists of players. @internal */
+    /** Every plugin listening for `key` hears it changed on player `id`, once, as the module tells them. */
+    private fieldChanged;
+    /** A player left: his fields go, and he goes from everyone's lists of players. Nobody is told. @internal */
     clearPlayerData(id: number): void;
-    private bumpRevision;
     /**
      * Calls a native a plugin exported with nativeFn, as another plugin would.
      * Returns what it gave back with ret(); a `setArg` it made lands in `args`.
@@ -514,7 +738,7 @@ export declare class FakeServer {
     nativeWithRoom(name: string, room: number, args: ArgValue[]): NativeResult;
     /**
      * A plugin calling another plugin's `export function` native
-     * through its ~/natives wrapper: the cells it pushed - text and buffers as
+     * through its @amxts/core/natives wrapper: the cells it pushed - text and buffers as
      * addresses in its memory - turned into the frame the native reads, and
      * what the native wrote into a buffer copied back, as AMX Mod X does.
      * @internal
@@ -526,13 +750,75 @@ export declare class FakeServer {
     within<T>(plugin: PluginInstance, body: () => T): T;
     /** The arguments arg() and arg_text() read while `body` runs. @internal */
     withCallArgs<T>(args: ArgValue[], body: () => T): T;
-    private cellFor;
     /** A client command: client_command, then every handler of it until one takes it. @internal */
     clientCommand(player: FakePlayer, argv: string[]): boolean;
+    /**
+     * A line typed in the server console or sent over rcon, split the way the
+     * engine splits it: every `register_srvcmd` handler of it until one takes
+     * it. True if handled.
+     */
+    serverCommand(line: string): boolean;
+    /** The handlers of the command in argv, in order, until one takes it. */
+    private handleCommand;
+    /** The command read_argv reads while `body` runs. */
+    private withArgv;
+    /**
+     * Takes a plugin off the server, as `amxts_reload` does before it loads
+     * the plugins again: its timers are removed, and a call to one of its
+     * other slots answers nothing, until a plugin of the same file asks for
+     * the same key and takes the slot back. `load` the file again for the
+     * reload's second half.
+     */
+    unload(plugin: PluginInstance): void;
+    /** A menu by its id, or the error AMX Mod X gives for another number. @internal */
+    menu(id: number): FakeMenu;
+    /** menu_create: a menu of seven items a page, with Back, More and Exit. @internal */
+    createMenu(title: string, handler: Slot): number;
+    /** menu_destroy: whoever has it open sees it close, and its handler hears MENU_EXIT. @internal */
+    destroyMenu(id: number): void;
+    /**
+     * menu_display: a page drawn for a player. An item with a callback is
+     * asked as AMX Mod X asks it, as it is drawn - the callback may name it
+     * for him, and its answer greys it out. Another menu he had open is
+     * closed first: its handler hears MENU_EXIT. @internal
+     */
+    displayMenu(player: FakePlayer, menu: FakeMenu, page: number): void;
+    /** A key on a menu of AMX Mod X's own: an item to the handler, Back and More a page, Exit MENU_EXIT. Whether the menu took it. @internal */
+    selectMenu(player: FakePlayer, key: number): boolean;
+    private menuAnswer;
+    /**
+     * A line of the game's log, as the engine hands it to AMX Mod X: split
+     * into its arguments as AMX Mod X splits it, and every logevent callback
+     * whose filters it passes is called.
+     *
+     * ```ts
+     * server.gameLog('World triggered "Round_End"');
+     * server.gameLog(`"${alice.name}<${alice.userid}><STEAM_0:0:1><TERRORIST>" triggered "Planted_The_Bomb"`);
+     * ```
+     */
+    gameLog(line: string): void;
+    /**
+     * A fakemeta function the game calls, through the register_forward
+     * callbacks of it: the pre ones, then, unless one of them superseded it,
+     * the post ones with `result` as get_orig_retval reads it. Returns whether
+     * it was superseded and what a callback answered with forward_return.
+     *
+     * ```ts
+     * server.fireForward('FM_EmitSound', [alice.id, 2, 'player/die1.wav', 1.0, 0.8, 0, 100]);
+     * ```
+     */
+    fireForward(name: string, args: ArgValue[], result?: number): {
+        superseded: boolean;
+        answer: number | string | null;
+    };
     /** A slot by the public name a native was given: "__amxts_cb3". @internal */
     slotByPublic(name: string): Slot;
-    /** One player touching another: every register_touch callback, as the engine calls it. */
-    touch(toucher: FakePlayer, touched: FakePlayer): void;
+    /**
+     * One entity moving into another: the register_touch callbacks whose
+     * classes match ("*" or "" is any), called as the engine module calls
+     * them - (touched, toucher). The largest answer, as the module takes it.
+     */
+    touch(toucher: FakeEntity, touched: FakeEntity): number;
     /** A client answering query_client_cvar: every question about that cvar it had. */
     answerCvar(player: FakePlayer, cvar: string, value: string): void;
     /** An entity on the map, as create_entity makes one. */
@@ -547,16 +833,16 @@ export declare class FakeServer {
     changeCvar(cvar: Cvar, value: string): void;
     /** A native from natives.ts, called by `plugin`. @internal */
     callNativeImpl(plugin: PluginInstance, name: string, args: number[]): number;
-    /**
-     * The externals the facade declares, as module.cpp registers
-     * them in g_wasmNatives. Each is called with the plugin that called it.
-     * @internal
-     */
     /** Modules a plugin runs for the others (module.cpp's g_services), and the bytes of the call in flight. @internal */
     private services;
     private rpcRequest;
     private rpcReply;
     private rpcResult;
+    /**
+     * The externals the facade declares, as module.cpp registers
+     * them in g_wasmNatives. Each is called with the plugin that called it.
+     * @internal
+     */
     readonly bridge: {
         amxts_serve(this: FakeServer, plugin: PluginInstance, name: number, hash: number): void;
         amxts_owner(this: FakeServer, plugin: PluginInstance, name: number, hash: number): number;
@@ -564,20 +850,34 @@ export declare class FakeServer {
         amxts_rpc_take(this: FakeServer, plugin: PluginInstance, to: number): void;
         amxts_rpc_reply(this: FakeServer, plugin: PluginInstance, data: number, length: number): void;
         amxts_rpc_result(this: FakeServer, plugin: PluginInstance, to: number): void;
+        net_open(this: FakeServer, plugin: PluginInstance, url: number): number;
+        net_option(this: FakeServer, plugin: PluginInstance, id: number, name: number, value: number): number;
+        net_body(this: FakeServer, plugin: PluginInstance, id: number, data: number, length: number): void;
+        net_send(this: FakeServer, plugin: PluginInstance, id: number, fn: number): number;
+        net_cancel(this: FakeServer, plugin: PluginInstance, id: number): void;
+        net_close(this: FakeServer, plugin: PluginInstance, id: number): void;
+        net_status(this: FakeServer, plugin: PluginInstance, id: number): number;
+        net_redirects(this: FakeServer, plugin: PluginInstance, id: number): number;
+        net_text(this: FakeServer, plugin: PluginInstance, id: number, what: number, out: number, max: number): number;
+        net_size(this: FakeServer, plugin: PluginInstance, id: number): number;
+        net_read(this: FakeServer, plugin: PluginInstance, id: number, out: number, max: number): number;
+        net_reply(this: FakeServer, plugin: PluginInstance, id: number): number;
         abort(this: FakeServer, plugin: PluginInstance, message: number, file: number, line: number, column: number): never;
+        stack_frames(): number;
+        stack_text(): number;
         seed(): number;
         'Date.now': (this: FakeServer) => number;
+        'Date.getTimezoneOffset': (this: FakeServer, _plugin: PluginInstance, time: number) => number;
         'performance.now': (this: FakeServer) => number;
-        'console.log': (this: FakeServer, plugin: PluginInstance, message: number) => void;
-        'console.info': (this: FakeServer, plugin: PluginInstance, message: number) => void;
-        'console.debug': (this: FakeServer, plugin: PluginInstance, message: number) => void;
+        'console.log': typeof logLine;
+        'console.info': typeof logLine;
+        'console.debug': typeof logLine;
         'console.warn': (this: FakeServer, plugin: PluginInstance, message: number) => void;
         'console.error': (this: FakeServer, plugin: PluginInstance, message: number) => void;
         'console.assert': (this: FakeServer, plugin: PluginInstance, condition: number, message: number) => void;
         'console.time': () => void;
         'console.timeLog': () => void;
         'console.timeEnd': () => void;
-        print_server(this: FakeServer, plugin: PluginInstance, message: number): void;
         print_client(this: FakeServer, plugin: PluginInstance, id: number, channel: number, message: number): void;
         say_text(this: FakeServer, plugin: PluginInstance, id: number, text: number): void;
         get_name(this: FakeServer, plugin: PluginInstance, id: number, out: number, max: number): number;
@@ -585,6 +885,7 @@ export declare class FakeServer {
         set_health(this: FakeServer, plugin: PluginInstance, id: number, hp: number): void;
         outcome(this: FakeServer, plugin: PluginInstance, value: number): void;
         on(this: FakeServer, plugin: PluginInstance, name: number, fn: number, shape: number): void;
+        on_cell(this: FakeServer, plugin: PluginInstance, name: number, fn: number, shape: number, arg: number, value: number): void;
         subscribe(this: FakeServer, plugin: PluginInstance, name: number, fn: number, tag: number): void;
         emit_local(this: FakeServer, plugin: PluginInstance, name: number, mask: number, cells: number, argc: number): void;
         slot(this: FakeServer, plugin: PluginInstance, fn: number, shape: number, key: number, fallback: number): number;
@@ -600,16 +901,29 @@ export declare class FakeServer {
         arg(this: FakeServer, plugin: PluginInstance, index: number): number;
         arg_text(this: FakeServer, plugin: PluginInstance, index: number, out: number, max: number): number;
         arg_string(this: FakeServer, plugin: PluginInstance, index: number, out: number, max: number): number;
+        arg_length(this: FakeServer, plugin: PluginInstance, index: number): number;
         arg_array(this: FakeServer, plugin: PluginInstance, index: number, out: number, count: number): number;
         set_arg_array(this: FakeServer, plugin: PluginInstance, index: number, cells: number, count: number): number;
         set_arg(this: FakeServer, plugin: PluginInstance, index: number, value: number): 0 | 1;
         set_arg_text(this: FakeServer, plugin: PluginInstance, index: number, text: number, max: number): number;
+        ent_get(this: FakeServer, plugin: PluginInstance, id: number, offset: number): number;
+        ent_set(this: FakeServer, plugin: PluginInstance, id: number, offset: number, cell: number): void;
+        ent_entity(this: FakeServer, plugin: PluginInstance, id: number, offset: number): number;
+        ent_set_entity(this: FakeServer, plugin: PluginInstance, id: number, offset: number, index: number): void;
+        member_slot(this: FakeServer, plugin: PluginInstance, className: number, name: number): number;
+        member_get(this: FakeServer, plugin: PluginInstance, id: number, slot: number, element: number): number;
+        member_set(this: FakeServer, plugin: PluginInstance, id: number, slot: number, element: number, cell: number): void;
+        member_text(this: FakeServer, plugin: PluginInstance, id: number, slot: number, out: number, max: number): number;
+        member_set_text(this: FakeServer, plugin: PluginInstance, id: number, slot: number, text: number): void;
+        game_rules(): number;
         player_data_get(this: FakeServer, plugin: PluginInstance, id: number, key: number): number;
         player_data_set(this: FakeServer, plugin: PluginInstance, id: number, key: number, value: number): void;
         player_data_get_text(this: FakeServer, plugin: PluginInstance, id: number, key: number, out: number, max: number): number;
         player_data_set_text(this: FakeServer, plugin: PluginInstance, id: number, key: number, value: number): void;
         player_data_set_players(this: FakeServer, plugin: PluginInstance, id: number, key: number, value: number): void;
-        player_data_revision(this: FakeServer, plugin: PluginInstance, key: number): number;
+        player_change_listen(this: FakeServer, plugin: PluginInstance, field: number, fn: number): void;
+        player_change_get(this: FakeServer, _plugin: PluginInstance, which: number): number;
+        player_change_get_text(this: FakeServer, plugin: PluginInstance, which: number, out: number, max: number): number;
         argc(this: FakeServer): number;
         caller(): number;
         call(this: FakeServer, plugin: PluginInstance, id: number, argsPtr: number, maskPtr: number, argc: number): number;

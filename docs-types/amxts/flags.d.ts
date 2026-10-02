@@ -22,19 +22,19 @@ export declare abstract class FlagStore {
     abstract read(): i32;
     abstract write(mask: i32): void;
 }
-/** A mask in an entvar - var_flags, var_effects, var_button. */
+/** A mask in an entvar - var_flags, var_effects, var_button - at its offset in entvars_t. */
 export declare class EntvarFlags extends FlagStore {
     private entity;
-    private field;
-    constructor(entity: i32, field: i32);
+    private offset;
+    constructor(entity: i32, offset: i32);
     read(): i32;
     write(mask: i32): void;
 }
-/** A mask in a game member - m_iHideHUD. */
+/** A mask in a game member - m_iHideHUD - by its place in entities.ts's member table. */
 export declare class MemberFlags extends FlagStore {
     private entity;
-    private field;
-    constructor(entity: i32, field: i32);
+    private member;
+    constructor(entity: i32, member: i32);
     read(): i32;
     write(mask: i32): void;
 }
@@ -77,6 +77,10 @@ export declare const DAMAGE: FlagFamily;
 export type Access = "Immunity" | "Reservation" | "Kick" | "Ban" | "Slay" | "Map" | "Cvar" | "Cfg" | "Chat" | "Vote" | "Password" | "Rcon" | "LevelA" | "LevelB" | "LevelC" | "LevelD" | "LevelE" | "LevelF" | "LevelG" | "LevelH" | "Menu" | "BanTemp" | "Admin" | "User";
 /** The Access names and their bits, for the hood. */
 export declare const ACCESS: FlagFamily;
+/** What the scoreboard shows beside a player - the ScoreAttrib message: dead, the bomb, the VIP, a defuse kit. */
+export type ScoreStatus = "Dead" | "Bomb" | "Vip" | "DefuseKit";
+/** The ScoreStatus names and their bits, for the hood. */
+export declare const SCORE_STATUS: FlagFamily;
 /** Modes a weapon is in - m_iWeaponState: a silencer on, burst fire, the shield drawn. */
 export type WeaponState = "UspSilenced" | "Glock18Burst" | "M4a1Silenced" | "EliteLeft" | "FamasBurst" | "ShieldDrawn";
 /** The WeaponState names and their bits, for the hood. */

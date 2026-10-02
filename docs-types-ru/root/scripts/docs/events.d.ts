@@ -11,3 +11,5 @@ export interface EventDoc {
     example?: string;
 }
 export declare const EVENTS: Record<string, EventDoc>;
+/** `"playerchange"`: an event of the core's, not a forward - its class and fields are the facade's. */
+export declare const PLAYER_CHANGE: EventDoc;

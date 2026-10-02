@@ -15,8 +15,11 @@ export function localModules(): Record<string, string>;
  * How to run one of the core's tasks in the current folder:
  *
  * - `prepare` writes .amxts/tsconfig.json;
- * - `build` builds the plugins and the modules (`--deploy`, `--watch`);
+ * - `build` builds the plugins and the modules (`--deploy`, `--watch`, and
+ *   `--docker`: for the Docker server that mounts the project - no deploy,
+ *   Linux only, its console shown);
  * - `check` checks a module package before it is published;
+ * - `upgrade` rewrites the project's code to this core's API, listing each change;
  * - `typecheck` runs TypeScript over the project, after `prepare`.
  *
  * A failure is printed by the task itself and ends it with a non-zero code.
@@ -28,7 +31,7 @@ export function localModules(): Record<string, string>;
 export function task(name: string, args?: string[]): Task;
 /**
  * The third-party includes this core's API is generated from, as
- * includes/sources.json pins them, by id: `reapi`, `easy_http`, `resemiclip`,
+ * includes/sources.json pins them, by id: `reapi`, `resemiclip`,
  * each `{ name, version, license, home, url, sha256, include? }` - `url` gives
  * a file whose sha256 is `sha256`; for a .zip, `include` is the folder in it
  * whose .inc files are the includes. The command fetches ReAPI's for a
@@ -81,7 +84,7 @@ export const version: string;
  * returns changes in a way an older command would misread; the command says
  * which of the two to update when they differ.
  */
-export const cliApi: 2;
+export const cliApi: 4;
 /** Whether the core runs from a checkout (a .git folder beside it) rather than from npm. */
 export const fromSource: boolean;
 export type Task = {
@@ -94,3 +97,4 @@ export type Task = {
      */
     args: string[];
 };
+export { describeSystem, serverSystem } from "./system.mjs";

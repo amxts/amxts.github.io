@@ -179,6 +179,8 @@ export declare function contain(source: string, string_: string): number;
 export declare function containi(source: string, string_: string): number;
 /** copy(anydest[], anylen, const anysrc[]) */
 export declare function copy(src: string): string;
+/** copy_infokey_buffer(anyinfoBuffer, anyout[], anymaxlen) */
+export declare function copy_infokey_buffer(infoBuffer: number): string;
 /** szClassName: pointer, sizea, szKeyName: pointer, sizeb, szValue: pointer, sizec */
 export declare function copy_keyvalue(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32, a5: i32): i32;
 /** copyc(anydest[], anylen, const anysrc[], anych) */
@@ -187,6 +189,10 @@ export declare function copyc(src: string, ch: number): string;
 export declare function create_cvar(name: string, string_: string, flags?: number, description?: string, has_min?: boolean, min_val?: number, has_max?: boolean, max_val?: number): number;
 /** create_entity(const anyszClassname[]) */
 export declare function create_entity(szClassname: string): number;
+/** create_kvd() */
+export declare function create_kvd(): number;
+/** create_tr2() */
+export declare function create_tr2(): number;
 /** CreateDataPack() */
 export declare function CreateDataPack(): number;
 /** CreateHamItemInfo() */
@@ -465,216 +471,6 @@ export declare function ewrite_long(x: number): number;
 export declare function ewrite_short(x: number): number;
 /** ewrite_string(const anyx[]) */
 export declare function ewrite_string(x: string): number;
-/** ezhttp_cancel_request(EzHttpRequestrequest_id) */
-export declare function ezhttp_cancel_request(request_id: number): number;
-/** ezhttp_create_options() */
-export declare function ezhttp_create_options(): number;
-/** ezhttp_create_queue() */
-export declare function ezhttp_create_queue(): number;
-/** ezhttp_delete(const anyurl[], const anyon_complete[], EzHttpOptionsoptions_id) */
-export declare function ezhttp_delete(url: string, on_complete: string, options_id: number): number;
-/** ezhttp_ftp_download(const anyuser[], const anypassword[], const anyhost[], const anyremote_file[], const anylocal_file[], const anyon_complete[], EzHttpFtpSecuritysecurity, EzHttpOptionsoptions_id) */
-export declare function ezhttp_ftp_download(user: string, password: string, host: string, remote_file: string, local_file: string, on_complete: string, security: number, options_id: number): number;
-/** ezhttp_ftp_download2(const anyuri[], const anylocal_file[], const anyon_complete[], EzHttpFtpSecuritysecurity, EzHttpOptionsoptions_id) */
-export declare function ezhttp_ftp_download2(uri: string, local_file: string, on_complete: string, security: number, options_id: number): number;
-/** ezhttp_ftp_upload(const anyuser[], const anypassword[], const anyhost[], const anyremote_file[], const anylocal_file[], const anyon_complete[], EzHttpFtpSecuritysecurity, EzHttpOptionsoptions_id) */
-export declare function ezhttp_ftp_upload(user: string, password: string, host: string, remote_file: string, local_file: string, on_complete: string, security: number, options_id: number): number;
-/** ezhttp_ftp_upload2(const anyuri[], const anylocal_file[], const anyon_complete[], EzHttpFtpSecuritysecurity, EzHttpOptionsoptions_id) */
-export declare function ezhttp_ftp_upload2(uri: string, local_file: string, on_complete: string, security: number, options_id: number): number;
-/** ezhttp_get(const anyurl[], const anyon_complete[], EzHttpOptionsoptions_id) */
-export declare function ezhttp_get(url: string, on_complete: string, options_id: number): number;
-/** ezhttp_get_cookies(EzHttpRequestrequest_id, const anykey[], anyvalue[], anymax_len) */
-export declare function ezhttp_get_cookies(request_id: number, key: string): string;
-/** ezhttp_get_cookies_count(EzHttpRequestrequest_id) */
-export declare function ezhttp_get_cookies_count(request_id: number): number;
-/** ezhttp_get_data(EzHttpRequestrequest_id, anybuffer[], anymax_len) */
-export declare function ezhttp_get_data(request_id: number): string;
-/** ezhttp_get_downloaded_bytes(EzHttpRequestrequest_id) */
-export declare function ezhttp_get_downloaded_bytes(request_id: number): number;
-/** ezhttp_get_elapsed(EzHttpRequestrequest_id) */
-export declare function ezhttp_get_elapsed(request_id: number): number;
-/** ezhttp_get_error_code(EzHttpRequestrequest_id) */
-export declare function ezhttp_get_error_code(request_id: number): number;
-/** ezhttp_get_error_message(EzHttpRequestrequest_id, anybuffer[], anymax_len) */
-export declare function ezhttp_get_error_message(request_id: number): string;
-/** ezhttp_get_headers(EzHttpRequestrequest_id, const anykey[], anyvalue[], anymax_len) */
-export declare function ezhttp_get_headers(request_id: number, key: string): string;
-/** ezhttp_get_headers_count(EzHttpRequestrequest_id) */
-export declare function ezhttp_get_headers_count(request_id: number): number;
-/** ezhttp_get_http_code(EzHttpRequestrequest_id) */
-export declare function ezhttp_get_http_code(request_id: number): number;
-/** ezhttp_get_redirect_count(EzHttpRequestrequest_id) */
-export declare function ezhttp_get_redirect_count(request_id: number): number;
-/** ezhttp_get_uploaded_bytes(EzHttpRequestrequest_id) */
-export declare function ezhttp_get_uploaded_bytes(request_id: number): number;
-/** ezhttp_get_url(EzHttpRequestrequest_id, anybuffer[], anymax_len) */
-export declare function ezhttp_get_url(request_id: number): string;
-/** request_id, data: pointer */
-export declare function ezhttp_get_user_data(a0: i32, a1: i32): i32;
-/** ezhttp_is_request_exists(EzHttpRequestrequest_id) */
-export declare function ezhttp_is_request_exists(request_id: number): number;
-/** ezhttp_option_add_form_payload(EzHttpOptionsoptions_id, const anykey[], const anyvalue[]) */
-export declare function ezhttp_option_add_form_payload(options_id: number, key: string, value: string): number;
-/** ezhttp_option_add_url_parameter(EzHttpOptionsoptions_id, const anykey[], const anyvalue[]) */
-export declare function ezhttp_option_add_url_parameter(options_id: number, key: string, value: string): number;
-/** ezhttp_option_append_body(EzHttpOptionsoptions_id, const anybody[]) */
-export declare function ezhttp_option_append_body(options_id: number, body: string): number;
-/** ezhttp_option_set_auth(EzHttpOptionsoptions_id, const anyuser[], const anypassword[]) */
-export declare function ezhttp_option_set_auth(options_id: number, user: string, password: string): number;
-/** ezhttp_option_set_body(EzHttpOptionsoptions_id, const anybody[]) */
-export declare function ezhttp_option_set_body(options_id: number, body: string): number;
-/** ezhttp_option_set_body_from_json(EzHttpOptionsoptions_id, EzJSONjson, boolpretty) */
-export declare function ezhttp_option_set_body_from_json(options_id: number, json: number, pretty?: boolean): boolean;
-/** ezhttp_option_set_connect_timeout(EzHttpOptionsoptions_id, anytimeout_ms) */
-export declare function ezhttp_option_set_connect_timeout(options_id: number, timeout_ms: number): number;
-/** ezhttp_option_set_cookie(EzHttpOptionsoptions_id, const anykey[], const anyvalue[]) */
-export declare function ezhttp_option_set_cookie(options_id: number, key: string, value: string): number;
-/** ezhttp_option_set_header(EzHttpOptionsoptions_id, const anykey[], const anyvalue[]) */
-export declare function ezhttp_option_set_header(options_id: number, key: string, value: string): number;
-/** ezhttp_option_set_plugin_end_behaviour(EzHttpOptionsoptions_id, EzHttpPluginEndBehaviourplugin_end_behaviour) */
-export declare function ezhttp_option_set_plugin_end_behaviour(options_id: number, plugin_end_behaviour: number): number;
-/** ezhttp_option_set_proxy(EzHttpOptionsoptions_id, const anyproxy_url[]) */
-export declare function ezhttp_option_set_proxy(options_id: number, proxy_url: string): number;
-/** ezhttp_option_set_proxy_auth(EzHttpOptionsoptions_id, const anyuser[], const anypassword[]) */
-export declare function ezhttp_option_set_proxy_auth(options_id: number, user: string, password: string): number;
-/** ezhttp_option_set_queue(EzHttpOptionsoptions_id, EzHttpQueueend_map_behaviour) */
-export declare function ezhttp_option_set_queue(options_id: number, end_map_behaviour: number): number;
-/** ezhttp_option_set_timeout(EzHttpOptionsoptions_id, anytimeout_ms) */
-export declare function ezhttp_option_set_timeout(options_id: number, timeout_ms: number): number;
-/** ezhttp_option_set_user_agent(EzHttpOptionsoptions_id, const anyuser_agent[]) */
-export declare function ezhttp_option_set_user_agent(options_id: number, user_agent: string): number;
-/** options_id, data: pointer, len */
-export declare function ezhttp_option_set_user_data(a0: i32, a1: i32, a2: i32): i32;
-/** ezhttp_parse_json_response(EzHttpRequestrequest_id, boolwith_comments) */
-export declare function ezhttp_parse_json_response(request_id: number, with_comments?: boolean): number;
-/** ezhttp_patch(const anyurl[], const anyon_complete[], EzHttpOptionsoptions_id) */
-export declare function ezhttp_patch(url: string, on_complete: string, options_id: number): number;
-/** ezhttp_post(const anyurl[], const anyon_complete[], EzHttpOptionsoptions_id) */
-export declare function ezhttp_post(url: string, on_complete: string, options_id: number): number;
-/** ezhttp_put(const anyurl[], const anyon_complete[], EzHttpOptionsoptions_id) */
-export declare function ezhttp_put(url: string, on_complete: string, options_id: number): number;
-/** ezhttp_request_progress(EzHttpRequestrequest_id, anyprogress[]) */
-export declare function ezhttp_request_progress(request_id: number, progress: number[]): number;
-/** ezhttp_save_data_to_file(EzHttpRequestrequest_id, const anyfile_path[]) */
-export declare function ezhttp_save_data_to_file(request_id: number, file_path: string): number;
-/** ezhttp_save_data_to_file2(EzHttpRequestrequest_id, anyfile_handle) */
-export declare function ezhttp_save_data_to_file2(request_id: number, file_handle: number): number;
-/** ezjson_array_append_bool(EzJSONarray, boolboolean) */
-export declare function ezjson_array_append_bool(array: number, boolean_: boolean): boolean;
-/** ezjson_array_append_null(EzJSONarray) */
-export declare function ezjson_array_append_null(array: number): boolean;
-/** ezjson_array_append_number(EzJSONarray, anynumber) */
-export declare function ezjson_array_append_number(array: number, number_: number): boolean;
-/** ezjson_array_append_real(EzJSONarray, Floatnumber) */
-export declare function ezjson_array_append_real(array: number, number_: number): boolean;
-/** ezjson_array_append_string(EzJSONarray, const anystring[]) */
-export declare function ezjson_array_append_string(array: number, string_: string): boolean;
-/** ezjson_array_append_value(EzJSONarray, const EzJSONvalue) */
-export declare function ezjson_array_append_value(array: number, value: number): boolean;
-/** ezjson_array_clear(EzJSONarray) */
-export declare function ezjson_array_clear(array: number): boolean;
-/** ezjson_array_get_bool(const EzJSONarray, anyindex) */
-export declare function ezjson_array_get_bool(array: number, index: number): boolean;
-/** ezjson_array_get_count(const EzJSONarray) */
-export declare function ezjson_array_get_count(array: number): number;
-/** ezjson_array_get_number(const EzJSONarray, anyindex) */
-export declare function ezjson_array_get_number(array: number, index: number): number;
-/** ezjson_array_get_real(const EzJSONarray, anyindex) */
-export declare function ezjson_array_get_real(array: number, index: number): number;
-/** array, index, buffer: pointer, maxlen */
-export declare function ezjson_array_get_string(a0: i32, a1: i32, a2: i32, a3: i32): i32;
-/** ezjson_array_get_value(const EzJSONarray, anyindex) */
-export declare function ezjson_array_get_value(array: number, index: number): number;
-/** ezjson_array_remove(EzJSONarray, anyindex) */
-export declare function ezjson_array_remove(array: number, index: number): boolean;
-/** ezjson_array_replace_bool(EzJSONarray, anyindex, boolboolean) */
-export declare function ezjson_array_replace_bool(array: number, index: number, boolean_: boolean): boolean;
-/** ezjson_array_replace_null(EzJSONarray, anyindex) */
-export declare function ezjson_array_replace_null(array: number, index: number): boolean;
-/** ezjson_array_replace_number(EzJSONarray, anyindex, anynumber) */
-export declare function ezjson_array_replace_number(array: number, index: number, number_: number): boolean;
-/** ezjson_array_replace_real(EzJSONarray, anyindex, Floatnumber) */
-export declare function ezjson_array_replace_real(array: number, index: number, number_: number): boolean;
-/** ezjson_array_replace_string(EzJSONarray, anyindex, const anystring[]) */
-export declare function ezjson_array_replace_string(array: number, index: number, string_: string): boolean;
-/** ezjson_array_replace_value(EzJSONarray, anyindex, const EzJSONvalue) */
-export declare function ezjson_array_replace_value(array: number, index: number, value: number): boolean;
-/** ezjson_deep_copy(const EzJSONvalue) */
-export declare function ezjson_deep_copy(value: number): number;
-/** ezjson_equals(const EzJSONvalue1, const EzJSONvalue2) */
-export declare function ezjson_equals(value1: number, value2: number): boolean;
-/** ezjson_free(EzJSONhandle) */
-export declare function ezjson_free(handle: number): boolean;
-/** ezjson_get_bool(const EzJSONvalue) */
-export declare function ezjson_get_bool(value: number): boolean;
-/** ezjson_get_number(const EzJSONvalue) */
-export declare function ezjson_get_number(value: number): number;
-/** ezjson_get_parent(const EzJSONvalue) */
-export declare function ezjson_get_parent(value: number): number;
-/** ezjson_get_real(const EzJSONvalue) */
-export declare function ezjson_get_real(value: number): number;
-/** ezjson_get_string(const EzJSONvalue, anybuffer[], anymaxlen) */
-export declare function ezjson_get_string(value: number): string;
-/** ezjson_get_type(const EzJSONvalue) */
-export declare function ezjson_get_type(value: number): number;
-/** ezjson_init_array() */
-export declare function ezjson_init_array(): number;
-/** ezjson_init_bool(boolvalue) */
-export declare function ezjson_init_bool(value: boolean): number;
-/** ezjson_init_null() */
-export declare function ezjson_init_null(): number;
-/** ezjson_init_number(anyvalue) */
-export declare function ezjson_init_number(value: number): number;
-/** ezjson_init_object() */
-export declare function ezjson_init_object(): number;
-/** ezjson_init_real(Floatvalue) */
-export declare function ezjson_init_real(value: number): number;
-/** ezjson_init_string(const anyvalue[]) */
-export declare function ezjson_init_string(value: string): number;
-/** ezjson_object_clear(EzJSONobject) */
-export declare function ezjson_object_clear(object: number): boolean;
-/** ezjson_object_get_bool(const EzJSONobject, const anyname[], booldot_not) */
-export declare function ezjson_object_get_bool(object: number, name: string, dot_not?: boolean): boolean;
-/** ezjson_object_get_count(const EzJSONobject) */
-export declare function ezjson_object_get_count(object: number): number;
-/** ezjson_object_get_name(const EzJSONobject, anyindex, anybuffer[], anymaxlen) */
-export declare function ezjson_object_get_name(object: number, index: number): string;
-/** ezjson_object_get_number(const EzJSONobject, const anyname[], booldot_not) */
-export declare function ezjson_object_get_number(object: number, name: string, dot_not?: boolean): number;
-/** ezjson_object_get_real(const EzJSONobject, const anyname[], booldot_not) */
-export declare function ezjson_object_get_real(object: number, name: string, dot_not?: boolean): number;
-/** ezjson_object_get_string(const EzJSONobject, const anyname[], anybuffer[], anymaxlen, booldot_not) */
-export declare function ezjson_object_get_string(object: number, name: string, dot_not?: boolean): string;
-/** ezjson_object_get_value(const EzJSONobject, const anyname[], booldot_not) */
-export declare function ezjson_object_get_value(object: number, name: string, dot_not?: boolean): number;
-/** ezjson_object_get_value_at(const EzJSONobject, anyindex) */
-export declare function ezjson_object_get_value_at(object: number, index: number): number;
-/** ezjson_object_has_value(const EzJSONobject, const anyname[], EzJSONTypetype, booldot_not) */
-export declare function ezjson_object_has_value(object: number, name: string, type_?: number, dot_not?: boolean): boolean;
-/** ezjson_object_remove(EzJSONobject, const anyname[], booldot_not) */
-export declare function ezjson_object_remove(object: number, name: string, dot_not?: boolean): boolean;
-/** ezjson_object_set_bool(EzJSONobject, const anyname[], boolboolean, booldot_not) */
-export declare function ezjson_object_set_bool(object: number, name: string, boolean_: boolean, dot_not?: boolean): boolean;
-/** ezjson_object_set_null(EzJSONobject, const anyname[], booldot_not) */
-export declare function ezjson_object_set_null(object: number, name: string, dot_not?: boolean): boolean;
-/** object, name: pointer, number, dot_not */
-export declare function ezjson_object_set_number(a0: i32, a1: i32, a2: i32, a3: i32): i32;
-/** object, name: pointer, number, dot_not */
-export declare function ezjson_object_set_real(a0: i32, a1: i32, a2: i32, a3: i32): i32;
-/** ezjson_object_set_string(EzJSONobject, const anyname[], const anystring[], booldot_not) */
-export declare function ezjson_object_set_string(object: number, name: string, string_: string, dot_not?: boolean): boolean;
-/** ezjson_object_set_value(EzJSONobject, const anyname[], const EzJSONvalue, booldot_not) */
-export declare function ezjson_object_set_value(object: number, name: string, value: number, dot_not?: boolean): boolean;
-/** ezjson_parse(const anystring[], boolis_file, boolwith_comments) */
-export declare function ezjson_parse(string_: string, is_file?: boolean, with_comments?: boolean): number;
-/** ezjson_serial_size(const EzJSONvalue, boolpretty, boolnull_byte) */
-export declare function ezjson_serial_size(value: number, pretty?: boolean, null_byte?: boolean): number;
-/** ezjson_serial_to_file(const EzJSONvalue, const anyfile[], boolpretty) */
-export declare function ezjson_serial_to_file(value: number, file: string, pretty?: boolean): boolean;
-/** ezjson_serial_to_string(const EzJSONvalue, anybuffer[], anymaxlen, boolpretty) */
-export declare function ezjson_serial_to_string(value: number, pretty?: boolean): string;
-/** ezjson_validate(const EzJSONschema, const EzJSONvalue) */
-export declare function ezjson_validate(schema: number, value: number): boolean;
 /** fake_touch(anyentTouched, anyentToucher) */
 export declare function fake_touch(entTouched: number, entToucher: number): number;
 /** FClassnameIs(const anyentityIndex, const anyclassName[]) */
@@ -719,8 +515,12 @@ export declare function find_ent_by_owner(iIndex: number, szClass: string, iOwne
 export declare function find_ent_by_target(iIndex: number, szClass: string): number;
 /** find_ent_by_tname(anyiIndex, const anyszClass[]) */
 export declare function find_ent_by_tname(iIndex: number, szClass: string): number;
+/** find_ent_data_info(const anyclass[], const anymember[], FieldTypetype, anyarraysize, boolunsigned) */
+export declare function find_ent_data_info(class_: string, member: string, type_: number, arraysize: number, unsigned: number): number;
 /** find_ent_in_sphere(anystart_from_ent, const Floatorigin[], Floatradius) */
 export declare function find_ent_in_sphere(start_from_ent: number, origin: number[], radius: number): number;
+/** find_gamerules_info(const anyclass[], const anymember[], FieldTypetype, anyarraysize, boolunsigned) */
+export declare function find_gamerules_info(class_: string, member: string, type_: number, arraysize: number, unsigned: number): number;
 /** find_plugin_byfile(const anyfilename[], anyignoreCase) */
 export declare function find_plugin_byfile(filename: string, ignoreCase?: number): number;
 /** aroundent, _lookforclassname: pointer, radius, entlist: pointer, maxents, origin: pointer */
@@ -793,6 +593,10 @@ export declare function fread(file: number, data: number, mode: number): number;
 export declare function fread_blocks(a0: i32, a1: i32, a2: i32, a3: i32): i32;
 /** file, stream: pointer, blocksize, blocks */
 export declare function fread_raw(a0: i32, a1: i32, a2: i32, a3: i32): i32;
+/** free_kvd(anykvd_handle) */
+export declare function free_kvd(kvd_handle: number): number;
+/** free_tr2(anytr_handle) */
+export declare function free_tr2(tr_handle: number): number;
 /** FreeHamItemInfo(anyitemInfo_handle) */
 export declare function FreeHamItemInfo(itemInfo_handle: number): number;
 /** fseek(anyfile, anyposition, anystart) */
@@ -855,12 +659,36 @@ export declare function get_decal_index(szDecalName: string): number;
 export declare function get_distance(origin1: number[], origin2: number[]): number;
 /** get_distance_f(const FloatOrigin1[], const FloatOrigin2[]) */
 export declare function get_distance_f(Origin1: number[], Origin2: number[]): number;
+/** get_ent_data(anyentity, const anyclass[], const anymember[], anyelement) */
+export declare function get_ent_data(entity: number, class_: string, member: string, element?: number): number;
+/** get_ent_data_entity(anyentity, const anyclass[], const anymember[], anyelement) */
+export declare function get_ent_data_entity(entity: number, class_: string, member: string, element?: number): number;
+/** get_ent_data_float(anyentity, const anyclass[], const anymember[], anyelement) */
+export declare function get_ent_data_float(entity: number, class_: string, member: string, element?: number): number;
+/** get_ent_data_size(const anyclass[], const anymember[]) */
+export declare function get_ent_data_size(class_: string, member: string): number;
+/** get_ent_data_string(anyentity, const anyclass[], const anymember[], anyvalue[], anymaxlen, anyelement) */
+export declare function get_ent_data_string(entity: number, class_: string, member: string, element?: number): string;
+/** get_ent_data_vector(anyentity, const anyclass[], const anymember[], Floatvalue[], anyelement) */
+export declare function get_ent_data_vector(entity: number, class_: string, member: string, value: number[], element?: number): number;
 /** get_flags(anyflags, anyoutput[], anylen) */
 export declare function get_flags(flags: number): string;
 /** get_float_byref(anyparam) */
 export declare function get_float_byref(param: number): number;
 /** get_func_id(const anyfuncName[], anypluginId) */
 export declare function get_func_id(funcName: string, pluginId?: number): number;
+/** get_gamerules_entity(const anyclass[], const anymember[], anyelement) */
+export declare function get_gamerules_entity(class_: string, member: string, element?: number): number;
+/** get_gamerules_float(const anyclass[], const anymember[], anyelement) */
+export declare function get_gamerules_float(class_: string, member: string, element?: number): number;
+/** get_gamerules_int(const anyclass[], const anymember[], anyelement) */
+export declare function get_gamerules_int(class_: string, member: string, element?: number): number;
+/** get_gamerules_size(const anyclass[], const anymember[]) */
+export declare function get_gamerules_size(class_: string, member: string): number;
+/** get_gamerules_string(const anyclass[], const anymember[], anyvalue[], anymaxlen, anyelement) */
+export declare function get_gamerules_string(class_: string, member: string, element?: number): string;
+/** get_gamerules_vector(const anyclass[], const anymember[], Floatvalue[], anyelement) */
+export declare function get_gamerules_vector(class_: string, member: string, value: number[], element?: number): number;
 /** get_gametime() */
 export declare function get_gametime(): number;
 /** get_global_edict(anyvariable) */
@@ -933,10 +761,28 @@ export declare function get_pcvar_float(pcvar: number): number;
 export declare function get_pcvar_num(pcvar: number): number;
 /** get_pcvar_string(anypcvar, anystring[], anymaxlen) */
 export declare function get_pcvar_string(pcvar: number): string;
+/** get_pdata_bool(any_index, any_offset, any_linuxdiff, any_macdiff) */
+export declare function get_pdata_bool(_index: number, _offset: number, _linuxdiff?: number, _macdiff?: number): boolean;
+/** get_pdata_byte(any_index, any_offset, any_linuxdiff, any_macdiff) */
+export declare function get_pdata_byte(_index: number, _offset: number, _linuxdiff?: number, _macdiff?: number): number;
 /** get_pdata_cbase(anyid, anyoffset, anylinuxdiff, anymacdiff) */
 export declare function get_pdata_cbase(id: number, offset: number, linuxdiff?: number, macdiff?: number): number;
 /** get_pdata_cbase_safe(anyid, anyoffset, anylinuxdiff, anymacdiff) */
 export declare function get_pdata_cbase_safe(id: number, offset: number, linuxdiff?: number, macdiff?: number): number;
+/** get_pdata_ehandle(any_index, any_offset, any_linuxdiff, any_macdiff) */
+export declare function get_pdata_ehandle(_index: number, _offset: number, _linuxdiff?: number, _macdiff?: number): number;
+/** get_pdata_ent(any_index, any_offset, any_linuxdiff, any_macdiff) */
+export declare function get_pdata_ent(_index: number, _offset: number, _linuxdiff?: number, _macdiff?: number): number;
+/** get_pdata_float(any_index, any_Offset, any_linuxdiff, any_macdiff) */
+export declare function get_pdata_float(_index: number, _Offset: number, _linuxdiff?: number, _macdiff?: number): number;
+/** get_pdata_int(any_index, any_Offset, any_linuxdiff, any_macdiff) */
+export declare function get_pdata_int(_index: number, _Offset: number, _linuxdiff?: number, _macdiff?: number): number;
+/** get_pdata_short(any_index, any_offset, any_linuxdiff, any_macdiff) */
+export declare function get_pdata_short(_index: number, _offset: number, _linuxdiff?: number, _macdiff?: number): number;
+/** get_pdata_string(anyentity, anyoffset, anydest[], anymaxlength, anybyref, anylinux, anymac) */
+export declare function get_pdata_string(entity: number, offset: number, byref: number, linux: number, mac: number): string;
+/** get_pdata_vector(any_index, any_offset, Float_output[], any_linuxdiff, any_macdiff) */
+export declare function get_pdata_vector(_index: number, _offset: number, _output: number[], _linuxdiff?: number, _macdiff?: number): number;
 /** players: pointer, num: pointer, flags: pointer, team: pointer */
 export declare function get_players(a0: i32, a1: i32, a2: i32, a3: i32): i32;
 /** get_playersnum(anyflag) */
@@ -1071,6 +917,8 @@ export declare function GetMessageArgsNum(): number;
 export declare function GetMessageArgType(number_: number): number;
 /** GetMessageBlock(const anymsgid) */
 export declare function GetMessageBlock(msgid: number): number;
+/** GetModelBoundingBox(anyentity, Floatmins[], Floatmaxs[], anysequence) */
+export declare function GetModelBoundingBox(entity: number, mins: number[], maxs: number[], sequence?: number): number;
 /** output: pointer */
 export declare function GetOrigHamReturnEntity(a0: i32): i32;
 /** output: pointer */
@@ -1193,6 +1041,8 @@ export declare function LibraryExists(library: string, type_: number): number;
 export declare function LoadFileForMe(a0: i32, a1: i32, a2: i32, a3: i32): i32;
 /** LoadGameConfigFile(const anyfile[]) */
 export declare function LoadGameConfigFile(file: string): number;
+/** lookup_sequence(anyentity, const anyname[], Floatframerate, boolloops, Floatgroundspeed) */
+export declare function lookup_sequence(entity: number, name: string, framerate: number, loops: number, groundspeed?: number): number;
 /** LookupLangKey(anyOutput[], anyOutputSize, const anyKey[], const anyid) */
 export declare function LookupLangKey(Key: string, id: number): string;
 /** max(anyvalue1, anyvalue2) */
@@ -1351,6 +1201,10 @@ export declare function parse_loguser(text: string, userid?: number, authid?: st
 export declare function parse_time(input: string, format: string, time?: number): number;
 /** pause(const anyflag[], const anyparam1[], const anyparam2[]) */
 export declare function pause(flag: string, param1?: string, param2?: string): number;
+/** pev_serial(anyentindex) */
+export declare function pev_serial(entindex: number): number;
+/** pev_valid(anyentindex) */
+export declare function pev_valid(entindex: number): number;
 /** playback_event(anyflags, anyinvoker, anyeventindex, Floatdelay, const Floatorigin[], const Floatangles[], Floatfparam1, Floatfparam2, anyiparam1, anyiparam2, anybparam1, anybparam2) */
 export declare function playback_event(flags: number, invoker: number, eventindex: number, delay: number, origin: number[], angles: number[], fparam1: number, fparam2: number, iparam1: number, iparam2: number, bparam1: number, bparam2: number): number;
 /** player_menu_info(anyid, anymenu, anynewmenu, anymenupage) */
@@ -1431,6 +1285,8 @@ export declare function register_concmd(cmd: string, function_: string, flags?: 
 export declare function register_cvar(name: string, string_: string, flags?: number, fvalue?: number): number;
 /** register_dictionary(const anyfilename[]) */
 export declare function register_dictionary(filename: string): number;
+/** register_forward(any_forwardType, const any_function[], any_post) */
+export declare function register_forward(_forwardType: number, _function: string, _post?: number): number;
 /** register_impulse(anyimpulse, const anyfunction[]) */
 export declare function register_impulse(impulse: number, function_: string): number;
 /** register_library(const anylibrary[]) */
@@ -1579,10 +1435,14 @@ export declare function rg_multidmg_add(inflictor: number, victim: number, flDam
 export declare function rg_multidmg_apply(inflictor: number, attacker: number): number;
 /** rg_multidmg_clear() */
 export declare function rg_multidmg_clear(): number;
+/** rg_observer_find_next_player(const anyplayer, const boolbReverse, const anyname[]) */
+export declare function rg_observer_find_next_player(player: number, bReverse?: boolean, name?: string): number;
 /** rg_plant_bomb(const anyindex, FloatvecOrigin[], FloatvecAngles[]) */
 export declare function rg_plant_bomb(index: number, vecOrigin: number[], vecAngles?: number[]): number;
 /** rg_player_relationship(const anyplayer, const anytarget) */
 export declare function rg_player_relationship(player: number, target: number): number;
+/** rg_player_takedamage_impulse(const anyplayer, const anyattacker, const FloatflKnockbackForce, const FloatflVelModifier) */
+export declare function rg_player_takedamage_impulse(player: number, attacker: number, flKnockbackForce: number, flVelModifier: number): number;
 /** rg_remove_all_items(const anyindex, const boolremoveSuit) */
 export declare function rg_remove_all_items(index: number, removeSuit?: boolean): number;
 /** rg_remove_entity(const anypEntity) */
@@ -1645,6 +1505,10 @@ export declare function rg_switch_best_weapon(player: number, currentWeapon?: nu
 export declare function rg_switch_team(index: number): number;
 /** rg_switch_weapon(const anyindex, const anyweapon) */
 export declare function rg_switch_weapon(index: number, weapon: number): number;
+/** rg_trace_hull(FloatvecStart[], FloatvecEnd[], const anyignoreMonsters, const anyhullNumber, const anyignoreEntity, const anyptr, const anytraceFlags) */
+export declare function rg_trace_hull(vecStart: number[], vecEnd: number[], ignoreMonsters: number, hullNumber: number, ignoreEntity: number, ptr: number, traceFlags?: number): number;
+/** rg_trace_line(FloatvecStart[], FloatvecEnd[], const anyignoreMonsters, const anyignoreEntity, const anyptr, const anytraceFlags) */
+export declare function rg_trace_line(vecStart: number[], vecEnd: number[], ignoreMonsters: number, ignoreEntity: number, ptr: number, traceFlags?: number): number;
 /** rg_transfer_c4(const anyindex, const anyreceiver) */
 export declare function rg_transfer_c4(index: number, receiver?: number): number;
 /** rg_update_teamscores(const anyiCtsWins, const anyiTsWins, const boolbAdd) */
@@ -1673,10 +1537,14 @@ export declare function rh_get_net_from(): string;
 export declare function rh_get_realtime(): number;
 /** rh_is_entity_fullpacked(const anyhost, const anyentity, const anyframe) */
 export declare function rh_is_entity_fullpacked(host: number, entity: number, frame?: number): boolean;
+/** rh_is_server_paused() */
+export declare function rh_is_server_paused(): boolean;
 /** rh_reset_mapname() */
 export declare function rh_reset_mapname(): number;
 /** rh_set_mapname(const anymapname[]) */
 export declare function rh_set_mapname(mapname: string): number;
+/** rh_set_server_pause(const boolstatus) */
+export declare function rh_set_server_pause(status: boolean): number;
 /** rh_update_user_info(const anyindex) */
 export declare function rh_update_user_info(index: number): number;
 /** rmdir(const anypath[]) */
@@ -1691,6 +1559,8 @@ export declare function set_array(a0: i32, a1: i32, a2: i32): i32;
 export declare function set_array_f(param: number, source: number[], size: number): number;
 /** set_client_listen(anyreceiver, anysender, anylisten) */
 export declare function set_client_listen(receiver: number, sender: number, listen: number): number;
+/** set_controller(anyentity, anycontroller, Floatvalue) */
+export declare function set_controller(entity: number, controller: number, value: number): number;
 /** set_cvar_flags(const anycvar[], anyflags) */
 export declare function set_cvar_flags(cvar: string, flags: number): number;
 /** set_cvar_float(const anycvar[], Floatvalue) */
@@ -1701,12 +1571,32 @@ export declare function set_cvar_num(cvarname: string, value: number): number;
 export declare function set_cvar_string(cvar: string, value: string): number;
 /** set_dhudmessage(anyred, anygreen, anyblue, Floatx, Floaty, anyeffects, Floatfxtime, Floatholdtime, Floatfadeintime, Floatfadeouttime) */
 export declare function set_dhudmessage(red?: number, green?: number, blue?: number, x?: number, y?: number, effects?: number, fxtime?: number, holdtime?: number, fadeintime?: number, fadeouttime?: number): number;
+/** set_ent_data(anyentity, const anyclass[], const anymember[], anyvalue, anyelement) */
+export declare function set_ent_data(entity: number, class_: string, member: string, value: number, element?: number): number;
+/** set_ent_data_entity(anyentity, const anyclass[], const anymember[], anyvalue, anyelement) */
+export declare function set_ent_data_entity(entity: number, class_: string, member: string, value: number, element?: number): number;
+/** set_ent_data_float(anyentity, const anyclass[], const anymember[], Floatvalue, anyelement) */
+export declare function set_ent_data_float(entity: number, class_: string, member: string, value: number, element?: number): number;
+/** set_ent_data_string(anyentity, const anyclass[], const anymember[], const anyvalue[], anyelement) */
+export declare function set_ent_data_string(entity: number, class_: string, member: string, value: string, element?: number): number;
+/** set_ent_data_vector(anyentity, const anyclass[], const anymember[], Floatvalue[], anyelement) */
+export declare function set_ent_data_vector(entity: number, class_: string, member: string, value: number[], element?: number): number;
 /** set_ent_rendering(anyindex, anyfx, anyr, anyg, anyb, anyrender, anyamount) */
 export declare function set_ent_rendering(index: number, fx?: number, r?: number, g?: number, b?: number, render?: number, amount?: number): number;
 /** set_error_filter(const anyhandler[]) */
 export declare function set_error_filter(handler: string): number;
 /** set_float_byref(anyparam, Floatvalue) */
 export declare function set_float_byref(param: number, value: number): number;
+/** set_gamerules_entity(const anyclass[], const anymember[], anyvalue, anyelement) */
+export declare function set_gamerules_entity(class_: string, member: string, value: number, element?: number): number;
+/** set_gamerules_float(const anyclass[], const anymember[], Floatvalue, anyelement) */
+export declare function set_gamerules_float(class_: string, member: string, value: number, element?: number): number;
+/** set_gamerules_int(const anyclass[], const anymember[], anyvalue, anyelement) */
+export declare function set_gamerules_int(class_: string, member: string, value: number, element?: number): number;
+/** set_gamerules_string(const anyclass[], const anymember[], const anyvalue[], anyelement) */
+export declare function set_gamerules_string(class_: string, member: string, value: string, element?: number): number;
+/** set_gamerules_vector(const anyclass[], const anymember[], Floatvalue[], anyelement) */
+export declare function set_gamerules_vector(class_: string, member: string, value: number[], element?: number): number;
 /** set_hudmessage(anyred, anygreen, anyblue, Floatx, Floaty, anyeffects, Floatfxtime, Floatholdtime, Floatfadeintime, Floatfadeouttime, anychannel, anyalpha1, anycolor2[]) */
 export declare function set_hudmessage(red?: number, green?: number, blue?: number, x?: number, y?: number, effects?: number, fxtime?: number, holdtime?: number, fadeintime?: number, fadeouttime?: number, channel?: number, alpha1?: number, color2?: number[]): number;
 /** set_key_value(const anypbuffer, const anykey[], const anyvalue[]) */
@@ -1743,8 +1633,28 @@ export declare function set_pcvar_float(pcvar: number, num: number): number;
 export declare function set_pcvar_num(pcvar: number, num: number): number;
 /** set_pcvar_string(anypcvar, const anystring[]) */
 export declare function set_pcvar_string(pcvar: number, string_: string): number;
+/** set_pdata_bool(any_index, any_offset, bool_value, any_linuxdiff, any_macdiff) */
+export declare function set_pdata_bool(_index: number, _offset: number, _value: boolean, _linuxdiff?: number, _macdiff?: number): number;
+/** set_pdata_byte(any_index, any_offset, any_value, any_linuxdiff, any_macdiff) */
+export declare function set_pdata_byte(_index: number, _offset: number, _value: number, _linuxdiff?: number, _macdiff?: number): number;
 /** set_pdata_cbase(anyid, anyoffset, anyvalue, anylinuxdiff, anymacdiff) */
 export declare function set_pdata_cbase(id: number, offset: number, value: number, linuxdiff?: number, macdiff?: number): number;
+/** set_pdata_ehandle(any_index, any_offset, any_value, any_linuxdiff, any_macdiff) */
+export declare function set_pdata_ehandle(_index: number, _offset: number, _value: number, _linuxdiff?: number, _macdiff?: number): number;
+/** set_pdata_ent(any_index, any_offset, any_value, any_linuxdiff, any_macdiff) */
+export declare function set_pdata_ent(_index: number, _offset: number, _value: number, _linuxdiff?: number, _macdiff?: number): number;
+/** set_pdata_float(any_index, any_Offset, Float_Value, any_linuxdiff, any_macdiff) */
+export declare function set_pdata_float(_index: number, _Offset: number, _Value: number, _linuxdiff?: number, _macdiff?: number): number;
+/** set_pdata_int(any_index, any_Offset, any_Value, any_linuxdiff, any_macdiff) */
+export declare function set_pdata_int(_index: number, _Offset: number, _Value: number, _linuxdiff?: number, _macdiff?: number): number;
+/** set_pdata_short(any_index, any_offset, any_value, any_linuxdiff, any_macdiff) */
+export declare function set_pdata_short(_index: number, _offset: number, _value: number, _linuxdiff?: number, _macdiff?: number): number;
+/** set_pdata_string(anyentity, anyoffset, const anysource[], anyrealloc, anylinux, anymac) */
+export declare function set_pdata_string(entity: number, offset: number, source: string, realloc: number, linux: number, mac: number): number;
+/** set_pdata_vector(any_index, any_offset, Float_origin[], any_linuxdiff, any_macdiff) */
+export declare function set_pdata_vector(_index: number, _offset: number, _origin: number[], _linuxdiff?: number, _macdiff?: number): number;
+/** set_pev_string(any_index, any_value, any_string) */
+export declare function set_pev_string(_index: number, _value: number, _string: number): number;
 /** set_rebuy(const RebuyHandlerebuyhandle, const RebuyStructmember, anyvalue) */
 export declare function set_rebuy(rebuyhandle: number, member: number, value: number): number;
 /** set_speak(anyiIndex, anyiSpeakFlags) */
@@ -1983,6 +1893,8 @@ export declare function ucfirst(a0: i32): i32;
 export declare function unlink(filename: string, use_valve_fs?: boolean, valve_path_id?: string): number;
 /** unpause(const anyflag[], const anyparam1[], const anyparam2[]) */
 export declare function unpause(flag: string, param1?: string, param2?: string): number;
+/** unregister_forward(any_forwardType, anyregisterId, anypost) */
+export declare function unregister_forward(_forwardType: number, registerId: number, post?: number): number;
 /** unregister_impulse(anyregisterid) */
 export declare function unregister_impulse(registerid: number): number;
 /** unregister_message(anyiMsgId, anyregisteredmsg) */
@@ -2041,6 +1953,24 @@ export declare function WritePackFloat(pack: number, val: number): number;
 export declare function WritePackString(pack: number, str: string): number;
 /** xvar_exists(const anyname[]) */
 export declare function xvar_exists(name: string): number;
+/** What a field of get_entvar holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_entvar_kind(field: i32): i32;
+/** What a field of get_ucmd holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_ucmd_kind(field: i32): i32;
+/** What a field of get_netadr holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_netadr_kind(field: i32): i32;
+/** What a field of get_netchan holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_netchan_kind(field: i32): i32;
+/** What a field of get_member_game holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_member_game_kind(field: i32): i32;
+/** What a field of get_member holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_member_kind(field: i32): i32;
+/** What a field of get_pmove holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_pmove_kind(field: i32): i32;
+/** What a field of get_movevar holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_movevar_kind(field: i32): i32;
+/** What a field of get_pmtrace holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_pmtrace_kind(field: i32): i32;
 /** abort(error, fmt, ...) - the dispatcher's id for it */
 export declare const NATIVE_abort: i32;
 /** abort(anyerror, const anyfmt[], ...) */
@@ -2081,6 +2011,10 @@ export declare function CreateOneForward(plugin_id: number, name: string, ...arg
 export declare const NATIVE_DispatchKeyValue: i32;
 /** DispatchKeyValue(...) */
 export declare function DispatchKeyValue(...args: number[]): number;
+/** dllfunc(type, ...) - the dispatcher's id for it */
+export declare const NATIVE_dllfunc: i32;
+/** dllfunc(anytype, ...) */
+export declare function dllfunc(type_: number, ...args: number[]): number;
 /** elog_message(message, ...) - the dispatcher's id for it */
 export declare const NATIVE_elog_message: i32;
 /** elog_message(const anymessage[], ...) */
@@ -2089,6 +2023,10 @@ export declare function elog_message(message: string): number;
 export declare const NATIVE_engclient_print: i32;
 /** engclient_print(anyplayer, anytype, const anymessage[], ...) */
 export declare function engclient_print(player: number, type_: number, message: string): number;
+/** engfunc(type, ...) - the dispatcher's id for it */
+export declare const NATIVE_engfunc: i32;
+/** engfunc(anytype, ...) */
+export declare function engfunc(type_: number, ...args: number[]): number;
 /** ExecuteForward(forward_handle, ret, ...) - the dispatcher's id for it */
 export declare const NATIVE_ExecuteForward: i32;
 /** ExecuteForward(anyforward_handle, &anyret, ...) */
@@ -2117,50 +2055,82 @@ export declare function find_player_ex(flags: number, ...args: number[]): number
 export declare const NATIVE_format: i32;
 /** formatex(output, len, format, ...) - the dispatcher's id for it */
 export declare const NATIVE_formatex: i32;
+/** forward_return(type, ...) - the dispatcher's id for it */
+export declare const NATIVE_forward_return: i32;
+/** forward_return(anytype, ...) */
+export declare function forward_return(type_: number, ...args: number[]): number;
 /** fprintf(file, fmt, ...) - the dispatcher's id for it */
 export declare const NATIVE_fprintf: i32;
 /** fprintf(anyfile, const anyfmt[], ...) */
 export declare function fprintf(file: number, fmt: string): number;
+/** get_cd(cd_handle, member, ...) - the dispatcher's id for it */
+export declare const NATIVE_get_cd: i32;
+/** get_cd(anycd_handle, ClientDatamember, ...) */
+export declare function get_cd(cd_handle: number, member: number, ...args: number[]): number;
 /** get_entvar(index, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_entvar: i32;
 /** get_entvar(const anyindex, const EntVarsvar, ...) */
-export declare function get_entvar(index: number, var_: number, ...args: number[]): number;
+export declare function get_entvar<T = number>(index: number, var_: number, element?: number): T;
+/** get_es(es_handle, member, ...) - the dispatcher's id for it */
+export declare const NATIVE_get_es: i32;
+/** get_es(anyes_handle, EntityStatemember, ...) */
+export declare function get_es(es_handle: number, member: number, ...args: number[]): number;
+/** get_kvd(kvd_handle, member, ...) - the dispatcher's id for it */
+export declare const NATIVE_get_kvd: i32;
+/** get_kvd(anykvd_handle, KeyValueDatamember, ...) */
+export declare function get_kvd(kvd_handle: number, member: number, ...args: number[]): number;
 /** get_member(index, member, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_member: i32;
 /** get_member(const anyindex, anymember, ...) */
-export declare function get_member(index: number, member: number, ...args: number[]): number;
+export declare function get_member<T = number>(index: number, member: number, element?: number): T;
 /** get_member_game(member, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_member_game: i32;
 /** get_member_game(CSGameRules_Membersmember, ...) */
-export declare function get_member_game(member: number, ...args: number[]): number;
+export declare function get_member_game<T = number>(member: number, element?: number): T;
 /** get_member_s(index, member, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_member_s: i32;
 /** get_member_s(const anyindex, anymember, ...) */
-export declare function get_member_s(index: number, member: number, ...args: number[]): number;
+export declare function get_member_s<T = number>(index: number, member: number, element?: number): T;
 /** get_movevar(var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_movevar: i32;
 /** get_movevar(const MoveVarsvar, ...) */
-export declare function get_movevar(var_: number, ...args: number[]): number;
+export declare function get_movevar<T = number>(var_: number, element?: number): T;
 /** get_netadr(adr, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_netadr: i32;
 /** get_netadr(const anyadr, const NetAdrVarsvar, ...) */
-export declare function get_netadr(adr: number, var_: number, ...args: number[]): number;
+export declare function get_netadr<T = number>(adr: number, var_: number, element?: number): T;
 /** get_netchan(index, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_netchan: i32;
 /** get_netchan(const anyindex, const NetChanvar, ...) */
-export declare function get_netchan(index: number, var_: number, ...args: number[]): number;
+export declare function get_netchan<T = number>(index: number, var_: number, element?: number): T;
+/** get_orig_retval(...) - the dispatcher's id for it */
+export declare const NATIVE_get_orig_retval: i32;
+/** get_orig_retval(...) */
+export declare function get_orig_retval(...args: number[]): number;
 /** get_pmove(var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_pmove: i32;
 /** get_pmove(const PlayerMovevar, ...) */
-export declare function get_pmove(var_: number, ...args: number[]): number;
+export declare function get_pmove<T = number>(var_: number, element?: number): T;
 /** get_pmtrace(tracehandle, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_pmtrace: i32;
 /** get_pmtrace(const anytracehandle, const PMTracevar, ...) */
-export declare function get_pmtrace(tracehandle: number, var_: number, ...args: number[]): number;
+export declare function get_pmtrace<T = number>(tracehandle: number, var_: number, element?: number): T;
+/** get_tr(tr_member, ...) - the dispatcher's id for it */
+export declare const NATIVE_get_tr: i32;
+/** get_tr(TraceResulttr_member, ...) */
+export declare function get_tr(tr_member: number, ...args: number[]): number;
+/** get_tr2(tr_handle, tr_member, ...) - the dispatcher's id for it */
+export declare const NATIVE_get_tr2: i32;
+/** get_tr2(anytr_handle, anytr_member, ...) */
+export declare function get_tr2(tr_handle: number, tr_member: number, ...args: number[]): number;
+/** get_uc(uc_handle, member, ...) - the dispatcher's id for it */
+export declare const NATIVE_get_uc: i32;
+/** get_uc(anyuc_handle, UserCmdmember, ...) */
+export declare function get_uc(uc_handle: number, member: number, ...args: number[]): number;
 /** get_ucmd(ucmd, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_ucmd: i32;
 /** get_ucmd(const anyucmd, const UCmdvar, ...) */
-export declare function get_ucmd(ucmd: number, var_: number, ...args: number[]): number;
+export declare function get_ucmd<T = number>(ucmd: number, var_: number, element?: number): T;
 /** get_user_attacker(index, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_user_attacker: i32;
 /** get_user_attacker(anyindex, ...) */
@@ -2189,6 +2159,10 @@ export declare function GetMessageData(type_: number, ...args: number[]): number
 export declare const NATIVE_GetMessageOrigData: i32;
 /** GetMessageOrigData(const MsgDataTypetype, ...) */
 export declare function GetMessageOrigData(type_: number, ...args: number[]): number;
+/** global_get(_value, ...) - the dispatcher's id for it */
+export declare const NATIVE_global_get: i32;
+/** global_get(any_value, ...) */
+export declare function global_get(_value: number, ...args: number[]): number;
 /** log_amx(string, ...) - the dispatcher's id for it */
 export declare const NATIVE_log_amx: i32;
 /** log_amx(const anystring[], ...) */
@@ -2217,6 +2191,10 @@ export declare function nvault_get(vault: number, key: string, ...args: number[]
 export declare const NATIVE_parse: i32;
 /** parse(const anytext[], ...) */
 export declare function parse(text: string): number;
+/** pev(_index, _value, ...) - the dispatcher's id for it */
+export declare const NATIVE_pev: i32;
+/** pev(any_index, any_value, ...) */
+export declare function pev(_index: number, _value: number, ...args: number[]): number;
 /** precache_event(type, Name, ...) - the dispatcher's id for it */
 export declare const NATIVE_precache_event: i32;
 /** precache_event(anytype, const anyName[], ...) */
@@ -2269,50 +2247,78 @@ export declare function server_cmd(command: string, ...args: number[]): number;
 export declare const NATIVE_server_print: i32;
 /** server_print(const anymessage[], ...) */
 export declare function server_print(message: string): number;
+/** set_cd(cd_handle, member, ...) - the dispatcher's id for it */
+export declare const NATIVE_set_cd: i32;
+/** set_cd(anycd_handle, ClientDatamember, ...) */
+export declare function set_cd(cd_handle: number, member: number, ...args: number[]): number;
 /** set_entvar(index, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_entvar: i32;
 /** set_entvar(const anyindex, const EntVarsvar, ...) */
-export declare function set_entvar(index: number, var_: number, ...args: number[]): number;
+export declare function set_entvar<T = number>(index: number, var_: number, value: T, element?: number): number;
+/** set_es(es_handle, member, ...) - the dispatcher's id for it */
+export declare const NATIVE_set_es: i32;
+/** set_es(anyes_handle, EntityStatemember, ...) */
+export declare function set_es(es_handle: number, member: number, ...args: number[]): number;
 /** set_fail_state(fmt, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_fail_state: i32;
 /** set_fail_state(const anyfmt[], ...) */
 export declare function set_fail_state(fmt: string): number;
+/** set_kvd(kvd_handle, member, ...) - the dispatcher's id for it */
+export declare const NATIVE_set_kvd: i32;
+/** set_kvd(anykvd_handle, KeyValueDatamember, ...) */
+export declare function set_kvd(kvd_handle: number, member: number, ...args: number[]): number;
 /** set_member(index, member, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_member: i32;
 /** set_member(const anyindex, anymember, ...) */
-export declare function set_member(index: number, member: number, ...args: number[]): number;
+export declare function set_member<T = number>(index: number, member: number, value: T, element?: number): number;
 /** set_member_game(member, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_member_game: i32;
 /** set_member_game(CSGameRules_Membersmember, ...) */
-export declare function set_member_game(member: number, ...args: number[]): number;
+export declare function set_member_game<T = number>(member: number, value: T, element?: number): number;
 /** set_member_s(index, member, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_member_s: i32;
 /** set_member_s(const anyindex, anymember, ...) */
-export declare function set_member_s(index: number, member: number, ...args: number[]): number;
+export declare function set_member_s<T = number>(index: number, member: number, value: T, element?: number): number;
 /** set_movevar(var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_movevar: i32;
 /** set_movevar(const MoveVarsvar, ...) */
-export declare function set_movevar(var_: number, ...args: number[]): number;
+export declare function set_movevar<T = number>(var_: number, value: T, element?: number): number;
 /** set_netadr(adr, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_netadr: i32;
 /** set_netadr(const anyadr, const NetAdrVarsvar, ...) */
-export declare function set_netadr(adr: number, var_: number, ...args: number[]): number;
+export declare function set_netadr<T = number>(adr: number, var_: number, value: T, element?: number): number;
 /** set_netchan(index, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_netchan: i32;
 /** set_netchan(const anyindex, const NetChanvar, ...) */
-export declare function set_netchan(index: number, var_: number, ...args: number[]): number;
+export declare function set_netchan<T = number>(index: number, var_: number, value: T, element?: number): number;
+/** set_pev(_index, _value, ...) - the dispatcher's id for it */
+export declare const NATIVE_set_pev: i32;
+/** set_pev(any_index, any_value, ...) */
+export declare function set_pev(_index: number, _value: number, ...args: number[]): number;
 /** set_pmove(var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_pmove: i32;
 /** set_pmove(const PlayerMovevar, ...) */
-export declare function set_pmove(var_: number, ...args: number[]): number;
+export declare function set_pmove<T = number>(var_: number, value: T, element?: number): number;
 /** set_pmtrace(tracehandle, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_pmtrace: i32;
 /** set_pmtrace(const anytracehandle, const PMTracevar, ...) */
-export declare function set_pmtrace(tracehandle: number, var_: number, ...args: number[]): number;
+export declare function set_pmtrace<T = number>(tracehandle: number, var_: number, value: T, element?: number): number;
+/** set_tr(tr_member, ...) - the dispatcher's id for it */
+export declare const NATIVE_set_tr: i32;
+/** set_tr(TraceResulttr_member, ...) */
+export declare function set_tr(tr_member: number, ...args: number[]): number;
+/** set_tr2(tr_handle, tr_member, ...) - the dispatcher's id for it */
+export declare const NATIVE_set_tr2: i32;
+/** set_tr2(anytr_handle, anytr_member, ...) */
+export declare function set_tr2(tr_handle: number, tr_member: number, ...args: number[]): number;
+/** set_uc(uc_handle, member, ...) - the dispatcher's id for it */
+export declare const NATIVE_set_uc: i32;
+/** set_uc(anyuc_handle, UserCmdmember, ...) */
+export declare function set_uc(uc_handle: number, member: number, ...args: number[]): number;
 /** set_ucmd(ucmd, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_ucmd: i32;
 /** set_ucmd(const anyucmd, const UCmdvar, ...) */
-export declare function set_ucmd(ucmd: number, var_: number, ...args: number[]): number;
+export declare function set_ucmd<T = number>(ucmd: number, var_: number, value: T, element?: number): number;
 /** set_usercmd(type, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_usercmd: i32;
 /** set_usercmd(anytype, ...) */

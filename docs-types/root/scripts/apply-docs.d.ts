@@ -44,7 +44,7 @@ export declare function dedent(text: string): string;
 /** A docs file's table, every text dedented. */
 export declare function loadTable(path: string): Promise<DocTable>;
 /**
- * A table as its file, the way the code-style skill's rule 29 has it: both
+ * A table as its file, the way code-style rule 29 has it: both
  * languages in backticks and laid out alike - on one line each, or both
  * indented under the key when either has more than one line.
  */
@@ -53,6 +53,8 @@ export declare function formatTable(table: DocTable, header: string[], quote: '\
 export declare function formatSources(sources: DocSource[]): Promise<string[]>;
 /** The text in `lang`, English when that one is not written. */
 export declare function pick(text: DocText, lang: Lang): string;
+/** Text safe inside a JSDoc comment, on one line. */
+export declare function docText(text: string): string;
 /** `source` with the words of `table` in `lang` above every element it names. */
 export declare function applyTable(fileName: string, source: string, table: DocTable, lang: Lang): string;
 /** A source file of the public API and the file its words are in. */
@@ -64,7 +66,7 @@ export interface DocSource {
     /** The package's folder. */
     root: string;
 }
-/** The core's hand-written API: what `~/facade` and the globals give a plugin. */
+/** The core's hand-written API: what `@amxts/core` and the globals give a plugin. */
 export declare const CORE_API: string[];
 export declare function docsFileOf(root: string, file: string): string;
 /**

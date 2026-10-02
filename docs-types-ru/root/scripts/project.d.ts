@@ -1,8 +1,16 @@
+import type { AutoImport, ModuleImport } from './auto-imports';
 /** The core's folder: the package this file ships in. */
 export declare const CORE_DIR: string;
 /** What `~/` is: the core's facade, natives and libraries. */
 export declare const CORE_PLUGINS: string;
 export declare const CONFIG_FILE = "amxts.config.ts";
+/**
+ * A project's folders of game files and where each goes in the game folder,
+ * as the amxts-server image lays a project out (docker/server/start.sh): its
+ * modules (.so) and Pawn plugins in addons, its dictionaries in data, the
+ * files its plugins precache in the game's own folders.
+ */
+export declare const PROJECT_GAME_FOLDERS: [string, string][];
 /** What amxts.config.ts exports, before any module's own key. */
 export interface AmxtsConfig {
     modules?: string[];
@@ -12,6 +20,12 @@ export interface AmxtsConfig {
     outDir?: string;
     /** The server the project is for, "rehlds" or "hlds": which includes the amxts command fetches without a server. */
     target?: 'rehlds' | 'hlds';
+    /** `{ autoImport: false }`: plugins import what they use themselves. */
+    imports?: {
+        autoImport?: boolean;
+    };
+    /** The modules Pawn plugins call the natives of: built even when no plugin of the project uses them. */
+    pawn?: string[];
     [configKey: string]: unknown;
 }
 export type OptionValue = string | number | boolean | null | OptionValue[] | {
@@ -24,6 +38,8 @@ export interface ModuleDefinition {
     configKey: string | null;
     requires: string[];
     defaults: Options;
+    /** What plugins use without an import: `[{ from: "@amxts/menu-core", as: "menus" }]`, `[{ from: "@amxts/resemiclip", name: "semiclip" }]`. */
+    imports: ModuleImport[];
     /** `defineModule<MenuCoreOptions>`: the type setup's parameter is. */
     optionsType: string | null;
     hasSetup: boolean;
@@ -36,6 +52,12 @@ export interface ModulePackage {
     dir: string;
     /** The module file: the API plugins import. */
     module: string;
+    /**
+     * `"library": true`: compiled into each plugin that imports it, like an
+     * npm library - no instance on the server, so no owner, no proxy, no
+     * defineModule, natives, include or test kit.
+     */
+    library: boolean;
     /**
      * Its Pawn natives: the plugin that owns the module - its one instance on
      * the server. Without one, the build generates an owner that only runs it.
@@ -67,6 +89,8 @@ export interface Project {
     packages: ModulePackage[];
     /** The ones this project uses, in load order: every module after what it requires. */
     modules: ModulePackage[];
+    /** What plugins use without an import - the facade's API, the modules' namespaces - unless the config turns it off. */
+    autoImports: AutoImport[];
     /** What is wrong with the project: a missing module, a requirement not listed. */
     problems: string[];
 }
@@ -102,13 +126,33 @@ export declare function optionsOf(project: Project, definition: ModuleDefinition
  */
 export declare const NOT_PLUGINS: Set<string>;
 /**
+ * The core's API a plugin imports, by the package's name, and its file in
+ * the core's as/ - its place in the tree. package.json's "exports" gives
+ * the same files to the editor.
+ */
+export declare const CORE_ENTRIES: Record<string, string>;
+/** How a plugin names the core's file at a place: its entry, or the facade, which exports the rest. */
+export declare function coreEntryOf(place: string): string;
+/**
  * The project's own plugins: the .ts files at the top of its plugins folder.
  * A module's own folder, without a plugins folder, has none - only the core's
  * repository builds the core's as/.
  */
 export declare function projectPlugins(project: Project): string[];
+/** The modules that run on the server - each in its owner plugin: every one but a library. */
+export declare function shared(modules: ModulePackage[]): ModulePackage[];
 /** plugins.ini: the modules' owners in load order, then the project's plugins. */
-export declare function pluginList(project: Project, plugins: string[]): string[];
+export declare function pluginList(project: Project, plugins: string[], modules?: ModulePackage[]): string[];
+/**
+ * The modules the project needs on the server, in load order: the ones its
+ * plugins import - by hand or through an auto-import, themselves or through
+ * the files they import - with what those modules import and require, and
+ * the ones `pawn` keeps for Pawn plugins, whose use no build can see.
+ * Without amxts.config.ts every module is in use: a module's own
+ * repository, testing itself. A library is never one: it is compiled into
+ * the plugins, and what it imports is reached through them.
+ */
+export declare function modulesInUse(sources: Sources, plugins: string[]): ModulePackage[];
 /**
  * The sources one compile reads: the core's as/ as `~/`, the project's plugins
  * over it, and the module packages mapped into it. Every path in and out is an
@@ -120,6 +164,16 @@ export declare class Sources {
     /** A plugin that imports a module package the config does not list. */
     readonly problems: string[];
     constructor(root: string, project: Project);
+    /**
+     * Whether a file is a plugin's code, which auto-imports reach: the
+     * project's plugins folder but its modules/, or a plugin outside every
+     * package (a test's). The core's as/ and a module - a package, or a file
+     * under modules/ - import what they use: a module is compiled in projects
+     * and on servers whose settings it does not know.
+     */
+    private isPlugin;
+    /** A plugin's text with the imports of what it uses without importing (scripts/auto-imports.ts). */
+    private withImports;
     private rel;
     private moduleNamed;
     /** The package a file on disk belongs to. */
@@ -135,15 +189,31 @@ export declare class Sources {
     place(real: string): string;
     /** An entry for asc: the plugin's place in the tree, relative to it. */
     entry(real: string): string;
-    /** Each file's typed configs, made once a compile (scripts/typed-configs.ts). */
+    /** Each file's typed configs and commands, made once a compile (scripts/typed-configs.ts, scripts/typed-commands.ts). */
     private typed;
     /**
-     * The file's text as asc reads it: imports rewritten, a module's
-     * definition turned into its setup, its typed configs' code generated.
+     * The file's text as asc reads it: auto-imports added, imports rewritten,
+     * a module's definition turned into its setup, its typed configs' code
+     * generated.
      */
     read(path: string): string | null;
-    /** The file's text with its imports rewritten and a module's definition turned into its setup. */
+    /** The file's text with its auto-imports added, its imports rewritten and a module's definition turned into its setup. */
     private readPlain;
+    /** Each file's plain text, made once a compile: a build reaches the facade from every plugin. */
+    private plain;
+    private plainOf;
+    private problem;
+    /**
+     * Whether a file on disk is the core's as/: the hood, which names its
+     * places by `~/`. On a server the plugins folder holds them, by place.
+     */
+    private isCore;
+    /**
+     * `~/` in a plugin or a module is the project's own files: the core's API
+     * goes by `@amxts/core/<entry>` and a module package by its name. What
+     * to write instead, or null for a file of the project's own.
+     */
+    private notOwn;
     /** A specifier as the tree has it: a package by its place, a relative import inside a package likewise. */
     private specifier;
     rewrite(real: string, text: string): string;
@@ -160,6 +230,13 @@ export declare class Sources {
 }
 /** The tree for `root` in the current project (process.cwd(), or setProjectDir); one per compile. */
 export declare function sourcesFor(root: string): Sources;
+/**
+ * The file asc asks for, as a path. asc reads any non-relative import as a
+ * library, so `~/facade` arrives as node_modules/~/facade.ts: `~/` is the
+ * plugins folder `root`, which spares a plugin in a subfolder from counting
+ * dots back to it. Anything else is where asc looked, from `baseDir`.
+ */
+export declare function ascPath(root: string, filename: string, baseDir: string): string;
 /** The project builds and tests read from; process.cwd() until set. */
 export declare function setProjectDir(dir: string): void;
 export declare function currentProjectDir(): string;

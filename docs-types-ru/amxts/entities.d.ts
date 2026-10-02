@@ -1,7 +1,15 @@
 /// <reference path="../as-types.d.ts" />
-import { Player } from "./facade";
+import { ActionOptions, Player, RoundWinner, SoundOptions, UseType, WeaponName } from "./facade";
 import { Vector } from "./vector";
 import { EntityFlag, Effect, Button, HideHud, Damage, PhysicsFlag, WeaponState } from "./flags";
+/** An entvar's cell: a whole number, or a Float's bits. */
+declare function entvarCell(id: number, offset: i32): i32;
+/** Writes an entvar's cell: a whole number, or a Float's bits. */
+declare function setEntvarCell(id: number, offset: i32, cell: i32): void;
+/** A member's cell: a whole number, a Float's bits, an entity's index; an array member's element. */
+declare function memberCell(id: number, at: i32, element?: i32): i32;
+declare function setMemberCell(id: number, at: i32, cell: i32, element?: i32): void;
+export { entvarCell as __entvarCell, setEntvarCell as __setEntvarCell, memberCell as __memberCell, setMemberCell as __setMemberCell };
 /**
  * Режим отрисовки сущности — `entity.renderMode`.
  *
@@ -123,7 +131,7 @@ export type PlayerModel = "unassigned" | "urban" | "terror" | "leet" | "arctic" 
  */
 export type IgnoredChat = "none" | "enemy" | "all" | "unknown";
 /**
- * Старое меню игры — `player.menu`.
+ * Старое меню игры — `player.openMenu`.
  *
  * "unknown" — число, которому нет имени (его записал Pawn-плагин или мод); запись "unknown" поле не меняет.
  *
@@ -147,14 +155,6 @@ export type ThrowDirection = "none" | "forward" | "backward" | "hitVelocity" | "
  */
 export type BloodColor = "none" | "red" | "yellow" | "unknown";
 /**
- * Состояние ИИ монстра (заложника) — `monsterState`, `idealMonsterState`.
- *
- * "unknown" — число, которому нет имени (его записал Pawn-плагин или мод); запись "unknown" поле не меняет.
- *
- * Pawn: `MONSTERSTATE_*`
- */
-export type MonsterState = "none" | "idle" | "combat" | "alert" | "hunt" | "prone" | "script" | "playDead" | "dead" | "unknown";
-/**
  * Музыкальное состояние Condition Zero — `player.musicState`.
  *
  * "unknown" — число, которому нет имени (его записал Pawn-плагин или мод); запись "unknown" поле не меняет.
@@ -162,6 +162,14 @@ export type MonsterState = "none" | "idle" | "combat" | "alert" | "hunt" | "pron
  * Pawn: `MusicState`
  */
 export type MusicState = "silent" | "calm" | "intense" | "unknown";
+/**
+ * Есть ли на карте зона спасения VIP — `game.mapHasVipSafetyZone`.
+ *
+ * "unknown" — число, которому нет имени (его записал Pawn-плагин или мод); запись "unknown" поле не меняет.
+ *
+ * Pawn: `MAP_HAVE_VIP_SAFETYZONE_*`
+ */
+export type VipSafetyZone = "notChecked" | "yes" | "no" | "unknown";
 /**
  * Which entities `Entity.findAll` returns. Every field is optional, and an
  * entity has to match all that are given:
@@ -197,6 +205,24 @@ export declare class Entity {
      * where nothing is holding them.
      */
     remove(): void;
+    /**
+     * `true`, пока сущность есть в мире: `false`, когда движок её освободил (`remove()` освобождает её в конце кадра), для ушедшего игрока и для `0` — «нет сущности». Номер из события или хука может указывать на сущность, которой уже нет.
+     *
+     * Pawn: `is_valid_ent`, `is_entity`
+     */
+    get exists(): bool;
+    /**
+     * Задаёт габариты сущности, углы — относительно её `origin`: `box.setSize([-16, -16, 0], [16, 16, 72])`. `mins`, `maxs`, `size` и то, где она сталкивается, следуют за ними. Габариты, у которых `mins` хоть по одной оси больше `maxs`, не ставятся, а в консоль пишется ошибка.
+     *
+     * Pawn: `entity_set_size`
+     */
+    setSize(mins: number[], maxs: number[]): void;
+    /**
+     * Проигрывает звук от сущности: его слышат все рядом, и он затихает с расстоянием: `player.emitSound("myplugin/hit.wav")`. Путь — внутри `sound/`, как его принимает `server.precache`; `options` задают канал, громкость, затухание и высоту.
+     *
+     * Pawn: `emit_sound`, `rh_emit_sound2`
+     */
+    emitSound(sample: string, options?: SoundOptions): void;
     /**
      * Класс сущности, например `"player"`, `"weaponbox"`, `"grenade"`, `"func_door"`.
      *
@@ -352,7 +378,7 @@ export declare class Entity {
     get modelIndex(): number;
     set modelIndex(value: number);
     /**
-     * Путь к модели сущности, например `"models/w_c4.mdl"`; у браша карты — его номер, например `"*12"`. Запись меняет только текст; натив `entity_set_model` ставит ещё `modelIndex` и размер.
+     * Путь к модели сущности, например `"models/w_c4.mdl"`; у браша карты — его номер, например `"*12"`. Запись ставит модель так, как это делает игра: `modelIndex` и размер следуют за ней. Модель должна быть прекэширована (`server.precache`), иначе сервер остановится.
      *
      * Pawn: `pev->model`
      */
@@ -387,14 +413,14 @@ export declare class Entity {
     get absMax(): Vector;
     set absMax(value: number[]);
     /**
-     * Нижний угол габаритов сущности относительно `origin`: `(-16, -16, -36)` у стоящего игрока. Ставится нативом `entity_set_size`, чтобы `size` и `absMin` пересчитались.
+     * Нижний угол габаритов сущности относительно `origin`: `(-16, -16, -36)` у стоящего игрока. Ставится через `setSize(mins, maxs)`, чтобы `size` и `absMin` пересчитались.
      *
      * Pawn: `pev->mins`
      */
     get mins(): Vector;
     set mins(value: number[]);
     /**
-     * Верхний угол габаритов сущности относительно `origin`: `(16, 16, 36)` у стоящего игрока. Ставится нативом `entity_set_size`, чтобы `size` и `absMax` пересчитались.
+     * Верхний угол габаритов сущности относительно `origin`: `(16, 16, 36)` у стоящего игрока. Ставится через `setSize(mins, maxs)`, чтобы `size` и `absMax` пересчитались.
      *
      * Pawn: `pev->maxs`
      */
@@ -548,6 +574,13 @@ export declare class Entity {
     get renderFx(): RenderFx;
     set renderFx(value: RenderFx);
     /**
+     * Здоровье сущности: разбиваемая ломается, а заложник умирает, когда урон доводит его до `0` или ниже, например `box.health = 50`. У игрока это его собственное свойство — целое число, при `0` он умирает.
+     *
+     * Pawn: `pev->health`
+     */
+    get health(): number;
+    set health(value: number);
+    /**
      * Оружие игрока, списком видов оружия, например [`"knife"`, `"usp"`]. Запись оружия не даёт и не отбирает и сохраняет костюм, без которого нет HUD.
      *
      * Pawn: `pev->weapons`
@@ -667,19 +700,12 @@ export declare class Entity {
     get teleportTime(): number;
     set teleportTime(value: number);
     /**
-     * Тип брони Half-Life. В CS не используется.
-     *
-     * Pawn: `pev->armortype`
-     */
-    get armorType(): number;
-    set armorType(value: number);
-    /**
      * Очки брони сущности, от `0` до `100` в обычной игре. Вид брони — в `kevlar`.
      *
      * Pawn: `pev->armorvalue`
      */
-    get armorValue(): number;
-    set armorValue(value: number);
+    get armor(): number;
+    set armor(value: number);
     /**
      * Глубина погружения сущности, одно из: `"none"` — не в воде; `"feet"` — ноги в воде; `"waist"` — по пояс; `"head"` — с головой.
      *
@@ -828,7 +854,7 @@ export declare class Entity {
     get maxSpeed(): number;
     set maxSpeed(value: number);
     /**
-     * Поле зрения игрока в градусах, `90` — обычное. Игра держит свою копию для прицела и пишет её сюда при смене зума.
+     * Поле зрения сущности в градусах. У игрока `fov` — своё, по которому игра приближает прицел и которое пишет и сюда.
      *
      * Pawn: `pev->fov`
      */
@@ -1023,6 +1049,54 @@ export declare class Entity {
      */
     get euser4(): number;
     set euser4(value: number);
+    /**
+     * Выполняет появление сущности, как игра, когда её создаёт: сущность из `Entity.create` настраивается им.
+     *
+     * Pawn: `ExecuteHamB(Ham_Spawn, ...)`, `ExecuteHam`
+     */
+    spawn(options?: ActionOptions): void;
+    /**
+     * Активирует сущность, как игра после загрузки карты.
+     *
+     * Pawn: `ExecuteHamB(Ham_Activate, ...)`, `ExecuteHam`
+     */
+    activate(options?: ActionOptions): void;
+    /**
+     * Лечит сущность, как игра, не выше её максимума: `true`, если здоровье прибавилось.
+     *
+     * Pawn: `ExecuteHamB(Ham_TakeHealth, ...)`, `ExecuteHam`
+     */
+    heal(health: number, damageType: Damage[], options?: ActionOptions): bool;
+    /**
+     * Убивает сущность, как игра, с указанным убийцей; `gib` — `0` обычная смерть, `1` — никогда не разрывает, `2` — всегда.
+     *
+     * Pawn: `ExecuteHamB(Ham_Killed, ...)`, `ExecuteHam`
+     */
+    killed(attacker: Entity, gib: number, options?: ActionOptions): void;
+    /**
+     * Выполняет «мысль» сущности сейчас, не дожидаясь её `nextThink`.
+     *
+     * Pawn: `ExecuteHamB(Ham_Think, ...)`, `ExecuteHam`
+     */
+    think(options?: ActionOptions): void;
+    /**
+     * Использует сущность — нажимает кнопку, открывает дверь, — как это сделал бы `activator` через `caller`.
+     *
+     * Pawn: `ExecuteHamB(Ham_Use, ...)`, `ExecuteHam`
+     */
+    use(caller: Entity, activator: Entity, useType: UseType, value: number, options?: ActionOptions): void;
+    /**
+     * Сообщает движущейся сущности — двери, поезду, — что `other` стоит у неё на пути.
+     *
+     * Pawn: `ExecuteHamB(Ham_Blocked, ...)`, `ExecuteHam`
+     */
+    blocked(other: Entity, options?: ActionOptions): void;
+    /**
+     * Возвращает сущность в то состояние, в каком её застаёт новый раунд.
+     *
+     * Pawn: `ExecuteHamB(Ham_CS_Restart, ...)`, `ExecuteHam`
+     */
+    restart(options?: ActionOptions): void;
 }
 /** A player's members - CBaseEntity up to CBasePlayer - on top of its entvars. */
 export declare class PlayerFields extends Entity {
@@ -1031,15 +1105,15 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBaseEntity::currentammo`
      */
-    get currentammo(): number;
-    set currentammo(value: number);
+    get currentAmmo(): number;
+    set currentAmmo(value: number);
     /**
      * Предел патронов buckshot у игрока, как его задумал Half-Life; игра его не использует.
      *
      * Pawn: `CBaseEntity::maxammo_buckshot`
      */
-    get maxammoBuckshot(): number;
-    set maxammoBuckshot(value: number);
+    get maxAmmoBuckshot(): number;
+    set maxAmmoBuckshot(value: number);
     /**
      * Копия запаса патронов buckshot у игрока (M3, XM1014): игра обновляет её при каждом изменении настоящего запаса, запись патронов не даёт.
      *
@@ -1052,8 +1126,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBaseEntity::maxammo_9mm`
      */
-    get maxammo9mm(): number;
-    set maxammo9mm(value: number);
+    get maxAmmo9mm(): number;
+    set maxAmmo9mm(value: number);
     /**
      * Копия запаса патронов 9mm у игрока (Glock, Elites, MP5, TMP): игра обновляет её при каждом изменении настоящего запаса, запись патронов не даёт.
      *
@@ -1066,8 +1140,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBaseEntity::maxammo_556nato`
      */
-    get maxammo556nato(): number;
-    set maxammo556nato(value: number);
+    get maxAmmo556nato(): number;
+    set maxAmmo556nato(value: number);
     /**
      * Копия запаса патронов 5.56mm у игрока (M4A1, FAMAS, Galil, AUG, SG552, SG550): игра обновляет её при каждом изменении настоящего запаса, запись патронов не даёт.
      *
@@ -1080,8 +1154,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBaseEntity::maxammo_556natobox`
      */
-    get maxammo556natobox(): number;
-    set maxammo556natobox(value: number);
+    get maxAmmo556natobox(): number;
+    set maxAmmo556natobox(value: number);
     /**
      * Копия запаса патронов 5.56mm box у игрока (M249): игра обновляет её при каждом изменении настоящего запаса, запись патронов не даёт.
      *
@@ -1094,8 +1168,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBaseEntity::maxammo_762nato`
      */
-    get maxammo762nato(): number;
-    set maxammo762nato(value: number);
+    get maxAmmo762nato(): number;
+    set maxAmmo762nato(value: number);
     /**
      * Копия запаса патронов 7.62mm у игрока (AK-47, Scout, G3SG1): игра обновляет её при каждом изменении настоящего запаса, запись патронов не даёт.
      *
@@ -1108,8 +1182,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBaseEntity::maxammo_45acp`
      */
-    get maxammo45acp(): number;
-    set maxammo45acp(value: number);
+    get maxAmmo45acp(): number;
+    set maxAmmo45acp(value: number);
     /**
      * Копия запаса патронов .45 ACP у игрока (USP, MAC-10, UMP45): игра обновляет её при каждом изменении настоящего запаса, запись патронов не даёт.
      *
@@ -1122,8 +1196,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBaseEntity::maxammo_50ae`
      */
-    get maxammo50ae(): number;
-    set maxammo50ae(value: number);
+    get maxAmmo50ae(): number;
+    set maxAmmo50ae(value: number);
     /**
      * Копия запаса патронов .50 AE у игрока (Desert Eagle): игра обновляет её при каждом изменении настоящего запаса, запись патронов не даёт.
      *
@@ -1136,8 +1210,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBaseEntity::maxammo_338mag`
      */
-    get maxammo338mag(): number;
-    set maxammo338mag(value: number);
+    get maxAmmo338mag(): number;
+    set maxAmmo338mag(value: number);
     /**
      * Копия запаса патронов .338 Magnum у игрока (AWP): игра обновляет её при каждом изменении настоящего запаса, запись патронов не даёт.
      *
@@ -1150,8 +1224,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBaseEntity::maxammo_57mm`
      */
-    get maxammo57mm(): number;
-    set maxammo57mm(value: number);
+    get maxAmmo57mm(): number;
+    set maxAmmo57mm(value: number);
     /**
      * Копия запаса патронов 5.7mm у игрока (P90, Five-seveN): игра обновляет её при каждом изменении настоящего запаса, запись патронов не даёт.
      *
@@ -1164,8 +1238,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBaseEntity::maxammo_357sig`
      */
-    get maxammo357sig(): number;
-    set maxammo357sig(value: number);
+    get maxAmmo357sig(): number;
+    set maxAmmo357sig(value: number);
     /**
      * Копия запаса патронов .357 SIG у игрока (P228): игра обновляет её при каждом изменении настоящего запаса, запись патронов не даёт.
      *
@@ -1230,20 +1304,6 @@ export declare class PlayerFields extends Entity {
     get sequenceLoops(): number;
     set sequenceLoops(value: number);
     /**
-     * Текущее действие модели (стоит, бежит, идёт, ...); игра ставит его вместе с анимацией игрока.
-     *
-     * Pawn: `CBaseMonster::m_Activity`, `ACT_*`
-     */
-    get activity(): number;
-    set activity(value: number);
-    /**
-     * Следующее действие модели — на которое она должна переключиться.
-     *
-     * Pawn: `CBaseMonster::m_IdealActivity`, `ACT_*`
-     */
-    get idealActivity(): number;
-    set idealActivity(value: number);
-    /**
      * Часть тела, куда попала последняя пуля, одно из: `"generic"` — без уточнения; `"head"`, `"chest"`, `"stomach"`, `"leftArm"`, `"rightArm"`, `"leftLeg"`, `"rightLeg"`; `"shield"` — щит.
      *
      * Pawn: `CBaseMonster::m_LastHitGroup`, `HITGROUP_*`
@@ -1258,47 +1318,12 @@ export declare class PlayerFields extends Entity {
     get damageType(): Damage[];
     set damageType(values: Damage[]);
     /**
-     * Состояние ИИ монстра (заложника), одно из: `"none"`, `"idle"`, `"combat"`, `"alert"`, `"hunt"`, `"prone"`, `"script"`, `"playDead"`, `"dead"`.
-     *
-     * Pawn: `CBaseMonster::m_MonsterState`
-     */
-    get monsterState(): MonsterState;
-    set monsterState(value: MonsterState);
-    /**
-     * Состояние ИИ, в которое монстр (заложник) должен перейти, — те же имена, что у `monsterState`.
-     *
-     * Pawn: `CBaseMonster::m_IdealMonsterState`
-     */
-    get idealMonsterState(): MonsterState;
-    set idealMonsterState(value: MonsterState);
-    /**
-     * Условия ИИ монстра в этом think, битами: видит врага, ранен, слышит звук.
-     *
-     * Pawn: `CBaseMonster::m_afConditions`
-     */
-    get conditions(): number;
-    set conditions(value: number);
-    /**
-     * Память ИИ монстра — биты, которые хранятся между think.
-     *
-     * Pawn: `CBaseMonster::m_afMemory`
-     */
-    get memory(): number;
-    set memory(value: number);
-    /**
      * Задержка игрока до использования любого оружия, в секундах; сама отсчитывается до `0`. Игра ставит её при смене оружия и перезарядке.
      *
      * Pawn: `CBaseMonster::m_flNextAttack`
      */
     get nextAttack(): number;
     set nextAttack(value: number);
-    /**
-     * Цель монстра: сущность, к которой он идёт или за которой следует, — например, игрок, за которым идёт заложник.
-     *
-     * Pawn: `CBaseMonster::m_hTargetEnt`
-     */
-    get targetEnt(): number;
-    set targetEnt(value: number);
     /**
      * Поле зрения монстра как косинус половины конуса: `0.5` — обзор 120 градусов.
      *
@@ -1313,20 +1338,6 @@ export declare class PlayerFields extends Entity {
      */
     get bloodColor(): BloodColor;
     set bloodColor(value: BloodColor);
-    /**
-     * Положение оружия монстра относительно `origin` — откуда он стреляет.
-     *
-     * Pawn: `CBaseMonster::m_HackedGunPos`
-     */
-    get hackedGunPos(): Vector;
-    set hackedGunPos(value: number[]);
-    /**
-     * Место, где монстр последний раз видел врага.
-     *
-     * Pawn: `CBaseMonster::m_vecEnemyLKP`
-     */
-    get enemyLkp(): Vector;
-    set enemyLkp(value: number[]);
     /**
      * Случайное зерно текущей команды игрока; из него берётся разброс пуль, чтобы клиент мог его предсказать.
      *
@@ -1402,8 +1413,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_flVelocityModifier`
      */
-    get velocityModifier(): number;
-    set velocityModifier(value: number);
+    get slowdown(): number;
+    set slowdown(value: number);
     /**
      * Зум игрока (поле зрения), к которому вернуться после перезарядки или выстрела снайперской винтовки.
      *
@@ -1444,8 +1455,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_iAccount`
      */
-    get account(): number;
-    set account(value: number);
+    get money(): number;
+    set money(value: number);
     /**
      * `true`, если у игрока есть основное оружие (винтовка, дробовик, пистолет-пулемёт).
      *
@@ -1640,8 +1651,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_iMenu`, `Menu_*`
      */
-    get menu(): GameMenu;
-    set menu(value: GameMenu);
+    get openMenu(): GameMenu;
+    set openMenu(value: GameMenu);
     /**
      * Цель слежения игрока: ставится в `1` при появлении, игра её не читает.
      *
@@ -1752,8 +1763,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_bPunishedForTK`
      */
-    get punishedForTk(): boolean;
-    set punishedForTk(value: boolean);
+    get punishedForTeamKill(): boolean;
+    set punishedForTeamKill(value: boolean);
     /**
      * `true`, если игрок не получит бонус в следующем раунде: так игра отмечает живых игроков команды, у которой истекло время раунда.
      *
@@ -1775,6 +1786,13 @@ export declare class PlayerFields extends Entity {
      */
     get hasChangedName(): boolean;
     set hasChangedName(value: boolean);
+    /**
+     * Имя, которое игрок получит при следующем возрождении: имя, сменённое мёртвым, ждёт здесь.
+     *
+     * Pawn: `CBasePlayer::m_szNewName`
+     */
+    get newName(): string;
+    set newName(value: string);
     /**
      * `true`, пока игрок обезвреживает бомбу.
      *
@@ -1843,15 +1861,15 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_flFlashLightTime`
      */
-    get flashLightTime(): number;
-    set flashLightTime(value: number);
+    get flashlightTime(): number;
+    set flashlightTime(value: number);
     /**
      * Заряд фонарика игрока, от `0` до `100`.
      *
      * Pawn: `CBasePlayer::m_iFlashBattery`
      */
-    get flashBattery(): number;
-    set flashBattery(value: number);
+    get flashlightBattery(): number;
+    set flashlightBattery(value: number);
     /**
      * Кнопки, которые игрок держал в прошлом кадре: `["Jump"]`.
      *
@@ -1878,22 +1896,22 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_pentSndLast`
      */
-    get sndLast(): number;
-    set sndLast(value: number);
+    get lastSoundEntity(): number;
+    set lastSoundEntity(value: number);
     /**
      * Эффект помещения (эхо) звуковой области игрока, `0` — нет.
      *
      * Pawn: `CBasePlayer::m_flSndRoomtype`
      */
-    get sndRoomtype(): number;
-    set sndRoomtype(value: number);
+    get roomType(): number;
+    set roomType(value: number);
     /**
      * Расстояние от игрока до его звуковой области.
      *
      * Pawn: `CBasePlayer::m_flSndRange`
      */
-    get sndRange(): number;
-    set sndRange(value: number);
+    get soundRange(): number;
+    set soundRange(value: number);
     /**
      * Флаг игрока «есть новые патроны для отправки» из Half-Life. В CS не используется.
      *
@@ -1916,7 +1934,7 @@ export declare class PlayerFields extends Entity {
     get nextSuicideTime(): number;
     set nextSuicideTime(value: number);
     /**
-     * Таймер покоя игрока из Half-Life; CS держит его у оружия (`timeWeaponIdle` у Weapon), а этот не использует.
+     * Таймер покоя игрока из Half-Life; CS держит его у оружия (`nextIdle` у Weapon), а этот не использует.
      *
      * Pawn: `CBasePlayer::m_flTimeWeaponIdle`
      */
@@ -1955,29 +1973,36 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_tbdPrev`
      */
-    get tbdPrev(): number;
-    set tbdPrev(value: number);
+    get timeBasedDamagePrev(): number;
+    set timeBasedDamagePrev(value: number);
     /**
      * Расстояние до ближайшей радиации — для счётчика Гейгера из Half-Life.
      *
      * Pawn: `CBasePlayer::m_flgeigerRange`
      */
-    get flgeigerRange(): number;
-    set flgeigerRange(value: number);
+    get geigerRange(): number;
+    set geigerRange(value: number);
     /**
      * Игровое время следующего обновления счётчика Гейгера (Half-Life).
      *
      * Pawn: `CBasePlayer::m_flgeigerDelay`
      */
-    get flgeigerDelay(): number;
-    set flgeigerDelay(value: number);
+    get geigerDelay(): number;
+    set geigerDelay(value: number);
     /**
      * Показание счётчика Гейгера, последним отправленное клиенту (Half-Life).
      *
      * Pawn: `CBasePlayer::m_igeigerRangePrev`
      */
-    get igeigerRangePrev(): number;
-    set igeigerRangePrev(value: number);
+    get geigerRangePrev(): number;
+    set geigerRangePrev(value: number);
+    /**
+     * Имя текстуры, на которой игрок стоял последней; по ней звучат его шаги.
+     *
+     * Pawn: `CBasePlayer::m_szTextureName`
+     */
+    get textureName(): string;
+    set textureName(value: string);
     /**
      * Тип текстуры под игроком — для звука шагов. В CS не используется.
      *
@@ -1990,15 +2015,15 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_idrowndmg`
      */
-    get idrowndmg(): number;
-    set idrowndmg(value: number);
+    get drownDamage(): number;
+    set drownDamage(value: number);
     /**
      * Часть урона от утопления, уже возвращённая игроку.
      *
      * Pawn: `CBasePlayer::m_idrownrestored`
      */
-    get idrownrestored(): number;
-    set idrownrestored(value: number);
+    get drownRestored(): number;
+    set drownRestored(value: number);
     /**
      * Виды урона, последними показанные на HUD игрока, битами; `-1` — игра отправит их заново.
      *
@@ -2025,22 +2050,22 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_iTrain`, `TRAIN_*`
      */
-    get train(): number;
-    set train(value: number);
+    get trainControls(): number;
+    set trainControls(value: number);
     /**
      * `false`, когда список оружия игрока нужно отправить заново.
      *
      * Pawn: `CBasePlayer::m_fWeapon`
      */
-    get weapon(): boolean;
-    set weapon(value: boolean);
+    get weaponHudValid(): boolean;
+    set weaponHudValid(value: boolean);
     /**
      * Стационарное оружие (`func_tank`), которым пользуется игрок.
      *
      * Pawn: `CBasePlayer::m_pTank`
      */
-    get tank(): number;
-    set tank(value: number);
+    get mountedGun(): number;
+    set mountedGun(value: number);
     /**
      * Игровое время смерти игрока.
      *
@@ -2060,15 +2085,15 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_fLongJump`
      */
-    get longJump(): boolean;
-    set longJump(value: boolean);
+    get hasLongJump(): boolean;
+    set hasLongJump(value: boolean);
     /**
      * Игровое время, с которого игрок считается крадущимся (Half-Life).
      *
      * Pawn: `CBasePlayer::m_tSneaking`
      */
-    get sneaking(): number;
-    set sneaking(value: number);
+    get sneakingUntil(): number;
+    set sneakingUntil(value: number);
     /**
      * Счётчик обновления игрока: ставится в `5` при сбросе, игра его не читает.
      *
@@ -2081,15 +2106,15 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_iClientHealth`
      */
-    get clientHealth(): number;
-    set clientHealth(value: number);
+    get healthSent(): number;
+    set healthSent(value: number);
     /**
      * Броня, последней отправленная в HUD игрока; `-1` — игра отправит её заново.
      *
      * Pawn: `CBasePlayer::m_iClientBattery`
      */
-    get clientBattery(): number;
-    set clientBattery(value: number);
+    get batterySent(): number;
+    set batterySent(value: number);
     /**
      * Скрытые части HUD игрока: `["Money", "Timer"]`; изменение игра отправляет сама.
      *
@@ -2102,22 +2127,29 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_iClientHideHUD`
      */
-    get clientHideHud(): HideHud[];
-    set clientHideHud(values: HideHud[]);
+    get hideHudSent(): HideHud[];
+    set hideHudSent(values: HideHud[]);
+    /**
+     * Поле зрения игрока в градусах: `90` — обычное, `40` и `10` — в снайперский прицел. Запись расширяет или сужает обзор — `110` показывает больше, — пока игра не поставит своё: при появлении, когда он достаёт оружие, когда приближает прицел.
+     *
+     * Pawn: `CBasePlayer::m_iFOV`
+     */
+    get fov(): number;
+    set fov(value: number);
     /**
      * Поле зрения, последним отправленное игроку; если своя копия игры отличается, игра отправит её.
      *
      * Pawn: `CBasePlayer::m_iClientFOV`
      */
-    get clientFov(): number;
-    set clientFov(value: number);
+    get fovSent(): number;
+    set fovSent(value: number);
     /**
      * Число появлений игрока в этом раунде; без `mp_forcerespawn` второй раз его не пустят.
      *
      * Pawn: `CBasePlayer::m_iNumSpawns`
      */
-    get numSpawns(): number;
-    set numSpawns(value: number);
+    get spawnCount(): number;
+    set spawnCount(value: number);
     /**
      * Сущность наблюдателя, привязанная к игроку; игра её не создаёт и только удаляет, когда игрок отключается.
      *
@@ -2136,7 +2168,7 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_pClientActiveItem`
      */
-    get clientActiveItem(): Weapon | null;
+    get activeItemSent(): Weapon | null;
     /**
      * Оружие, которое игрок держал до текущего, — на него переключает lastinv. Только чтение.
      *
@@ -2155,15 +2187,15 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_fOnTarget`
      */
-    get onTarget(): boolean;
-    set onTarget(value: boolean);
+    get aimingAtTarget(): boolean;
+    set aimingAtTarget(value: boolean);
     /**
      * Игровое время следующего обновления строки статуса игрока (имя под прицелом); раз в 0.2 секунды.
      *
      * Pawn: `CBasePlayer::m_flNextSBarUpdateTime`
      */
-    get nextSBarUpdateTime(): number;
-    set nextSBarUpdateTime(value: number);
+    get nextStatusBarUpdate(): number;
+    set nextStatusBarUpdate(value: number);
     /**
      * Игровое время, до которого держится строка статуса об игроке под прицелом, — 2 секунды после того, как он ушёл из прицела.
      *
@@ -2172,19 +2204,26 @@ export declare class PlayerFields extends Entity {
     get statusBarDisappearDelay(): number;
     set statusBarDisappearDelay(value: number);
     /**
+     * Текст строки состояния, который игра последним отправила игроку, — строка о том, в кого он целится, в виде формата, который заполняет его клиент.
+     *
+     * Pawn: `CBasePlayer::m_SbarString0`
+     */
+    get statusBarText(): string;
+    set statusBarText(value: string);
+    /**
      * Горизонтальная поправка автоприцела, последней отправленная клиенту игрока.
      *
      * Pawn: `CBasePlayer::m_lastx`
      */
-    get lastx(): number;
-    set lastx(value: number);
+    get lastX(): number;
+    set lastX(value: number);
     /**
      * Вертикальная поправка автоприцела, последней отправленная клиенту игрока.
      *
      * Pawn: `CBasePlayer::m_lasty`
      */
-    get lasty(): number;
-    set lasty(value: number);
+    get lastY(): number;
+    set lastY(value: number);
     /**
      * Число кадров в собственном спрей-логотипе игрока; `-1` — логотипа нет.
      *
@@ -2207,33 +2246,40 @@ export declare class PlayerFields extends Entity {
     get modelIndexPlayer(): number;
     set modelIndexPlayer(value: number);
     /**
+     * Набор анимаций, с которым модель игрока держит оружие, например `"knife"`, `"rifle"`, `"c4"`.
+     *
+     * Pawn: `CBasePlayer::m_szAnimExtention`
+     */
+    get animExtension(): string;
+    set animExtension(value: string);
+    /**
      * Анимация ног, которую игра выбрала игроку в этом кадре.
      *
      * Pawn: `CBasePlayer::m_iGaitsequence`
      */
-    get gaitsequence(): number;
-    set gaitsequence(value: number);
+    get playerGaitSequence(): number;
+    set playerGaitSequence(value: number);
     /**
      * Позиция в анимации ног игрока, в кадрах.
      *
      * Pawn: `CBasePlayer::m_flGaitframe`
      */
-    get gaitframe(): number;
-    set gaitframe(value: number);
+    get gaitFrame(): number;
+    set gaitFrame(value: number);
     /**
      * Направление ног игрока, в градусах; догоняет направление тела.
      *
      * Pawn: `CBasePlayer::m_flGaityaw`
      */
-    get gaityaw(): number;
-    set gaityaw(value: number);
+    get gaitYaw(): number;
+    set gaitYaw(value: number);
     /**
      * Позиция игрока при прошлом обновлении анимации — чтобы оценить его скорость.
      *
      * Pawn: `CBasePlayer::m_prevgaitorigin`
      */
-    get prevgaitorigin(): Vector;
-    set prevgaitorigin(value: number[]);
+    get prevGaitOrigin(): Vector;
+    set prevGaitOrigin(value: number[]);
     /**
      * Наклон верхней части тела, который игра вычислила для модели игрока.
      *
@@ -2260,8 +2306,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_iAutoWepSwitch`
      */
-    get autoWepSwitch(): number;
-    set autoWepSwitch(value: number);
+    get autoSwitchWeapon(): number;
+    set autoSwitchWeapon(value: number);
     /**
      * `true`, если игрок пользуется графическими (VGUI) меню, — его настройка `_vgui_menus`.
      *
@@ -2354,6 +2400,20 @@ export declare class PlayerFields extends Entity {
     get allowAutoFollowTime(): number;
     set allowAutoFollowTime(value: number);
     /**
+     * Список автозакупки игрока: предметы, которые его клиент прислал для `autobuy`.
+     *
+     * Pawn: `CBasePlayer::m_autoBuyString`
+     */
+    get autoBuyString(): string;
+    set autoBuyString(value: string);
+    /**
+     * Список повторной закупки игрока: предметы, которые его клиент прислал для `rebuy`.
+     *
+     * Pawn: `CBasePlayer::m_rebuyString`
+     */
+    get rebuyString(): string;
+    set rebuyString(value: string);
+    /**
      * `true`, пока команда rebuy закупает прошлое снаряжение игрока.
      *
      * Pawn: `CBasePlayer::m_bIsInRebuy`
@@ -2368,19 +2428,26 @@ export declare class PlayerFields extends Entity {
     get lastUpdateTime(): number;
     set lastUpdateTime(value: number);
     /**
+     * Название места на карте, где игрок был последним, — его называют радио и командный чат, например `"BombsiteA"`.
+     *
+     * Pawn: `CBasePlayer::m_lastLocation`
+     */
+    get lastLocation(): string;
+    set lastLocation(value: string);
+    /**
      * Игровое время начала полосы прогресса игрока (разминирование, закладка); `0` — нет.
      *
      * Pawn: `CBasePlayer::m_progressStart`
      */
-    get progressStart(): number;
-    set progressStart(value: number);
+    get progressBarStart(): number;
+    set progressBarStart(value: number);
     /**
      * Игровое время, когда полоса прогресса игрока заполнится.
      *
      * Pawn: `CBasePlayer::m_progressEnd`
      */
-    get progressEnd(): number;
-    set progressEnd(value: number);
+    get progressBarEnd(): number;
+    set progressBarEnd(value: number);
     /**
      * `true`, если камера зрителя следует за взглядом цели, а не вращается свободно.
      *
@@ -2428,8 +2495,8 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_iLastAccount`
      */
-    get lastAccount(): number;
-    set lastAccount(value: number);
+    get lastSentMoney(): number;
+    set lastSentMoney(value: number);
     /**
      * Здоровье игрока, последним отправленное в таблицы счёта других игроков.
      *
@@ -2442,21 +2509,614 @@ export declare class PlayerFields extends Entity {
      *
      * Pawn: `CBasePlayer::m_tmNextAccountHealthUpdate`
      */
-    get nextAccountHealthUpdate(): number;
-    set nextAccountHealthUpdate(value: number);
+    get nextScoreboardUpdate(): number;
+    set nextScoreboardUpdate(value: number);
     /**
-     * Режим наблюдения игрока, одно из: `"none"` — не наблюдает; `"chaseLocked"` — камера за целью, поворачивается вместе с ней; `"chaseFree"` — камера за целью, поворачивается свободно; `"roaming"` — свободный полёт; `"inEye"` — от первого лица, глазами цели; `"mapFree"` — карта, свободно; `"mapChase"` — карта за целью. Его ставит игра; цель — iuser2.
+     * Режим наблюдения игрока, одно из: `"none"` — не наблюдает; `"chaseLocked"` — камера за целью, поворачивается вместе с ней; `"chaseFree"` — камера за целью, поворачивается свободно; `"roaming"` — свободный полёт; `"inEye"` — от первого лица, глазами цели; `"mapFree"` — карта, свободно; `"mapChase"` — карта за целью. Запись режима переключает камеру так же, как игра, когда он выбирает режим сам: на того, за кем ему можно наблюдать, или `"roaming"`, если наблюдать не за кем; цель — iuser2. Запись `"none"` только очищает поле: наблюдение заканчивает игра, когда он появляется.
      *
-     * Pawn: `pev->iuser1`, `OBS_*`
+     * Pawn: `pev->iuser1`, `OBS_*`, `rg_set_observer_mode`
      */
     get observerMode(): ObserverMode;
     set observerMode(value: ObserverMode);
+    /**
+     * Добавляет очки к счёту игрока, как убийство; `allowNegative` позволяет счёту уйти ниже `0`.
+     *
+     * Pawn: `ExecuteHamB(Ham_AddPoints, ...)`, `ExecuteHam`
+     */
+    addFrags(points: number, allowNegative: boolean, options?: ActionOptions): void;
+    /**
+     * Добавляет очки к счёту команды игрока, как игра за выполнение задачи.
+     *
+     * Pawn: `ExecuteHamB(Ham_AddPointsToTeam, ...)`, `ExecuteHam`
+     */
+    addTeamScore(points: number, allowNegative: boolean, options?: ActionOptions): void;
+    /**
+     * Кладёт оружие-сущность в инвентарь игрока; `true` — положено. Чтобы выдать оружие по имени — `player.give`.
+     *
+     * Pawn: `ExecuteHamB(Ham_AddPlayerItem, ...)`, `ExecuteHam`
+     */
+    addItem(item: Weapon, options?: ActionOptions): bool;
+    /**
+     * Убирает оружие-сущность из инвентаря игрока, не удаляя саму сущность; `true` — оно там было.
+     *
+     * Pawn: `ExecuteHamB(Ham_RemovePlayerItem, ...)`, `ExecuteHam`
+     */
+    removeItem(item: Weapon, options?: ActionOptions): bool;
+    /**
+     * Даёт игроку патроны по имени вида у игры, например `"buckshot"`, не больше `max`; возвращает индекс патронов, `-1` — не дано.
+     *
+     * Pawn: `ExecuteHamB(Ham_GiveAmmo, ...)`, `ExecuteHam`
+     */
+    giveAmmo(amount: number, name: string, max: number, options?: ActionOptions): number;
+    /**
+     * Выполняет прыжок игрока, как когда он нажимает прыжок.
+     *
+     * Pawn: `ExecuteHamB(Ham_Player_Jump, ...)`, `ExecuteHam`
+     */
+    jump(options?: ActionOptions): void;
+    /**
+     * Выполняет приседание игрока, как когда он держит присед.
+     *
+     * Pawn: `ExecuteHamB(Ham_Player_Duck, ...)`, `ExecuteHam`
+     */
+    duck(options?: ActionOptions): void;
     /**
      * Every weapon the player carries: the first item of each of the six
      * slots (m_rgpPlayerItems), and the ones chained behind it (m_pNext) -
      * the grenades all share slot four.
      */
     get items(): Weapon[];
+}
+/**
+ * The game rules' members, the fields of `game`: `game.freezePeriod`,
+ * `game.ctWins`. The facade's Game extends this.
+ */
+export declare class GameFields {
+    /**
+     * `true` во время заморозки в начале раунда, пока игроки не могут ни двигаться, ни стрелять. Запись `false` заканчивает её для собственных проверок игры.
+     *
+     * Pawn: `CSGameRules::m_bFreezePeriod`
+     */
+    get isFreezeTime(): boolean;
+    set isFreezeTime(value: boolean);
+    /**
+     * `true`, пока бомба лежит на земле, брошенная тем, кто её нёс.
+     *
+     * Pawn: `CSGameRules::m_bBombDropped`
+     */
+    get bombDropped(): boolean;
+    set bombDropped(value: boolean);
+    /**
+     * Название игры в браузере серверов, например `"Counter-Strike"`.
+     *
+     * Pawn: `CSGameRules::m_GameDesc`
+     */
+    get gameName(): string;
+    set gameName(value: string);
+    /**
+     * Число мест для игроков, как их считает голосовой код игры.
+     *
+     * Pawn: `CSGameRules::m_nMaxPlayers`
+     */
+    get maxPlayers(): number;
+    set maxPlayers(value: number);
+    /**
+     * Секунды между обновлениями игры о том, кто кого слышит в голосовом чате.
+     *
+     * Pawn: `CSGameRules::m_UpdateInterval`
+     */
+    get updateInterval(): number;
+    set updateInterval(value: number);
+    /**
+     * Игровое время, когда начнётся следующий раунд после конца раунда или рестарта; `0`, если ничего не ожидается.
+     *
+     * Pawn: `CSGameRules::m_flRestartRoundTime`
+     */
+    get newRoundTime(): number;
+    set newRoundTime(value: number);
+    /**
+     * Игровое время следующей проверки игрой, не победила ли сторона; `0`, если проверка не ожидается.
+     *
+     * Pawn: `CSGameRules::m_flCheckWinConditions`
+     */
+    get checkWinConditionsTime(): number;
+    set checkWinConditionsTime(value: number);
+    /**
+     * Игровое время, когда началась игра в раунде: конец заморозки.
+     *
+     * Pawn: `CSGameRules::m_fRoundStartTime`
+     */
+    get roundStartTime(): number;
+    set roundStartTime(value: number);
+    /**
+     * Длина раунда в секундах; во время заморозки — длина заморозки.
+     *
+     * Pawn: `CSGameRules::m_iRoundTime`
+     */
+    get roundTime(): number;
+    set roundTime(value: number);
+    /**
+     * Длина раунда в секундах, из `mp_roundtime`.
+     *
+     * Pawn: `CSGameRules::m_iRoundTimeSecs`
+     */
+    get roundTimeSecs(): number;
+    set roundTimeSecs(value: number);
+    /**
+     * Длина заморозки в секундах, из `mp_freezetime`.
+     *
+     * Pawn: `CSGameRules::m_iIntroRoundTime`
+     */
+    get freezeTime(): number;
+    set freezeTime(value: number);
+    /**
+     * Игровое время, когда начался раунд, вместе с заморозкой.
+     *
+     * Pawn: `CSGameRules::m_fRoundStartTimeReal`
+     */
+    get freezeStartTime(): number;
+    set freezeStartTime(value: number);
+    /**
+     * Деньги, которые каждый террорист получит в начале следующего раунда за то, как прошёл этот.
+     *
+     * Pawn: `CSGameRules::m_iAccountTerrorist`
+     */
+    get terroristRoundBonus(): number;
+    set terroristRoundBonus(value: number);
+    /**
+     * Деньги, которые каждый спецназовец получит в начале следующего раунда за то, как прошёл этот.
+     *
+     * Pawn: `CSGameRules::m_iAccountCT`
+     */
+    get ctRoundBonus(): number;
+    set ctRoundBonus(value: number);
+    /**
+     * Число террористов, посчитанное в конце раунда.
+     *
+     * Pawn: `CSGameRules::m_iNumTerrorist`
+     */
+    get terroristCount(): number;
+    set terroristCount(value: number);
+    /**
+     * Число спецназовцев, посчитанное в конце раунда.
+     *
+     * Pawn: `CSGameRules::m_iNumCT`
+     */
+    get ctCount(): number;
+    set ctCount(value: number);
+    /**
+     * Число террористов, которые могут появиться в следующем раунде, посчитанное в конце раунда.
+     *
+     * Pawn: `CSGameRules::m_iNumSpawnableTerrorist`
+     */
+    get spawnableTerrorists(): number;
+    set spawnableTerrorists(value: number);
+    /**
+     * Число спецназовцев, которые могут появиться в следующем раунде, посчитанное в конце раунда.
+     *
+     * Pawn: `CSGameRules::m_iNumSpawnableCT`
+     */
+    get spawnableCts(): number;
+    set spawnableCts(value: number);
+    /**
+     * Число точек появления террористов на карте.
+     *
+     * Pawn: `CSGameRules::m_iSpawnPointCount_Terrorist`
+     */
+    get spawnPointCountTerrorist(): number;
+    set spawnPointCountTerrorist(value: number);
+    /**
+     * Число точек появления спецназовцев на карте.
+     *
+     * Pawn: `CSGameRules::m_iSpawnPointCount_CT`
+     */
+    get spawnPointCountCt(): number;
+    set spawnPointCountCt(value: number);
+    /**
+     * Число заложников, спасённых в этом раунде.
+     *
+     * Pawn: `CSGameRules::m_iHostagesRescued`
+     */
+    get hostagesRescued(): number;
+    set hostagesRescued(value: number);
+    /**
+     * Число заложников, которых спецназовец повёл за собой в этом раунде.
+     *
+     * Pawn: `CSGameRules::m_iHostagesTouched`
+     */
+    get hostagesTouched(): number;
+    set hostagesTouched(value: number);
+    /**
+     * Победитель последнего раунда, одно из `"CT"`, `"TERRORIST"`, `"draw"` или `"none"`, пока раунд идёт.
+     *
+     * Pawn: `CSGameRules::m_iRoundWinStatus`
+     */
+    get roundWinner(): RoundWinner;
+    set roundWinner(value: RoundWinner);
+    /**
+     * Счёт спецназовцев: выигранные ими раунды. Запись меняет счёт, и таблица сразу его показывает.
+     *
+     * Pawn: `CSGameRules::m_iNumCTWins`, `rg_update_teamscores`
+     */
+    get ctWins(): number;
+    set ctWins(value: number);
+    /**
+     * Счёт террористов: выигранные ими раунды. Запись меняет счёт, и таблица сразу его показывает.
+     *
+     * Pawn: `CSGameRules::m_iNumTerroristWins`, `rg_update_teamscores`
+     */
+    get terroristWins(): number;
+    set terroristWins(value: number);
+    /**
+     * `true`, когда бомба в этом раунде взорвала цель.
+     *
+     * Pawn: `CSGameRules::m_bTargetBombed`
+     */
+    get targetBombed(): boolean;
+    set targetBombed(value: boolean);
+    /**
+     * `true`, когда бомбу в этом раунде обезвредили.
+     *
+     * Pawn: `CSGameRules::m_bBombDefused`
+     */
+    get bombDefused(): boolean;
+    set bombDefused(value: boolean);
+    /**
+     * `true`, если на карте есть место для закладки бомбы.
+     *
+     * Pawn: `CSGameRules::m_bMapHasBombTarget`
+     */
+    get mapHasBombTarget(): boolean;
+    set mapHasBombTarget(value: boolean);
+    /**
+     * `true`, если на карте есть зона, в которой надо стоять, чтобы заложить бомбу.
+     *
+     * Pawn: `CSGameRules::m_bMapHasBombZone`
+     */
+    get mapHasBombZone(): boolean;
+    set mapHasBombZone(value: boolean);
+    /**
+     * `true`, если на карте есть свои зоны закупки.
+     *
+     * Pawn: `CSGameRules::m_bMapHasBuyZone`
+     */
+    get mapHasBuyZone(): boolean;
+    set mapHasBuyZone(value: boolean);
+    /**
+     * `true`, если на карте есть зона спасения заложников.
+     *
+     * Pawn: `CSGameRules::m_bMapHasRescueZone`
+     */
+    get mapHasRescueZone(): boolean;
+    set mapHasRescueZone(value: boolean);
+    /**
+     * `true`, если на карте есть зона побега для террористов.
+     *
+     * Pawn: `CSGameRules::m_bMapHasEscapeZone`
+     */
+    get mapHasEscapeZone(): boolean;
+    set mapHasEscapeZone(value: boolean);
+    /**
+     * Есть ли на карте зона спасения VIP, одно из: `"yes"`, `"no"` или `"notChecked"`, пока игра её не искала.
+     *
+     * Pawn: `CSGameRules::m_bMapHasVIPSafetyZone`
+     */
+    get mapHasVipSafetyZone(): VipSafetyZone;
+    set mapHasVipSafetyZone(value: VipSafetyZone);
+    /**
+     * `true`, если на карте есть камеры для зрителей.
+     *
+     * Pawn: `CSGameRules::m_bMapHasCameras`
+     */
+    get mapHasCameras(): boolean;
+    set mapHasCameras(value: boolean);
+    /**
+     * Таймер бомбы в секундах, из `mp_c4timer`.
+     *
+     * Pawn: `CSGameRules::m_iC4Timer`
+     */
+    get bombTimer(): number;
+    set bombTimer(value: number);
+    /**
+     * Террорист, которому в этом раунде досталась бомба, или `null`. Только чтение.
+     *
+     * Pawn: `CSGameRules::m_iC4Guy`
+     */
+    get bomber(): Player | null;
+    /**
+     * Деньги, которые получает проигравшая раунд сторона; растут с каждым поражением подряд.
+     *
+     * Pawn: `CSGameRules::m_iLoserBonus`
+     */
+    get loserBonus(): number;
+    set loserBonus(value: number);
+    /**
+     * Число раундов, проигранных спецназовцами подряд.
+     *
+     * Pawn: `CSGameRules::m_iNumConsecutiveCTLoses`
+     */
+    get ctLossStreak(): number;
+    set ctLossStreak(value: number);
+    /**
+     * Число раундов, проигранных террористами подряд.
+     *
+     * Pawn: `CSGameRules::m_iNumConsecutiveTerroristLoses`
+     */
+    get terroristLossStreak(): number;
+    set terroristLossStreak(value: number);
+    /**
+     * Секунды, которые игрок может стоять без дела, пока его не выкинет при включённом `mp_autokick`.
+     *
+     * Pawn: `CSGameRules::m_fMaxIdlePeriod`
+     */
+    get maxIdlePeriod(): number;
+    set maxIdlePeriod(value: number);
+    /**
+     * Насколько одна сторона может превосходить другую числом, из `mp_limitteams`.
+     *
+     * Pawn: `CSGameRules::m_iLimitTeams`
+     */
+    get limitTeams(): number;
+    set limitTeams(value: number);
+    /**
+     * `true`, когда игра осмотрела карту: места для бомбы, зоны закупки и заложников.
+     *
+     * Pawn: `CSGameRules::m_bLevelInitialized`
+     */
+    get mapInitialized(): boolean;
+    set mapInitialized(value: boolean);
+    /**
+     * `true` с конца раунда до начала следующего.
+     *
+     * Pawn: `CSGameRules::m_bRoundTerminating`
+     */
+    get roundEnding(): boolean;
+    set roundEnding(value: boolean);
+    /**
+     * `true`, если следующий рестарт сбросит всё, и счёт тоже, как это делает `sv_restart`.
+     *
+     * Pawn: `CSGameRules::m_bCompleteReset`
+     */
+    get completeReset(): boolean;
+    set completeReset(value: boolean);
+    /**
+     * Доля террористов, от `0` до `1`, которым надо сбежать, чтобы они победили на карте побега.
+     *
+     * Pawn: `CSGameRules::m_flRequiredEscapeRatio`
+     */
+    get requiredEscapeRatio(): number;
+    set requiredEscapeRatio(value: number);
+    /**
+     * Число террористов, которые могут сбежать, на карте побега.
+     *
+     * Pawn: `CSGameRules::m_iNumEscapers`
+     */
+    get numEscapers(): number;
+    set numEscapers(value: number);
+    /**
+     * Число террористов, сбежавших в этом раунде.
+     *
+     * Pawn: `CSGameRules::m_iHaveEscaped`
+     */
+    get haveEscaped(): number;
+    set haveEscaped(value: number);
+    /**
+     * `true`, пока спецназовцам нельзя покупать.
+     *
+     * Pawn: `CSGameRules::m_bCTCantBuy`
+     */
+    get ctsCantBuy(): boolean;
+    set ctsCantBuy(value: boolean);
+    /**
+     * `true`, пока террористам нельзя покупать.
+     *
+     * Pawn: `CSGameRules::m_bTCantBuy`
+     */
+    get terroristsCantBuy(): boolean;
+    set terroristsCantBuy(value: boolean);
+    /**
+     * Радиус взрыва бомбы в единицах, как его задаёт карта.
+     *
+     * Pawn: `CSGameRules::m_flBombRadius`
+     */
+    get bombRadius(): number;
+    set bombRadius(value: number);
+    /**
+     * Число раундов подряд, в которых VIP был один и тот же игрок.
+     *
+     * Pawn: `CSGameRules::m_iConsecutiveVIP`
+     */
+    get consecutiveVip(): number;
+    set consecutiveVip(value: number);
+    /**
+     * Число ружей, которые игра насчитала лежащими на карте.
+     *
+     * Pawn: `CSGameRules::m_iTotalGunCount`
+     */
+    get totalGunCount(): number;
+    set totalGunCount(value: number);
+    /**
+     * Число гранат, которые игра насчитала лежащими на карте.
+     *
+     * Pawn: `CSGameRules::m_iTotalGrenadeCount`
+     */
+    get totalGrenadeCount(): number;
+    set totalGrenadeCount(value: number);
+    /**
+     * Число бронежилетов, которые игра насчитала лежащими на карте.
+     *
+     * Pawn: `CSGameRules::m_iTotalArmourCount`
+     */
+    get totalArmourCount(): number;
+    set totalArmourCount(value: number);
+    /**
+     * Число раундов подряд, в которых одна сторона превосходила другую больше чем на двоих; после нескольких таких игра уравнивает стороны.
+     *
+     * Pawn: `CSGameRules::m_iUnBalancedRounds`
+     */
+    get unbalancedRounds(): number;
+    set unbalancedRounds(value: number);
+    /**
+     * Число раундов побега подряд; после 8 стороны меняются.
+     *
+     * Pawn: `CSGameRules::m_iNumEscapeRounds`
+     */
+    get numEscapeRounds(): number;
+    set numEscapeRounds(value: number);
+    /**
+     * Номер карты, которую выбрало последнее голосование.
+     *
+     * Pawn: `CSGameRules::m_iLastPick`
+     */
+    get lastPick(): number;
+    set lastPick(value: number);
+    /**
+     * Ограничение времени карты, из `mp_timelimit`.
+     *
+     * Pawn: `CSGameRules::m_iMaxMapTime`
+     */
+    get maxMapTime(): number;
+    set maxMapTime(value: number);
+    /**
+     * Число раундов, которое длится карта, из `mp_maxrounds`; `0` — без ограничения.
+     *
+     * Pawn: `CSGameRules::m_iMaxRounds`
+     */
+    get maxRounds(): number;
+    set maxRounds(value: number);
+    /**
+     * Число раундов, сыгранных на карте.
+     *
+     * Pawn: `CSGameRules::m_iTotalRoundsPlayed`
+     */
+    get totalRoundsPlayed(): number;
+    set totalRoundsPlayed(value: number);
+    /**
+     * Число раундов, которые стороне надо выиграть, чтобы карта кончилась, из `mp_winlimit`; `0` — без ограничения.
+     *
+     * Pawn: `CSGameRules::m_iMaxRoundsWon`
+     */
+    get maxRoundsWon(): number;
+    set maxRoundsWon(value: number);
+    /**
+     * Значение `allow_spectators`, которое игра помнит, чтобы заметить его изменение.
+     *
+     * Pawn: `CSGameRules::m_iStoredSpectValue`
+     */
+    get storedSpectValue(): number;
+    set storedSpectValue(value: number);
+    /**
+     * Значение `mp_forcecamera`, которое игра помнит, чтобы заметить его изменение.
+     *
+     * Pawn: `CSGameRules::m_flForceCameraValue`
+     */
+    get forceCamera(): number;
+    set forceCamera(value: number);
+    /**
+     * Значение `mp_forcechasecam`, которое игра помнит, чтобы заметить его изменение.
+     *
+     * Pawn: `CSGameRules::m_flForceChaseCamValue`
+     */
+    get forceChaseCam(): number;
+    set forceChaseCam(value: number);
+    /**
+     * Значение `mp_fadetoblack`, которое игра помнит, чтобы заметить его изменение.
+     *
+     * Pawn: `CSGameRules::m_flFadeToBlackValue`
+     */
+    get fadeToBlack(): number;
+    set fadeToBlack(value: number);
+    /**
+     * VIP на карте с убийством VIP — `id` игрока; `0`, если его нет.
+     *
+     * Pawn: `CSGameRules::m_pVIP`
+     */
+    get vip(): number;
+    set vip(value: number);
+    /**
+     * Игровое время, когда закончится перерыв в конце карты и загрузится следующая.
+     *
+     * Pawn: `CSGameRules::m_flIntermissionEndTime`
+     */
+    get intermissionEndTime(): number;
+    set intermissionEndTime(value: number);
+    /**
+     * Игровое время, когда начался перерыв в конце карты.
+     *
+     * Pawn: `CSGameRules::m_flIntermissionStartTime`
+     */
+    get intermissionStartTime(): number;
+    set intermissionStartTime(value: number);
+    /**
+     * `true`, когда игрок нажал кнопку, чтобы закончить перерыв раньше.
+     *
+     * Pawn: `CSGameRules::m_iEndIntermissionButtonHit`
+     */
+    get intermissionSkipped(): boolean;
+    set intermissionSkipped(value: boolean);
+    /**
+     * Игровое время следующей периодической проверки игрой её ограничений и кваров.
+     *
+     * Pawn: `CSGameRules::m_tmNextPeriodicThink`
+     */
+    get nextPeriodicThink(): number;
+    set nextPeriodicThink(value: number);
+    /**
+     * `true`, когда игра началась: на обеих сторонах были игроки. До этого раунд кончается надписью «Game Commencing».
+     *
+     * Pawn: `CSGameRules::m_bGameStarted`
+     */
+    get gameStarted(): boolean;
+    set gameStarted(value: boolean);
+    /**
+     * `true`, если следующий раунд начнётся, не возрождая игроков.
+     *
+     * Pawn: `CSGameRules::m_bSkipSpawn`
+     */
+    get skipSpawn(): boolean;
+    set skipSpawn(value: boolean);
+    /**
+     * `true`, пока входящему игроку не показывается меню выбора команды.
+     *
+     * Pawn: `CSGameRules::m_bSkipShowMenu`
+     */
+    get skipShowMenu(): boolean;
+    set skipShowMenu(value: boolean);
+    /**
+     * `true`, пока игра ждёт игроков, потому что одна из сторон пуста.
+     *
+     * Pawn: `CSGameRules::m_bNeededPlayers`
+     */
+    get neededPlayers(): boolean;
+    set neededPlayers(value: boolean);
+    /**
+     * Доля террористов, от `0` до `1`, сбежавших в этом раунде.
+     *
+     * Pawn: `CSGameRules::m_flEscapeRatio`
+     */
+    get escapeRatio(): number;
+    set escapeRatio(value: number);
+    /**
+     * Игровое время, когда карта кончится по `mp_timelimit`; `0` — без ограничения.
+     *
+     * Pawn: `CSGameRules::m_flTimeLimit`
+     */
+    get timeLimit(): number;
+    set timeLimit(value: number);
+    /**
+     * Игровое время, когда началась игра, после «Game Commencing».
+     *
+     * Pawn: `CSGameRules::m_flGameStartTime`
+     */
+    get gameStartTime(): number;
+    set gameStartTime(value: number);
+    /**
+     * `true`, если стороны уравнивались в начале этого раунда.
+     *
+     * Pawn: `CSGameRules::m_bTeamBalanced`
+     */
+    get teamBalanced(): boolean;
+    set teamBalanced(value: boolean);
 }
 /** What a weapon is, by the name CS gives it without the WEAPON_ prefix. */
 export type WeaponKind = "none" | "p228" | "glock" | "scout" | "hegrenade" | "xm1014" | "c4" | "mac10" | "aug" | "smokegrenade" | "elite" | "fiveseven" | "ump45" | "sg550" | "galil" | "famas" | "usp" | "glock18" | "awp" | "mp5n" | "m249" | "m3" | "m4a1" | "tmp" | "g3sg1" | "flashbang" | "deagle" | "sg552" | "ak47" | "knife" | "p90" | "shieldgun";
@@ -2468,6 +3128,13 @@ export declare class Weapon extends Entity {
     get kind(): WeaponKind;
     /** m_iId as the number WEAPON_* constants hold. */
     get kindId(): number;
+    /**
+     * Класс оружия, например `"weapon_ak47"`: имя, которое принимают `player.give`, `setAmmo`, `getAmmo` и `switchWeapon`, — `player.give(weapon.classname)`.
+     *
+     * Pawn: `pev->classname`, `get_weaponname`
+     */
+    get classname(): WeaponName;
+    set classname(value: WeaponName);
     /**
      * Игрок, у которого оружие, или `null`, если оно лежит на земле. Только чтение.
      *
@@ -2513,15 +3180,15 @@ export declare class Weapon extends Entity {
      *
      * Pawn: `CBasePlayerWeapon::m_flTimeWeaponIdle` (reapi `m_Weapon_flTimeWeaponIdle`)
      */
-    get timeWeaponIdle(): number;
-    set timeWeaponIdle(value: number);
+    get nextIdle(): number;
+    set nextIdle(value: number);
     /**
      * Вид патронов оружия — номер запаса патронов игрока, из которого оно берёт; `-1` — никаких (нож).
      *
      * Pawn: `CBasePlayerWeapon::m_iPrimaryAmmoType` (reapi `m_Weapon_iPrimaryAmmoType`)
      */
-    get primaryAmmoType(): number;
-    set primaryAmmoType(value: number);
+    get ammoType(): number;
+    set ammoType(value: number);
     /**
      * Номер запаса вторичных патронов оружия; у оружия CS их нет (`-1`).
      *
@@ -2541,8 +3208,8 @@ export declare class Weapon extends Entity {
      *
      * Pawn: `CBasePlayerWeapon::m_iClientClip` (reapi `m_Weapon_iClientClip`)
      */
-    get clientClip(): number;
-    set clientClip(value: number);
+    get clipSent(): number;
+    set clipSent(value: number);
     /**
      * Состояние оружия (в руках или нет), последним отправленное в HUD игрока.
      *
@@ -2555,15 +3222,15 @@ export declare class Weapon extends Entity {
      *
      * Pawn: `CBasePlayerWeapon::m_fInReload` (reapi `m_Weapon_fInReload`)
      */
-    get inReload(): number;
-    set inReload(value: number);
+    get isReloading(): number;
+    set isReloading(value: number);
     /**
      * Стадия поштучной перезарядки дробовика: `0` — не перезаряжается, `1` — начало, `2` — вставляет патрон.
      *
      * Pawn: `CBasePlayerWeapon::m_fInSpecialReload` (reapi `m_Weapon_fInSpecialReload`)
      */
-    get inSpecialReload(): number;
-    set inSpecialReload(value: number);
+    get shotgunReloadStage(): number;
+    set shotgunReloadStage(value: number);
     /**
      * Патроны, которые оружие даёт при первом подборе; `0` у выброшенного игроком (только магазин).
      *
@@ -2607,13 +3274,6 @@ export declare class Weapon extends Entity {
     get accuracy(): number;
     set accuracy(value: number);
     /**
-     * Игровое время последнего выстрела пистолета — для его точности.
-     *
-     * Pawn: `CBasePlayerWeapon::m_flLastFire` (reapi `m_Weapon_flLastFire`)
-     */
-    get lastFire(): number;
-    set lastFire(value: number);
-    /**
      * Выстрелы в текущей очереди оружия; с ними растёт отдача, и счёт сбрасывается, когда игрок перестаёт стрелять.
      *
      * Pawn: `CBasePlayerWeapon::m_iShotsFired` (reapi `m_Weapon_iShotsFired`)
@@ -2625,29 +3285,29 @@ export declare class Weapon extends Entity {
      *
      * Pawn: `CBasePlayerWeapon::m_flGlock18Shoot` (reapi `m_Weapon_flGlock18Shoot`)
      */
-    get glock18Shoot(): number;
-    set glock18Shoot(value: number);
+    get glockNextBurstShot(): number;
+    set glockNextBurstShot(value: number);
     /**
      * Патроны, которые Glock выпустил в текущей очереди.
      *
      * Pawn: `CBasePlayerWeapon::m_iGlock18ShotsFired` (reapi `m_Weapon_iGlock18ShotsFired`)
      */
-    get glock18ShotsFired(): number;
-    set glock18ShotsFired(value: number);
+    get glockBurstShots(): number;
+    set glockBurstShots(value: number);
     /**
      * Игровое время следующего патрона очереди FAMAS; `0` — очереди нет.
      *
      * Pawn: `CBasePlayerWeapon::m_flFamasShoot` (reapi `m_Weapon_flFamasShoot`)
      */
-    get famasShoot(): number;
-    set famasShoot(value: number);
+    get famasNextBurstShot(): number;
+    set famasNextBurstShot(value: number);
     /**
      * Патроны, которые FAMAS выпустил в текущей очереди.
      *
      * Pawn: `CBasePlayerWeapon::m_iFamasShotsFired` (reapi `m_Weapon_iFamasShotsFired`)
      */
-    get famasShotsFired(): number;
-    set famasShotsFired(value: number);
+    get famasBurstShots(): number;
+    set famasBurstShots(value: number);
     /**
      * Разброс очереди FAMAS, сохранённый для её следующих патронов.
      *
@@ -2674,22 +3334,8 @@ export declare class Weapon extends Entity {
      *
      * Pawn: `CBasePlayerWeapon::m_flDecreaseShotsFired` (reapi `m_Weapon_flDecreaseShotsFired`)
      */
-    get decreaseShotsFired(): number;
-    set decreaseShotsFired(value: number);
-    /**
-     * Событие выстрела Glock (подгруженное).
-     *
-     * Pawn: `CBasePlayerWeapon::m_usFireGlock18` (reapi `m_Weapon_usFireGlock18`)
-     */
-    get fireGlock18(): number;
-    set fireGlock18(value: number);
-    /**
-     * Событие выстрела FAMAS (подгруженное).
-     *
-     * Pawn: `CBasePlayerWeapon::m_usFireFamas` (reapi `m_Weapon_usFireFamas`)
-     */
-    get fireFamas(): number;
-    set fireFamas(value: number);
+    get recoilResetTime(): number;
+    set recoilResetTime(value: number);
     /**
      * Задержка между двумя последними выстрелами оружия, в секундах; по ней игра выравнивает темп стрельбы.
      *
@@ -2704,4 +3350,88 @@ export declare class Weapon extends Entity {
      */
     get lastFireTime(): number;
     set lastFireTime(value: number);
+    /**
+     * Отдаёт оружие игроку, как при подборе; `true` — он его взял.
+     *
+     * Pawn: `ExecuteHamB(Ham_Item_AddToPlayer, ...)`, `ExecuteHam`
+     */
+    addToPlayer(player: Player, options?: ActionOptions): bool;
+    /**
+     * Достаёт оружие в руки владельца, как при переключении на него, — модель и анимация показываются заново: `knife.deploy()`. `true` — достал.
+     *
+     * Pawn: `ExecuteHamB(Ham_Item_Deploy, ...)`, `ExecuteHam`
+     */
+    deploy(options?: ActionOptions): bool;
+    /**
+     * Убирает оружие, как при переключении с него.
+     *
+     * Pawn: `ExecuteHamB(Ham_Item_Holster, ...)`, `ExecuteHam`
+     */
+    holster(options?: ActionOptions): void;
+    /**
+     * Выбрасывает оружие из инвентаря владельца.
+     *
+     * Pawn: `ExecuteHamB(Ham_Item_Drop, ...)`, `ExecuteHam`
+     */
+    drop(options?: ActionOptions): void;
+    /**
+     * Прикрепляет оружие к игроку как его собственное, без подбора.
+     *
+     * Pawn: `ExecuteHamB(Ham_Item_AttachToPlayer, ...)`, `ExecuteHam`
+     */
+    attachToPlayer(player: Player, options?: ActionOptions): void;
+    /**
+     * Перекладывает патроны этого оружия в `target`, как при подборе второго такого же; возвращает переложенное.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_ExtractAmmo, ...)`, `ExecuteHam`
+     */
+    extractAmmo(target: Weapon, options?: ActionOptions): number;
+    /**
+     * Перекладывает патроны из обоймы этого оружия в `target`; возвращает переложенное.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_ExtractClipAmmo, ...)`, `ExecuteHam`
+     */
+    extractClipAmmo(target: Weapon, options?: ActionOptions): number;
+    /**
+     * Разрешает щелчку пустого оружия прозвучать снова при следующей попытке.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_ResetEmptySound, ...)`, `ExecuteHam`
+     */
+    resetEmptySound(options?: ActionOptions): void;
+    /**
+     * Выполняет основную атаку оружия — выстрел, удар ножом, — как левый клик.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_PrimaryAttack, ...)`, `ExecuteHam`
+     */
+    primaryAttack(options?: ActionOptions): void;
+    /**
+     * Выполняет вторую атаку оружия — укол ножом, прицел, — как правый клик: `knife.secondaryAttack()`.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_SecondaryAttack, ...)`, `ExecuteHam`
+     */
+    secondaryAttack(options?: ActionOptions): void;
+    /**
+     * Перезаряжает оружие, как клавиша перезарядки.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_Reload, ...)`, `ExecuteHam`
+     */
+    reload(options?: ActionOptions): void;
+    /**
+     * Выполняет бездействие оружия, которое проигрывает анимацию ожидания.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_WeaponIdle, ...)`, `ExecuteHam`
+     */
+    weaponIdle(options?: ActionOptions): void;
+    /**
+     * Убирает оружие — например, без патронов — и переключает владельца на следующее лучшее.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_RetireWeapon, ...)`, `ExecuteHam`
+     */
+    retireWeapon(options?: ActionOptions): void;
+    /**
+     * Проигрывает анимацию модели оружия от первого лица по номеру; `skipLocal` пропускает клиента, который предсказывает её сам.
+     *
+     * Pawn: `ExecuteHamB(Ham_CS_Weapon_SendWeaponAnim, ...)`, `ExecuteHam`
+     */
+    sendWeaponAnim(anim: number, skipLocal: boolean, options?: ActionOptions): void;
 }

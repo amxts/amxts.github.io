@@ -10,6 +10,8 @@ export interface HookShape {
     texts: Set<number>;
     /** The ATYPE_* the chain answers with, or -1 for a chain that answers nothing. */
     answer: number;
+    /** The Ham_* function a Ham Sandwich hook of the event is on, when it has one. */
+    ham?: number;
 }
 export interface Tables {
     /** Every `export const X: i32 = N` in as/constants.ts. */
@@ -24,8 +26,17 @@ export interface Tables {
     floatFields: Set<number>;
     /** Entvars and members that hold three floats. */
     vectorFields: Set<number>;
+    /** Entvars and members that hold text: var_classname, m_szTeamName. */
+    stringFields: Set<number>;
     /** Members read with an element index: m_rgpPlayerItems. */
     arrayFields: Set<number>;
+    /** An entvar by its offset in entvars_t, as the module's ent_get takes it: its constant, and a vector's component. */
+    entvarAt: Map<number, {
+        field: number;
+        component: number;
+    }>;
+    /** A member by its class and name in the gamedata, as member_slot takes it ("CBasePlayer::m_iAccount"): its constant. */
+    memberNamed: Map<string, number>;
 }
 export declare function tables(): Tables;
 /** A constant's value by name, or an error naming it. */

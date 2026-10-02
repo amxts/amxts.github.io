@@ -51,8 +51,6 @@ interface Pending {
 }
 export declare class MenuKit {
     readonly server: FakeServer;
-    /** The dictionary GetLangTransKey and LookupLangKey answer from: key -> text. */
-    readonly dictionary: Map<string, string>;
     readonly plugins: FakePawnPlugin[];
     /** Who is calling a native right now; the host unless a FakePawnPlugin is. */
     caller: number;
@@ -67,7 +65,7 @@ export declare class MenuKit {
     constructor(server: FakeServer);
     /** A Pawn plugin whose publics menu_core may call. */
     pawnPlugin(file: string, publics: Record<string, PawnPublic>): FakePawnPlugin;
-    /** Translations, as a dictionary file registers them. */
+    /** Translations in English, as a dictionary file writes them: the server's own dictionary. */
     translate(entries: Record<string, string>): void;
     /** What the player sees; null when no menu is up. */
     screen(player: FakePlayer): MenuScreen | null;

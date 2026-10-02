@@ -1,4 +1,8 @@
 declare const _default: {
+    Awaited: {
+        en: string;
+        ru: string;
+    };
     Promise: {
         en: string;
         ru: string;
