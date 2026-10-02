@@ -1,7 +1,9 @@
 import type { EventDoc, Text } from './events';
 export declare const MESSAGES: Record<string, EventDoc>;
-/** The words of a message that has no entry, and of the receiver every message has. */
+/** The line every message's words end with: the game's name of it. */
+export declare function gameName(name: string): Text;
+/** The words of a message without fields, and of the receiver every message has. */
 export declare const ANY_MESSAGE: {
-    summary: Text;
+    args: Text;
     player: Text;
 };

@@ -219,6 +219,34 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    MoveOptions: {
+        en: string;
+        ru: string;
+    };
+    'MoveOptions.forward': {
+        en: string;
+        ru: string;
+    };
+    'MoveOptions.side': {
+        en: string;
+        ru: string;
+    };
+    'MoveOptions.up': {
+        en: string;
+        ru: string;
+    };
+    'MoveOptions.buttons': {
+        en: string;
+        ru: string;
+    };
+    'MoveOptions.angles': {
+        en: string;
+        ru: string;
+    };
+    'MoveOptions.msec': {
+        en: string;
+        ru: string;
+    };
     Client: {
         en: string;
         ru: string;
@@ -771,6 +799,14 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Server.addMessageListener': {
+        en: string;
+        ru: string;
+    };
+    'Server.removeMessageListener': {
+        en: string;
+        ru: string;
+    };
     'Server.map': {
         en: string;
         ru: string;
@@ -780,6 +816,10 @@ declare const _default: {
         ru: string;
     };
     'Server.players': {
+        en: string;
+        ru: string;
+    };
+    'Server.addBot': {
         en: string;
         ru: string;
     };
@@ -1079,6 +1119,26 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Call.count': {
+        en: string;
+        ru: string;
+    };
+    'Call.textInto': {
+        en: string;
+        ru: string;
+    };
+    'Call.cellsAt': {
+        en: string;
+        ru: string;
+    };
+    Ref: {
+        en: string;
+        ru: string;
+    };
+    'Ref.value': {
+        en: string;
+        ru: string;
+    };
     'Call.run': {
         en: string;
         ru: string;
@@ -1348,6 +1408,10 @@ declare const _default: {
         ru: string;
     };
     'Player.kick': {
+        en: string;
+        ru: string;
+    };
+    'Player.move': {
         en: string;
         ru: string;
     };

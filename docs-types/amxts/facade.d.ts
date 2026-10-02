@@ -420,6 +420,25 @@ export interface KillOptions {
     /** Keeps the player's frags: no penalty for the suicide. */
     keepFrags?: boolean;
 }
+import { Button } from "./flags";
+/**
+ * One move of a bot, `bot.move({ ... })`: the speeds are units a second, as
+ * a player's keys give them - `250` runs with a knife, `-250` backs away.
+ */
+export interface MoveOptions {
+    /** Forward, or back when negative. */
+    forward?: number;
+    /** To the right, or to the left when negative. */
+    side?: number;
+    /** Up, or down when negative: swimming and climbing a ladder. */
+    up?: number;
+    /** The buttons held during the move: `["Jump", "Duck"]`. */
+    buttons?: Button[];
+    /** The direction the bot looks in, `[pitch, yaw, roll]` or a Vector; where it looks now when left out. */
+    angles?: number[];
+    /** The move's length in milliseconds, `1` to `255`; the server frame's time when left out. */
+    msec?: number;
+}
 /**
  * A connecting player, in `"connect"`, `"authorized"` and `"putinserver"`: name,
  * address, SteamID and team, but no health or weapons yet. Every Player is a
@@ -529,7 +548,8 @@ export declare class Player extends PlayerFields implements Client {
      * Joins a side the way the game joins a player who picks it in the team
      * menu, appearance picked for him: `player.joinTeam("CT")`. A player who
      * has just arrived is in the game after it and can spawn, which
-     * `player.team = ...` does not do for him. `false` if the game refused.
+     * `player.team = ...` does not do for him. A living player sent to the
+     * spectators dies quietly: no death, no frag. `false` if the game refused.
      *
      * Pawn: `rg_join_team`
      */
@@ -703,6 +723,15 @@ export declare class Player extends PlayerFields implements Client {
      * Pawn: `server_cmd("kick #%d")`
      */
     kick(reason?: string): void;
+    /**
+     * Moves a bot `server.addBot` made, as a player's keys and mouse would for
+     * one frame: `bot.move({ forward: 250, buttons: ["Jump"] })`. A bot does
+     * nothing by itself, so it is moved every frame - in the `"frame"` event -
+     * or it stands still. A player who is not a bot is refused with an error.
+     *
+     * Pawn: `engfunc(EngFunc_RunPlayerMove, ...)`
+     */
+    move(options?: MoveOptions): void;
     /**
      * Asks the player's game for one of its cvars: `await
      * player.queryCvar("fps_max")` is the value as text, e.g. `"100"`, or
@@ -1021,7 +1050,7 @@ export declare function __whenPrecache(register: () => void): void;
  * or a text, as the message wrote it.
  *
  * ```ts
- * server.addEventListener("message:BotProgress", (event) => {
+ * server.addMessageListener("botProgress", (event) => {
  *   console.log(`${event.args.length} ${event.args.number(0)}`);
  * });
  * ```
@@ -1047,7 +1076,7 @@ export declare class MessageArgs {
  * HUD icon - heard on its way, before it leaves:
  *
  * ```ts
- * server.addEventListener("message:TextMsg", (event) => {
+ * server.addMessageListener("text", (event) => {
  *   if (event.text == "#Round_Draw") event.preventDefault();
  * });
  * ```
@@ -1060,11 +1089,9 @@ export declare class MessageArgs {
  * Pawn: `register_message`
  */
 export declare class ClientMessage {
-    /** @hidden What a message's event is told apart by, at compile time. */
-    __message: bool;
     /** @hidden The player it goes to: the message's msg_entity. */
     __receiver: i32;
-    /** The message's name, e.g. `"TextMsg"`. */
+    /** The game's name of the message, e.g. `"TextMsg"` for `text`. */
     name: string;
     /** The player the message goes to; `null` for a message to everyone. */
     get player(): Player | null;
@@ -1245,6 +1272,25 @@ export declare class Cvar {
  */
 export declare class Server {
     /**
+     * Calls `listener` every time the server sends the message `name` to a
+     * client, before it leaves: the listener reads its fields, changes them, or
+     * stops it with `preventDefault()`.
+     *
+     * ```ts
+     * server.addMessageListener("death", (event) => {
+     *   if (event.headshot) console.log(`${event.killer?.name} - headshot - ${event.victim?.name}`);
+     * });
+     * ```
+     *
+     * The editor lists the names, each with the game's own one in its words:
+     * `death` is the game's `DeathMsg`.
+     *
+     * Pawn: `register_message`
+     */
+    addMessageListener<K extends keyof ServerMessageMap>(name: K, listener: (event: ServerMessageMap[K]) => void): void;
+    /** Stops calling a listener added with `addMessageListener` - the same name and the same function. */
+    removeMessageListener<K extends keyof ServerMessageMap>(name: K, listener: (event: ServerMessageMap[K]) => void): void;
+    /**
      * The current map's name, e.g. `"de_dust2"`.
      *
      * Pawn: `get_mapname`
@@ -1268,6 +1314,21 @@ export declare class Server {
      * Pawn: `get_players`
      */
     get players(): Player[];
+    /**
+     * Adds a bot under `name`: a player the server runs, with no game behind
+     * it and no mind of its own - it stands where it spawns until a plugin
+     * moves it with `bot.move()`. `null` when no slot is free. `"putinserver"`
+     * fires for it as for anyone, `bot.isBot` is `true` and `bot.kick()`
+     * removes it.
+     *
+     * ```ts
+     * const bot = server.addBot("Dummy");
+     * bot?.joinTeam("CT");
+     * ```
+     *
+     * Pawn: `engfunc(EngFunc_CreateFakeClient)`, `dllfunc(DLLFunc_ClientConnect)`, `dllfunc(DLLFunc_ClientPutInServer)`
+     */
+    addBot(name: string): Player | null;
     /**
      * The AMX Mod X configs folder, relative to the game folder, as `fs` takes it:
      * `addons/amxmodx/configs` unless the server moved it.
@@ -1494,6 +1555,7 @@ import { FlagName, HookName } from "./constants";
 import { Entity, GameFields, PlayerFields } from "./entities";
 export { Entity, Weapon, WeaponKind, weaponKindOf } from "./entities";
 export { RenderMode, RenderFx, MoveType, Solid, TakeDamage, DeadFlag, WaterLevel, Contents, FixAngle, HitGroup, ArmorType, ObserverMode, JoinState, GameMenu, PlayerModel, IgnoredChat, ThrowDirection, BloodColor, MusicState } from "./entities";
+import { ServerMessageMap } from "./events";
 /** A message's recipient together with its place: `{ id: 0, variant: "center" }`. `id` is a player's `id`, `0` for everyone. */
 export interface Target {
     /** The recipient's player `id`; `0` for every player. */
@@ -1720,9 +1782,50 @@ export declare class Call {
     ref(value: number): Call;
     /** The value the native left in the `ref` argument at this position, after `run`. */
     out(index: i32): number;
+    /** The number of arguments added so far: the position the next one takes. */
+    get count(): i32;
+    /**
+     * Adds room for text the native writes, in a `...` tail, holding `text` to
+     * begin with; its length follows by address, as `ret[], len` wants it.
+     * After `run` the text is in `cellsAt` of this position.
+     */
+    textInto(text: string, length: i32): Call;
+    /** The cells at the address of the argument at this position, after `run`: a vector or text the native wrote. */
+    cellsAt(index: i32): StaticArray<i32>;
     /** Calls the native with the arguments added so far and returns its result. */
     run(): number;
 }
+/**
+ * A value a native writes back through its argument, where Pawn passes a
+ * variable for the native to fill: text into `ret[], len`, a number into
+ * `&value`. Give it where the native takes one; after the call, `value` is
+ * what the native wrote.
+ *
+ * ```ts
+ * const reason = new Ref("");
+ * if (!dllfunc(DLLFunc_ClientConnect, id, "Bot", "127.0.0.1", reason)) console.log(reason.value);
+ * ```
+ */
+export declare class Ref<T> {
+    /** The value the native wrote; before the call, the one it starts with. */
+    value: T;
+    constructor(/** The value the native wrote; before the call, the one it starts with. */ value: T);
+    /** @hidden Adds this to a call: text as room to write in with its length, a number or a boolean by address. */
+    __push(call: Call, float: bool): void;
+    /** @hidden Reads what the native wrote at this position of the call. */
+    __back(call: Call, at: i32, float: bool): void;
+}
+/** @hidden What an argument left out of a native's `...` tail stands at: nothing is sent for it. */
+export declare function __noArgument<T>(): T;
+/**
+ * @hidden A native's `...` tail of up to twelve arguments of any kind, onto
+ * `call`, and the call run: what the generated wrappers of ~/natives call.
+ * `floats` is the native's float table for this call (bit `i`: the tail's
+ * argument `i` is a Float; TAIL_FLOAT_RESULT: so is the result) - a
+ * plugin's number cannot say whether it is one. What the native wrote into
+ * a vector or a Ref is read back into it.
+ */
+export declare function __callTail<A, B, C, D, E, F, G, H, I, J, K, L>(call: Call, floats: i32, a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H, i: I, j: J, k: K, l: L): number;
 /**
  * @hidden A field of a reapi field native, as T: a whole number or a Float
  * as a number (or a boolean), a vector as a Vector, text as a string. A T the

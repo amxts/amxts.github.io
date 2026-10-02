@@ -34,8 +34,8 @@ export interface CompileAll {
     includes: string[];
     /** The compile in this process: the build's plugin cache. */
     here: (plugin: Plugin, natives: PluginNative[]) => Promise<string | null>;
-    started: (index: number) => void;
-    finished: (index: number, compiled: Compiled) => void;
+    started?: (index: number) => void;
+    finished?: (index: number, compiled: Compiled) => void;
 }
 /**
  * The plugins compiled, several at once when there is room - in this process

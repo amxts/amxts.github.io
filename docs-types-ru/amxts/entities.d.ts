@@ -1437,7 +1437,7 @@ export declare class PlayerFields extends Entity {
     get ejectBrass(): number;
     set ejectBrass(value: number);
     /**
-     * Вид брони игрока, одно из: `"none"` — нет; `"vest"` — жилет; `"vestHelmet"` — жилет и шлем.
+     * Вид брони игрока, одно из: `"none"` — нет; `"vest"` — жилет; `"vestHelmet"` — жилет и шлем. Запись показывает шлем на его HUD или убирает его.
      *
      * Pawn: `CBasePlayer::m_iKevlar`, `ARMOR_*`
      */
@@ -1451,7 +1451,7 @@ export declare class PlayerFields extends Entity {
     get notKilled(): boolean;
     set notKilled(value: boolean);
     /**
-     * Деньги игрока: `800` в начале. Запись не обновляет деньги на его HUD, а `rg_add_account` обновляет.
+     * Деньги игрока: `800` в начале. Запись сразу показывает новую сумму на его HUD, с миганием: `player.money += 500`.
      *
      * Pawn: `CBasePlayer::m_iAccount`
      */
@@ -1563,14 +1563,14 @@ export declare class PlayerFields extends Entity {
     get ignoreGlobalChat(): IgnoredChat;
     set ignoreGlobalChat(value: IgnoredChat);
     /**
-     * `true`, если у игрока есть прибор ночного видения.
+     * `true`, если у игрока есть прибор ночного видения. Запись выдаёт или забирает его, и меню покупки это знает.
      *
      * Pawn: `CBasePlayer::m_bHasNightVision`
      */
     get hasNightVision(): boolean;
     set hasNightVision(value: boolean);
     /**
-     * `true`, пока прибор ночного видения игрока включён.
+     * `true`, пока прибор ночного видения игрока включён. Запись включает или выключает ночное видение на его экране.
      *
      * Pawn: `CBasePlayer::m_bNightVisionOn`
      */
@@ -1612,7 +1612,7 @@ export declare class PlayerFields extends Entity {
     get hasC4(): boolean;
     set hasC4(value: boolean);
     /**
-     * `true`, если у игрока есть набор сапёра.
+     * `true`, если у игрока есть набор сапёра. Запись выдаёт или забирает набор, как это делает игра: на модели, значком на HUD и в меню покупки.
      *
      * Pawn: `CBasePlayer::m_bHasDefuser`
      */
@@ -1864,7 +1864,7 @@ export declare class PlayerFields extends Entity {
     get flashlightTime(): number;
     set flashlightTime(value: number);
     /**
-     * Заряд фонарика игрока, от `0` до `100`.
+     * Заряд фонарика игрока, от `0` до `100`. Запись сразу показывает новый заряд на его HUD.
      *
      * Pawn: `CBasePlayer::m_iFlashBattery`
      */

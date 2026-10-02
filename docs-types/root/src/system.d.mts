@@ -5,6 +5,17 @@
  */
 export function parseSystem(value: string | undefined | null): System | null;
 /**
+ * The server's addons/amxts folder, from what AMXTS_SERVER holds: that
+ * folder itself, or the hlds folder, cstrike or cstrike/addons above it. A
+ * path that is not there yet is taken as addons/amxts, as it is written -
+ * dev builds, and deploys once it is - and so is a folder named amxts, or
+ * one holding the module's plugins.ini. Throws, naming where it looked, for
+ * a folder that is none of them.
+ * @param {string} path
+ * @returns {string} the folder; '' for ''
+ */
+export function serverFolder(path: string): string;
+/**
  * What a server's files say it runs. `amxtsDir` is AMXTS_SERVER: the server's
  * addons/amxts, so hlds sits three folders up. Null when nothing there says.
  * @param {string} amxtsDir

@@ -636,6 +636,8 @@ export declare class PfnSpawnEvent {
 /**
  * HUD игрока перестаёт показывать рекламу раунда.
  *
+ * Сообщение игры `ADStop`.
+ *
  * Pawn: `register_message(get_user_msgid("ADStop"), ...)`
  */
 export declare class ADStopMessage extends ClientMessage {
@@ -643,6 +645,8 @@ export declare class ADStopMessage extends ClientMessage {
 }
 /**
  * Можно ли игроку выбрать «Наблюдать» в меню команды.
+ *
+ * Сообщение игры `AllowSpec`.
  *
  * Pawn: `register_message(get_user_msgid("AllowSpec"), ...)`
  */
@@ -658,6 +662,8 @@ export declare class AllowSpecMessage extends ClientMessage {
 }
 /**
  * Игрок подбирает патроны: уведомление сбоку экрана.
+ *
+ * Сообщение игры `AmmoPickup`.
  *
  * Pawn: `register_message(get_user_msgid("AmmoPickup"), ...)`
  */
@@ -681,6 +687,8 @@ export declare class AmmoPickupMessage extends ClientMessage {
 /**
  * Меняется запас патронов одного вида на HUD игрока.
  *
+ * Сообщение игры `AmmoX`.
+ *
  * Pawn: `register_message(get_user_msgid("AmmoX"), ...)`
  */
 export declare class AmmoXMessage extends ClientMessage {
@@ -703,6 +711,8 @@ export declare class AmmoXMessage extends ClientMessage {
 /**
  * Значок брони на HUD игрока: жилет или жилет со шлемом.
  *
+ * Сообщение игры `ArmorType`.
+ *
  * Pawn: `register_message(get_user_msgid("ArmorType"), ...)`
  */
 export declare class ArmorTypeMessage extends ClientMessage {
@@ -718,6 +728,8 @@ export declare class ArmorTypeMessage extends ClientMessage {
 /**
  * Полосу прогресса посреди экрана игрока показывают или прячут.
  *
+ * Сообщение игры `BarTime`.
+ *
  * Pawn: `register_message(get_user_msgid("BarTime"), ...)`
  */
 export declare class BarTimeMessage extends ClientMessage {
@@ -732,6 +744,8 @@ export declare class BarTimeMessage extends ClientMessage {
 }
 /**
  * Полоса прогресса посреди экрана игрока, начатая не с нуля.
+ *
+ * Сообщение игры `BarTime2`.
  *
  * Pawn: `register_message(get_user_msgid("BarTime2"), ...)`
  */
@@ -755,6 +769,8 @@ export declare class BarTime2Message extends ClientMessage {
 /**
  * Меняется броня игрока на его HUD.
  *
+ * Сообщение игры `Battery`.
+ *
  * Pawn: `register_message(get_user_msgid("Battery"), ...)`
  */
 export declare class BatteryMessage extends ClientMessage {
@@ -770,6 +786,8 @@ export declare class BatteryMessage extends ClientMessage {
 /**
  * Деньги на HUD игрока мигают: ему не хватает на покупку.
  *
+ * Сообщение игры `BlinkAcct`.
+ *
  * Pawn: `register_message(get_user_msgid("BlinkAcct"), ...)`
  */
 export declare class BlinkAcctMessage extends ClientMessage {
@@ -784,6 +802,8 @@ export declare class BlinkAcctMessage extends ClientMessage {
 }
 /**
  * Бомба на радаре террористов: брошена или заложена.
+ *
+ * Сообщение игры `BombDrop`.
  *
  * Pawn: `register_message(get_user_msgid("BombDrop"), ...)`
  */
@@ -807,6 +827,8 @@ export declare class BombDropMessage extends ClientMessage {
 /**
  * Бомбу подобрали: она пропадает с радара террористов.
  *
+ * Сообщение игры `BombPickup`.
+ *
  * Pawn: `register_message(get_user_msgid("BombPickup"), ...)`
  */
 export declare class BombPickupMessage extends ClientMessage {
@@ -814,6 +836,8 @@ export declare class BombPickupMessage extends ClientMessage {
 }
 /**
  * Значок голоса над ботом, который говорит по рации.
+ *
+ * Сообщение игры `BotVoice`.
  *
  * Pawn: `register_message(get_user_msgid("BotVoice"), ...)`
  */
@@ -837,6 +861,8 @@ export declare class BotVoiceMessage extends ClientMessage {
 /**
  * Меню закупки игрока закрывается.
  *
+ * Сообщение игры `BuyClose`.
+ *
  * Pawn: `register_message(get_user_msgid("BuyClose"), ...)`
  */
 export declare class BuyCloseMessage extends ClientMessage {
@@ -844,6 +870,8 @@ export declare class BuyCloseMessage extends ClientMessage {
 }
 /**
  * Тело погибшего игрока остаётся на земле, чтобы клиенты его нарисовали.
+ *
+ * Сообщение игры `ClCorpse`.
  *
  * Pawn: `register_message(get_user_msgid("ClCorpse"), ...)`
  */
@@ -874,6 +902,8 @@ export declare class ClCorpseMessage extends ClientMessage {
 /**
  * Собственный прицел Counter-Strike на экране игрока показывают или прячут.
  *
+ * Сообщение игры `Crosshair`.
+ *
  * Pawn: `register_message(get_user_msgid("Crosshair"), ...)`
  */
 export declare class CrosshairMessage extends ClientMessage {
@@ -888,6 +918,8 @@ export declare class CrosshairMessage extends ClientMessage {
 }
 /**
  * Оружие в руках игрока и его обойма на HUD.
+ *
+ * Сообщение игры `CurWeapon`.
  *
  * Pawn: `register_message(get_user_msgid("CurWeapon"), ...)`
  */
@@ -917,6 +949,8 @@ export declare class CurWeaponMessage extends ClientMessage {
 }
 /**
  * Игроку показывают полученный урон: красные метки сбоку экрана.
+ *
+ * Сообщение игры `Damage`.
  *
  * Pawn: `register_message(get_user_msgid("Damage"), ...)`
  */
@@ -954,6 +988,8 @@ export declare class DamageMessage extends ClientMessage {
 /**
  * Убийство в правом верхнем углу каждого экрана.
  *
+ * Сообщение игры `DeathMsg`.
+ *
  * Pawn: `register_message(get_user_msgid("DeathMsg"), ...)`
  */
 export declare class DeathMsgMessage extends ClientMessage {
@@ -990,6 +1026,8 @@ export declare class DeathMsgMessage extends ClientMessage {
 /**
  * Значок фонарика на HUD игрока: включён ли он, и его заряд.
  *
+ * Сообщение игры `Flashlight`.
+ *
  * Pawn: `register_message(get_user_msgid("Flashlight"), ...)`
  */
 export declare class FlashlightMessage extends ClientMessage {
@@ -1012,6 +1050,8 @@ export declare class FlashlightMessage extends ClientMessage {
 /**
  * Меняется заряд фонарика на HUD игрока.
  *
+ * Сообщение игры `FlashBat`.
+ *
  * Pawn: `register_message(get_user_msgid("FlashBat"), ...)`
  */
 export declare class FlashBatMessage extends ClientMessage {
@@ -1026,6 +1066,8 @@ export declare class FlashBatMessage extends ClientMessage {
 }
 /**
  * Щелчки счётчика Гейгера, которые игрок слышит рядом с радиацией.
+ *
+ * Сообщение игры `Geiger`.
  *
  * Pawn: `register_message(get_user_msgid("Geiger"), ...)`
  */
@@ -1042,6 +1084,8 @@ export declare class GeigerMessage extends ClientMessage {
 /**
  * Меняется здоровье игрока на его HUD.
  *
+ * Сообщение игры `Health`.
+ *
  * Pawn: `register_message(get_user_msgid("Health"), ...)`
  */
 export declare class HealthMessage extends ClientMessage {
@@ -1056,6 +1100,8 @@ export declare class HealthMessage extends ClientMessage {
 }
 /**
  * Меняются скрытые части HUD игрока.
+ *
+ * Сообщение игры `HideWeapon`.
  *
  * Pawn: `register_message(get_user_msgid("HideWeapon"), ...)`
  */
@@ -1072,6 +1118,8 @@ export declare class HideWeaponMessage extends ClientMessage {
 /**
  * Заложник убит: он пропадает с радара спецназа.
  *
+ * Сообщение игры `HostageK`.
+ *
  * Pawn: `register_message(get_user_msgid("HostageK"), ...)`
  */
 export declare class HostageKMessage extends ClientMessage {
@@ -1086,6 +1134,8 @@ export declare class HostageKMessage extends ClientMessage {
 }
 /**
  * Заложник на радаре спецназа.
+ *
+ * Сообщение игры `HostagePos`.
  *
  * Pawn: `register_message(get_user_msgid("HostagePos"), ...)`
  */
@@ -1109,6 +1159,8 @@ export declare class HostagePosMessage extends ClientMessage {
 /**
  * Подсказка посреди экрана игрока.
  *
+ * Сообщение игры `HudText`.
+ *
  * Pawn: `register_message(get_user_msgid("HudText"), ...)`
  */
 export declare class HudTextMessage extends ClientMessage {
@@ -1123,6 +1175,8 @@ export declare class HudTextMessage extends ClientMessage {
 }
 /**
  * Подсказка посреди экрана игрока из собственных текстов игры.
+ *
+ * Сообщение игры `HudTextArgs`.
  *
  * Pawn: `register_message(get_user_msgid("HudTextArgs"), ...)`
  */
@@ -1146,6 +1200,8 @@ export declare class HudTextArgsMessage extends ClientMessage {
 /**
  * Подсказка посреди экрана игрока — для новичка.
  *
+ * Сообщение игры `HudTextPro`.
+ *
  * Pawn: `register_message(get_user_msgid("HudTextPro"), ...)`
  */
 export declare class HudTextProMessage extends ClientMessage {
@@ -1161,6 +1217,8 @@ export declare class HudTextProMessage extends ClientMessage {
 /**
  * HUD игрока готовится, когда он входит в игру.
  *
+ * Сообщение игры `InitHUD`.
+ *
  * Pawn: `register_message(get_user_msgid("InitHUD"), ...)`
  */
 export declare class InitHUDMessage extends ClientMessage {
@@ -1168,6 +1226,8 @@ export declare class InitHUDMessage extends ClientMessage {
 }
 /**
  * Игрок подбирает предмет: уведомление сбоку экрана.
+ *
+ * Сообщение игры `ItemPickup`.
  *
  * Pawn: `register_message(get_user_msgid("ItemPickup"), ...)`
  */
@@ -1183,6 +1243,8 @@ export declare class ItemPickupMessage extends ClientMessage {
 }
 /**
  * Прибор ночного видения и набор сапёра, которые есть у игрока, для его HUD.
+ *
+ * Сообщение игры `ItemStatus`.
  *
  * Pawn: `register_message(get_user_msgid("ItemStatus"), ...)`
  */
@@ -1206,6 +1268,8 @@ export declare class ItemStatusMessage extends ClientMessage {
 /**
  * Место на карте, где находится игрок, как его называет рация.
  *
+ * Сообщение игры `Location`.
+ *
  * Pawn: `register_message(get_user_msgid("Location"), ...)`
  */
 export declare class LocationMessage extends ClientMessage {
@@ -1227,6 +1291,8 @@ export declare class LocationMessage extends ClientMessage {
 }
 /**
  * Меняются деньги игрока на его HUD.
+ *
+ * Сообщение игры `Money`.
  *
  * Pawn: `register_message(get_user_msgid("Money"), ...)`
  */
@@ -1250,6 +1316,8 @@ export declare class MoneyMessage extends ClientMessage {
 /**
  * Часть сообщения дня — окна, которое видит вошедший игрок.
  *
+ * Сообщение игры `MOTD`.
+ *
  * Pawn: `register_message(get_user_msgid("MOTD"), ...)`
  */
 export declare class MOTDMessage extends ClientMessage {
@@ -1272,6 +1340,8 @@ export declare class MOTDMessage extends ClientMessage {
 /**
  * Ночное видение игрока включают или выключают.
  *
+ * Сообщение игры `NVGToggle`.
+ *
  * Pawn: `register_message(get_user_msgid("NVGToggle"), ...)`
  */
 export declare class NVGToggleMessage extends ClientMessage {
@@ -1286,6 +1356,8 @@ export declare class NVGToggleMessage extends ClientMessage {
 }
 /**
  * Союзник на радаре игрока.
+ *
+ * Сообщение игры `Radar`.
  *
  * Pawn: `register_message(get_user_msgid("Radar"), ...)`
  */
@@ -1309,6 +1381,8 @@ export declare class RadarMessage extends ClientMessage {
 /**
  * Игра запрашивает у клиента игрока его состояние — для голоса.
  *
+ * Сообщение игры `ReqState`.
+ *
  * Pawn: `register_message(get_user_msgid("ReqState"), ...)`
  */
 export declare class ReqStateMessage extends ClientMessage {
@@ -1317,6 +1391,8 @@ export declare class ReqStateMessage extends ClientMessage {
 /**
  * HUD игрока сбрасывается при его появлении.
  *
+ * Сообщение игры `ResetHUD`.
+ *
  * Pawn: `register_message(get_user_msgid("ResetHUD"), ...)`
  */
 export declare class ResetHUDMessage extends ClientMessage {
@@ -1324,6 +1400,8 @@ export declare class ResetHUDMessage extends ClientMessage {
 }
 /**
  * Задаются часы раунда вверху HUD игрока.
+ *
+ * Сообщение игры `RoundTime`.
  *
  * Pawn: `register_message(get_user_msgid("RoundTime"), ...)`
  */
@@ -1339,6 +1417,8 @@ export declare class RoundTimeMessage extends ClientMessage {
 }
 /**
  * Строка чата.
+ *
+ * Сообщение игры `SayText`.
  *
  * Pawn: `register_message(get_user_msgid("SayText"), ...)`
  */
@@ -1369,6 +1449,8 @@ export declare class SayTextMessage extends ClientMessage {
 /**
  * Значок сценария на HUD игрока, например бомбы или заложника.
  *
+ * Сообщение игры `Scenario`.
+ *
  * Pawn: `register_message(get_user_msgid("Scenario"), ...)`
  */
 export declare class ScenarioMessage extends ClientMessage {
@@ -1398,6 +1480,8 @@ export declare class ScenarioMessage extends ClientMessage {
 /**
  * Отметки, которые таблица счёта показывает рядом с игроком: погиб, бомба, VIP.
  *
+ * Сообщение игры `ScoreAttrib`.
+ *
  * Pawn: `register_message(get_user_msgid("ScoreAttrib"), ...)`
  */
 export declare class ScoreAttribMessage extends ClientMessage {
@@ -1419,6 +1503,8 @@ export declare class ScoreAttribMessage extends ClientMessage {
 }
 /**
  * Строка игрока в таблице счёта.
+ *
+ * Сообщение игры `ScoreInfo`.
  *
  * Pawn: `register_message(get_user_msgid("ScoreInfo"), ...)`
  */
@@ -1455,6 +1541,8 @@ export declare class ScoreInfoMessage extends ClientMessage {
 }
 /**
  * Экран игрока окрашивается с затуханием — флешка, затемнение.
+ *
+ * Сообщение игры `ScreenFade`.
  *
  * Pawn: `register_message(get_user_msgid("ScreenFade"), ...)`
  */
@@ -1506,6 +1594,8 @@ export declare class ScreenFadeMessage extends ClientMessage {
 /**
  * Вид игрока трясётся — рядом взрыв.
  *
+ * Сообщение игры `ScreenShake`.
+ *
  * Pawn: `register_message(get_user_msgid("ScreenShake"), ...)`
  */
 export declare class ScreenShakeMessage extends ClientMessage {
@@ -1534,6 +1624,8 @@ export declare class ScreenShakeMessage extends ClientMessage {
 }
 /**
  * Звук, который играет игроку, например фраза рации.
+ *
+ * Сообщение игры `SendAudio`.
  *
  * Pawn: `register_message(get_user_msgid("SendAudio"), ...)`
  */
@@ -1564,6 +1656,8 @@ export declare class SendAudioMessage extends ClientMessage {
 /**
  * Имя сервера, которое показывает клиент игрока.
  *
+ * Сообщение игры `ServerName`.
+ *
  * Pawn: `register_message(get_user_msgid("ServerName"), ...)`
  */
 export declare class ServerNameMessage extends ClientMessage {
@@ -1579,6 +1673,8 @@ export declare class ServerNameMessage extends ClientMessage {
 /**
  * Задаётся поле зрения игрока.
  *
+ * Сообщение игры `SetFOV`.
+ *
  * Pawn: `register_message(get_user_msgid("SetFOV"), ...)`
  */
 export declare class SetFOVMessage extends ClientMessage {
@@ -1593,6 +1689,8 @@ export declare class SetFOVMessage extends ClientMessage {
 }
 /**
  * Текстовое меню на экране игрока — меню команды без VGUI, рация, меню плагина.
+ *
+ * Сообщение игры `ShowMenu`.
  *
  * Pawn: `register_message(get_user_msgid("ShowMenu"), ...)`
  */
@@ -1616,6 +1714,8 @@ export declare class ShowMenuMessage extends ClientMessage {
 /**
  * На HUD игрока появляются часы раунда.
  *
+ * Сообщение игры `ShowTimer`.
+ *
  * Pawn: `register_message(get_user_msgid("ShowTimer"), ...)`
  */
 export declare class ShowTimerMessage extends ClientMessage {
@@ -1623,6 +1723,8 @@ export declare class ShowTimerMessage extends ClientMessage {
 }
 /**
  * Здоровье игрока, за которым следит наблюдатель.
+ *
+ * Сообщение игры `SpecHealth`.
  *
  * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`
  */
@@ -1638,6 +1740,8 @@ export declare class SpecHealthMessage extends ClientMessage {
 }
 /**
  * Здоровье игрока, за которым следит наблюдатель, и кто это.
+ *
+ * Сообщение игры `SpecHealth2`.
  *
  * Pawn: `register_message(get_user_msgid("SpecHealth2"), ...)`
  */
@@ -1661,6 +1765,8 @@ export declare class SpecHealth2Message extends ClientMessage {
 /**
  * Игрок становится наблюдателем или перестаёт им быть — в таблице счёта.
  *
+ * Сообщение игры `Spectator`.
+ *
  * Pawn: `register_message(get_user_msgid("Spectator"), ...)`
  */
 export declare class SpectatorMessage extends ClientMessage {
@@ -1682,6 +1788,8 @@ export declare class SpectatorMessage extends ClientMessage {
 }
 /**
  * Значок состояния на HUD игрока — зона закупки, бомба — показывается, мигает или прячется.
+ *
+ * Сообщение игры `StatusIcon`.
  *
  * Pawn: `register_message(get_user_msgid("StatusIcon"), ...)`
  */
@@ -1712,6 +1820,8 @@ export declare class StatusIconMessage extends ClientMessage {
 /**
  * Строка состояния внизу экрана игрока, например имя игрока, в которого он целится.
  *
+ * Сообщение игры `StatusText`.
+ *
  * Pawn: `register_message(get_user_msgid("StatusText"), ...)`
  */
 export declare class StatusTextMessage extends ClientMessage {
@@ -1734,6 +1844,8 @@ export declare class StatusTextMessage extends ClientMessage {
 /**
  * Значение, которое показывает строка состояния, например игрок, в которого целится игрок.
  *
+ * Сообщение игры `StatusValue`.
+ *
  * Pawn: `register_message(get_user_msgid("StatusValue"), ...)`
  */
 export declare class StatusValueMessage extends ClientMessage {
@@ -1755,6 +1867,8 @@ export declare class StatusValueMessage extends ClientMessage {
 }
 /**
  * Отсчёт задания на HUD игрока, например спасения заложников в карьере.
+ *
+ * Сообщение игры `TaskTime`.
  *
  * Pawn: `register_message(get_user_msgid("TaskTime"), ...)`
  */
@@ -1785,6 +1899,8 @@ export declare class TaskTimeMessage extends ClientMessage {
 /**
  * Команда игрока в таблице счёта.
  *
+ * Сообщение игры `TeamInfo`.
+ *
  * Pawn: `register_message(get_user_msgid("TeamInfo"), ...)`
  */
 export declare class TeamInfoMessage extends ClientMessage {
@@ -1807,6 +1923,8 @@ export declare class TeamInfoMessage extends ClientMessage {
 /**
  * Счёт команды в таблице счёта.
  *
+ * Сообщение игры `TeamScore`.
+ *
  * Pawn: `register_message(get_user_msgid("TeamScore"), ...)`
  */
 export declare class TeamScoreMessage extends ClientMessage {
@@ -1828,6 +1946,8 @@ export declare class TeamScoreMessage extends ClientMessage {
 }
 /**
  * Текст игры — объявление, подсказка — в чате, консоли или посреди экрана.
+ *
+ * Сообщение игры `TextMsg`.
  *
  * Pawn: `register_message(get_user_msgid("TextMsg"), ...)`
  */
@@ -1858,6 +1978,8 @@ export declare class TextMsgMessage extends ClientMessage {
 /**
  * Скорость поезда, которым управляет игрок, на его HUD.
  *
+ * Сообщение игры `Train`.
+ *
  * Pawn: `register_message(get_user_msgid("Train"), ...)`
  */
 export declare class TrainMessage extends ClientMessage {
@@ -1873,6 +1995,8 @@ export declare class TrainMessage extends ClientMessage {
 /**
  * Сообщение подсказчика на экране игрока закрывается.
  *
+ * Сообщение игры `TutorClose`.
+ *
  * Pawn: `register_message(get_user_msgid("TutorClose"), ...)`
  */
 export declare class TutorCloseMessage extends ClientMessage {
@@ -1880,6 +2004,8 @@ export declare class TutorCloseMessage extends ClientMessage {
 }
 /**
  * На экране игрока открывается VGUI-меню игры: меню команды, класса, закупки.
+ *
+ * Сообщение игры `VGUIMenu`.
  *
  * Pawn: `register_message(get_user_msgid("VGUIMenu"), ...)`
  */
@@ -1896,6 +2022,8 @@ export declare class VGUIMenuMessage extends ClientMessage {
 /**
  * Вид игрока возвращается к виду от первого лица.
  *
+ * Сообщение игры `ViewMode`.
+ *
  * Pawn: `register_message(get_user_msgid("ViewMode"), ...)`
  */
 export declare class ViewModeMessage extends ClientMessage {
@@ -1903,6 +2031,8 @@ export declare class ViewModeMessage extends ClientMessage {
 }
 /**
  * Описание оружия для клиента игрока: его патроны, слот, место в слоте.
+ *
+ * Сообщение игры `WeaponList`.
  *
  * Pawn: `register_message(get_user_msgid("WeaponList"), ...)`
  */
@@ -1968,6 +2098,8 @@ export declare class WeaponListMessage extends ClientMessage {
 /**
  * Игрок подбирает оружие: уведомление сбоку экрана.
  *
+ * Сообщение игры `WeapPickup`.
+ *
  * Pawn: `register_message(get_user_msgid("WeapPickup"), ...)`
  */
 export declare class WeapPickupMessage extends ClientMessage {
@@ -1980,7 +2112,7 @@ export declare class WeapPickupMessage extends ClientMessage {
     get weapon(): WeaponKind;
     set weapon(value: WeaponKind);
 }
-/** Every event a server raises, by name: the short one and the Pawn one, and every message it sends. */
+/** Every event a server raises, by name: the short one and the Pawn one. */
 export interface ServerEventMap {
     /**
      * Плагин загрузился: здесь регистрируют команды, события и хуки.
@@ -2374,499 +2506,668 @@ export interface ServerEventMap {
     pfn_spawn: PfnSpawnEvent;
     /** У игрока изменилось поле, которое плагины добавили в `Player`; `{ field: "spawnProtected" }` слушает одно поле. */
     playerchange: PlayerChangeEvent;
+}
+/** Every message the server sends its clients, by the name server.addMessageListener takes. */
+export interface ServerMessageMap {
     /**
      * HUD игрока перестаёт показывать рекламу раунда.
      *
+     * Сообщение игры `ADStop`.
+     *
      * Pawn: `register_message(get_user_msgid("ADStop"), ...)`
      */
-    "message:ADStop": ADStopMessage;
+    adStop: ADStopMessage;
     /**
      * Можно ли игроку выбрать «Наблюдать» в меню команды.
      *
+     * Сообщение игры `AllowSpec`.
+     *
      * Pawn: `register_message(get_user_msgid("AllowSpec"), ...)`
      */
-    "message:AllowSpec": AllowSpecMessage;
+    allowSpectate: AllowSpecMessage;
     /**
      * Игрок подбирает патроны: уведомление сбоку экрана.
      *
+     * Сообщение игры `AmmoPickup`.
+     *
      * Pawn: `register_message(get_user_msgid("AmmoPickup"), ...)`
      */
-    "message:AmmoPickup": AmmoPickupMessage;
+    ammoPickup: AmmoPickupMessage;
     /**
      * Меняется запас патронов одного вида на HUD игрока.
      *
+     * Сообщение игры `AmmoX`.
+     *
      * Pawn: `register_message(get_user_msgid("AmmoX"), ...)`
      */
-    "message:AmmoX": AmmoXMessage;
+    ammo: AmmoXMessage;
     /**
      * Значок брони на HUD игрока: жилет или жилет со шлемом.
      *
+     * Сообщение игры `ArmorType`.
+     *
      * Pawn: `register_message(get_user_msgid("ArmorType"), ...)`
      */
-    "message:ArmorType": ArmorTypeMessage;
+    armorType: ArmorTypeMessage;
     /**
      * Полосу прогресса посреди экрана игрока показывают или прячут.
      *
+     * Сообщение игры `BarTime`.
+     *
      * Pawn: `register_message(get_user_msgid("BarTime"), ...)`
      */
-    "message:BarTime": BarTimeMessage;
+    progressBar: BarTimeMessage;
     /**
      * Полоса прогресса посреди экрана игрока, начатая не с нуля.
      *
+     * Сообщение игры `BarTime2`.
+     *
      * Pawn: `register_message(get_user_msgid("BarTime2"), ...)`
      */
-    "message:BarTime2": BarTime2Message;
+    progressBarPartial: BarTime2Message;
     /**
      * Меняется броня игрока на его HUD.
      *
+     * Сообщение игры `Battery`.
+     *
      * Pawn: `register_message(get_user_msgid("Battery"), ...)`
      */
-    "message:Battery": BatteryMessage;
+    armor: BatteryMessage;
     /**
      * Деньги на HUD игрока мигают: ему не хватает на покупку.
      *
+     * Сообщение игры `BlinkAcct`.
+     *
      * Pawn: `register_message(get_user_msgid("BlinkAcct"), ...)`
      */
-    "message:BlinkAcct": BlinkAcctMessage;
+    moneyBlink: BlinkAcctMessage;
     /**
      * Бомба на радаре террористов: брошена или заложена.
      *
+     * Сообщение игры `BombDrop`.
+     *
      * Pawn: `register_message(get_user_msgid("BombDrop"), ...)`
      */
-    "message:BombDrop": BombDropMessage;
+    bombDrop: BombDropMessage;
     /**
      * Бомбу подобрали: она пропадает с радара террористов.
      *
+     * Сообщение игры `BombPickup`.
+     *
      * Pawn: `register_message(get_user_msgid("BombPickup"), ...)`
      */
-    "message:BombPickup": BombPickupMessage;
+    bombPickup: BombPickupMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Полоса прогресса, которую клиент игрока показывает, пока боты изучают новую карту. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `BotProgress`.
      *
      * Pawn: `register_message(get_user_msgid("BotProgress"), ...)`
      */
-    "message:BotProgress": ClientMessage;
+    botProgress: ClientMessage;
     /**
      * Значок голоса над ботом, который говорит по рации.
      *
+     * Сообщение игры `BotVoice`.
+     *
      * Pawn: `register_message(get_user_msgid("BotVoice"), ...)`
      */
-    "message:BotVoice": BotVoiceMessage;
+    botVoice: BotVoiceMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Гильза, которую выбрасывает оружие, — клиенты её рисуют. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `Brass`.
      *
      * Pawn: `register_message(get_user_msgid("Brass"), ...)`
      */
-    "message:Brass": ClientMessage;
+    shellCasing: ClientMessage;
     /**
      * Меню закупки игрока закрывается.
      *
+     * Сообщение игры `BuyClose`.
+     *
      * Pawn: `register_message(get_user_msgid("BuyClose"), ...)`
      */
-    "message:BuyClose": BuyCloseMessage;
+    closeBuyMenu: BuyCloseMessage;
     /**
      * Тело погибшего игрока остаётся на земле, чтобы клиенты его нарисовали.
      *
+     * Сообщение игры `ClCorpse`.
+     *
      * Pawn: `register_message(get_user_msgid("ClCorpse"), ...)`
      */
-    "message:ClCorpse": ClCorpseMessage;
+    corpse: ClCorpseMessage;
     /**
      * Собственный прицел Counter-Strike на экране игрока показывают или прячут.
      *
+     * Сообщение игры `Crosshair`.
+     *
      * Pawn: `register_message(get_user_msgid("Crosshair"), ...)`
      */
-    "message:Crosshair": CrosshairMessage;
+    crosshair: CrosshairMessage;
     /**
      * Оружие в руках игрока и его обойма на HUD.
      *
+     * Сообщение игры `CurWeapon`.
+     *
      * Pawn: `register_message(get_user_msgid("CurWeapon"), ...)`
      */
-    "message:CurWeapon": CurWeaponMessage;
+    currentWeapon: CurWeaponMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Шаг карьеры Condition Zero, её одиночной кампании. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `CZCareer`.
      *
      * Pawn: `register_message(get_user_msgid("CZCareer"), ...)`
      */
-    "message:CZCareer": ClientMessage;
+    czCareer: ClientMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Карьера Condition Zero на HUD игрока. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `CZCareerHUD`.
      *
      * Pawn: `register_message(get_user_msgid("CZCareerHUD"), ...)`
      */
-    "message:CZCareerHUD": ClientMessage;
+    czCareerHud: ClientMessage;
     /**
      * Игроку показывают полученный урон: красные метки сбоку экрана.
      *
+     * Сообщение игры `Damage`.
+     *
      * Pawn: `register_message(get_user_msgid("Damage"), ...)`
      */
-    "message:Damage": DamageMessage;
+    damage: DamageMessage;
     /**
      * Убийство в правом верхнем углу каждого экрана.
      *
+     * Сообщение игры `DeathMsg`.
+     *
      * Pawn: `register_message(get_user_msgid("DeathMsg"), ...)`
      */
-    "message:DeathMsg": DeathMsgMessage;
+    death: DeathMsgMessage;
     /**
      * Значок фонарика на HUD игрока: включён ли он, и его заряд.
      *
+     * Сообщение игры `Flashlight`.
+     *
      * Pawn: `register_message(get_user_msgid("Flashlight"), ...)`
      */
-    "message:Flashlight": FlashlightMessage;
+    flashlight: FlashlightMessage;
     /**
      * Меняется заряд фонарика на HUD игрока.
      *
+     * Сообщение игры `FlashBat`.
+     *
      * Pawn: `register_message(get_user_msgid("FlashBat"), ...)`
      */
-    "message:FlashBat": FlashBatMessage;
+    flashlightBattery: FlashBatMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Туман на экране игрока: его цвет и плотность. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `Fog`.
      *
      * Pawn: `register_message(get_user_msgid("Fog"), ...)`
      */
-    "message:Fog": ClientMessage;
+    fog: ClientMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Виды, в которых мёртвый игрок может смотреть игру, как разрешают `mp_forcecamera` и `mp_forcechasecam`. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `ForceCam`.
      *
      * Pawn: `register_message(get_user_msgid("ForceCam"), ...)`
      */
-    "message:ForceCam": ClientMessage;
+    forceCamera: ClientMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Играют ли командами — для клиента игрока. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `GameMode`.
      *
      * Pawn: `register_message(get_user_msgid("GameMode"), ...)`
      */
-    "message:GameMode": ClientMessage;
+    gameMode: ClientMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Заголовок игры на экране игрока, когда он входит в игру. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `GameTitle`.
      *
      * Pawn: `register_message(get_user_msgid("GameTitle"), ...)`
      */
-    "message:GameTitle": ClientMessage;
+    gameTitle: ClientMessage;
     /**
      * Щелчки счётчика Гейгера, которые игрок слышит рядом с радиацией.
      *
+     * Сообщение игры `Geiger`.
+     *
      * Pawn: `register_message(get_user_msgid("Geiger"), ...)`
      */
-    "message:Geiger": GeigerMessage;
+    geiger: GeigerMessage;
     /**
      * Меняется здоровье игрока на его HUD.
      *
+     * Сообщение игры `Health`.
+     *
      * Pawn: `register_message(get_user_msgid("Health"), ...)`
      */
-    "message:Health": HealthMessage;
+    health: HealthMessage;
     /**
      * Меняются скрытые части HUD игрока.
      *
+     * Сообщение игры `HideWeapon`.
+     *
      * Pawn: `register_message(get_user_msgid("HideWeapon"), ...)`
      */
-    "message:HideWeapon": HideWeaponMessage;
+    hideWeapon: HideWeaponMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Заметка для прокси HLTV, например о начале нового раунда. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `HLTV`.
      *
      * Pawn: `register_message(get_user_msgid("HLTV"), ...)`
      */
-    "message:HLTV": ClientMessage;
+    hltv: ClientMessage;
     /**
      * Заложник убит: он пропадает с радара спецназа.
      *
+     * Сообщение игры `HostageK`.
+     *
      * Pawn: `register_message(get_user_msgid("HostageK"), ...)`
      */
-    "message:HostageK": HostageKMessage;
+    hostageKilled: HostageKMessage;
     /**
      * Заложник на радаре спецназа.
      *
+     * Сообщение игры `HostagePos`.
+     *
      * Pawn: `register_message(get_user_msgid("HostagePos"), ...)`
      */
-    "message:HostagePos": HostagePosMessage;
+    hostagePosition: HostagePosMessage;
     /**
      * Подсказка посреди экрана игрока.
      *
+     * Сообщение игры `HudText`.
+     *
      * Pawn: `register_message(get_user_msgid("HudText"), ...)`
      */
-    "message:HudText": HudTextMessage;
+    hint: HudTextMessage;
     /**
      * Подсказка посреди экрана игрока из собственных текстов игры.
      *
+     * Сообщение игры `HudTextArgs`.
+     *
      * Pawn: `register_message(get_user_msgid("HudTextArgs"), ...)`
      */
-    "message:HudTextArgs": HudTextArgsMessage;
+    hintWithParams: HudTextArgsMessage;
     /**
      * Подсказка посреди экрана игрока — для новичка.
      *
+     * Сообщение игры `HudTextPro`.
+     *
      * Pawn: `register_message(get_user_msgid("HudTextPro"), ...)`
      */
-    "message:HudTextPro": HudTextProMessage;
+    newPlayerHint: HudTextProMessage;
     /**
      * HUD игрока готовится, когда он входит в игру.
      *
+     * Сообщение игры `InitHUD`.
+     *
      * Pawn: `register_message(get_user_msgid("InitHUD"), ...)`
      */
-    "message:InitHUD": InitHUDMessage;
+    initHud: InitHUDMessage;
     /**
      * Игрок подбирает предмет: уведомление сбоку экрана.
      *
+     * Сообщение игры `ItemPickup`.
+     *
      * Pawn: `register_message(get_user_msgid("ItemPickup"), ...)`
      */
-    "message:ItemPickup": ItemPickupMessage;
+    itemPickup: ItemPickupMessage;
     /**
      * Прибор ночного видения и набор сапёра, которые есть у игрока, для его HUD.
      *
+     * Сообщение игры `ItemStatus`.
+     *
      * Pawn: `register_message(get_user_msgid("ItemStatus"), ...)`
      */
-    "message:ItemStatus": ItemStatusMessage;
+    itemStatus: ItemStatusMessage;
     /**
      * Место на карте, где находится игрок, как его называет рация.
      *
+     * Сообщение игры `Location`.
+     *
      * Pawn: `register_message(get_user_msgid("Location"), ...)`
      */
-    "message:Location": LocationMessage;
+    location: LocationMessage;
     /**
      * Меняются деньги игрока на его HUD.
      *
+     * Сообщение игры `Money`.
+     *
      * Pawn: `register_message(get_user_msgid("Money"), ...)`
      */
-    "message:Money": MoneyMessage;
+    money: MoneyMessage;
     /**
      * Часть сообщения дня — окна, которое видит вошедший игрок.
      *
+     * Сообщение игры `MOTD`.
+     *
      * Pawn: `register_message(get_user_msgid("MOTD"), ...)`
      */
-    "message:MOTD": MOTDMessage;
+    motd: MOTDMessage;
     /**
      * Ночное видение игрока включают или выключают.
      *
+     * Сообщение игры `NVGToggle`.
+     *
      * Pawn: `register_message(get_user_msgid("NVGToggle"), ...)`
      */
-    "message:NVGToggle": NVGToggleMessage;
+    nightVision: NVGToggleMessage;
     /**
      * Союзник на радаре игрока.
      *
+     * Сообщение игры `Radar`.
+     *
      * Pawn: `register_message(get_user_msgid("Radar"), ...)`
      */
-    "message:Radar": RadarMessage;
+    radar: RadarMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Погода на карте, дождь или снег, — для клиента игрока. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `ReceiveW`.
      *
      * Pawn: `register_message(get_user_msgid("ReceiveW"), ...)`
      */
-    "message:ReceiveW": ClientMessage;
+    weather: ClientMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Звук перезарядки оружия поблизости — для клиента игрока. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `ReloadSound`.
      *
      * Pawn: `register_message(get_user_msgid("ReloadSound"), ...)`
      */
-    "message:ReloadSound": ClientMessage;
+    reloadSound: ClientMessage;
     /**
      * Игра запрашивает у клиента игрока его состояние — для голоса.
      *
+     * Сообщение игры `ReqState`.
+     *
      * Pawn: `register_message(get_user_msgid("ReqState"), ...)`
      */
-    "message:ReqState": ReqStateMessage;
+    requestState: ReqStateMessage;
     /**
      * HUD игрока сбрасывается при его появлении.
      *
+     * Сообщение игры `ResetHUD`.
+     *
      * Pawn: `register_message(get_user_msgid("ResetHUD"), ...)`
      */
-    "message:ResetHUD": ResetHUDMessage;
+    resetHud: ResetHUDMessage;
     /**
      * Задаются часы раунда вверху HUD игрока.
      *
+     * Сообщение игры `RoundTime`.
+     *
      * Pawn: `register_message(get_user_msgid("RoundTime"), ...)`
      */
-    "message:RoundTime": RoundTimeMessage;
+    roundTime: RoundTimeMessage;
     /**
      * Строка чата.
      *
+     * Сообщение игры `SayText`.
+     *
      * Pawn: `register_message(get_user_msgid("SayText"), ...)`
      */
-    "message:SayText": SayTextMessage;
+    chat: SayTextMessage;
     /**
      * Значок сценария на HUD игрока, например бомбы или заложника.
      *
+     * Сообщение игры `Scenario`.
+     *
      * Pawn: `register_message(get_user_msgid("Scenario"), ...)`
      */
-    "message:Scenario": ScenarioMessage;
+    scenarioIcon: ScenarioMessage;
     /**
      * Отметки, которые таблица счёта показывает рядом с игроком: погиб, бомба, VIP.
      *
+     * Сообщение игры `ScoreAttrib`.
+     *
      * Pawn: `register_message(get_user_msgid("ScoreAttrib"), ...)`
      */
-    "message:ScoreAttrib": ScoreAttribMessage;
+    scoreAttribute: ScoreAttribMessage;
     /**
      * Строка игрока в таблице счёта.
      *
+     * Сообщение игры `ScoreInfo`.
+     *
      * Pawn: `register_message(get_user_msgid("ScoreInfo"), ...)`
      */
-    "message:ScoreInfo": ScoreInfoMessage;
+    score: ScoreInfoMessage;
     /**
      * Экран игрока окрашивается с затуханием — флешка, затемнение.
      *
+     * Сообщение игры `ScreenFade`.
+     *
      * Pawn: `register_message(get_user_msgid("ScreenFade"), ...)`
      */
-    "message:ScreenFade": ScreenFadeMessage;
+    screenFade: ScreenFadeMessage;
     /**
      * Вид игрока трясётся — рядом взрыв.
      *
+     * Сообщение игры `ScreenShake`.
+     *
      * Pawn: `register_message(get_user_msgid("ScreenShake"), ...)`
      */
-    "message:ScreenShake": ScreenShakeMessage;
+    screenShake: ScreenShakeMessage;
     /**
      * Звук, который играет игроку, например фраза рации.
      *
+     * Сообщение игры `SendAudio`.
+     *
      * Pawn: `register_message(get_user_msgid("SendAudio"), ...)`
      */
-    "message:SendAudio": SendAudioMessage;
+    sound: SendAudioMessage;
     /**
      * Имя сервера, которое показывает клиент игрока.
      *
+     * Сообщение игры `ServerName`.
+     *
      * Pawn: `register_message(get_user_msgid("ServerName"), ...)`
      */
-    "message:ServerName": ServerNameMessage;
+    serverName: ServerNameMessage;
     /**
      * Задаётся поле зрения игрока.
      *
+     * Сообщение игры `SetFOV`.
+     *
      * Pawn: `register_message(get_user_msgid("SetFOV"), ...)`
      */
-    "message:SetFOV": SetFOVMessage;
+    fov: SetFOVMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Спрайт, которым клиент игрока рисует тени игроков. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `ShadowIdx`.
      *
      * Pawn: `register_message(get_user_msgid("ShadowIdx"), ...)`
      */
-    "message:ShadowIdx": ClientMessage;
+    shadow: ClientMessage;
     /**
      * Текстовое меню на экране игрока — меню команды без VGUI, рация, меню плагина.
      *
+     * Сообщение игры `ShowMenu`.
+     *
      * Pawn: `register_message(get_user_msgid("ShowMenu"), ...)`
      */
-    "message:ShowMenu": ShowMenuMessage;
+    menu: ShowMenuMessage;
     /**
      * На HUD игрока появляются часы раунда.
      *
+     * Сообщение игры `ShowTimer`.
+     *
      * Pawn: `register_message(get_user_msgid("ShowTimer"), ...)`
      */
-    "message:ShowTimer": ShowTimerMessage;
+    showTimer: ShowTimerMessage;
     /**
      * Здоровье игрока, за которым следит наблюдатель.
      *
+     * Сообщение игры `SpecHealth`.
+     *
      * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`
      */
-    "message:SpecHealth": SpecHealthMessage;
+    spectatedHealth: SpecHealthMessage;
     /**
      * Здоровье игрока, за которым следит наблюдатель, и кто это.
      *
+     * Сообщение игры `SpecHealth2`.
+     *
      * Pawn: `register_message(get_user_msgid("SpecHealth2"), ...)`
      */
-    "message:SpecHealth2": SpecHealth2Message;
+    spectatedPlayerHealth: SpecHealth2Message;
     /**
      * Игрок становится наблюдателем или перестаёт им быть — в таблице счёта.
      *
+     * Сообщение игры `Spectator`.
+     *
      * Pawn: `register_message(get_user_msgid("Spectator"), ...)`
      */
-    "message:Spectator": SpectatorMessage;
+    spectator: SpectatorMessage;
     /**
      * Значок состояния на HUD игрока — зона закупки, бомба — показывается, мигает или прячется.
      *
+     * Сообщение игры `StatusIcon`.
+     *
      * Pawn: `register_message(get_user_msgid("StatusIcon"), ...)`
      */
-    "message:StatusIcon": StatusIconMessage;
+    statusIcon: StatusIconMessage;
     /**
      * Строка состояния внизу экрана игрока, например имя игрока, в которого он целится.
      *
+     * Сообщение игры `StatusText`.
+     *
      * Pawn: `register_message(get_user_msgid("StatusText"), ...)`
      */
-    "message:StatusText": StatusTextMessage;
+    statusText: StatusTextMessage;
     /**
      * Значение, которое показывает строка состояния, например игрок, в которого целится игрок.
      *
+     * Сообщение игры `StatusValue`.
+     *
      * Pawn: `register_message(get_user_msgid("StatusValue"), ...)`
      */
-    "message:StatusValue": StatusValueMessage;
+    statusValue: StatusValueMessage;
     /**
      * Отсчёт задания на HUD игрока, например спасения заложников в карьере.
      *
+     * Сообщение игры `TaskTime`.
+     *
      * Pawn: `register_message(get_user_msgid("TaskTime"), ...)`
      */
-    "message:TaskTime": TaskTimeMessage;
+    taskTime: TaskTimeMessage;
     /**
      * Команда игрока в таблице счёта.
      *
+     * Сообщение игры `TeamInfo`.
+     *
      * Pawn: `register_message(get_user_msgid("TeamInfo"), ...)`
      */
-    "message:TeamInfo": TeamInfoMessage;
+    team: TeamInfoMessage;
     /**
      * Счёт команды в таблице счёта.
      *
+     * Сообщение игры `TeamScore`.
+     *
      * Pawn: `register_message(get_user_msgid("TeamScore"), ...)`
      */
-    "message:TeamScore": TeamScoreMessage;
+    teamScore: TeamScoreMessage;
     /**
      * Текст игры — объявление, подсказка — в чате, консоли или посреди экрана.
      *
+     * Сообщение игры `TextMsg`.
+     *
      * Pawn: `register_message(get_user_msgid("TextMsg"), ...)`
      */
-    "message:TextMsg": TextMsgMessage;
+    text: TextMsgMessage;
     /**
      * Скорость поезда, которым управляет игрок, на его HUD.
      *
+     * Сообщение игры `Train`.
+     *
      * Pawn: `register_message(get_user_msgid("Train"), ...)`
      */
-    "message:Train": TrainMessage;
+    train: TrainMessage;
     /**
      * Сообщение подсказчика на экране игрока закрывается.
      *
+     * Сообщение игры `TutorClose`.
+     *
      * Pawn: `register_message(get_user_msgid("TutorClose"), ...)`
      */
-    "message:TutorClose": TutorCloseMessage;
+    tutorClose: TutorCloseMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Указатель подсказчика на экране игрока — на предмет в мире. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `TutorLine`.
      *
      * Pawn: `register_message(get_user_msgid("TutorLine"), ...)`
      */
-    "message:TutorLine": ClientMessage;
+    tutorLine: ClientMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Состояние подсказчика на клиенте игрока. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `TutorState`.
      *
      * Pawn: `register_message(get_user_msgid("TutorState"), ...)`
      */
-    "message:TutorState": ClientMessage;
+    tutorState: ClientMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Сообщение подсказчика на экране игрока. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `TutorText`.
      *
      * Pawn: `register_message(get_user_msgid("TutorText"), ...)`
      */
-    "message:TutorText": ClientMessage;
+    tutorText: ClientMessage;
     /**
      * На экране игрока открывается VGUI-меню игры: меню команды, класса, закупки.
      *
+     * Сообщение игры `VGUIMenu`.
+     *
      * Pawn: `register_message(get_user_msgid("VGUIMenu"), ...)`
      */
-    "message:VGUIMenu": VGUIMenuMessage;
+    vguiMenu: VGUIMenuMessage;
     /**
      * Вид игрока возвращается к виду от первого лица.
      *
+     * Сообщение игры `ViewMode`.
+     *
      * Pawn: `register_message(get_user_msgid("ViewMode"), ...)`
      */
-    "message:ViewMode": ViewModeMessage;
+    viewMode: ViewModeMessage;
     /**
-     * Сообщение, которое сервер шлёт клиентам; его аргументы — `event.args`.
+     * Игроки, которых игрок слышит в голосовом чате, и те, кого он заглушил. Его аргументы читаются по месту, через `event.args`.
+     *
+     * Сообщение игры `VoiceMask`.
      *
      * Pawn: `register_message(get_user_msgid("VoiceMask"), ...)`
      */
-    "message:VoiceMask": ClientMessage;
+    voiceMask: ClientMessage;
     /**
      * Описание оружия для клиента игрока: его патроны, слот, место в слоте.
      *
+     * Сообщение игры `WeaponList`.
+     *
      * Pawn: `register_message(get_user_msgid("WeaponList"), ...)`
      */
-    "message:WeaponList": WeaponListMessage;
+    weaponList: WeaponListMessage;
     /**
      * Игрок подбирает оружие: уведомление сбоку экрана.
      *
+     * Сообщение игры `WeapPickup`.
+     *
      * Pawn: `register_message(get_user_msgid("WeapPickup"), ...)`
      */
-    "message:WeapPickup": WeapPickupMessage;
+    weaponPickup: WeapPickupMessage;
 }
+/** The game's name of a message, by the name server.addMessageListener takes; a name it does not know as it is. */
+export declare function protocolMessageName(name: string): string;
 /** Adds a listener for the event E - server.addEventListener's hood. */
 export declare function addServerListener<E>(listener: (event: E) => void): void;
 /** Takes a listener off again - server.removeEventListener's hood. */

@@ -25,3 +25,10 @@ export interface MessageField {
 export declare const MESSAGE_FIELDS: Record<string, MessageField[]>;
 /** Every message Counter-Strike 1.6 registers, by the name get_user_msgid takes. */
 export declare const CLIENT_MESSAGES: string[];
+/**
+ * Every message's name in the player's words, by the game's: lowerCamelCase,
+ * without the protocol's `Msg`, an abbreviation spelled out (`CurWeapon` is
+ * `currentWeapon`, `SetFOV` `fov`) and an opaque name given its meaning
+ * (`SayText` is `chat`, `Battery` `armor`, `ShowMenu` `menu`).
+ */
+export declare const MESSAGE_NAMES: Record<string, string>;

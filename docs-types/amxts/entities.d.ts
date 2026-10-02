@@ -1437,7 +1437,7 @@ export declare class PlayerFields extends Entity {
     get ejectBrass(): number;
     set ejectBrass(value: number);
     /**
-     * The player's armour kind, one of: `"none"`; `"vest"`; `"vestHelmet"` - a vest and a helmet.
+     * The player's armour kind, one of: `"none"`; `"vest"`; `"vestHelmet"` - a vest and a helmet. Setting it shows the helmet on his HUD, or takes it off.
      *
      * Pawn: `CBasePlayer::m_iKevlar`, `ARMOR_*`
      */
@@ -1451,7 +1451,7 @@ export declare class PlayerFields extends Entity {
     get notKilled(): boolean;
     set notKilled(value: boolean);
     /**
-     * The player's money: `800` at the start. Writing it does not update the money on his HUD; `rg_add_account` does.
+     * The player's money: `800` at the start. Setting it shows the new amount on his HUD at once, flashing: `player.money += 500`.
      *
      * Pawn: `CBasePlayer::m_iAccount`
      */
@@ -1563,14 +1563,14 @@ export declare class PlayerFields extends Entity {
     get ignoreGlobalChat(): IgnoredChat;
     set ignoreGlobalChat(value: IgnoredChat);
     /**
-     * `true` if the player owns night vision goggles.
+     * `true` if the player owns night vision goggles. Setting it gives or takes them, and his buy menu knows.
      *
      * Pawn: `CBasePlayer::m_bHasNightVision`
      */
     get hasNightVision(): boolean;
     set hasNightVision(value: boolean);
     /**
-     * `true` while the player's night vision is switched on.
+     * `true` while the player's night vision is switched on. Setting it switches his screen to night vision or back.
      *
      * Pawn: `CBasePlayer::m_bNightVisionOn`
      */
@@ -1612,7 +1612,7 @@ export declare class PlayerFields extends Entity {
     get hasC4(): boolean;
     set hasC4(value: boolean);
     /**
-     * `true` if the player has a defuse kit.
+     * `true` if the player has a defuse kit. Setting it gives or takes the kit as the game does: on his model, its icon on his HUD and in his buy menu.
      *
      * Pawn: `CBasePlayer::m_bHasDefuser`
      */
@@ -1864,7 +1864,7 @@ export declare class PlayerFields extends Entity {
     get flashlightTime(): number;
     set flashlightTime(value: number);
     /**
-     * The charge of the player's flashlight, `0` to `100`.
+     * The charge of the player's flashlight, `0` to `100`. Setting it shows the new charge on his HUD.
      *
      * Pawn: `CBasePlayer::m_iFlashBattery`
      */

@@ -47,8 +47,9 @@ export declare function dropHttpImports(file: string, text: string): {
  * A file's command handlers brought to one argument: `(player) =>` becomes
  * `({ player }) =>`, a function passed by its name and taking the player is
  * called from `({ player }) => name(player)`. A handler that reads the words
- * after the name - a second parameter, or a server command's one - is left,
- * with what to write; one that takes nothing, or already one object, is right.
+ * after the name - a second parameter it uses, or a server command's one - is
+ * left, with what to write; one that takes nothing, or already one object, is
+ * right.
  */
 export declare function upgradeHandlers(file: string, text: string): {
     text: string;
@@ -64,12 +65,24 @@ export declare function upgradeHandlers(file: string, text: string): {
  * ones. Without a type checker a value is a player, a weapon, an entity or the
  * game where the code says so: `event.player`, `new Weapon(id)`, an
  * annotation, `player.activeItem`, an element of `server.players` or of a
- * player's `items`, `{ player }` taken from an event or a command, `game`.
+ * player's `items`, `{ player }` taken from an event or a command, a
+ * command handler's first parameter, `game`.
  * The rest is listed: an old name on a value the code does not say, options
  * not written out as `true` or a team's name, and a field or an event left out
  * of the API, which the natives reach.
  */
 export declare function upgradeNames(file: string, text: string): {
+    text: string;
+    changes: Change[];
+    left: Left[];
+};
+/**
+ * A file's game messages brought to their own methods:
+ * `addEventListener("message:DeathMsg", ...)` is
+ * `addMessageListener("death", ...)`, and `removeEventListener` likewise. A
+ * name the game does not have is listed.
+ */
+export declare function upgradeMessages(file: string, text: string): {
     text: string;
     changes: Change[];
     left: Left[];

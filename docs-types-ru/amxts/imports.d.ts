@@ -285,6 +285,7 @@ declare global {
 	export import MoneyMessage = __0.MoneyMessage;
 	export import MonsterInitDeadEvent = __0.MonsterInitDeadEvent;
 	export import MoveEvent = __0.MoveEvent;
+	export import MoveOptions = __0.MoveOptions;
 	export import MoveType = __0.MoveType;
 	export import MusicState = __0.MusicState;
 	export import NVGToggleMessage = __0.NVGToggleMessage;
@@ -345,6 +346,7 @@ declare global {
 	export import RadarMessage = __0.RadarMessage;
 	export import RadioEvent = __0.RadioEvent;
 	export import RecoilEvent = __0.RecoilEvent;
+	export import Ref = __0.Ref;
 	export import ReflectGaussEvent = __0.ReflectGaussEvent;
 	export import RelationshipEvent = __0.RelationshipEvent;
 	export import ReloadEvent = __0.ReloadEvent;

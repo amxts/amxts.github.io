@@ -1,6 +1,6 @@
 /** The third-party includes the core generates the API from: `bun run setup` fetches them. */
 export declare const VENDOR: string;
-/** The server's own includes: addons/amxmodx/scripting/include beside AMXTS_SERVER (addons/amxts), when it is there. */
+/** The server's own includes: addons/amxmodx/scripting/include beside its addons/amxts (AMXTS_SERVER), when it is there. */
 export declare function serverIncludes(): string | null;
 /** The folders includes are looked in for a project, first to last. */
 export declare function includeDirs(project?: string): string[];

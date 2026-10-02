@@ -470,6 +470,8 @@ export declare class FakeServer {
     origRetval: number;
     /** The engine's EngFunc_SetClientListening calls plugins made: listener, sender, whether he hears. */
     readonly listening: number[][];
+    /** The engine's and the game's functions plugins called through engfunc and dllfunc, each as a line: `TraceLine 1,2,3 4,5,6 1 7 0`. */
+    readonly engineCalls: string[];
     /** query_client_cvar's questions, waiting for answerCvar(). */
     readonly cvarQueries: {
         player: number;
@@ -661,8 +663,11 @@ export declare class FakeServer {
      * const sent = server.sendMessage("RoundTime", [120]);   // sent.args: [90] with a listener that writes 90
      * ```
      *
-     * A text argument is a string; a whole number is written as a byte, a
-     * fraction as a coordinate, unless `types` gives each argument's ARG_*.
+     * `name` is the game's name of the message, `"TextMsg"` for the
+     * `"text"` that server.addMessageListener takes, and `args` are its
+     * arguments in the game's order. A text argument is a string; a whole
+     * number is written as a byte, a fraction as a coordinate, unless `types`
+     * gives each argument's ARG_*.
      * Returns whether a callback stopped it, and the arguments as they left.
      */
     sendMessage(name: string, args: (number | string)[], options?: {

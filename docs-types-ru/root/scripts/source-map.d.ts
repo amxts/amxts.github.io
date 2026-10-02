@@ -38,5 +38,7 @@ export declare function mapText(map: PluginMap): string;
 export declare function withSection(wasm: Uint8Array, name: string, text: string): Uint8Array;
 /** The map a wasm carries, or null. */
 export declare function readMap(wasm: Uint8Array): PluginMap | null;
+/** The text of a wasm's custom section by its name, or null. */
+export declare function readSection(wasm: Uint8Array, wanted: string): string | null;
 /** The section's text, read back. */
 export declare function parseMap(text: string): PluginMap;
