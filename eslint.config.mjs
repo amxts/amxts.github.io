@@ -13,9 +13,9 @@ export default antfu(
     formatters: true,
     antislop: true,
     // content/ is Markdown whose code blocks are fragments ("..."), and
-    // docs-types/ the framework's generated declarations (bun run docs:types).
+    // docs-types*/ the framework's generated declarations (bun run docs:types).
     markdown: false,
-    ignores: ['content/**', 'docs-types/**', 'docs-types-ru/**'],
+    ignores: ['content/**', 'docs-types*/**'],
   },
   {
     ...betterTailwindcss.configs['correctness-error'],

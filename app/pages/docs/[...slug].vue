@@ -2,6 +2,7 @@
 import type { ContentNavigationItem } from '@nuxt/content'
 import { findPageHeadline } from '@nuxt/content/utils'
 import { withoutTrailingSlash } from 'ufo'
+import { collections, docsPrefix } from '#shared/docs'
 
 definePageMeta({
   layout: 'docs',
@@ -26,6 +27,19 @@ const { data: surround } = await useAsyncData(`${routePath.value}-surround`, () 
   return queryCollectionItemSurroundings(content.value.docs, routePath.value, {
     fields: ['description'],
   })
+})
+
+// A page of the next version says so, and links to the same page of the
+// current docs - to their introduction when the page is new in next.
+const { data: currentPage } = await useAsyncData(`${routePath.value}-current`, async () => {
+  if (content.value.version !== 'next')
+    return null
+  const prefix = docsPrefix(content.value.locale)
+  const current = await queryCollection(collections(content.value.locale).docs)
+    .path(routePath.value.replace(content.value.prefix, prefix))
+    .select('path')
+    .first()
+  return current?.path ?? `${prefix}/getting-started/introduction`
 })
 
 const title = page.value.seo?.title || page.value.title
@@ -55,6 +69,16 @@ defineOgImage('Docs', { title, description, headline: headline.value })
     </UPageHeader>
 
     <UPageBody>
+      <UAlert
+        v-if="currentPage"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-flask-conical"
+        :title="t('docs.next.title')"
+        :description="t('docs.next.description')"
+        :actions="[{ label: t('docs.next.current'), to: currentPage, color: 'warning', variant: 'outline' }]"
+      />
+
       <ContentRenderer
         v-if="page"
         :value="page"

@@ -8,11 +8,11 @@ const head = useLocaleHead()
 const route = useRoute()
 
 const { data: navigation } = await useAsyncData(
-  () => `navigation-${content.value.locale}`,
-  async () => docsNavigation(await queryCollectionNavigation(content.value.docs), content.value.locale),
+  () => `navigation-${content.value.docs}`,
+  async () => docsNavigation(await queryCollectionNavigation(content.value.docs), content.value.prefix),
 )
 const { data: files } = useLazyAsyncData(
-  () => `search-${content.value.locale}`,
+  () => `search-${content.value.docs}`,
   () => queryCollectionSearchSections(content.value.docs),
   { server: false },
 )

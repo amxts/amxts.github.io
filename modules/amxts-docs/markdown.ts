@@ -19,22 +19,25 @@
 // - a module's README (its repository) becomes its catalog page:
 //   the header block gives the title and description, links into the
 //   repository open on GitHub, alerts become callouts.
+import type { DocsVersion, SiteLocale } from '../../shared/docs'
 import { existsSync, readFileSync } from 'node:fs'
 import { posix } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as ts from 'typescript'
+import { docsPrefix, typesFolder } from '../../shared/docs'
 
-export type Locale = 'en' | 'ru'
+export type Locale = SiteLocale
 
 /** A locale's part of an address: '' for English, '/ru' for Russian. */
 export const localePrefix = (locale: Locale) => locale === 'en' ? '' : `/${locale}`
 
 /**
- * The site's address of a page of the framework's docs/, by its path there:
- * `docs/en/2.core/01.plugin.md` is `/docs/core/plugin`,
- * `docs/modules/ru/http.md` is `/ru/modules/http`; null for anything else.
+ * The site's address of a page of the framework's docs/ in a docs version, by
+ * its path there: `docs/en/2.core/01.plugin.md` is `/docs/core/plugin` (and
+ * `/docs/next/core/plugin` in the next version), `docs/modules/ru/http.md` is
+ * `/ru/modules/http`; null for anything else.
  */
-export function sitePath(file: string) {
+export function sitePath(file: string, version: DocsVersion = 'current') {
   const module = file.match(/^docs\/modules\/(en|ru)\/([\w-]+)\.md$/)
   if (module)
     return `${localePrefix(module[1] as Locale)}/modules/${module[2]}`
@@ -42,7 +45,7 @@ export function sitePath(file: string) {
   if (!page)
     return null
   const path = page[2]!.split('/').map(part => part.replace(/^\d+\./, '')).filter(part => part !== 'index').join('/')
-  return `${localePrefix(page[1] as Locale)}/docs${path ? `/${path}` : ''}`
+  return `${docsPrefix(page[1] as Locale, version)}${path ? `/${path}` : ''}`
 }
 
 /**
@@ -118,10 +121,10 @@ function codeGroups(text: string) {
  * there), becomes the site's address of it; a site link (`/modules`) gets the
  * page's language.
  */
-function links(prose: string, from: string, locale: Locale) {
+function links(prose: string, from: string, locale: Locale, version: DocsVersion) {
   return prose
     .replace(/\]\((?![a-z]+:|#|\/)([^)\s#]+\.md)(#[^)\s]*)?\)/g, (match, target: string, hash = '') => {
-      const path = sitePath(posix.join(posix.dirname(from), target))
+      const path = sitePath(posix.join(posix.dirname(from), target), version)
       return path ? `](${path}${hash})` : match
     })
     .replace(/\]\(\/(?!docs\/|ru\/)/g, `](${localePrefix(locale)}/`)
@@ -188,64 +191,77 @@ function packageManagers(block: string) {
   return `::code-group{sync="pm"}\n${tabs.join('\n\n')}\n::`
 }
 
-let facade: string[] | undefined
+/** A file of a docs version's declarations (English: the names are the same in both languages). */
+const declarations = (version: DocsVersion, path: string) => fileURLToPath(new URL(`../../${typesFolder('en', version)}/${path}`, import.meta.url))
+
+const facade = new Map<DocsVersion, string[]>()
 
 /**
- * What `~/facade` exports, read with the TypeScript compiler from the
- * framework's declarations (docs-types/): an example that uses `Player` or
- * `server` without importing them gets a hidden import of all of them (above
- * `// ---cut---`, which Twoslash does not show), so their types still show on
- * hover. Read once.
+ * What `~/facade` exports in a docs version, read with the TypeScript
+ * compiler from the framework's declarations (docs-types/): an example that
+ * uses `Player` or `server` without importing them gets a hidden import of all
+ * of them (above `// ---cut---`, which Twoslash does not show), so their types
+ * still show on hover. Read once.
  */
-function facadeExports() {
-  if (facade)
-    return facade
-  const file = fileURLToPath(new URL('../../docs-types/amxts/facade.d.ts', import.meta.url))
-  if (!existsSync(file))
-    return facade = []
-  const program = ts.createProgram([file], { noEmit: true, types: [] })
-  const checker = program.getTypeChecker()
-  const module = checker.getSymbolAtLocation(program.getSourceFile(file)!)
-  return facade = module ? checker.getExportsOfModule(module).map(symbol => symbol.name).filter(name => !name.startsWith('__')) : []
+function facadeExports(version: DocsVersion) {
+  const known = facade.get(version)
+  if (known)
+    return known
+  const file = declarations(version, 'amxts/facade.d.ts')
+  let names: string[] = []
+  if (existsSync(file)) {
+    const program = ts.createProgram([file], { noEmit: true, types: [] })
+    const module = program.getTypeChecker().getSymbolAtLocation(program.getSourceFile(file)!)
+    names = module ? program.getTypeChecker().getExportsOfModule(module).map(symbol => symbol.name).filter(name => !name.startsWith('__')) : []
+  }
+  facade.set(version, names)
+  return names
 }
 
-let modules: { name: string, from: string, line: string }[] | undefined
+const modules = new Map<DocsVersion, { name: string, from: string, line: string }[]>()
 
 /**
  * What the official modules give a plugin without an import (`menus`,
- * `semiclip`), read from the framework's declarations (docs-types/amxts/imports.d.ts,
- * as a project's .amxts/imports.d.ts has it): an example that uses one
- * gets a hidden import of it, as of the facade's names. Read once.
+ * `semiclip`) in a docs version, read from the framework's declarations
+ * (docs-types/amxts/imports.d.ts, as a project's .amxts/imports.d.ts has it):
+ * an example that uses one gets a hidden import of it, as of the facade's
+ * names. Read once.
  */
-function moduleImports() {
-  if (modules)
-    return modules
-  const file = fileURLToPath(new URL('../../docs-types/amxts/imports.d.ts', import.meta.url))
-  if (!existsSync(file))
-    return modules = []
-  const text = readFileSync(file, 'utf8').replace(/\r\n/g, '\n')
+function moduleImports(version: DocsVersion) {
+  const known = modules.get(version)
+  if (known)
+    return known
+  const file = declarations(version, 'amxts/imports.d.ts')
+  const text = existsSync(file) ? readFileSync(file, 'utf8').replace(/\r\n/g, '\n') : ''
   const sources = new Map([...text.matchAll(/^import \* as (\w+) from "([^"]+)";$/gm)].map(([, alias, from]) => [alias!, from!]))
-  return modules = [...text.matchAll(/^\texport import (\w+) = (\w+)(?:\.(\w+))?;$/gm)]
+  const imports = [...text.matchAll(/^\texport import (\w+) = (\w+)(?:\.(\w+))?;$/gm)]
     .map(([, name, alias, member]) => {
       const from = sources.get(alias!)!
       return { name: name!, from, line: member ? `import { ${name} } from "${from}";` : `import * as ${name} from "${from}";` }
     })
     .filter(each => each.from !== '@amxts/core')
+  modules.set(version, imports)
+  return imports
 }
 
-/** A TypeScript example with hovers: a Russian page's blocks read the Russian declarations (`locale-ru`). */
-function twoslash(block: string, locale: Locale) {
+/**
+ * A TypeScript example with hovers. A block reads the declarations of its
+ * page's language and docs version: `types-ru`, `types-next`, `types-next-ru`
+ * in its meta names the folder beside docs-types/ (docs-types-ru...), which
+ * the site's patch of nuxt-content-twoslash points its `paths` at.
+ */
+function twoslash(block: string, locale: Locale, version: DocsVersion) {
   if (!/^```ts\s/.test(block))
     return block
   const [fence, ...rest] = block.split('\n')
   const code = rest.join('\n')
-  const names = facadeExports()
+  const names = facadeExports(version)
   // what the example declares itself stays its own: `const text` is not the facade's text
   const declared = new Set([...code.matchAll(/\b(?:const|let|var|function|class|interface|type|enum)\s+(\w+)/g)].map(match => match[1]))
   const hidden = names.length && !/from "(?:~\/facade|@amxts\/core)"/.test(block)
     ? [`import { ${names.filter(name => !declared.has(name)).join(', ')} } from "~/facade";`]
     : []
-  for (const each of moduleImports()) {
+  for (const each of moduleImports(version)) {
     if (new RegExp(`\\b${each.name}\\b`).test(code) && !declared.has(each.name) && !block.includes(`from "${each.from}"`))
       hidden.push(each.line)
   }
@@ -254,17 +270,18 @@ function twoslash(block: string, locale: Locale) {
   if (/\bplayer\b/.test(code) && !/(?:\b(?:const|let|var)\s+|[(,]\s*)player\b/.test(code))
     hidden.push('declare const player: import("~/facade").Player;')
   const prelude = hidden.length ? [...hidden, '// ---cut---'] : []
-  return [fence!.replace(/^```ts/, locale === 'en' ? '```ts twoslash' : `\`\`\`ts twoslash locale-${locale}`), ...prelude, ...rest].join('\n')
+  const folder = typesFolder(locale, version).slice('docs-'.length)
+  return [fence!.replace(/^```ts/, folder === 'types' ? '```ts twoslash' : `\`\`\`ts twoslash ${folder}`), ...prelude, ...rest].join('\n')
 }
 
-const code = (block: string, locale: Locale) => twoslash(packageManagers(block), locale)
+const code = (block: string, locale: Locale, version: DocsVersion) => twoslash(packageManagers(block), locale, version)
 
-/** A page of the framework's docs/, `from` its path there (`docs/en/2.core/01.plugin.md`). */
-export function docsPage(markdown: string, from: string, locale: Locale) {
+/** A page of the framework's docs/ in a docs version, `from` its path there (`docs/en/2.core/01.plugin.md`). */
+export function docsPage(markdown: string, from: string, locale: Locale, version: DocsVersion) {
   const { front, body } = frontMatter(markdown)
   const text = splitFences(codeGroups(body)).map((part, i) => i % 2
-    ? code(part, locale)
-    : containers(links(part, from, locale)).replace(/(\S)[ \n]\u2014/g, '$1\u00A0\u2014')).join('\n')
+    ? code(part, locale, version)
+    : containers(links(part, from, locale, version)).replace(/(\S)[ \n]\u2014/g, '$1\u00A0\u2014')).join('\n')
   return `${front}${text}`
 }
 
@@ -284,7 +301,7 @@ export function modulePage(markdown: string, name: string, repo: string, locale:
 
   const repository = `https://github.com/${repo}/blob/HEAD/`
   const body = splitFences(text.trim()).map((part, i) => i % 2
-    ? code(part, locale)
+    ? code(part, locale, 'current')
     : part
         // a link into the repository (PAWN.md, LICENSE, include/...) opens on GitHub
         .replace(/\]\((?!https?:|#|\/)([^)\s]+)\)/g, (_, path: string) => `](${repository}${path})`)

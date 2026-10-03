@@ -17,7 +17,12 @@
   },
   "docs": {
     "toc": "On this page",
-    "notFound": "This page does not exist."
+    "notFound": "This page does not exist.",
+    "next": {
+      "title": "The next version, not released yet",
+      "description": "This page describes amxts as it is on main: what it says may not be in the version you install from npm.",
+      "current": "The current docs"
+    }
   },
   "modules": {
     "title": "Modules",

@@ -90,7 +90,7 @@ export default defineNuxtConfig({
 
   // The framework's declarations for the hovers: thousands of files that
   // `docs:types` rewrites and Twoslash reads itself, so dev does not watch them.
-  ignore: ['docs-types', 'docs-types-ru'],
+  ignore: ['docs-types', 'docs-types-ru', 'docs-types-next', 'docs-types-next-ru'],
 
   site: {
     name: 'amxts',
@@ -144,6 +144,9 @@ export default defineNuxtConfig({
   routeRules: {
     '/docs': { redirect: to('/docs/getting-started/introduction') },
     '/ru/docs': { redirect: to('/ru/docs/getting-started/introduction') },
+    // the next version's docs (main), beside the current ones
+    '/docs/next': { redirect: to('/docs/next/getting-started/introduction') },
+    '/ru/docs/next': { redirect: to('/ru/docs/next/getting-started/introduction') },
     ...movedRules,
     // module pages moved from the docs to the modules' catalog pages
     '/modules/http': { redirect: to('/docs/data/http') },
@@ -178,6 +181,9 @@ export default defineNuxtConfig({
         '/changelog',
         '/ru/changelog',
         '/api/changelog',
+        // the next version's docs: no page of the current ones links there
+        '/docs/next/getting-started/introduction',
+        '/ru/docs/next/getting-started/introduction',
       ],
       crawlLinks: true,
     },

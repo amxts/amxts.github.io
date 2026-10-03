@@ -27,14 +27,15 @@ every docs page and the modules catalog (`/modules`, `/modules/<name>`,
 
 ## Pages
 
-| Route                                   | What                                                                      |
-| --------------------------------------- | ------------------------------------------------------------------------- |
-| `/`, `/ru`                              | landing (`content/<locale>/index.md`)                                     |
-| `/docs/<group>/<page>`, `/ru/docs/...`  | the reference (the framework's `docs/<locale>/`)                          |
-| `/modules`, `/ru/modules`               | the modules catalog: search and categories                                |
-| `/modules/<name>`, `/ru/modules/<name>` | a module: install command, the README of its repository                   |
-| `/api/modules`, `/api/modules/<name>`   | the catalog as JSON                                                       |
-| `/raw/docs/<group>/<page>.md`           | a docs page as Markdown (template feature, as are `/llms.txt` and `/mcp`) |
+| Route                                        | What                                                                      |
+| -------------------------------------------- | ------------------------------------------------------------------------- |
+| `/`, `/ru`                                   | landing (`content/<locale>/index.md`)                                     |
+| `/docs/<group>/<page>`, `/ru/docs/...`       | the reference of the latest release (the framework's `docs/<locale>/`)    |
+| `/docs/next/<group>/<page>`, `/ru/docs/next` | the reference of the next version, unreleased (the framework's `main`)    |
+| `/modules`, `/ru/modules`                    | the modules catalog: search and categories                                |
+| `/modules/<name>`, `/ru/modules/<name>`      | a module: install command, the README of its repository                   |
+| `/api/modules`, `/api/modules/<name>`        | the catalog as JSON                                                       |
+| `/raw/docs/<group>/<page>.md`                | a docs page as Markdown (template feature, as are `/llms.txt` and `/mcp`) |
 
 ## Languages
 
@@ -44,13 +45,15 @@ English is the default and has no prefix, Russian lives under `/ru`: the
 
 Content is one set of Nuxt Content collections per language
 (`content.config.ts`): `landing_en` reads `content/en/`, `docs_en` the
-framework's `docs/en/`, `module_docs_en` the official modules' READMEs; the
-`_ru` ones the same in Russian, each with the path prefix its language's
-routes have. A page picks the collection of the current locale
-(`useLocaleContent()`), and so does the search. Separate collections rather
-than one with a locale field, because Nuxt Content v3 builds navigation,
-search sections and prev/next links per collection, so each language gets
-its own for free.
+framework's `docs/en/`, `docs_next_en` the same of the next version,
+`module_docs_en` the official modules' READMEs; the `_ru` ones the same in
+Russian, each with the path prefix its language's routes have. A page picks
+the collection of the current locale and docs version (`useLocaleContent()`,
+`shared/docs.ts`), and so do the sidebar and the search. Separate collections
+rather than one with a locale field, because Nuxt Content v3 builds
+navigation, search sections and prev/next links per collection, so each
+language and version gets its own for free. `/llms.txt` and the MCP tools
+serve the current docs only.
 
 ## Where the docs come from
 
@@ -61,13 +64,19 @@ in it (`docs/en/2.core/01.plugin.md` is `/docs/core/plugin`). Nuxt Content
 reads it as it is, the way nuxt.com reads Nuxt's docs:
 
 - from a checkout on disk: `AMXTS_CORE_PATH`, or `../amxts` beside this
-  repository when it is there;
-- from https://github.com/amxts/amxts otherwise (the deploy).
+  repository when it is there - for both versions;
+- from https://github.com/amxts/amxts otherwise (the deploy): the docs of the
+  latest release from the branch of its release line - the highest
+  `<major>.<minor>.x` branch, which each minor release cuts at its tag - and
+  the next version's from `main`, at `/docs/next` with a banner that says it
+  is unreleased. The build finds the line itself (`git ls-remote`,
+  `modules/amxts-docs/sources.ts`).
 
 A module's page is its README (`README.md`, `README.ru.md`; a module with an
 English one only shows it on `/ru` too): from `AMXTS_MODULES_PATH/<name>` or
 `../amxts-modules/<name>` (`<name>`: its repository's), or from its GitHub
-repository's default branch.
+repository's branch of its latest release line (its default branch while it
+has released nothing).
 
 The site does not edit those pages. What only it needs is added as each file
 is read (`modules/amxts-docs/`, the `content:file:beforeParse` hook): links
@@ -76,17 +85,26 @@ become package manager tabs, TypeScript examples get types on hover, a
 README's header becomes the page's title and description. After changing that
 code, remove `.data`: the pages parsed before keep their old form.
 
-The hovers read the framework's declarations, kept in `docs-types/` and
-`docs-types-ru/`: the framework builds them with its whole toolchain
-(`bun run types:site`, `bun run types:site -- --lang ru` there), and
+The hovers read the framework's declarations, one set per docs version and
+language: `docs-types/` and `docs-types-ru/` for the current version,
+`docs-types-next/` and `docs-types-next-ru/` for the next (a code block's
+`types-<set>` meta picks the folder). The framework builds them with its
+whole toolchain (`bun run types:site`, `bun run types:site -- --lang ru`
+there), and
 
 ```sh
-bun run docs:types
+bun run docs:types              # from the checkout of the current version
+bun run docs:types -- --next    # from the checkout of main
+bun run docs:types -- --check   # only check the examples
 ```
 
 copies them here from `AMXTS_CORE_PATH` (or `../amxts`) and checks every
-example of the docs and the READMEs against them - an example whose hover
-would say `any` fails it.
+example of that version's docs - and, for the current one, of the READMEs -
+against them: an example whose hover would say `any` fails it. The `types`
+workflow (`.github/workflows/types.yml`) does the same every day and when the
+framework asks: it builds a version's set again from that version's branch
+when the branch has moved (`<folder>/.commit`), commits it, then deploys the
+site.
 
 ## How a module gets into the catalog
 

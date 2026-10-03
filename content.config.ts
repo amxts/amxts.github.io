@@ -1,14 +1,15 @@
+import type { DocsVersion, SiteLocale as Locale } from './shared/docs'
 import type { RegistryModule } from './shared/modules'
 import { defineCollection, defineCollectionSource, defineContentConfig } from '@nuxt/content'
 import { z } from 'zod'
 import { coreSource, loadRegistry, moduleSource } from './modules/amxts-docs/sources'
+import { docsPrefix } from './shared/docs'
 import { moduleCategories } from './shared/modules'
-
-type Locale = 'en' | 'ru'
 
 // One set of collections per language. English is the default and has no
 // prefix (/docs/core/plugin), Russian lives under /ru (/ru/docs/core/plugin),
-// the way @nuxtjs/i18n's `prefix_except_default` routes the pages.
+// the way @nuxtjs/i18n's `prefix_except_default` routes the pages. The docs
+// come twice, the current version and the next one (/docs/next/core/plugin).
 const localized = (locale: Locale, path: string) => locale === 'en' ? path : `/${locale}${path}`
 
 function landing(locale: Locale) {
@@ -18,12 +19,13 @@ function landing(locale: Locale) {
   })
 }
 
-// The framework's docs/<locale>: a numbered folder is a sidebar group (its
+// The framework's docs/<locale> of a version (the current one at /docs, the
+// next at /docs/next): a numbered folder is a sidebar group (its
 // .navigation.yml has the title and icon), a numbered file a page.
-function docs(locale: Locale) {
+function docs(locale: Locale, version: DocsVersion) {
   return defineCollection({
     type: 'page',
-    source: coreSource({ include: `docs/${locale}/**`, prefix: localized(locale, '/docs') }),
+    source: coreSource({ include: `docs/${locale}/**`, prefix: docsPrefix(locale, version) }, version),
   })
 }
 
@@ -38,7 +40,7 @@ function moduleDocs(locale: Locale, registry: RegistryModule[]) {
         include: `docs/modules/${locale}/*.md`,
         exclude: registry.map(module => `docs/modules/${locale}/${module.name}.md`),
         prefix: localized(locale, '/modules'),
-      }),
+      }, 'current'),
       ...registry.map(module => moduleSource(module, {
         include: locale === 'en' ? 'README.md' : `README.${locale}.md`,
         prefix: localized(locale, `/modules/${module.name}`),
@@ -57,8 +59,10 @@ export default async () => {
     collections: {
       landing_en: landing('en'),
       landing_ru: landing('ru'),
-      docs_en: docs('en'),
-      docs_ru: docs('ru'),
+      docs_en: docs('en', 'current'),
+      docs_ru: docs('ru', 'current'),
+      docs_next_en: docs('en', 'next'),
+      docs_next_ru: docs('ru', 'next'),
       module_docs_en: moduleDocs('en', registry),
       module_docs_ru: moduleDocs('ru', registry),
       // the modules the catalog lists, one document each, as the registry's
