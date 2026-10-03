@@ -29,7 +29,7 @@ import process from 'node:process'
 import { createTwoslasher } from 'twoslash'
 import * as ts from 'typescript'
 import { docsPage, modulePage, splitFences, unindent } from '../modules/amxts-docs/markdown'
-import { corePath, modulesPath } from '../modules/amxts-docs/sources'
+import { corePath, modulesPath, releaseLine } from '../modules/amxts-docs/sources'
 import { examplesOptions, typesFolder } from '../shared/docs'
 
 if (!corePath)
@@ -72,8 +72,11 @@ function read(path: string) {
 }
 
 // The pages as the site shows them (markdown.ts): the framework's docs of the
-// version, and the READMEs of the official modules checked out in modulesPath,
-// which the site shows with the current docs only.
+// version, and for the current one the READMEs of the official modules in
+// modulesPath that have a release line (0.N.x) - like types.yml, which leaves
+// out a module that has released nothing yet.
+const released = version === 'current' && modulesPath ? readdirSync(modulesPath).filter(name => releaseLine(`amxts/${name}`)) : []
+
 const corePages = locales.flatMap(({ code }) => [`docs/${code}`, `docs/modules/${code}`]
   .flatMap(dir => markdown(join(corePath, dir)).map(file => `${dir}/${file}`))
   .map((path) => {
@@ -81,7 +84,7 @@ const corePages = locales.flatMap(({ code }) => [`docs/${code}`, `docs/modules/$
     return { from: path, locale: code, source, text: docsPage(source, path, code, version) }
   }))
 
-const readmes = locales.flatMap(({ code }) => (modulesPath && version === 'current' ? readdirSync(modulesPath) : []).flatMap((name) => {
+const readmes = locales.flatMap(({ code }) => released.flatMap((name) => {
   const file = code === 'en' ? 'README.md' : `README.${code}.md`
   const path = modulesPath && join(modulesPath, name, file)
   const source = path && existsSync(path) ? read(path) : undefined
