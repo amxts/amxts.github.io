@@ -1,45 +1,60 @@
 // The framework's declarations for the docs' hovers, from a checkout of it
 // (AMXTS_CORE_PATH, or ../amxts), where `bun run types:site` and
-// `bun run types:site -- --lang ru` wrote them:
+// `bun run types:site -- --lang ru` wrote them. One set per docs version
+// (shared/docs.ts), each from that version's checkout:
 //
-//   bun run docs:types
+//   bun run docs:types              the current version (the latest release line, 0.N.x)
+//   bun run docs:types -- --next    the next one (main)
+//   ... -- --check                  check the examples against the set there, copy nothing
 //
 // dist-docs-types/en -> docs-types/ (the docs' hovers and the playground)
 // dist-docs-types/ru -> docs-types-ru/ (the same on /ru)
+// and for --next docs-types-next/ and docs-types-next-ru/.
 //
 // They are kept in this repository: the framework builds them with its whole
-// toolchain, which the site's build does not have. After the copy every
-// TypeScript example of the docs and of the official modules' READMEs is
-// checked against them: a hover that would say `any` fails this script.
+// toolchain, which the site's build does not have (.github/workflows/types.yml
+// builds them again when a version's branch moves; <folder>/.commit is the
+// commit of the framework they were built from). After the copy every
+// TypeScript example of that version's docs - and, for the current version,
+// of the official modules' READMEs - is checked against them: a hover that
+// would say `any` fails this script.
 import type { Locale } from '../modules/amxts-docs/markdown'
+import type { DocsVersion } from '../shared/docs'
+import { execFileSync } from 'node:child_process'
 import { cpSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import * as ts from 'typescript'
 import { docsPage, modulePage, splitFences } from '../modules/amxts-docs/markdown'
 import { corePath, modulesPath } from '../modules/amxts-docs/sources'
+import { typesFolder } from '../shared/docs'
 
 if (!corePath)
   throw new Error('No checkout of the framework: set AMXTS_CORE_PATH, or put it at ../amxts')
 
-const locales: { code: Locale, types: string }[] = [{ code: 'en', types: 'docs-types' }, { code: 'ru', types: 'docs-types-ru' }]
+const version: DocsVersion = process.argv.includes('--next') ? 'next' : 'current'
+const locales = (['en', 'ru'] as const).map(code => ({ code: code as Locale, types: typesFolder(code, version) }))
 
-for (const { code, types } of locales) {
-  const from = join(corePath, 'dist-docs-types', code)
-  if (!existsSync(from))
-    throw new Error(`${from} is missing: run \`bun run types:site${code === 'en' ? '' : ` -- --lang ${code}`}\` in the framework`)
-  const out = resolve(types)
-  rmSync(out, { recursive: true, force: true })
-  cpSync(from, out, { recursive: true })
-  // The AssemblyScript prelude (i32, bool...) is global: every declaration
-  // file under amxts/ references it, so an example sees it whatever it imports.
-  const framework = join(out, 'amxts')
-  for (const file of readdirSync(framework, { recursive: true, encoding: 'utf8' }).filter(file => file.endsWith('.d.ts'))) {
-    const path = join(framework, file)
-    const up = relative(dirname(path), out).replaceAll('\\', '/') || '.'
-    writeFileSync(path, `/// <reference path="${up}/as-types.d.ts" />\n${readFileSync(path, 'utf8')}`)
+if (!process.argv.includes('--check')) {
+  for (const { code, types } of locales) {
+    const from = join(corePath, 'dist-docs-types', code)
+    if (!existsSync(from))
+      throw new Error(`${from} is missing: run \`bun run types:site${code === 'en' ? '' : ` -- --lang ${code}`}\` in the framework`)
+    const out = resolve(types)
+    rmSync(out, { recursive: true, force: true })
+    cpSync(from, out, { recursive: true })
+    // The AssemblyScript prelude (i32, bool...) is global: every declaration
+    // file under amxts/ references it, so an example sees it whatever it imports.
+    const framework = join(out, 'amxts')
+    for (const file of readdirSync(framework, { recursive: true, encoding: 'utf8' }).filter(file => file.endsWith('.d.ts'))) {
+      const path = join(framework, file)
+      const up = relative(dirname(path), out).replaceAll('\\', '/') || '.'
+      writeFileSync(path, `/// <reference path="${up}/as-types.d.ts" />\n${readFileSync(path, 'utf8')}`)
+    }
+    console.log(`types: ${from} -> ${types}`)
   }
-  console.log(`types: ${from} -> ${types}`)
+  const commit = execFileSync('git', ['-C', corePath, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+  writeFileSync(resolve(typesFolder('en', version), '.commit'), `${commit}\n`)
 }
 
 /** Every Markdown file under `dir`, relative to it, with forward slashes. */
@@ -53,13 +68,14 @@ function read(path: string) {
   return readFileSync(path, 'utf8').replace(/\r\n/g, '\n')
 }
 
-// The pages as the site shows them (markdown.ts): the framework's docs, and
-// the READMEs of the official modules checked out in modulesPath.
+// The pages as the site shows them (markdown.ts): the framework's docs of the
+// version, and the READMEs of the official modules checked out in modulesPath,
+// which the site shows with the current docs only.
 const corePages = locales.flatMap(({ code }) => [`docs/${code}`, `docs/modules/${code}`]
   .flatMap(dir => markdown(join(corePath, dir)).map(file => `${dir}/${file}`))
-  .map(path => ({ from: path, locale: code, text: docsPage(read(join(corePath, path)), path, code) })))
+  .map(path => ({ from: path, locale: code, text: docsPage(read(join(corePath, path)), path, code, version) })))
 
-const readmes = locales.flatMap(({ code }) => (modulesPath ? readdirSync(modulesPath) : []).flatMap((name) => {
+const readmes = locales.flatMap(({ code }) => (modulesPath && version === 'current' ? readdirSync(modulesPath) : []).flatMap((name) => {
   const file = code === 'en' ? 'README.md' : `README.${code}.md`
   const path = modulesPath && join(modulesPath, name, file)
   return path && existsSync(path) ? [{ from: `${name}/${file}`, locale: code, text: modulePage(read(path), name, `amxts/${name}`, code) }] : []

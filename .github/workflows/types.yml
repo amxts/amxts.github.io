@@ -1,0 +1,151 @@
+name: types
+
+# The framework's declarations the docs' hovers read, one set per version of
+# the docs (shared/docs.ts): docs-types/ and docs-types-ru/ for the current
+# version - the framework's latest release line, its branch 0.N.x - and
+# docs-types-next/ and docs-types-next-ru/ for the next one, main. They are
+# kept in this repository (the site's build has not the framework's
+# toolchain); this workflow builds a version's set again when its branch has
+# moved since it was built (<folder>/.commit): from that branch's tree, with
+# the framework's own toolchain - its .github/actions/setup, which checks the
+# command and the official modules out beside it at the same release line -
+# then checks every example of that version's docs (and, for the current one,
+# of the modules' READMEs) against it (`bun run docs:types`). What changed is
+# committed here. Then the site is deployed, whatever happened: a version whose
+# build failed keeps the declarations it had.
+#
+# It runs every day, by hand, and when the framework asks (its release, a push
+# to a release line's branch: its site.yml, with the SITE_TOKEN secret).
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: types
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [current, next]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          path: site
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+
+      # The official modules the framework's setup does not check out, whose
+      # READMEs and examples the site shows.
+      - name: The version's branch
+        id: version
+        working-directory: site
+        run: bun scripts/docs-version.ts ${{ matrix.version }} amxts/resemiclip amxts/ftp >> "$GITHUB_OUTPUT"
+
+      - name: The framework at that branch
+        if: steps.version.outputs.commit != steps.version.outputs.built
+        uses: actions/checkout@v7
+        with:
+          repository: amxts/amxts
+          ref: ${{ steps.version.outputs.branch }}
+          path: amxts
+
+      - name: Its toolchain
+        if: steps.version.outputs.commit != steps.version.outputs.built
+        uses: ./amxts/.github/actions/setup
+
+      - name: The other official modules
+        if: steps.version.outputs.commit != steps.version.outputs.built
+        env:
+          MODULES: ${{ steps.version.outputs.modules }}
+        run: |
+          for module in $MODULES; do
+            git clone -q --depth 1 --branch "${module#*:}" "https://github.com/amxts/${module%%:*}" "amxts-modules/${module%%:*}"
+          done
+
+      - name: The declarations
+        if: steps.version.outputs.commit != steps.version.outputs.built
+        working-directory: amxts
+        run: |
+          bun run types:site
+          bun run types:site -- --lang ru
+
+      - name: Install the site's dependencies
+        if: steps.version.outputs.commit != steps.version.outputs.built
+        working-directory: site
+        run: bun install --frozen-lockfile
+
+      - name: Copied here, every example checked
+        if: steps.version.outputs.commit != steps.version.outputs.built
+        working-directory: site
+        env:
+          AMXTS_CORE_PATH: ${{ github.workspace }}/amxts
+          AMXTS_MODULES_PATH: ${{ github.workspace }}/amxts-modules
+        run: bun run docs:types ${{ matrix.version == 'next' && '--next' || '' }}
+
+      - name: Upload
+        if: steps.version.outputs.commit != steps.version.outputs.built
+        uses: actions/upload-artifact@v4
+        with:
+          name: types-${{ matrix.version }}
+          path: |
+            site/${{ matrix.version == 'next' && 'docs-types-next' || 'docs-types' }}/
+            site/${{ matrix.version == 'next' && 'docs-types-next-ru' || 'docs-types-ru' }}/
+          include-hidden-files: true
+
+  commit:
+    needs: build
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: The versions built
+        uses: actions/download-artifact@v4
+        with:
+          pattern: types-*
+          path: built
+
+      - name: Commit what changed
+        run: |
+          for version in built/*/; do
+            for folder in "$version"docs-types*/; do
+              rm -rf "$(basename "$folder")"
+              cp -r "$folder" .
+            done
+          done
+          git add -A docs-types*
+          git diff --cached --quiet && exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -q -m 'chore(docs): the framework''s declarations' -m "Built from the framework's branches by the types workflow."
+          git push
+
+  deploy:
+    needs: commit
+    if: always()
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+
+    steps:
+      - name: Deploy the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref main

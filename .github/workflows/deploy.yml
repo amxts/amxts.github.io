@@ -1,21 +1,21 @@
 name: deploy
 
 # The site is static on GitHub Pages. It is built on every push to main, by
-# hand, and every day - the modules catalog is the registry's modules.json
-# and npm's versions at build time, so the daily build is what brings new
-# modules in.
+# hand, and every day after the types workflow (types.yml) - the modules
+# catalog is the registry's modules.json and npm's versions at build time, so
+# the daily build is what brings new modules in.
 #
 # The docs are not in this repository: Nuxt Content reads the framework's
-# docs/ from github.com/amxts/amxts, the catalog from github.com/amxts/modules
-# and each listed module's READMEs from its repository while it builds
-# (content.config.ts), so the build takes whatever their main branches have.
-# A push there does not start this workflow; the daily build or a run by hand
-# brings it in.
+# docs/ from github.com/amxts/amxts - the current version from the branch of
+# its latest release line (0.N.x), the next one from main - the catalog from
+# github.com/amxts/modules and each listed module's READMEs from the branch
+# of its latest release line, while it builds (content.config.ts,
+# modules/amxts-docs/sources.ts). The framework's release, and a push to its
+# release line's branch, start types.yml, which ends with this; otherwise the
+# daily build or a run by hand brings changes in.
 on:
   push:
     branches: [main]
-  schedule:
-    - cron: '0 4 * * *'
   workflow_dispatch:
 
 permissions:
