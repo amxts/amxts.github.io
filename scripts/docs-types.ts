@@ -18,13 +18,15 @@
 // TypeScript example of that version's docs - and, for the current version,
 // of the official modules' READMEs - is checked against them: a hover that
 // would say `any` fails this script, and so does a TypeScript block the site
-// would show without hovers at all.
+// would show without hovers at all: one it did not find, or one Twoslash
+// throws on.
 import type { Locale } from '../modules/amxts-docs/markdown'
 import type { DocsVersion } from '../shared/docs'
 import { execFileSync } from 'node:child_process'
 import { cpSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
+import { createTwoslasher } from 'twoslash'
 import * as ts from 'typescript'
 import { docsPage, modulePage, splitFences, unindent } from '../modules/amxts-docs/markdown'
 import { corePath, modulesPath } from '../modules/amxts-docs/sources'
@@ -160,12 +162,36 @@ function checkSnippets() {
   })
 }
 
+/**
+ * An example Twoslash cannot render - TypeScript throws while it reads one of
+ * its hovers - shows on the site without hovers, and only the build's log
+ * says so. Each example is rendered here as the site renders it.
+ */
+function renderSnippets() {
+  return locales.flatMap(({ code, types }) => {
+    const twoslasher = createTwoslasher({ compilerOptions: examplesOptions(resolve(types).replaceAll('\\', '/')), handbookOptions: { noErrors: true } })
+    return snippets.filter(snippet => snippet.locale === code).flatMap((snippet) => {
+      try {
+        twoslasher(snippet.code, 'ts')
+        return []
+      }
+      catch (error) {
+        const first = snippet.code.split('// ---cut---\n').at(-1)!.split('\n')[0]
+        return [`${snippet.from} (${code}), the example \`${first}\`: ${error instanceof Error ? error.message : String(error)}`]
+      }
+    })
+  })
+}
+
 const problems = checkSnippets()
+const failed = renderSnippets()
 if (unchecked.length)
   console.error(`TypeScript examples the site shows without hovers (it did not find them):\n${unchecked.map(page => `  ${page}`).join('\n')}`)
 if (problems.length)
   console.error(`${problems.length} example(s) would show \`any\` on hover:\n${problems.map(problem => `  ${problem}`).join('\n')}`)
-if (unchecked.length || problems.length)
+if (failed.length)
+  console.error(`${failed.length} example(s) Twoslash cannot render, shown without hovers:\n${failed.map(problem => `  ${problem}`).join('\n')}`)
+if (unchecked.length || problems.length || failed.length)
   process.exitCode = 1
 else
   console.log(`examples: ${snippets.length} typed`)
