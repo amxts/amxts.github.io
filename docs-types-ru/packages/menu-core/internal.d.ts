@@ -168,6 +168,12 @@ export declare function textOf(value: MenuText, player: Player, target: number):
  * given for it is already a list of one, `[{ when: test }]`.
  */
 export declare function checksOf(enabled: ((player: Player, target: number) => boolean) | Requirement[]): Check[];
+/**
+ * Text that came from Pawn - a mc_* native's argument, a Pawn plugin's
+ * callback, a dictionary of data/lang - with its colour codes made the tags
+ * menu text is written with: the game's yellow code is "!y".
+ */
+export declare function pawnColors(text: string): string;
 /** A list menu's filter by condition names - menu.ini's FILTER, a Pawn plugin's MP_FILTER. */
 export declare function addNamedFilter(menu: string, condition: string, message: string): void;
 export interface ConditionEntry {
@@ -197,7 +203,6 @@ export interface FilterEntry {
     filter: ConditionFilter;
 }
 export interface SourceEntry {
-    /** The menu's name upper-cased: any case names the same menu's source. */
     menu: string;
     rows: ListSource;
 }

@@ -1,0 +1,142 @@
+/** A `key = value` line, or a `key = { ... }` block. */
+export type EntryKind = "value" | "block";
+/** What a block holds: a line of strings, or rows. The original's CFG_CONTENT_SIMPLE is a line of one string. */
+export type ContentKind = "strings" | "entries";
+/** A line of a section or a row of a block. */
+export interface Entry {
+    /** The name before `=`; "" for a row of a block. */
+    key: string;
+    kind: EntryKind;
+    content: ContentKind;
+    /** The entry's values, in order; empty for a block of rows. */
+    values: string[];
+    /** A block's rows; empty otherwise. */
+    rows: Entry[];
+    /** The comment and blank lines read before it; null for one made at run time. */
+    comments: string[] | null;
+    /** The line of the file it was read from, from 1; 0 for one made at run time. */
+    line: number;
+}
+/** A [section] of a config file. */
+export interface Section {
+    name: string;
+    /** The comment and blank lines read before it; null for one made at run time. */
+    comments: string[] | null;
+    /** The section's lines, in file order. */
+    entries: Entry[];
+    /** The line of the file it was read from, from 1; 0 for one made at run time. */
+    line: number;
+}
+/** A loaded config file. */
+export interface Config {
+    /** The name it was loaded under, ".ini" included. */
+    name: string;
+    /** In file order; a name the file has twice is there twice. */
+    sections: Section[];
+}
+/** One entry of a section as `entries()` lists it. */
+export interface SectionEntry {
+    key: string;
+    /** The entry's values; empty for a block. */
+    values: string[];
+    block: boolean;
+}
+/** A dump of one section - the heading, then the entries - as `dump_config` prints it. */
+export interface SectionDump {
+    /** "Section 0: NAME". */
+    heading: string;
+    lines: string[];
+}
+/** The `index`-th value of a key's line, without its quotes; null when there is none. A key with "/" is a path. */
+export declare function getValue(section: Section, key: string, index?: number): string | null;
+/** Reads an INI text into the config's sections. */
+export declare function readSections(config: Config, text: string): void;
+/**
+ * Loads `configs/<baseDir>/<name>`; ".ini" is added when the name has none.
+ * A file that is not there loads empty, for a plugin to fill and save.
+ */
+export declare function loadFile(name: string): Config;
+/** A section of a config by its name - the last one, when the file has two. */
+export declare function section(config: Config, name: string): Section | undefined;
+/** The section, made when the config does not have it. */
+export declare function createSection(config: Config, name: string): Section;
+/**
+ * Writes every section of a config to `configs/<baseDir>/<name>`, with the
+ * comments and blank lines it was read with. A section or an entry made at
+ * run time gets a blank line before it. False without a name.
+ */
+export declare function saveFile(config: Config, name: string): boolean;
+/** Writes one section alone to `configs/<baseDir>/<name>`; `saveFile()` writes them all. */
+export declare function writeSection(written: Section, name: string): boolean;
+/** A dump of every loaded config - each section with its entries, as `dump_config` prints them. */
+export declare function dump(): SectionDump[];
+/**
+ * A value by a path, `line` a row of its block. With the key in the section
+ * more than once and no line asked for, `index` picks which one - and, as in
+ * the original, still picks the value in it.
+ */
+export declare function getValueByPath(section: Section, path: string, index?: number, line?: number): string | null;
+/** A whole number; 0 when there is none. */
+export declare function getInt(section: Section, key: string, index?: number): number;
+/** A number; 0 when there is none. */
+export declare function getNumber(section: Section, key: string, index?: number): number;
+/** cfg_get_bool's rule: true for a whole number other than 0, e.g. "1" or "2"; false for anything else, "true" included. */
+export declare function getBoolean(section: Section, key: string, index?: number): boolean;
+/**
+ * The words of a key's line - of its `index`-th line when the key is there
+ * more than once. For a block, every value of every row. Null when there is
+ * no such key or nothing in it.
+ */
+export declare function getWords(section: Section, key: string, index?: number): string[] | null;
+/** The numbers in the value `index` - "1.0 2.0 3.0" is three; null when there is no value. */
+export declare function getNumbers(section: Section, key: string, index?: number): number[] | null;
+/** Every value of the line a path leads to, quotes and all; [] for an empty line, null for none. */
+export declare function getValues(section: Section, path: string, index?: number, line?: number): string[] | null;
+/** The section's keys, in file order. */
+export declare function keys(section: Section): string[];
+/** Every entry: its key, and its values when it is a line. */
+export declare function entries(section: Section): SectionEntry[];
+/**
+ * The number of values in a line, of rows in a block, or - for a key that is
+ * there more than once - of times it is there. A path counts what it leads to.
+ */
+export declare function size(section: Section, key: string): number;
+/** Whether the section has the key. A key with "/" is not a path here. */
+export declare function has(section: Section, key: string): boolean;
+/**
+ * Sets a value. A key that is not there is made; a value past the end of its
+ * line is added with empty ones before it. For a block, `line` is the row -
+ * made, with the rows before it, when missing. A path makes the blocks on its
+ * way.
+ */
+export declare function set(section: Section, key: string, text: string, index?: number, line?: number): boolean;
+/** Sets a whole number; the fraction is dropped: 2.7 is written as 2. */
+export declare function setInt(section: Section, key: string, value: number, index?: number): boolean;
+/** Sets a number, written as is: 2.5, not 2.500000. */
+export declare function setNumber(section: Section, key: string, value: number, index?: number): boolean;
+/** Written as 1 or 0. */
+export declare function setBoolean(section: Section, key: string, value: boolean, index?: number): boolean;
+/** Removes every entry of the key; false when there was none. */
+export declare function remove(section: Section, key: string): boolean;
+/**
+ * Makes the key a line of values or a block, emptying it when it changes; a
+ * key that is not there is made. Turning it into a block drops the other
+ * entries of the key.
+ */
+export declare function setKind(section: Section, key: string, kind: EntryKind): void;
+/** Says what the key holds; between rows and text it is emptied. A key that is not there is made. */
+export declare function setContent(section: Section, key: string, content: ContentKind): void;
+/** The comment written before row `row` of the block `key`; "" removes it. False when there is no such row. */
+export declare function setRowComment(section: Section, key: string, row: number, comment: string): boolean;
+/** A config's handle for Pawn plugins: its number among the loaded ones; -1 for none. */
+export declare function configHandle(config: Config): number;
+/** The config a Pawn plugin's handle stands for; null for none. */
+export declare function configByHandle(handle: number): Config | null;
+/** A section's handle for Pawn plugins: its number among every loaded one; -1 for none. */
+export declare function sectionHandle(found: Section): number;
+/** The section a Pawn plugin's handle stands for; null for none. */
+export declare function sectionByHandle(handle: number): Section | null;
+/** A section of that name in any config: the last one loaded. */
+export declare function findSection(name: string): Section | undefined;
+/** How many sections are loaded, across every config. */
+export declare function sectionCount(): number;

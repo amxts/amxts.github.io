@@ -1,7 +1,6 @@
 /**
- * Menu Core — an opinionated way to create menus: from a menu file (INI, YAML
- * or JSON) or in code, with conditions, placeholders and lists. How to use it:
- * README.md.
+ * Menu Core — an opinionated way to create menus: from an ini file or in code,
+ * with conditions, placeholders and lists. How to use it: README.md.
  */
 import { Player } from "@amxts/core";
 import { ActionHandler, ActionTest, ConditionFilter, ConditionTest, ListRow, ListSource, MenuCoreOptions, MenuEventType, MenuItemOptions, MenuKind, MenuOptions, MenuShowOptions, MenuText, PlaceholderValue, RestrictionTest, RowTest } from "./types";

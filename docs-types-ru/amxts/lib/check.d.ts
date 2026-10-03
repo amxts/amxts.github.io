@@ -1,5 +1,5 @@
 /// <reference path="../../as-types.d.ts" />
-import { Player } from "../facade";
+import { Player } from "~/facade";
 /**
  * Проверки одной части API на живом сервере. Каждая пишется в консоль
  * сервера с тегом — `[tag] ok ...` или `[tag] FAIL ...`; игрок, который

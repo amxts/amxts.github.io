@@ -37,6 +37,5 @@ export declare class IncludeParser {
     private parseParameter;
     private parseDefine;
     private parseEnum;
-    /** One member as splitTopLevel() cut it from a line without its comments: `NAME` or `NAME = value`. */
     private parseEnumMember;
 }

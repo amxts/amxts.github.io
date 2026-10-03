@@ -1,5 +1,5 @@
 /// <reference path="../as-types.d.ts" />
-import "./promise";
+import "~/promise";
 /** What a call carries: its arguments, or its answer, as bytes. */
 export declare class Writer {
     data: ArrayBuffer;

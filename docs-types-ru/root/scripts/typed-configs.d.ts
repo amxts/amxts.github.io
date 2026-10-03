@@ -1,4 +1,3 @@
-import ts from 'typescript';
 /** The module, by its place in the tree, as the files' imports have it once rewritten (scripts/project.ts). */
 export declare const CONFIG_MODULE = "~/modules/config-core";
 type Scalar = 'text' | 'number' | 'boolean';
@@ -38,40 +37,6 @@ export type ImportReader = (from: string, spec: string) => {
     path: string;
     text: string;
 } | null;
-/** A shape that cannot be read, at a node of the file it is in. */
-export declare class ShapeError extends Error {
-    readonly node: ts.Node;
-    readonly file: ts.SourceFile;
-    constructor(node: ts.Node, file: ts.SourceFile, message: string);
-}
-interface Context {
-    path: string;
-    file: ts.SourceFile;
-}
-export declare class Shapes {
-    private imports;
-    private files;
-    constructor(imports: ImportReader);
-    parsed(path: string, text: string): ts.SourceFile;
-    /** A type as written in a file. */
-    ofType(node: ts.TypeNode, at: Context, seen?: string[]): Shape;
-    private list;
-    private members;
-    /** A type by its name: declared in the file, imported by name, or reached through a namespace import. */
-    private named;
-    declaration(name: ts.EntityName, at: Context): {
-        node: ts.InterfaceDeclaration | ts.TypeAliasDeclaration;
-        at: Context;
-    } | null;
-    private local;
-    /** What a local name is imported as: a name of another file, or that whole file. */
-    private importOf;
-    /** A name a file exports: declared there, or passed on from another file. */
-    private exported;
-    private open;
-    /** The defaults' value, when no type is given: what it visibly is. */
-    ofValue(node: ts.Expression, at: Context): Shape;
-}
 /** A shape as one line: equal shapes, equal lines. */
 export declare function describe(shape: Shape): string;
 /** The type as AssemblyScript reads it; an object type in place is a class of its own there (Parser.parseTypeLiteral). */
@@ -96,12 +61,4 @@ export interface TypedConfigs {
  * imported from another file is found.
  */
 export declare function typedConfigs(path: string, display: string, text: string, imports: ImportReader): TypedConfigs;
-/**
- * A file's text with code the build wrote for it: after its last line of its
- * own, so every line above keeps its number, but before the imports that
- * follow it - the auto-imports' line - with the code's own import after
- * them. The build moves a file's trailing imports to its top
- * (HoistImports), and the code would stop them being the last.
- */
-export declare function withGenerated(path: string, text: string, code: string, imports: string): string;
 export {};

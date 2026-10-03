@@ -47,8 +47,6 @@ export interface SectionDump {
     heading: string;
     lines: string[];
 }
-/** The `index`-th value of a key's line, without its quotes; null when there is none. A key with "/" is a path. */
-export declare function getValue(section: Section, key: string, index?: number): string | null;
 /** Reads an INI text into the config's sections. */
 export declare function readSections(config: Config, text: string): void;
 /**
@@ -57,7 +55,7 @@ export declare function readSections(config: Config, text: string): void;
  */
 export declare function loadFile(name: string): Config;
 /** A section of a config by its name - the last one, when the file has two. */
-export declare function section(config: Config, name: string): Section | undefined;
+export declare function section(config: Config, name: string): Section | null;
 /** The section, made when the config does not have it. */
 export declare function createSection(config: Config, name: string): Section;
 /**
@@ -70,6 +68,8 @@ export declare function saveFile(config: Config, name: string): boolean;
 export declare function writeSection(written: Section, name: string): boolean;
 /** A dump of every loaded config - each section with its entries, as `dump_config` prints them. */
 export declare function dump(): SectionDump[];
+/** The `index`-th value of a key's line, without its quotes; null when there is none. A key with "/" is a path. */
+export declare function getValue(section: Section, key: string, index?: number): string | null;
 /**
  * A value by a path, `line` a row of its block. With the key in the section
  * more than once and no line asked for, `index` picks which one - and, as in
@@ -137,6 +137,6 @@ export declare function sectionHandle(found: Section): number;
 /** The section a Pawn plugin's handle stands for; null for none. */
 export declare function sectionByHandle(handle: number): Section | null;
 /** A section of that name in any config: the last one loaded. */
-export declare function findSection(name: string): Section | undefined;
-/** How many sections are loaded, across every config. */
-export declare function sectionCount(): number;
+export declare function findSection(name: string): Section | null;
+/** Every section of every config, in the order they were loaded. */
+export declare function allSections(): Section[];

@@ -15,6 +15,10 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    outcome: {
+        en: string;
+        ru: string;
+    };
     floatCell: {
         en: string;
         ru: string;
@@ -203,6 +207,30 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    PlayerFilter: {
+        en: string;
+        ru: string;
+    };
+    'PlayerFilter.alive': {
+        en: string;
+        ru: string;
+    };
+    'PlayerFilter.dead': {
+        en: string;
+        ru: string;
+    };
+    'PlayerFilter.team': {
+        en: string;
+        ru: string;
+    };
+    'PlayerFilter.bots': {
+        en: string;
+        ru: string;
+    };
+    'PlayerFilter.humans': {
+        en: string;
+        ru: string;
+    };
     ModuleName: {
         en: string;
         ru: string;
@@ -216,34 +244,6 @@ declare const _default: {
         ru: string;
     };
     'KillOptions.keepFrags': {
-        en: string;
-        ru: string;
-    };
-    MoveOptions: {
-        en: string;
-        ru: string;
-    };
-    'MoveOptions.forward': {
-        en: string;
-        ru: string;
-    };
-    'MoveOptions.side': {
-        en: string;
-        ru: string;
-    };
-    'MoveOptions.up': {
-        en: string;
-        ru: string;
-    };
-    'MoveOptions.buttons': {
-        en: string;
-        ru: string;
-    };
-    'MoveOptions.angles': {
-        en: string;
-        ru: string;
-    };
-    'MoveOptions.msec': {
         en: string;
         ru: string;
     };
@@ -287,26 +287,6 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    'Client.joinTeam': {
-        en: string;
-        ru: string;
-    };
-    'Client.queryCvar': {
-        en: string;
-        ru: string;
-    };
-    'Client.heardByEveryone': {
-        en: string;
-        ru: string;
-    };
-    'Client.hearsEveryone': {
-        en: string;
-        ru: string;
-    };
-    'Client.language': {
-        en: string;
-        ru: string;
-    };
     'Client.signal': {
         en: string;
         ru: string;
@@ -316,6 +296,14 @@ declare const _default: {
         ru: string;
     };
     Player: {
+        en: string;
+        ru: string;
+    };
+    'Player.all': {
+        en: string;
+        ru: string;
+    };
+    'Player.revision': {
         en: string;
         ru: string;
     };
@@ -371,31 +359,7 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    'Player.joinTeam': {
-        en: string;
-        ru: string;
-    };
-    'Player.queryCvar': {
-        en: string;
-        ru: string;
-    };
-    'Player.language': {
-        en: string;
-        ru: string;
-    };
-    'Player.heardByEveryone': {
-        en: string;
-        ru: string;
-    };
-    'Player.hearsEveryone': {
-        en: string;
-        ru: string;
-    };
     'Player.showHud': {
-        en: string;
-        ru: string;
-    };
-    'Player.playSound': {
         en: string;
         ru: string;
     };
@@ -412,10 +376,6 @@ declare const _default: {
         ru: string;
     };
     'Player.setAmmo': {
-        en: string;
-        ru: string;
-    };
-    'Player.getAmmo': {
         en: string;
         ru: string;
     };
@@ -451,6 +411,10 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    CommandHandler: {
+        en: string;
+        ru: string;
+    };
     CommandOptions: {
         en: string;
         ru: string;
@@ -464,6 +428,10 @@ declare const _default: {
         ru: string;
     };
     accessOf: {
+        en: string;
+        ru: string;
+    };
+    ServerCommandHandler: {
         en: string;
         ru: string;
     };
@@ -531,90 +499,6 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    SoundChannel: {
-        en: string;
-        ru: string;
-    };
-    SoundOptions: {
-        en: string;
-        ru: string;
-    };
-    'SoundOptions.channel': {
-        en: string;
-        ru: string;
-    };
-    'SoundOptions.volume': {
-        en: string;
-        ru: string;
-    };
-    'SoundOptions.attenuation': {
-        en: string;
-        ru: string;
-    };
-    'SoundOptions.pitch': {
-        en: string;
-        ru: string;
-    };
-    MessageArgs: {
-        en: string;
-        ru: string;
-    };
-    'MessageArgs.length': {
-        en: string;
-        ru: string;
-    };
-    'MessageArgs.isText': {
-        en: string;
-        ru: string;
-    };
-    'MessageArgs.number': {
-        en: string;
-        ru: string;
-    };
-    'MessageArgs.text': {
-        en: string;
-        ru: string;
-    };
-    'MessageArgs.setNumber': {
-        en: string;
-        ru: string;
-    };
-    'MessageArgs.setText': {
-        en: string;
-        ru: string;
-    };
-    ClientMessage: {
-        en: string;
-        ru: string;
-    };
-    'ClientMessage.name': {
-        en: string;
-        ru: string;
-    };
-    'ClientMessage.player': {
-        en: string;
-        ru: string;
-    };
-    'ClientMessage.args': {
-        en: string;
-        ru: string;
-    };
-    'ClientMessage.preventDefault': {
-        en: string;
-        ru: string;
-    };
-    Resource: {
-        en: string;
-        ru: string;
-    };
-    'Resource.path': {
-        en: string;
-        ru: string;
-    };
-    'Resource.index': {
-        en: string;
-        ru: string;
-    };
     FadeDirection: {
         en: string;
         ru: string;
@@ -663,14 +547,6 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    ProgressBarOptions: {
-        en: string;
-        ru: string;
-    };
-    'ProgressBarOptions.startPercent': {
-        en: string;
-        ru: string;
-    };
     StatusIconState: {
         en: string;
         ru: string;
@@ -704,30 +580,6 @@ declare const _default: {
         ru: string;
     };
     'Screen.flashlight': {
-        en: string;
-        ru: string;
-    };
-    'Screen.progressBar': {
-        en: string;
-        ru: string;
-    };
-    PlayerChangeEvent: {
-        en: string;
-        ru: string;
-    };
-    'PlayerChangeEvent.field': {
-        en: string;
-        ru: string;
-    };
-    'PlayerChangeEvent.player': {
-        en: string;
-        ru: string;
-    };
-    ServerListenerOptions: {
-        en: string;
-        ru: string;
-    };
-    'ServerListenerOptions.field': {
         en: string;
         ru: string;
     };
@@ -807,27 +659,11 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    'Server.addMessageListener': {
-        en: string;
-        ru: string;
-    };
-    'Server.removeMessageListener': {
-        en: string;
-        ru: string;
-    };
     'Server.map': {
         en: string;
         ru: string;
     };
     'Server.maxPlayers': {
-        en: string;
-        ru: string;
-    };
-    'Server.players': {
-        en: string;
-        ru: string;
-    };
-    'Server.addBot': {
         en: string;
         ru: string;
     };
@@ -843,11 +679,15 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    'Server.showHud': {
+    'Server.addCommand': {
         en: string;
         ru: string;
     };
-    'Server.precache': {
+    'Server.addServerCommand': {
+        en: string;
+        ru: string;
+    };
+    'Server.showHud': {
         en: string;
         ru: string;
     };
@@ -867,59 +707,7 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    'Game.time': {
-        en: string;
-        ru: string;
-    };
     'Game.endRound': {
-        en: string;
-        ru: string;
-    };
-    GameListenerOptions: {
-        en: string;
-        ru: string;
-    };
-    'GameListenerOptions.post': {
-        en: string;
-        ru: string;
-    };
-    'GameListenerOptions.classname': {
-        en: string;
-        ru: string;
-    };
-    UseType: {
-        en: string;
-        ru: string;
-    };
-    ActionOptions: {
-        en: string;
-        ru: string;
-    };
-    'ActionOptions.hooks': {
-        en: string;
-        ru: string;
-    };
-    'GameListenerOptions.toucher': {
-        en: string;
-        ru: string;
-    };
-    'GameListenerOptions.touched': {
-        en: string;
-        ru: string;
-    };
-    TouchEvent: {
-        en: string;
-        ru: string;
-    };
-    'TouchEvent.toucher': {
-        en: string;
-        ru: string;
-    };
-    'TouchEvent.touched': {
-        en: string;
-        ru: string;
-    };
-    'TouchEvent.preventDefault': {
         en: string;
         ru: string;
     };
@@ -999,27 +787,11 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    colorTags: {
-        en: string;
-        ru: string;
-    };
     swapTeam: {
         en: string;
         ru: string;
     };
     print: {
-        en: string;
-        ru: string;
-    };
-    lang: {
-        en: string;
-        ru: string;
-    };
-    'lang.load': {
-        en: string;
-        ru: string;
-    };
-    'lang.translate': {
         en: string;
         ru: string;
     };
@@ -1111,14 +883,6 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    'Call.tailBuffer': {
-        en: string;
-        ru: string;
-    };
-    'Call.array': {
-        en: string;
-        ru: string;
-    };
     'Call.ref': {
         en: string;
         ru: string;
@@ -1127,31 +891,15 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    'Call.count': {
-        en: string;
-        ru: string;
-    };
-    'Call.textInto': {
-        en: string;
-        ru: string;
-    };
-    'Call.cellsAt': {
-        en: string;
-        ru: string;
-    };
-    Ref: {
-        en: string;
-        ru: string;
-    };
-    'Ref.value': {
-        en: string;
-        ru: string;
-    };
     'Call.run': {
         en: string;
         ru: string;
     };
     hook: {
+        en: string;
+        ru: string;
+    };
+    ham: {
         en: string;
         ru: string;
     };
@@ -1328,122 +1076,6 @@ declare const _default: {
         ru: string;
     };
     showMenu: {
-        en: string;
-        ru: string;
-    };
-    MenuColor: {
-        en: string;
-        ru: string;
-    };
-    MenuOptions: {
-        en: string;
-        ru: string;
-    };
-    'MenuOptions.perPage': {
-        en: string;
-        ru: string;
-    };
-    'MenuOptions.exit': {
-        en: string;
-        ru: string;
-    };
-    'MenuOptions.backText': {
-        en: string;
-        ru: string;
-    };
-    'MenuOptions.nextText': {
-        en: string;
-        ru: string;
-    };
-    'MenuOptions.exitText': {
-        en: string;
-        ru: string;
-    };
-    'MenuOptions.numberColor': {
-        en: string;
-        ru: string;
-    };
-    MenuContext: {
-        en: string;
-        ru: string;
-    };
-    'MenuContext.player': {
-        en: string;
-        ru: string;
-    };
-    'MenuContext.menu': {
-        en: string;
-        ru: string;
-    };
-    'MenuContext.data': {
-        en: string;
-        ru: string;
-    };
-    MenuItemOptions: {
-        en: string;
-        ru: string;
-    };
-    'MenuItemOptions.title': {
-        en: string;
-        ru: string;
-    };
-    'MenuItemOptions.enabled': {
-        en: string;
-        ru: string;
-    };
-    'MenuItemOptions.visible': {
-        en: string;
-        ru: string;
-    };
-    'MenuItemOptions.onSelect': {
-        en: string;
-        ru: string;
-    };
-    Menu: {
-        en: string;
-        ru: string;
-    };
-    'Menu.addItem': {
-        en: string;
-        ru: string;
-    };
-    'Menu.show': {
-        en: string;
-        ru: string;
-    };
-    'Client.kick': {
-        en: string;
-        ru: string;
-    };
-    'Player.kick': {
-        en: string;
-        ru: string;
-    };
-    'Player.move': {
-        en: string;
-        ru: string;
-    };
-    CommandInfo: {
-        en: string;
-        ru: string;
-    };
-    'CommandInfo.usage': {
-        en: string;
-        ru: string;
-    };
-    'CommandInfo.description': {
-        en: string;
-        ru: string;
-    };
-    'CommandInfo.access': {
-        en: string;
-        ru: string;
-    };
-    'CommandInfo.server': {
-        en: string;
-        ru: string;
-    };
-    'Server.commands': {
         en: string;
         ru: string;
     };

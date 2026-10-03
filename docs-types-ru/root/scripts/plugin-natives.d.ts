@@ -1,4 +1,4 @@
-import type { ForwardDeclaration, NativeFunction } from '../src/types';
+import type { NativeFunction } from '../src/types';
 /**
  * How one argument crosses from Pawn. `tag` is a cell under one of the
  * plugin's own exported enums - `section: ConfigSection` is
@@ -74,7 +74,6 @@ export interface NativesBeside {
         file: string;
         text: string;
     } | null;
-    author: string | null;
 }
 export declare function nativesBeside(natives: PluginNative[]): NativesBeside;
 /** Natives read back from a cache get their enums and contract beside them again. */
@@ -105,8 +104,6 @@ export declare function pawnLayout(native: PluginNative): PawnSlot[];
  * a message naming the function and the parameter.
  */
 export declare function nativesTransform(entry: string, found: PluginNative[], root?: string): any;
-/** The forward as the first include that declares it has it - what decides how a Forward's arguments cross - or null. */
-export declare function includeForward(name: string): ForwardDeclaration | null;
 /** A plugin's name as a Pawn identifier: `api-natives` is `api_natives`. */
 export declare function includeName(plugin: string): string;
 /** The `native` line of one of them, with its comment. */

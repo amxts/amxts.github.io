@@ -25,8 +25,8 @@ export declare function hostIndex<T>(handler: T, wide: bool): i32;
  * Pawn: `return PLUGIN_HANDLED`
  */
 export declare function handled(): void;
-/** @hidden Sets the handler's answer to a number other than `0` or `1`: a game event's status. */
-export declare function __outcome(value: number): void;
+/** Sets the handler's answer to a number other than `0` or `1` — for Ham, for instance. */
+export declare function outcome(value: number): void;
 /**
  * Converts a number to a Pawn `Float:` cell, for a raw native or `ret()`:
  *
@@ -47,11 +47,12 @@ export declare function cellFloat(cell: number): f64;
 export declare function ret(value: number): void;
 /**
  * A public name that calls `handler`, for an AMX Mod X native that takes a
- * callback by name: `register_think`, `set_native_filter`.
+ * callback by name: `register_message`, `register_touch`, `query_client_cvar`,
+ * `set_native_filter`.
  *
  * ```ts
- * const pub = publicFor(onThink, "think:myplugin_box");
- * if (pub.length > 0) register_think("myplugin_box", pub);
+ * const pub = publicFor(onDeathMsg, "msg:DeathMsg");
+ * if (pub.length > 0) register_message(get_user_msgid("DeathMsg"), pub);
  * ```
  *
  * An empty name means “already registered”: such a registration cannot be
@@ -119,17 +120,6 @@ export declare function __nativeInts(index: i32): f64[];
 export declare function __nativeFloats(index: i32): f64[];
 /** @hidden A `Float:v[3]` argument. */
 export declare function __nativeVector(index: i32): Vector;
-/**
- * @hidden Writes a `Float:v[3]` argument where it lies: a hookchain's vector,
- * which reapi copies back into the game's once the listener returns.
- */
-export declare function __setNativeVector(index: i32, value: Vector): void;
-/**
- * @hidden A forward's array argument, as many numbers as it has: what the
- * emitting plugin sent, or the size the include declares; none when neither
- * says. `floats` reads them as `Float:`.
- */
-export declare function __forwardNumbers(index: i32, floats: bool): f64[];
 /**
  * @hidden What the function returned, handed back the way its type says:
  * a string into the caller's `out[], len`, a `string | null` the same and
@@ -245,6 +235,7 @@ export declare class CellArray {
     /** Adds one item of several numbers: `[a, b]` into an array made with `new CellArray(2)`. */
     pushCells(values: number[]): void;
 }
+export declare function __strings(): i32;
 /**
  * Reads an argument of the running handler by position; `0` is its first
  * parameter. Useful past the fourth, which a handler does not get as a
@@ -303,7 +294,7 @@ export declare function argString(pointer: number): string;
  * zero cell or `max` cells. AMX Mod X, the engine and the game keep text as
  * bytes - get_amxstring takes the low byte of each cell - so a letter outside
  * ASCII is two or three cells, and a cell per UTF-16 unit came out as
- * mojibake one way and a truncated byte the other (a Cyrillic word arrived as "@0").
+ * mojibake one way and a truncated byte the other ("раз" arrived as "@0").
  */
 export declare function __cellText(pointer: usize, max: i32): string;
 /**
@@ -390,14 +381,33 @@ export declare function putCell(buffer: number, value: number): number;
 export declare function noOrigin(): number[];
 /** The length of text an `out()` buffer holds: `255`. */
 export declare const TEXT_MAX: i32;
+/**
+ * A player: the hand-written basics below, and every entvar and CBasePlayer
+ * member as a typed property from as/entities.ts (`player.gravity`,
+ * `player.hideHud`, `player.origin`).
+ */
 /** A Counter-Strike team, by the name the game gives it: one of `"TERRORIST"`, `"CT"`, `"SPECTATOR"`, `"UNASSIGNED"`. */
 export type Team = "TERRORIST" | "CT" | "SPECTATOR" | "UNASSIGNED";
 /** A weapon a player can hold, by its class name, e.g. `"weapon_ak47"` or `"weapon_knife"`. */
 export type WeaponName = "weapon_p228" | "weapon_scout" | "weapon_hegrenade" | "weapon_xm1014" | "weapon_c4" | "weapon_mac10" | "weapon_aug" | "weapon_smokegrenade" | "weapon_elite" | "weapon_fiveseven" | "weapon_ump45" | "weapon_sg550" | "weapon_galil" | "weapon_famas" | "weapon_usp" | "weapon_glock18" | "weapon_awp" | "weapon_mp5navy" | "weapon_m249" | "weapon_m3" | "weapon_m4a1" | "weapon_tmp" | "weapon_g3sg1" | "weapon_flashbang" | "weapon_deagle" | "weapon_sg552" | "weapon_ak47" | "weapon_knife" | "weapon_p90";
 /** An item `player.give` hands over: a weapon, armour (`"item_kevlar"`, `"item_assaultsuit"`) or the defuse kit (`"item_thighpack"`). */
 export type ItemName = "weapon_p228" | "weapon_scout" | "weapon_hegrenade" | "weapon_xm1014" | "weapon_c4" | "weapon_mac10" | "weapon_aug" | "weapon_smokegrenade" | "weapon_elite" | "weapon_fiveseven" | "weapon_ump45" | "weapon_sg550" | "weapon_galil" | "weapon_famas" | "weapon_usp" | "weapon_glock18" | "weapon_awp" | "weapon_mp5navy" | "weapon_m249" | "weapon_m3" | "weapon_m4a1" | "weapon_tmp" | "weapon_g3sg1" | "weapon_flashbang" | "weapon_deagle" | "weapon_sg552" | "weapon_ak47" | "weapon_knife" | "weapon_p90" | "item_kevlar" | "item_assaultsuit" | "item_thighpack";
-/** @hidden Every weapon's class name: what Ham Sandwich hooks a weapon's event on for "every weapon". */
-export declare function __weaponClassnames(): string[];
+/**
+ * The filter of `Player.all`; every field is optional, e.g.
+ * `Player.all({ alive: true, team: "CT" })`.
+ */
+export interface PlayerFilter {
+    /** Only living players. */
+    alive?: boolean;
+    /** Only dead players. */
+    dead?: boolean;
+    /** Only players of this team, e.g. `"CT"`. */
+    team?: Team;
+    /** Only bots. */
+    bots?: boolean;
+    /** Only people, no bots. */
+    humans?: boolean;
+}
 /** An AMX Mod X module a plugin can check for, one of `"reapi"`, `"cstrike"`, `"fun"`, `"hamsandwich"`, `"engine"`, `"fakemeta"`. */
 export type ModuleName = "reapi" | "cstrike" | "fun" | "hamsandwich" | "engine" | "fakemeta";
 /**
@@ -407,37 +417,10 @@ export type ModuleName = "reapi" | "cstrike" | "fun" | "hamsandwich" | "engine" 
  * Pawn: `LibraryExists`, `module_exists`
  */
 export declare function hasModule(name: ModuleName): boolean;
-/** @hidden Whether the server has reapi: the hood's choice of backend, made once. */
-export declare function __hasReapi(): bool;
-/**
- * @hidden A line in the console the first time it is said: what this server
- * cannot do, where a plugin asks for it - not on every call, which a field
- * read in a frame listener makes every frame.
- */
-export declare function __sayOnce(text: string): void;
 /** The options of `player.kill()`. */
 export interface KillOptions {
     /** Keeps the player's frags: no penalty for the suicide. */
     keepFrags?: boolean;
-}
-import { Button } from "./flags";
-/**
- * One move of a bot, `bot.move({ ... })`: the speeds are units a second, as
- * a player's keys give them - `250` runs with a knife, `-250` backs away.
- */
-export interface MoveOptions {
-    /** Forward, or back when negative. */
-    forward?: number;
-    /** To the right, or to the left when negative. */
-    side?: number;
-    /** Up, or down when negative: swimming and climbing a ladder. */
-    up?: number;
-    /** The buttons held during the move: `["Jump", "Duck"]`. */
-    buttons?: Button[];
-    /** The direction the bot looks in, `[pitch, yaw, roll]` or a Vector; where it looks now when left out. */
-    angles?: number[];
-    /** The move's length in milliseconds, `1` to `255`; the server frame's time when left out. */
-    msec?: number;
 }
 /**
  * A connecting player, in `"connect"`, `"authorized"` and `"putinserver"`: name,
@@ -469,32 +452,37 @@ export interface Client {
     team: Team;
     /** `true` when nobody hears the player on the voice chat. Setting it mutes or unmutes him. */
     muted: boolean;
-    /** `true` when every player hears him on the voice chat, whatever the side. */
-    heardByEveryone: boolean;
-    /** `true` when he hears every player on the voice chat, whatever the side. */
-    hearsEveryone: boolean;
-    /** The language the player reads the server's text in, e.g. `"en"`, `"ru"`: the one `lang.translate` picks for him. */
-    readonly language: string;
     /** A signal that aborts when the player leaves the server: `fetch(url, { signal: client.signal })`. */
     readonly signal: AbortSignal;
     /** Runs a command in the player's console, as if he had typed it: `client.command("stop")`. */
     command(text: string): void;
-    /** Kicks the player off the server, with the reason he is shown: `client.kick("Spam")`. */
-    kick(reason?: string): void;
-    /** Joins a side as the game joins a player who picks it in the team menu: `client.joinTeam("CT")`. `false` if the game refused. */
-    joinTeam(team: Team): boolean;
-    /** Asks the player's game for one of its cvars: `await client.queryCvar("fps_max")`, the value as text, or `null` when his game has none. */
-    queryCvar(name: string): Promise<string | null>;
 }
 /**
  * A player in the game: everything a Client has, plus health, armor, frags,
  * weapons and the screen.
  *
- * An event about a player gives one as `event.player`; `server.players`
+ * An event about a player gives one as `event.player`; `Player.all()`
  * lists everyone on the server.
  */
 export declare class Player extends PlayerFields implements Client {
     constructor(id: number);
+    /**
+     * The players on the server: `Player.all({ alive: true })`.
+     *
+     * Every field narrows: `{ bots: true }` is bots only, `{ humans: true }`
+     * people only. Without a filter, everyone connected, never an HLTV proxy.
+     *
+     * Pawn: `get_players`
+     */
+    static all(filter?: PlayerFilter): Player[];
+    /**
+     * The change counter of a field plugins added to Player:
+     * `Player.revision("semiclip")`. It goes up whenever the field changes on
+     * any player — written by any plugin, TS or Pawn, or reset when a player
+     * leaves; writing the same value is no change. To act on changes, keep the
+     * last number and compare, at most once a frame.
+     */
+    static revision(field: string): number;
     /**
      * The player's name.
      *
@@ -502,7 +490,7 @@ export declare class Player extends PlayerFields implements Client {
      */
     get name(): string;
     /**
-     * The player's health. `100` at spawn. Setting it to `0` or less kills the player.
+     * The player's health: `100` at spawn. Setting it to `0` or less kills the player.
      *
      * Pawn: `get_user_health`, `set_user_health`
      */
@@ -544,16 +532,6 @@ export declare class Player extends PlayerFields implements Client {
      * win conditions are not checked - the caller decides when that happens.
      */
     set team(value: Team);
-    /**
-     * Joins a side the way the game joins a player who picks it in the team
-     * menu, appearance picked for him: `player.joinTeam("CT")`. A player who
-     * has just arrived is in the game after it and can spawn, which
-     * `player.team = ...` does not do for him. A living player sent to the
-     * spectators dies quietly: no death, no frag. `false` if the game refused.
-     *
-     * Pawn: `rg_join_team`
-     */
-    joinTeam(team: Team): boolean;
     /**
      * The player's IP address without the port, e.g. `"192.168.0.10"`.
      *
@@ -603,32 +581,6 @@ export declare class Player extends PlayerFields implements Client {
      * Pawn: `set_speak`, `SPEAK_MUTED`
      */
     get muted(): boolean;
-    set muted(value: boolean);
-    /**
-     * `true` when every player hears him on the voice chat, whatever the side
-     * and without alltalk. A mute (`muted`) still silences him.
-     *
-     * Pawn: `set_speak`, `SPEAK_ALL`
-     */
-    get heardByEveryone(): boolean;
-    set heardByEveryone(value: boolean);
-    /**
-     * `true` when he hears every player on the voice chat, whatever the side
-     * and without alltalk: a spectator who hears both sides.
-     *
-     * Pawn: `set_speak`, `SPEAK_LISTENALL`
-     */
-    get hearsEveryone(): boolean;
-    set hearsEveryone(value: boolean);
-    private setSpeak;
-    /**
-     * The language the player reads the server's text in, e.g. `"en"`, `"ru"`:
-     * the one `lang.translate` picks for him. It is his `setinfo lang`, or the
-     * server's language when he has none or `amx_client_languages` is `0`.
-     *
-     * Pawn: `get_user_info(id, "lang")`, `amx_language`
-     */
-    get language(): string;
     /**
      * Shows a line of text on the player's screen:
      * `player.showHud("-35 HP", { color: [255, 40, 40], x: 0.02, y: 0.88, hold: 2 })`.
@@ -637,16 +589,9 @@ export declare class Player extends PlayerFields implements Client {
      * Pawn: `set_hudmessage`, `show_hudmessage`
      */
     showHud(text: string, options?: HudOptions): void;
-    /**
-     * Plays a sound to the player alone, the way the radio does - heard as it
-     * is wherever he stands: `player.playSound("vox/one.wav")`. The path is
-     * under `sound/`, as `server.precache` takes it.
-     *
-     * Pawn: `SendAudio`, `rg_send_audio`
-     */
-    playSound(sample: string): void;
     /** The player's screen effects: `player.screen.fade({ ... })`, `.shake(...)`, `.statusIcon(...)` — see Screen. */
     get screen(): Screen;
+    set muted(value: boolean);
     /**
      * Gives the player a weapon or an item: `player.give("weapon_flashbang")`.
      * `false` if the game did not give it.
@@ -662,18 +607,11 @@ export declare class Player extends PlayerFields implements Client {
      */
     removeAllItems(removeSuit?: boolean): void;
     /**
-     * Sets the player's reserve ammo for a weapon he carries: `player.setAmmo("weapon_flashbang", 2)`.
+     * Sets the player's reserve ammo for a weapon: `player.setAmmo("weapon_flashbang", 2)`.
      *
      * Pawn: `rg_set_user_bpammo`, `cs_set_user_bpammo`
      */
     setAmmo(weapon: WeaponName, amount: number): void;
-    /**
-     * The player's reserve ammo for a weapon he carries: `player.getAmmo("weapon_ak47")`;
-     * for a grenade, how many he has. `0` for a weapon he does not carry.
-     *
-     * Pawn: `rg_get_user_bpammo`, `cs_get_user_bpammo`
-     */
-    getAmmo(weapon: WeaponName): number;
     /**
      * Respawns the player in the current round, at a spawn point the game picks.
      *
@@ -716,33 +654,6 @@ export declare class Player extends PlayerFields implements Client {
      * Pawn: `client_cmd`
      */
     command(text: string): void;
-    /**
-     * Kicks the player off the server, with the reason he is shown:
-     * `player.kick("Spam")`; without one, the game's own.
-     *
-     * Pawn: `server_cmd("kick #%d")`
-     */
-    kick(reason?: string): void;
-    /**
-     * Moves a bot `server.addBot` made, as a player's keys and mouse would for
-     * one frame: `bot.move({ forward: 250, buttons: ["Jump"] })`. A bot does
-     * nothing by itself, so it is moved every frame - in the `"frame"` event -
-     * or it stands still. A player who is not a bot is refused with an error.
-     *
-     * Pawn: `engfunc(EngFunc_RunPlayerMove, ...)`
-     */
-    move(options?: MoveOptions): void;
-    /**
-     * Asks the player's game for one of its cvars: `await
-     * player.queryCvar("fps_max")` is the value as text, e.g. `"100"`, or
-     * `null` when his game has no such cvar or will not tell. The answer is
-     * what his game says, a claim a cheat can change. A bot has no game to ask
-     * and answers `null` at once; when the player leaves before he answers, the
-     * promise is rejected with an `"AbortError"`.
-     *
-     * Pawn: `query_client_cvar`
-     */
-    queryCvar(name: string): Promise<string | null>;
 }
 /**
  * Calls a native that fills a text buffer and returns the text. The native
@@ -754,76 +665,20 @@ export declare class Player extends PlayerFields implements Client {
 export declare function readText(fill: (out: number, max: number) => number, max?: number): string;
 /**
  * The ids of the players on the server, as an array. `flags`: `"a"` living,
- * `"b"` dead, `"c"` no bots, `"h"` no HLTV, `"e"` only `team`. `server.players` is
- * everyone, as players, to filter as an array.
+ * `"b"` dead, `"c"` no bots, `"h"` no HLTV, `"e"` only `team`. `Player.all` does the
+ * same with readable options.
  *
  * Pawn: `get_players`
  */
 export declare function playerIds(flags?: string, team?: string): number[];
+/** A command's handler: gets the player who typed it and the words after the command's name. */
+export type CommandHandler = (player: Player, args: string[]) => void;
 /** The options of a command: who may use it and its description in a listing. */
 export interface CommandOptions {
     /** The admin right a player needs to use the command; left out, everyone may. */
     access?: Access;
-    /** The command's description, shown by `amx_help` and in `server.commands`. */
+    /** The command's description, shown by `amx_help` and the like. */
     description?: string;
-}
-/** A command the plugin added, as `server.commands` lists it: what a `/help` shows. */
-export declare class CommandInfo {
-    /** The command's usage, as it is typed, e.g. `"/kick <target> [reason]"`. */
-    readonly usage: string;
-    /** The command's description, as its `description` option gave it; `""` without one. */
-    readonly description: string;
-    /** The admin right the command needs; `null` when everyone may use it. */
-    readonly access: Access | null;
-    /** Whether it is a command of the server console rather than a player's. */
-    readonly server: boolean;
-    constructor(
-    /** The command's usage, as it is typed, e.g. `"/kick <target> [reason]"`. */
-    usage: string, 
-    /** The command's description, as its `description` option gave it; `""` without one. */
-    description: string, 
-    /** The admin right the command needs; `null` when everyone may use it. */
-    access: Access | null, 
-    /** Whether it is a command of the server console rather than a player's. */
-    server: boolean);
-}
-/**
- * @hidden The words a command was typed with, as the build's code for one
- * command reads its arguments (scripts/typed-commands.ts): each by its place,
- * as its type says. A word that is not what the command takes answers the
- * one who typed it with the usage, and sets `failed`: the handler does not run.
- */
-export declare class __CommandWords {
-    /** The player who typed it; `null` for the server's console. */
-    readonly player: Player | null;
-    readonly usage: string;
-    readonly words: string[];
-    /** The line from each word on, as typed: what the last text argument takes. */
-    readonly rests: string[];
-    /** Set once a word is wrong: the one who typed it has been told. */
-    failed: bool;
-    constructor(
-    /** The player who typed it; `null` for the server's console. */
-    player: Player | null, usage: string, words: string[], 
-    /** The line from each word on, as typed: what the last text argument takes. */
-    rests: string[]);
-    get count(): i32;
-    /** The word at `at`; `""` when it was not typed. */
-    text(at: i32): string;
-    /** The rest of the line from the word at `at`. */
-    rest(at: i32): string;
-    /** The word at `at` as a number; a word that is not one fails. */
-    number(at: i32): number;
-    /** The word at `at`, one of `names`; another fails. */
-    name(at: i32, names: string[]): string;
-    /** The player the word at `at` names - `#userid`, the whole name or a part of it. None, or several, fails. */
-    target(at: i32): Player | null;
-    /** Whether at least `count` words were typed; fewer fails. */
-    need(count: i32): bool;
-    /** Whether no word is left over after the first `count`; one more fails. */
-    done(count: i32): bool;
-    /** Tells the one who typed it what was wrong, and the usage. */
-    private fail;
 }
 /**
  * Converts `users.ini` letters to rights: `accessOf("abc")` is
@@ -832,11 +687,8 @@ export declare class __CommandWords {
  * Pawn: `read_flags`
  */
 export declare function accessOf(letters: string): Access[];
-/**
- * @hidden The hood of a game event Ham Sandwich delivers (as/hooks.ts):
- * `fn` hooked on the class, a reload taking its slot back.
- */
-export declare function __ham(fn: i32, classname: string, handler: WideHandler, post: bool): void;
+/** A server command's handler: gets the words after the command's name. */
+export type ServerCommandHandler = (args: string[]) => void;
 /**
  * The look of a HUD message. Every field has a default, so
  * `{ color: [255, 40, 40] }` is enough.
@@ -921,11 +773,6 @@ export interface ShakeOptions {
     /** The shake's frequency, in jolts a second; `5` by default. */
     frequency?: number;
 }
-/** The options of `player.screen.progressBar`. */
-export interface ProgressBarOptions {
-    /** The bar's fill at the start, in percent; `0`, empty, by default. */
-    startPercent?: number;
-}
 /** A status icon's state, one of `"hide"`, `"show"` (lit) or `"flash"`. */
 export type StatusIconState = "hide" | "show" | "flash";
 /**
@@ -938,8 +785,7 @@ export type StatusIconState = "hide" | "show" | "flash";
  * player.screen.statusIcon("dmg_cold", "show", [0, 160, 255]);
  * ```
  *
- * Times are in seconds. A message listener hears what the screen sends, as
- * it hears the game's: `"progressBar"` hears `progressBar(seconds)`.
+ * Times are in seconds.
  *
  * Pawn: `ScreenFade`, `ScreenShake`, `StatusIcon`, ...
  */
@@ -994,195 +840,6 @@ export declare class Screen {
      * Pawn: `Flashlight`
      */
     flashlight(on: boolean, battery?: number): void;
-    /**
-     * Shows the progress bar in the middle of the player's screen, filling up
-     * over `seconds`; `0` hides it. With `startPercent` it starts part of the
-     * way full and fills the rest of `seconds`:
-     *
-     * ```ts
-     * player.screen.progressBar(4, { startPercent: 50 });   // half full, full in 2 seconds
-     * ```
-     *
-     * Pawn: `BarTime`, `BarTime2`, `rg_send_bartime`, `rg_send_bartime2`
-     */
-    progressBar(seconds: number, options?: ProgressBarOptions): void;
-}
-/**
- * The channel a sound plays on, one of `"auto"` (the default), `"weapon"`,
- * `"voice"`, `"item"`, `"body"`, `"stream"`, `"static"`. A new sound on an
- * entity's channel cuts the one playing there; `"auto"` never cuts.
- */
-export type SoundChannel = "auto" | "weapon" | "voice" | "item" | "body" | "stream" | "static";
-/** The options of `entity.emitSound`; every one has a default. */
-export interface SoundOptions {
-    /** The entity's channel the sound plays on; `"auto"` by default. */
-    channel?: SoundChannel;
-    /** The volume, `0` to `1`; `1` by default. */
-    volume?: number;
-    /** The sound's fall-off with distance: `0` is heard across the map, `0.8` (the default) as a footstep, `2` only close by. */
-    attenuation?: number;
-    /** The pitch in percent: `100` (the default) as recorded, `50` an octave lower, up to `255`. */
-    pitch?: number;
-}
-/**
- * A file the game has precached - a sprite, a model, a sound - as
- * `server.precache` returns it. An effect takes it where it draws a sprite or
- * a model:
- *
- * ```ts
- * const shock = server.precache("sprites/shockwave.spr");
- * effects.beamCylinder({ at: here, radius: 385, sprite: shock, life: 0.4, width: 60 });
- * ```
- */
-export declare class Resource {
-    /** The file's path, as `server.precache` was given it, e.g. `"sprites/shockwave.spr"`. */
-    readonly path: string;
-    constructor(
-    /** The file's path, as `server.precache` was given it, e.g. `"sprites/shockwave.spr"`. */
-    path: string);
-    /**
-     * The file's index in the game's precache list, as a native takes it; `0`
-     * while it is not precached.
-     */
-    get index(): number;
-}
-/**
- * @hidden A forward the host relays, heard by `fn` (a one-cell handler) only
- * when its argument `arg` is `value`: the module compares it, so a forward
- * that comes often crosses into the plugin for that value alone.
- */
-export declare function __onCell(event: string, fn: i32, arg: i32, value: i32): void;
-/** @hidden Runs `register` from plugin_init on: now, or when it comes. */
-export declare function __whenUp(register: () => void): void;
-/** @hidden Runs `register` from plugin_precache on - or plugin_init, after a reload mid-map. */
-export declare function __whenPrecache(register: () => void): void;
-/**
- * The arguments of a message, by their place, `0` for the first: a number
- * or a text, as the message wrote it.
- *
- * ```ts
- * server.addMessageListener("botProgress", (event) => {
- *   console.log(`${event.args.length} ${event.args.number(0)}`);
- * });
- * ```
- *
- * Pawn: `get_msg_args`, `get_msg_arg_*`, `set_msg_arg_*`
- */
-export declare class MessageArgs {
-    /** The number of arguments. */
-    get length(): number;
-    /** Whether the argument at `index` is text; otherwise it is a number. */
-    isText(index: number): boolean;
-    /** The argument at `index` as a number: a byte, a short, a coordinate, an angle. */
-    number(index: number): number;
-    /** The argument at `index` as text. */
-    text(index: number): string;
-    /** Writes a number argument: the message goes out with it. */
-    setNumber(index: number, value: number): void;
-    /** Writes a text argument: the message goes out with it. */
-    setText(index: number, value: string): void;
-}
-/**
- * A message the server sends its clients - a chat line, the round clock, a
- * HUD icon - heard on its way, before it leaves:
- *
- * ```ts
- * server.addMessageListener("text", (event) => {
- *   if (event.text == "#Round_Draw") event.preventDefault();
- * });
- * ```
- *
- * A message whose layout is known has a typed field for each argument
- * (`event.text`), and writing one changes what the client gets; a message
- * without a known layout is read by place, through `event.args`, which
- * every message has.
- *
- * Pawn: `register_message`
- */
-export declare class ClientMessage {
-    /** @hidden The player it goes to: the message's msg_entity. */
-    __receiver: i32;
-    /** The game's name of the message, e.g. `"TextMsg"` for `text`. */
-    name: string;
-    /** The player the message goes to; `null` for a message to everyone. */
-    get player(): Player | null;
-    /** The message's arguments, by their place: `event.args.text(1)`. */
-    get args(): MessageArgs;
-    /**
-     * Stops the message: the client does not get it.
-     *
-     * Pawn: `return PLUGIN_HANDLED`
-     */
-    preventDefault(): void;
-    /** @hidden Whether the message has the argument. */
-    protected __has(arg: i32): bool;
-    /** @hidden An argument as a number. */
-    protected __number(arg: i32): f64;
-    /** @hidden */
-    protected __setNumber(arg: i32, value: f64): void;
-    /** @hidden */
-    protected __text(arg: i32): string;
-    /** @hidden */
-    protected __setText(arg: i32, value: string): void;
-    /** @hidden Every text from the argument on. */
-    protected __texts(arg: i32): string[];
-    /** @hidden Writes the texts from the argument on, as many as the message has. */
-    protected __setTexts(arg: i32, value: string[]): void;
-    /** @hidden A player's number argument; `0` or past the players is none. */
-    protected __player(arg: i32): Player | null;
-    /** @hidden Three coordinates from the argument on. */
-    protected __vector(arg: i32): Vector;
-    /** @hidden */
-    protected __setVector(arg: i32, value: number[]): void;
-    /** @hidden `count` bytes from the argument on: a colour. */
-    protected __bytes(arg: i32, count: i32): number[];
-    /** @hidden */
-    protected __setBytes(arg: i32, value: number[]): void;
-    /** @hidden Whether the argument has the bit. */
-    protected __bit(arg: i32, bit: i32): bool;
-    /** @hidden Sets or clears one bit of the argument, keeping the others. */
-    protected __setBit(arg: i32, bit: i32, on: bool): void;
-}
-/**
- * A field plugins added to `Player` changed on a player - written by any
- * plugin, TypeScript or Pawn:
- *
- * ```ts
- * server.addEventListener("playerchange", (event) => {
- *   print(event.player, event.value ? "You are protected" : "Your spawn protection is over");
- * }, { field: "spawnProtected" });
- * ```
- *
- * With `field`, `event.value` and `event.previous` have the field's type; a
- * named listener takes `PlayerChangeEvent<"spawnProtected">`. Without it
- * every field is heard, and `event.field` says which.
- */
-export declare class PlayerChangeEvent<F extends string = string> {
-    /** @hidden What a change's event is told apart by, at compile time. */
-    __playerChange: bool;
-    /** @hidden The player's slot. */
-    __slot: i32;
-    /** @hidden The value before the change, as the module keeps it: a number, or a text. */
-    __previousNumber: f64;
-    /** @hidden */
-    __previousText: string;
-    /** @hidden The value after it. */
-    __number: f64;
-    /** @hidden */
-    __text: string;
-    /** The field that changed, e.g. `"spawnProtected"`; a member of an object field is dotted, `"glow.enabled"`. */
-    field: string;
-    /** The player whose field changed. */
-    get player(): Player;
-}
-/** The third argument of `server.addEventListener`. */
-export interface ServerListenerOptions {
-    /**
-     * For `"playerchange"`: the field listened for, e.g. `"spawnProtected"`, or
-     * an object field's member, `"glow.enabled"`; an object field's name
-     * hears each of its members. Left out, every field.
-     */
-    field?: string;
 }
 /** The event a cvar's change listener receives: the cvar, its old and its new value. */
 export declare class CvarChangeEvent {
@@ -1282,27 +939,10 @@ export declare class Cvar {
  * of the function it is written in - it is a closure, as in JavaScript.
  */
 export declare class Server {
-    /**
-     * Calls `listener` every time the server sends the message `name` to a
-     * client, before it leaves: the listener reads its fields, changes them, or
-     * stops it with `preventDefault()`.
-     *
-     * ```ts
-     * server.addMessageListener("death", (event) => {
-     *   if (event.headshot) console.log(`${event.killer?.name} - headshot - ${event.victim?.name}`);
-     * });
-     * ```
-     *
-     * The editor lists the names, each with the game's own one in its words:
-     * `death` is the game's `DeathMsg`. A name may hear a few of the game's
-     * messages that are one thing: `progressBar` is `BarTime` and
-     * `BarTime2`, and `event.name` says which one came.
-     *
-     * Pawn: `register_message`
-     */
-    addMessageListener<K extends keyof ServerMessageMap>(name: K, listener: (event: ServerMessageMap[K]) => void): void;
-    /** Stops calling a listener added with `addMessageListener` - the same name and the same function. */
-    removeMessageListener<K extends keyof ServerMessageMap>(name: K, listener: (event: ServerMessageMap[K]) => void): void;
+    /** Calls `listener` every time the server raises the event `type`. */
+    addEventListener<K extends keyof ServerEventMap>(type: K, listener: (event: ServerEventMap[K]) => void): void;
+    /** Stops calling a listener added with `addEventListener` - the same function. */
+    removeEventListener<K extends keyof ServerEventMap>(type: K, listener: (event: ServerEventMap[K]) => void): void;
     /**
      * The current map's name, e.g. `"de_dust2"`.
      *
@@ -1310,38 +950,11 @@ export declare class Server {
      */
     get map(): string;
     /**
-     * The number of player slots on the server, e.g. `32`.
+     * The number of player slots on the server: `32`.
      *
      * Pawn: `get_maxplayers`
      */
     get maxPlayers(): number;
-    /**
-     * The players on the server, every one connected - never an HLTV proxy -
-     * read anew each time. Narrow them with the array's `filter`:
-     *
-     * ```ts
-     * const alive = server.players.filter(player => player.isAlive);
-     * const cts = server.players.filter(player => player.team === "CT" && !player.isBot);
-     * ```
-     *
-     * Pawn: `get_players`
-     */
-    get players(): Player[];
-    /**
-     * Adds a bot under `name`: a player the server runs, with no game behind
-     * it and no mind of its own - it stands where it spawns until a plugin
-     * moves it with `bot.move()`. `null` when no slot is free. `"putinserver"`
-     * fires for it as for anyone, `bot.isBot` is `true` and `bot.kick()`
-     * removes it.
-     *
-     * ```ts
-     * const bot = server.addBot("Dummy");
-     * bot?.joinTeam("CT");
-     * ```
-     *
-     * Pawn: `engfunc(EngFunc_CreateFakeClient)`, `dllfunc(DLLFunc_ClientConnect)`, `dllfunc(DLLFunc_ClientPutInServer)`
-     */
-    addBot(name: string): Player | null;
     /**
      * The AMX Mod X configs folder, relative to the game folder, as `fs` takes it:
      * `addons/amxmodx/configs` unless the server moved it.
@@ -1367,52 +980,50 @@ export declare class Server {
      */
     command(text: string): void;
     /**
-     * The commands this plugin added, players' and the server's, in the order
-     * they were added: each one's `usage`, `description` and `access` - what a
-     * `/help` prints.
+     * Adds a command players type, e.g. `"/hp"` in chat, or a name without the slash
+     * in the console.
      *
      * ```ts
-     * server.addCommand("/help", ({ player }) => {
-     *   for (const command of server.commands) {
-     *     if (command.access == null || player.access.includes(command.access)) print(player, command.usage);
-     *   }
-     * });
+     * server.addCommand("/hp", (player, args) => print(player, `${player.health} HP`));
+     * server.addCommand("/kick", kick, { access: "Kick", description: "Kick a player" });
      * ```
+     *
+     * `args` are the words after the command. A chat command is not repeated in
+     * chat, and it does not run for a player without the `access` right.
+     * `"say time"` runs when a player writes exactly `"time"` in chat.
+     *
+     * Pawn: `register_clcmd`
      */
-    get commands(): CommandInfo[];
+    addCommand(name: string, handler: CommandHandler, options?: CommandOptions): void;
     /**
-     * @hidden A player's command, its words read by `run` - the parser the
-     * build writes for each `addCommand` call (scripts/typed-commands.ts).
+     * Adds a command of the server console - typed there, sent over rcon or run by
+     * another plugin. Players cannot use it.
+     *
+     * ```ts
+     * server.addServerCommand("myplugin_reset",(args) => reset(args.length > 0 ? args[0] : "all"));
+     * ```
+     *
+     * `args` are the words after the command. It may be added at the top level of
+     * the file.
+     *
+     * Pawn: `register_srvcmd`
      */
-    __addCommand(usage: string, run: (words: __CommandWords) => void, options?: CommandOptions): void;
-    /** @hidden A command of the server console, its words read by `run`, as `__addCommand`'s are. */
-    __addServerCommand(usage: string, run: (words: __CommandWords) => void): void;
+    addServerCommand(name: string, handler: ServerCommandHandler): void;
     /** Shows a HUD message to every player, with the same options as `player.showHud`. */
     showHud(text: string, options?: HudOptions): void;
-    /**
-     * Precaches a file, so the game can use it and players download it:
-     * `const shock = server.precache("sprites/shockwave.spr")`. At the top level
-     * of the file it is precached when the map loads; in the `"precache"` event,
-     * at once. A sound is written as the game plays it, under `sound/`:
-     * `"myplugin/hit.wav"`. Returns the file as a `Resource` - what an effect
-     * takes for a sprite or a model.
-     *
-     * Pawn: `precache_model`, `precache_sound`, `precache_generic`
-     */
-    precache(path: string): Resource;
 }
 /** The server the plugin runs on: its events, commands and map. */
 export declare const server: Server;
 /**
- * The game's events (reapi hookchains and Ham Sandwich functions) and round
- * control, as an event target like the DOM's:
+ * The game's events (reapi hookchains) and round control, as an event target
+ * like the DOM's:
  *
  * ```ts
  * game.addEventListener("takeDamage", (event) => {
  *   if (event.player.isBot) event.preventDefault();
  * });
  * game.addEventListener("canPlayerHearPlayer", (event) => event.listener.team == event.sender.team);
- * game.addEventListener("fallDamage", (event) => event.result / 2, true);
+ * game.addEventListener("flPlayerFallDamage", (event) => event.result / 2, true);
  * ```
  *
  * The event's type follows from its name. What a listener returns is the
@@ -1421,35 +1032,19 @@ export declare const server: Server;
  * nothing leaves it to the game; `event.preventDefault()` blocks without an
  * answer. A value of the wrong type is an error in the editor and in the build.
  *
- * The game rules are its fields: `game.isFreezeTime`, `game.ctWins`,
- * `game.roundWinner`.
- *
- * Pawn: `RegisterHookChain`, `RegisterHam`, `get_member_game`
+ * Pawn: `RegisterHookChain`
  */
-export declare class Game extends GameFields {
+export declare class Game {
     /**
-     * Calls `listener` every time the game runs `type`. With `true` - or
-     * `{ post: true }` - it runs after the game has acted, with the game's answer
-     * in `event.result`; by default it runs before and can stop it.
-     * `classname` narrows it to one class of entity, and only that class's
-     * reach the plugin: `{ classname: "weapon_knife" }`. A `"touch"` listener
-     * takes the classes it is about instead: `{ toucher: "player", touched: "player" }`.
+     * Calls `listener` every time the game runs `type`. With `post` set to `true`
+     * it runs after the game has acted, with the game's answer in `event.result`;
+     * by default it runs before and can stop it.
      *
-     * Pawn: `RegisterHookChain`, `RegisterHam`, `register_touch`
+     * Pawn: `RegisterHookChain`
      */
-    addEventListener<K extends keyof GameEventMap, R extends GameAnswerMap[K] | void | Promise<GameAnswerMap[K] | void> = void>(type: K, listener: (event: GameEventMap[K]) => R, options?: boolean | GameListenerOptions): void;
-    /** Stops calling a listener added with `addEventListener` - the same function and the same options. */
-    removeEventListener<K extends keyof GameEventMap, R extends GameAnswerMap[K] | void | Promise<GameAnswerMap[K] | void> = void>(type: K, listener: (event: GameEventMap[K]) => R, options?: boolean | GameListenerOptions): void;
-    /**
-     * The game's clock: seconds since the map started. Entity fields that hold a
-     * moment - `nextThink`, `damageTime` - are on it:
-     * `grenade.damageTime = game.time + 1`. The attack timers - a weapon's
-     * `nextPrimaryAttack`, a player's `nextAttack` - count from now instead:
-     * `weapon.nextPrimaryAttack = 1` is a second away.
-     *
-     * Pawn: `get_gametime`
-     */
-    get time(): number;
+    addEventListener<K extends keyof GameEventMap, R extends GameAnswerMap[K] | void | Promise<GameAnswerMap[K] | void> = void>(type: K, listener: (event: GameEventMap[K]) => R, post?: boolean): void;
+    /** Stops calling a listener added with `addEventListener` - the same function and the same `post`. */
+    removeEventListener<K extends keyof GameEventMap, R extends GameAnswerMap[K] | void | Promise<GameAnswerMap[K] | void> = void>(type: K, listener: (event: GameEventMap[K]) => R, post?: boolean): void;
     /**
      * Ends the round now:
      *
@@ -1465,61 +1060,6 @@ export declare class Game extends GameFields {
      * Pawn: `rg_round_end`
      */
     endRound(options: EndRoundOptions): void;
-}
-/**
- * The third argument of `game.addEventListener`: `true` stands for
- * `{ post: true }`; a `"touch"` listener names the classes it is about.
- */
-export interface GameListenerOptions {
-    /** Runs the listener after the game has acted, with its answer in `event.result`. */
-    post?: boolean;
-    /** The class of entity the event is listened for on, e.g. `"weapon_knife"`: only its entities reach the listener. */
-    classname?: string;
-    /** For `"touch"`: the class of the entity that moves into the other, e.g. `"player"`; left out, any. */
-    toucher?: string;
-    /** For `"touch"`: the class of the entity touched, e.g. `"func_door"`; left out, any. */
-    touched?: string;
-}
-/**
- * The way one entity uses another - a button pressed, a door opened - one of
- * `"off"`, `"on"`, `"set"` or `"toggle"`.
- *
- * Pawn: `USE_OFF`, `USE_ON`, `USE_SET`, `USE_TOGGLE`
- */
-export type UseType = "off" | "on" | "set" | "toggle";
-/** The options of an entity's action such as `weapon.deploy()` or `entity.heal(...)`. */
-export interface ActionOptions {
-    /**
-     * Whether the game's listeners run too - this plugin's and every other's,
-     * Pawn ones included; `true` by default. `false` runs the game's own
-     * function alone.
-     *
-     * Pawn: `ExecuteHamB`, `ExecuteHam`
-     */
-    hooks?: boolean;
-}
-/**
- * Two entities touched: `toucher` moved into `touched`. Only the classes a
- * listener asked for reach it:
- *
- * ```ts
- * game.addEventListener("touch", onTouch, { toucher: "player", touched: "player" });
- * ```
- *
- * Pawn: `register_touch`
- */
-export declare class TouchEvent {
-    /** The entity that moved into the other. */
-    toucher: Entity;
-    /** The entity it touched. */
-    touched: Entity;
-    constructor(
-    /** The entity that moved into the other. */
-    toucher: Entity, 
-    /** The entity it touched. */
-    touched: Entity);
-    /** Blocks the touch: the game does not act on it. */
-    preventDefault(): void;
 }
 /** The winner of a round, one of `"TERRORIST"`, `"CT"`, `"draw"`, or `"none"` - a restart without a winner. */
 export type RoundWinner = "TERRORIST" | "CT" | "draw" | "none";
@@ -1542,7 +1082,7 @@ export interface EndRoundOptions {
      */
     dispatch?: boolean;
 }
-/** The game the plugin runs in: its events (reapi hookchains and Ham Sandwich functions), its rules' fields and `endRound`. */
+/** The game the plugin runs in: its events (reapi hookchains) and `endRound`. */
 export declare const game: Game;
 /**
  * The places a message can show: `Variant.chat`, `center`, `console`, `notify`.
@@ -1564,11 +1104,11 @@ export declare namespace Variant {
 export type VariantName = "chat" | "center" | "console" | "notify";
 export { Flag } from "./constants";
 export * from "./events";
-import { FlagName, HookName } from "./constants";
-import { Entity, GameFields, PlayerFields } from "./entities";
+import { FlagName, HookName, HamName } from "./constants";
+import { PlayerFields } from "./entities";
 export { Entity, Weapon, WeaponKind, weaponKindOf } from "./entities";
-export { RenderMode, RenderFx, MoveType, Solid, TakeDamage, DeadFlag, WaterLevel, Contents, FixAngle, HitGroup, ArmorType, ObserverMode, JoinState, GameMenu, PlayerModel, IgnoredChat, ThrowDirection, BloodColor, MusicState } from "./entities";
-import { ServerMessageMap } from "./events";
+export { RenderMode, RenderFx, MoveType, Solid, TakeDamage, DeadFlag, WaterLevel, Contents, FixAngle, HitGroup, ArmorType, ObserverMode, JoinState, GameMenu, PlayerModel, IgnoredChat, ThrowDirection, BloodColor, MonsterState, MusicState } from "./entities";
+import { ServerEventMap } from "./events";
 /** A message's recipient together with its place: `{ id: 0, variant: "center" }`. `id` is a player's `id`, `0` for everyone. */
 export interface Target {
     /** The recipient's player `id`; `0` for every player. */
@@ -1605,38 +1145,6 @@ export declare let swapTeam: string;
  * Pawn: `client_print`, `client_print_color`
  */
 export declare function print<T extends Target | Client | number = Target>(to: T, message: string, variant?: VariantName): void;
-/**
- * The server's dictionaries: the files of `data/lang`, a line per key and
- * language, and each player reads them in his own.
- *
- * ```ts
- * lang.load("myplugin");                                        // data/lang/myplugin.txt
- * print(player, lang.translate(player, "MYPLUGIN_WELCOME", [player.name]));
- * ```
- *
- * Pawn: `register_dictionary`, `LookupLangKey`
- */
-export declare namespace lang {
-    /**
-     * Loads the dictionary `data/lang/<name>.txt`: `lang.load("myplugin")`.
-     * `false` when there is no such file.
-     *
-     * Pawn: `register_dictionary`
-     */
-    function load(name: string): boolean;
-    /**
-     * The key's line in the player's language, `null` for the server's:
-     * `lang.translate(player, "MYPLUGIN_WELCOME", [player.name])`.
-     *
-     * `%s`, `%d`, `%f` (`%.1f`, `%02d`, ...) are filled from `args` in order;
-     * one no argument is left for stays as written. The dictionary's colour
-     * codes come back as tags - `\y` as `!y`, `^4` as `!g` - so the line goes
-     * to a menu and to chat alike. A key no dictionary has comes back as it is.
-     *
-     * Pawn: `LookupLangKey`, `format` with `%L`
-     */
-    function translate(player: Client | null, key: string, args?: string[]): string;
-}
 /**
  * Reads and sets a cvar by name in one call: `cvar.num("mp_freezetime")`.
  *
@@ -1763,11 +1271,6 @@ export declare class Call {
     private held;
     private n;
     constructor(id: i32);
-    /** Keeps an argument's cells alive until the call is done. */
-    private hold;
-    /** Puts an argument and its kind at the next place. */
-    private push;
-    private grow;
     /** Adds a number argument as it is: an entity index, a constant, a count. */
     num(value: number): Call;
     /** Adds a fractional number argument, one the native declares as `Float:`. */
@@ -1776,82 +1279,17 @@ export declare class Call {
     str(text: string): Call;
     /** Adds an array of cells the native reads and may write into, followed by its length. */
     buffer(cells: CellBuffer, length: number): Call;
-    /**
-     * Adds an array of cells the native writes into, in a `...` tail: its length
-     * follows by address, as a tail's numbers do - `get_member(id, member,
-     * dest[], len)`.
-     */
-    tailBuffer(cells: CellBuffer, length: number): Call;
     /** Adds a vector: three fractional numbers at one address - an origin, angles, a colour. Unlike `buffer`, no length follows it. */
     vec(x: f64, y: f64, z: f64): Call;
     /** Adds a vector the native fills in; after `run` the result is in `cells`. */
     vecInto(cells: CellBuffer): Call;
-    /**
-     * Adds an array to a forward's `...` tail: `ExecuteForward` gets it as
-     * `PrepareArray` makes it. `floats` sends the numbers as `Float:`.
-     */
-    array(values: number[], floats?: bool): Call;
     /** Adds a number passed by address, as a `...` tail argument must be; `out` reads what the native wrote into it. */
     ref(value: number): Call;
     /** The value the native left in the `ref` argument at this position, after `run`. */
     out(index: i32): number;
-    /** The number of arguments added so far: the position the next one takes. */
-    get count(): i32;
-    /**
-     * Adds room for text the native writes, in a `...` tail, holding `text` to
-     * begin with; its length follows by address, as `ret[], len` wants it.
-     * After `run` the text is in `cellsAt` of this position.
-     */
-    textInto(text: string, length: i32): Call;
-    /** The cells at the address of the argument at this position, after `run`: a vector or text the native wrote. */
-    cellsAt(index: i32): StaticArray<i32>;
     /** Calls the native with the arguments added so far and returns its result. */
     run(): number;
 }
-/**
- * A value a native writes back through its argument, where Pawn passes a
- * variable for the native to fill: text into `ret[], len`, a number into
- * `&value`. Give it where the native takes one; after the call, `value` is
- * what the native wrote.
- *
- * ```ts
- * const reason = new Ref("");
- * if (!dllfunc(DLLFunc_ClientConnect, id, "Bot", "127.0.0.1", reason)) console.log(reason.value);
- * ```
- */
-export declare class Ref<T> {
-    /** The value the native wrote; before the call, the one it starts with. */
-    value: T;
-    constructor(/** The value the native wrote; before the call, the one it starts with. */ value: T);
-    /** @hidden Adds this to a call: text as room to write in with its length, a number or a boolean by address. */
-    __push(call: Call, float: bool): void;
-    /** @hidden Reads what the native wrote at this position of the call. */
-    __back(call: Call, at: i32, float: bool): void;
-}
-/** @hidden What an argument left out of a native's `...` tail stands at: nothing is sent for it. */
-export declare function __noArgument<T>(): T;
-/**
- * @hidden A native's `...` tail of up to twelve arguments of any kind, onto
- * `call`, and the call run: what the generated wrappers of ~/natives call.
- * `floats` is the native's float table for this call (bit `i`: the tail's
- * argument `i` is a Float; TAIL_FLOAT_RESULT: so is the result) - a
- * plugin's number cannot say whether it is one. What the native wrote into
- * a vector or a Ref is read back into it.
- */
-export declare function __callTail<A, B, C, D, E, F, G, H, I, J, K, L>(call: Call, floats: i32, a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H, i: I, j: J, k: K, l: L): number;
-/**
- * @hidden A field of a reapi field native, as T: a whole number or a Float
- * as a number (or a boolean), a vector as a Vector, text as a string. A T the
- * field is not reads as nothing, and the console says which one to write.
- */
-export declare function __getField<T>(call: Call, kind: i32, element: number, native: string): T;
-/**
- * @hidden Writes a field of a reapi field native from a value of its kind:
- * a number - a Float where the field is one - a boolean, a vector (a Vector or
- * any three numbers), text. A value of another kind writes nothing, and the
- * console says so. The native's result: 1 when it wrote.
- */
-export declare function __setField<T>(call: Call, kind: i32, value: T, element: number, native: string): number;
 /**
  * Registers a reapi hookchain with a raw handler of four numbers - the low
  * level under `game.addEventListener`, which is what a plugin uses.
@@ -1864,6 +1302,12 @@ export declare function __setField<T>(call: Call, kind: i32, value: T, element: 
  * Pawn: `RegisterHookChain`, `EnableHookChain`, `DisableHookChain`
  */
 export declare function hook(name: HookName, handler: WideHandler, post?: bool): number;
+/**
+ * Registers a Ham Sandwich hook the same way: `ham("spawn", "player", onSpawn)`.
+ *
+ * Pawn: `RegisterHam`
+ */
+export declare function ham(name: HamName, entityClass: string, handler: WideHandler, post?: bool): number;
 /** The plugin's name, version, author and description, given to `plugin({ ... })`; `amxts_plugins` in the server console lists them. */
 export interface PluginInfo {
     /** The plugin's name, e.g. `"My Plugin"`. */
@@ -1922,11 +1366,11 @@ export declare class NoArgument {
 }
 /** What subscribe() hangs on: a Forward, reached by its tag - see forwardTrampoline. */
 declare abstract class ForwardListener {
-    abstract deliver(): void;
+    abstract deliver(a: i32, b: i32, c: i32): void;
 }
 /**
  * A forward other plugins listen to, Pawn and TypeScript alike. Its arguments
- * are its type parameters, up to 32 - as many as AMX Mod X gives a forward:
+ * are its type parameters:
  *
  * ```ts
  * const roundStart = new Forward("myplugin_on_round_start");
@@ -1943,8 +1387,7 @@ declare abstract class ForwardListener {
  *
  * A Pawn plugin listens with `public myplugin_on_round_end(winner)`, as usual;
  * a TypeScript plugin with `subscribe(handler)`. A number, a boolean and a
- * Player (its `id`) reach Pawn as numbers, a `Float` as a Float, a string as
- * a string, a `number[]` or a `Vector` as an array. A `Team` or a
+ * Player (its `id`) reach Pawn as numbers, a string as a string. A `Team` or a
  * `RoundWinner` goes as Pawn's number where an include declares the forward
  * with that tag; a `Team` for a forward no include declares is a build error.
  *
@@ -1954,7 +1397,7 @@ declare abstract class ForwardListener {
  *
  * Pawn: `CreateMultiForward`, `ExecuteForward`
  */
-export declare class Forward<T1 = NoArgument, T2 = NoArgument, T3 = NoArgument, T4 = NoArgument, T5 = NoArgument, T6 = NoArgument, T7 = NoArgument, T8 = NoArgument, T9 = NoArgument, T10 = NoArgument, T11 = NoArgument, T12 = NoArgument, T13 = NoArgument, T14 = NoArgument, T15 = NoArgument, T16 = NoArgument, T17 = NoArgument, T18 = NoArgument, T19 = NoArgument, T20 = NoArgument, T21 = NoArgument, T22 = NoArgument, T23 = NoArgument, T24 = NoArgument, T25 = NoArgument, T26 = NoArgument, T27 = NoArgument, T28 = NoArgument, T29 = NoArgument, T30 = NoArgument, T31 = NoArgument, T32 = NoArgument> extends ForwardListener {
+export declare class Forward<A = NoArgument, B = NoArgument, C = NoArgument> extends ForwardListener {
     /** The forward's name, as Pawn plugins listen to it. */
     name: string;
     private crossing;
@@ -1966,11 +1409,12 @@ export declare class Forward<T1 = NoArgument, T2 = NoArgument, T3 = NoArgument, 
     /**
      * @param name The forward's name, as Pawn plugins hook it.
      * @param crossing @internal Written by the build from the forward's Pawn
-     * declaration in an include, or its types; a plugin leaves it out.
+     * declaration in an include; a plugin leaves it out.
      */
     constructor(
     /** The forward's name, as Pawn plugins listen to it. */
     name: string, crossing?: string);
+    private crossingOf;
     /**
      * Calls `handler` each time the forward is emitted - by this plugin, another
      * TypeScript plugin or a Pawn plugin:
@@ -1985,11 +1429,11 @@ export declare class Forward<T1 = NoArgument, T2 = NoArgument, T3 = NoArgument, 
      * only when one of the amxts host plugin's includes declares it; one emitted
      * from TypeScript reaches every subscriber.
      */
-    subscribe(handler: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9, a10: T10, a11: T11, a12: T12, a13: T13, a14: T14, a15: T15, a16: T16, a17: T17, a18: T18, a19: T19, a20: T20, a21: T21, a22: T22, a23: T23, a24: T24, a25: T25, a26: T26, a27: T27, a28: T28, a29: T29, a30: T30, a31: T31, a32: T32) => void): void;
+    subscribe(handler: (a: A, b: B, c: C) => void): void;
     /** Stops calling a handler given to `subscribe()`. */
-    unsubscribe(handler: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9, a10: T10, a11: T11, a12: T12, a13: T13, a14: T14, a15: T15, a16: T16, a17: T17, a18: T18, a19: T19, a20: T20, a21: T21, a22: T22, a23: T23, a24: T24, a25: T25, a26: T26, a27: T27, a28: T28, a29: T29, a30: T30, a31: T31, a32: T32) => void): void;
+    unsubscribe(handler: (a: A, b: B, c: C) => void): void;
     /** Passes the forward's arguments to every `subscribe()` handler; the server calls it, not a plugin. */
-    deliver(): void;
+    deliver(a: i32, b: i32, c: i32): void;
     /**
      * Creates the forward now rather than on its first emit; later calls do nothing.
      *
@@ -2001,7 +1445,7 @@ export declare class Forward<T1 = NoArgument, T2 = NoArgument, T3 = NoArgument, 
      *
      * Pawn: `ExecuteForward`
      */
-    emit(a1?: T1, a2?: T2, a3?: T3, a4?: T4, a5?: T5, a6?: T6, a7?: T7, a8?: T8, a9?: T9, a10?: T10, a11?: T11, a12?: T12, a13?: T13, a14?: T14, a15?: T15, a16?: T16, a17?: T17, a18?: T18, a19?: T19, a20?: T20, a21?: T21, a22?: T22, a23?: T23, a24?: T24, a25?: T25, a26?: T26, a27?: T27, a28?: T28, a29?: T29, a30?: T30, a31?: T31, a32?: T32): boolean;
+    emit(a?: A, b?: B, c?: C): boolean;
 }
 /**
  * A key-to-text store on disk: a Map that survives a map change and a server
@@ -2043,8 +1487,6 @@ import { Access, HideHud } from "./flags";
 export * from "./hooks";
 import { GameAnswerMap, GameEventMap } from "./hooks";
 export * from "./vector";
-export * from "./effects";
-export * from "./fetch";
 export { EntityFilter } from "./entities";
 /**
  * A public function of another plugin - a Pawn plugin's public, or a
@@ -2147,12 +1589,6 @@ export declare function textCells(text: string, count: number): number[];
 /** Turns a menu's colour tags (`!y`, `!R`, ...) into the codes the game draws, and drops the ones only chat has (`!g`, `!b`, `!t`) and the game's own codes written into the text (`\y`); any other `!` stays. `showMenu` calls it, and a module hands its result to Pawn. */
 export declare function menuColors(text: string): string;
 /**
- * Text from Pawn - a dictionary's line, a Pawn plugin's argument - with its
- * colour codes made tags: a menu's `\y` `\r` `\d` `\w` `\R` are `!y` `!r`
- * `!d` `!w` `!R`, and chat's bytes `^1` `^3` `^4` are `!y` `!t` `!g`.
- */
-export declare function colorTags(text: string): string;
-/**
  * Shows a player an old-style menu of any length: `keys` are the keys it
  * accepts, `title` the name its key presses come back under.
  *
@@ -2163,123 +1599,3 @@ export declare function colorTags(text: string): string;
  * Pawn: `show_menu`, `register_menucmd`
  */
 export declare function showMenu(id: number, keys: number, text: string, title: string): void;
-/** A colour of a menu's item numbers: a menu's colour tag, `"!y"`, `"!r"`, `"!d"` or `"!w"`. */
-export type MenuColor = "!y" | "!r" | "!d" | "!w";
-/** The options of a `Menu`: its pages and the texts of its own items. */
-export interface MenuOptions {
-    /**
-     * Items on a page, `7` at most: Back, More and Exit go below them. `0`
-     * puts every item on one page, without Back and More - `10` at most.
-     *
-     * Pawn: `MPROP_PERPAGE`
-     */
-    perPage?: number;
-    /**
-     * Whether the menu has an Exit item; `true` by default.
-     *
-     * Pawn: `MPROP_EXIT`
-     */
-    exit?: boolean;
-    /**
-     * The Back item's text; AMX Mod X's `"Back"`, in the player's language, by default.
-     *
-     * Pawn: `MPROP_BACKNAME`
-     */
-    backText?: string;
-    /**
-     * The More item's text; AMX Mod X's `"More"` by default.
-     *
-     * Pawn: `MPROP_NEXTNAME`
-     */
-    nextText?: string;
-    /**
-     * The Exit item's text; AMX Mod X's `"Exit"` by default.
-     *
-     * Pawn: `MPROP_EXITNAME`
-     */
-    exitText?: string;
-    /**
-     * The colour of the item numbers; `"!r"`, red, by default.
-     *
-     * Pawn: `MPROP_NUMBER_COLOR`
-     */
-    numberColor?: MenuColor;
-}
-/** The context a menu's functions get: the player it is shown to, the menu and the data it was shown with. */
-export interface MenuContext<Data extends object = object> {
-    /** The player the menu is shown to. */
-    player: Player;
-    /** The menu itself: `menu.show(player, data)` keeps it open after a choice. */
-    menu: Menu<Data>;
-    /** The data `show` was given. */
-    data: Data;
-}
-/** An item of a `Menu`: its title, when it is shown and can be chosen, and what choosing it does. */
-export interface MenuItemOptions<Data extends object = object> {
-    /** The item's text - or a function that gives it for the player it is shown to. */
-    title: string | ((context: MenuContext<Data>) => string);
-    /** Whether the player can choose it; one he cannot is drawn grey and does nothing. `true` by default. */
-    enabled?: boolean | ((context: MenuContext<Data>) => boolean);
-    /** Whether it is shown at all; a hidden item takes no place. `true` by default. */
-    visible?: boolean | ((context: MenuContext<Data>) => boolean);
-    /** The item's action, run when the player chooses it. The menu closes, unless this shows it again. */
-    onSelect: (context: MenuContext<Data>) => void;
-}
-/**
- * A menu of AMX Mod X's own: items a player picks with the number keys, on
- * pages with Back and More, and Exit. `Data` is what it is shown with, which
- * its functions get beside the player.
- *
- * ```ts
- * interface ShopData {
- *   category: string;
- * }
- *
- * const shop = new Menu<ShopData>("!yShop");
- * shop.addItem({
- *   title: "Armor - $1000",
- *   enabled: ({ player }) => player.armor < 100,
- *   onSelect: ({ player }) => {
- *     player.armor = 100;
- *   },
- * });
- * shop.show(player, { category: "armor" });
- * ```
- *
- * The title and each item's title, `visible` and `enabled` are asked at
- * every `show`, for that player. Colour tags as in `showMenu`: `!y` yellow,
- * `!r` red, `!d` grey, `!w` white, `!R` to the right edge.
- *
- * Pawn: `menu_create`, `menu_setprop`
- */
-export declare class Menu<Data extends object = object> {
-    private readonly title;
-    private readonly options;
-    private readonly items;
-    constructor(title: string | ((context: MenuContext<Data>) => string), options?: MenuOptions);
-    /**
-     * Adds an item: its title, when it is shown and can be chosen, and what
-     * choosing it does.
-     *
-     * ```ts
-     * shop.addItem({
-     *   title: ({ player }) => `Heal (${player.health} HP)`,
-     *   visible: ({ player }) => player.isAlive,
-     *   enabled: ({ player }) => player.health < 100,
-     *   onSelect: ({ player }) => {
-     *     player.health = 100;
-     *   },
-     * });
-     * ```
-     *
-     * Pawn: `menu_additem`
-     */
-    addItem(item: MenuItemOptions<Data>): void;
-    /**
-     * Shows the menu to a player, with the data its functions get; it closes
-     * when he chooses an item or leaves it.
-     *
-     * Pawn: `menu_display`
-     */
-    show(player: Player, data?: Data | null): void;
-}

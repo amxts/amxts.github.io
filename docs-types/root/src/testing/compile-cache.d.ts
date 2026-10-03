@@ -8,7 +8,8 @@ export declare const cacheCounts: {
 /**
  * `run`'s value, from the disk when an earlier run made it from the same
  * sources, or made now and kept. `parts` is what it depends on besides the
- * files it reads: the entry, the flags. `keep` says whether a failure is
- * worth keeping - a compile error is, a file that could not be opened is not.
+ * files it reads: the entry, the flags. A value is JSON, with Uint8Arrays in
+ * it; `keep` says whether a failure is worth keeping - a compile error is, a
+ * file that could not be opened is not.
  */
-export declare const cached: <T>(parts: unknown[], run: () => Promise<T>, keep?: (value: T) => boolean) => Promise<T>;
+export declare function cached<T>(parts: unknown[], run: () => Promise<T>, keep?: (value: T) => boolean): Promise<T>;
