@@ -2,6 +2,7 @@
 import type { Release } from '~~/server/utils/changelog'
 
 const { t } = useI18n()
+const localePath = useLocalePath()
 const route = useRoute()
 const router = useRouter()
 
@@ -34,6 +35,16 @@ useSeoMeta({
     <UPageHeader :title="t('changelog.title')" :description="t('changelog.description')" />
 
     <UPageBody :ui="{ base: 'mt-8 pb-16' }">
+      <UAlert
+        :title="t('changelog.next.title')"
+        :description="t('changelog.next.description')"
+        icon="i-lucide-flask-conical"
+        color="warning"
+        variant="subtle"
+        class="mb-10"
+        :actions="[{ label: t('changelog.next.action'), to: localePath('/docs/next'), color: 'warning', variant: 'outline', trailingIcon: 'i-lucide-arrow-right' }]"
+      />
+
       <div v-if="repos.length > 1" class="mb-10 flex flex-wrap gap-2">
         <UButton
           :label="t('changelog.all')"
