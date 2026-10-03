@@ -15,7 +15,8 @@
 // - a shell block of package manager commands becomes tabs, one per package
 //   manager;
 // - a TypeScript example gets `twoslash`, so the site shows its types on
-//   hover (from docs-types/, `bun run docs:types`);
+//   hover (from docs-types/, `bun run docs:types`); a block indented in a
+//   list item or quoted is rewritten like a top-level one;
 // - a module's README (its repository) becomes its catalog page:
 //   the header block gives the title and description, links into the
 //   repository open on GitHub, alerts become callouts.
@@ -48,6 +49,12 @@ export function sitePath(file: string, version: DocsVersion = 'current') {
   return `${docsPrefix(page[1] as Locale, version)}${path ? `/${path}` : ''}`
 }
 
+/** What a fence's line starts with inside a list item (its indent) or a quote (`> `). */
+const fencePrefix = /^[\t >]*/
+
+/** A line that opens or closes a fenced block, at the top level, in a list item or in a quote. */
+const isFence = (line: string) => line.slice(line.match(fencePrefix)![0].length).startsWith('```')
+
 /**
  * The text as prose and code blocks in turn: prose at even places, a fenced
  * block (its fences included) at odd ones. Code blocks stay exactly as they
@@ -58,7 +65,7 @@ export function splitFences(text: string) {
   let current: string[] = []
   let fenced = false
   for (const line of text.split('\n')) {
-    const fence = line.trimStart().startsWith('```')
+    const fence = isFence(line)
     if (fence && !fenced) {
       parts.push(current.join('\n'))
       current = [line]
@@ -106,7 +113,7 @@ function codeGroups(text: string) {
   let fenced = false
   let open = false
   for (const [i, line] of lines.entries()) {
-    if (line.trimStart().startsWith('```'))
+    if (isFence(line))
       fenced = !fenced
     else if (!fenced && line.trim() === '::: code-group')
       [lines[i], open] = ['::code-group{sync="pm"}', true]
@@ -274,7 +281,27 @@ function twoslash(block: string, locale: Locale, version: DocsVersion) {
   return [fence!.replace(/^```ts/, folder === 'types' ? '```ts twoslash' : `\`\`\`ts twoslash ${folder}`), ...prelude, ...rest].join('\n')
 }
 
-const code = (block: string, locale: Locale, version: DocsVersion) => twoslash(packageManagers(block), locale, version)
+/**
+ * A fenced block as a top-level one writes it, and what its lines start
+ * with: the indent of a list item, the `> ` of a quote. Markdown strips that
+ * prefix from the code, so the site reads the block without it.
+ */
+export function unindent(block: string) {
+  const prefix = block.match(fencePrefix)![0]
+  const text = block.split('\n').map(line => line.startsWith(prefix) ? line.slice(prefix.length) : line.trim() === prefix.trim() ? '' : line).join('\n')
+  return { prefix, text }
+}
+
+/**
+ * A code block as the site shows it. One inside a list item or a quote is
+ * rewritten like a top-level one and gets its prefix back on every line, so it
+ * keeps its place there and Twoslash still sees the code without it.
+ */
+function code(block: string, locale: Locale, version: DocsVersion) {
+  const { prefix, text } = unindent(block)
+  const rewritten = twoslash(packageManagers(text), locale, version)
+  return prefix ? rewritten.split('\n').map(line => line ? `${prefix}${line}` : prefix.trimEnd()).join('\n') : rewritten
+}
 
 /** A page of the framework's docs/ in a docs version, `from` its path there (`docs/en/2.core/01.plugin.md`). */
 export function docsPage(markdown: string, from: string, locale: Locale, version: DocsVersion) {

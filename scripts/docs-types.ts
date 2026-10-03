@@ -25,7 +25,7 @@ import { cpSync, existsSync, readdirSync, readFileSync, rmSync, writeFileSync } 
 import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import * as ts from 'typescript'
-import { docsPage, modulePage, splitFences } from '../modules/amxts-docs/markdown'
+import { docsPage, modulePage, splitFences, unindent } from '../modules/amxts-docs/markdown'
 import { corePath, modulesPath } from '../modules/amxts-docs/sources'
 import { typesFolder } from '../shared/docs'
 
@@ -83,7 +83,9 @@ const readmes = locales.flatMap(({ code }) => (modulesPath && version === 'curre
 
 /** Every TypeScript example: the code Twoslash checks, the hidden prelude included. */
 const snippets = [...corePages, ...readmes].flatMap(page => splitFences(page.text)
-  .filter((part, i) => i % 2 === 1 && part.startsWith('```ts twoslash'))
+  .filter((_, i) => i % 2 === 1)
+  .map(part => unindent(part).text)
+  .filter(part => part.startsWith('```ts twoslash'))
   .map(part => ({ from: page.from, locale: page.locale, code: part.split('\n').slice(1, -1).join('\n') })))
 
 /**
