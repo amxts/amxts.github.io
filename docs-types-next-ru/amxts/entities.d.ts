@@ -243,6 +243,15 @@ export declare class Entity {
      * Pawn: `pev->origin`
      */
     get origin(): Vector;
+    /**
+     * `origin`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const origin = new Vector();
+     * player.getOrigin(origin);
+     * ```
+     */
+    getOrigin(target: Vector): Vector;
     set origin(value: number[]);
     /**
      * Сохранённая позиция сущности; что в ней, зависит от сущности (разбиваемая хранит здесь точку появления).
@@ -250,6 +259,15 @@ export declare class Entity {
      * Pawn: `pev->oldorigin`
      */
     get oldOrigin(): Vector;
+    /**
+     * `oldOrigin`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const oldOrigin = new Vector();
+     * player.getOldOrigin(oldOrigin);
+     * ```
+     */
+    getOldOrigin(target: Vector): Vector;
     set oldOrigin(value: number[]);
     /**
      * Скорость сущности с направлением, единиц в секунду: бегущий игрок — около `250`.
@@ -257,6 +275,15 @@ export declare class Entity {
      * Pawn: `pev->velocity`
      */
     get velocity(): Vector;
+    /**
+     * `velocity`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const velocity = new Vector();
+     * player.getVelocity(velocity);
+     * ```
+     */
+    getVelocity(target: Vector): Vector;
     set velocity(value: number[]);
     /**
      * Добавочная скорость сущности от того, в чём она стоит, — конвейер, `trigger_push`, течение. Единиц в секунду.
@@ -264,6 +291,15 @@ export declare class Entity {
      * Pawn: `pev->basevelocity`
      */
     get baseVelocity(): Vector;
+    /**
+     * `baseVelocity`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const baseVelocity = new Vector();
+     * player.getBaseVelocity(baseVelocity);
+     * ```
+     */
+    getBaseVelocity(target: Vector): Vector;
     set baseVelocity(value: number[]);
     /**
      * Скорость конвейера для предсказания движения на клиенте игрока; движок обнуляет её каждый кадр игрока.
@@ -271,6 +307,15 @@ export declare class Entity {
      * Pawn: `pev->clbasevelocity`
      */
     get clBaseVelocity(): Vector;
+    /**
+     * `clBaseVelocity`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const clBaseVelocity = new Vector();
+     * player.getClBaseVelocity(clBaseVelocity);
+     * ```
+     */
+    getClBaseVelocity(target: Vector): Vector;
     set clBaseVelocity(value: number[]);
     /**
      * Направление движения двери, платформы или кнопки; вычисляется из углов при появлении.
@@ -278,6 +323,15 @@ export declare class Entity {
      * Pawn: `pev->movedir`
      */
     get moveDir(): Vector;
+    /**
+     * `moveDir`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const moveDir = new Vector();
+     * player.getMoveDir(moveDir);
+     * ```
+     */
+    getMoveDir(target: Vector): Vector;
     set moveDir(value: number[]);
     /**
      * Поворот сущности: тангаж, рысканье, крен в градусах. У игрока следует за взглядом; чтобы развернуть взгляд, поставьте его вместе с `fixAngle`.
@@ -285,6 +339,15 @@ export declare class Entity {
      * Pawn: `pev->angles`
      */
     get angles(): Vector;
+    /**
+     * `angles`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const angles = new Vector();
+     * player.getAngles(angles);
+     * ```
+     */
+    getAngles(target: Vector): Vector;
     set angles(value: number[]);
     /**
      * Скорость вращения сущности, градусов в секунду по каждой оси.
@@ -292,6 +355,15 @@ export declare class Entity {
      * Pawn: `pev->avelocity`
      */
     get angularVelocity(): Vector;
+    /**
+     * `angularVelocity`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const angularVelocity = new Vector();
+     * player.getAngularVelocity(angularVelocity);
+     * ```
+     */
+    getAngularVelocity(target: Vector): Vector;
     set angularVelocity(value: number[]);
     /**
      * Толчок взгляда игрока от отдачи или попадания, в градусах; движок сам гасит его до нуля.
@@ -299,6 +371,15 @@ export declare class Entity {
      * Pawn: `pev->punchangle`
      */
     get punchAngle(): Vector;
+    /**
+     * `punchAngle`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const punchAngle = new Vector();
+     * player.getPunchAngle(punchAngle);
+     * ```
+     */
+    getPunchAngle(target: Vector): Vector;
     set punchAngle(value: number[]);
     /**
      * Направление взгляда игрока: тангаж (вниз — положительный), рысканье, крен в градусах. Только у игроков.
@@ -306,6 +387,15 @@ export declare class Entity {
      * Pawn: `pev->v_angle`
      */
     get viewAngle(): Vector;
+    /**
+     * `viewAngle`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const viewAngle = new Vector();
+     * player.getViewAngle(viewAngle);
+     * ```
+     */
+    getViewAngle(target: Vector): Vector;
     set viewAngle(value: number[]);
     /**
      * Конечная точка предсказываемого снаряда; уходит клиенту вместе со `startTime` и `impactTime`.
@@ -313,6 +403,15 @@ export declare class Entity {
      * Pawn: `pev->endpos`
      */
     get endPos(): Vector;
+    /**
+     * `endPos`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const endPos = new Vector();
+     * player.getEndPos(endPos);
+     * ```
+     */
+    getEndPos(target: Vector): Vector;
     set endPos(value: number[]);
     /**
      * Начальная точка предсказываемого снаряда; уходит клиенту вместе с `endPos`.
@@ -320,6 +419,15 @@ export declare class Entity {
      * Pawn: `pev->startpos`
      */
     get startPos(): Vector;
+    /**
+     * `startPos`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const startPos = new Vector();
+     * player.getStartPos(startPos);
+     * ```
+     */
+    getStartPos(target: Vector): Vector;
     set startPos(value: number[]);
     /**
      * Игровое время, когда предсказываемый снаряд долетит до `endPos`.
@@ -404,6 +512,15 @@ export declare class Entity {
      * Pawn: `pev->absmin`
      */
     get absMin(): Vector;
+    /**
+     * `absMin`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const absMin = new Vector();
+     * player.getAbsMin(absMin);
+     * ```
+     */
+    getAbsMin(target: Vector): Vector;
     set absMin(value: number[]);
     /**
      * Верхний угол габаритов сущности в координатах мира; движок пересчитывает его при перемещении.
@@ -411,6 +528,15 @@ export declare class Entity {
      * Pawn: `pev->absmax`
      */
     get absMax(): Vector;
+    /**
+     * `absMax`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const absMax = new Vector();
+     * player.getAbsMax(absMax);
+     * ```
+     */
+    getAbsMax(target: Vector): Vector;
     set absMax(value: number[]);
     /**
      * Нижний угол габаритов сущности относительно `origin`: `(-16, -16, -36)` у стоящего игрока. Ставится через `setSize(mins, maxs)`, чтобы `size` и `absMin` пересчитались.
@@ -418,6 +544,15 @@ export declare class Entity {
      * Pawn: `pev->mins`
      */
     get mins(): Vector;
+    /**
+     * `mins`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const mins = new Vector();
+     * player.getMins(mins);
+     * ```
+     */
+    getMins(target: Vector): Vector;
     set mins(value: number[]);
     /**
      * Верхний угол габаритов сущности относительно `origin`: `(16, 16, 36)` у стоящего игрока. Ставится через `setSize(mins, maxs)`, чтобы `size` и `absMax` пересчитались.
@@ -425,6 +560,15 @@ export declare class Entity {
      * Pawn: `pev->maxs`
      */
     get maxs(): Vector;
+    /**
+     * `maxs`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const maxs = new Vector();
+     * player.getMaxs(maxs);
+     * ```
+     */
+    getMaxs(target: Vector): Vector;
     set maxs(value: number[]);
     /**
      * Размеры габаритов сущности: maxs минус mins.
@@ -432,6 +576,15 @@ export declare class Entity {
      * Pawn: `pev->size`
      */
     get size(): Vector;
+    /**
+     * `size`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const size = new Vector();
+     * player.getSize(size);
+     * ```
+     */
+    getSize(target: Vector): Vector;
     set size(value: number[]);
     /**
      * Собственные часы двери, платформы или поезда: идут, только пока сущность движется, и её `nextThink` отсчитывается по ним.
@@ -565,6 +718,15 @@ export declare class Entity {
      * Pawn: `pev->rendercolor`
      */
     get renderColor(): Vector;
+    /**
+     * `renderColor`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const renderColor = new Vector();
+     * player.getRenderColor(renderColor);
+     * ```
+     */
+    getRenderColor(target: Vector): Vector;
     set renderColor(value: number[]);
     /**
      * Эффект отрисовки сущности, одно из: `"none"` — нет; `"glowShell"` — цветная оболочка вокруг модели (цвет — `renderColor`, толщина — `renderAmount`); `"pulseSlow"`, `"pulseFast"`, `"pulseSlowWide"`, `"pulseFastWide"` — прозрачность пульсирует; `"fadeSlow"`, `"fadeFast"` — растворяется; `"solidSlow"`, `"solidFast"` — проявляется; `"strobeSlow"`, `"strobeFast"`, `"strobeFaster"`, `"flickerSlow"`, `"flickerFast"` — мигает; `"hologram"` — мерцающая голограмма, тает с расстоянием; `"distort"`, `"noDissipation"`, `"deadPlayer"`, `"explode"`, `"clampMinScale"`, `"lightMultiplier"` — для спрайтов, трупов и особых эффектов.
@@ -607,6 +769,15 @@ export declare class Entity {
      * Pawn: `pev->view_ofs`
      */
     get viewOffset(): Vector;
+    /**
+     * `viewOffset`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const viewOffset = new Vector();
+     * player.getViewOffset(viewOffset);
+     * ```
+     */
+    getViewOffset(target: Vector): Vector;
     set viewOffset(value: number[]);
     /**
      * Кнопки, которые игрок держит в этом кадре, например `"attack"`, `"jump"`, `"duck"`, `"use"`.
@@ -999,6 +1170,15 @@ export declare class Entity {
      * Pawn: `pev->vuser1`
      */
     get vuser1(): Vector;
+    /**
+     * `vuser1`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const vuser1 = new Vector();
+     * player.getVuser1(vuser1);
+     * ```
+     */
+    getVuser1(target: Vector): Vector;
     set vuser1(value: number[]);
     /**
      * Свободное поле: плагин хранит здесь своё значение, игра его не трогает.
@@ -1006,6 +1186,15 @@ export declare class Entity {
      * Pawn: `pev->vuser2`
      */
     get vuser2(): Vector;
+    /**
+     * `vuser2`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const vuser2 = new Vector();
+     * player.getVuser2(vuser2);
+     * ```
+     */
+    getVuser2(target: Vector): Vector;
     set vuser2(value: number[]);
     /**
      * Свободное поле: плагин хранит здесь своё значение, игра его не трогает.
@@ -1013,6 +1202,15 @@ export declare class Entity {
      * Pawn: `pev->vuser3`
      */
     get vuser3(): Vector;
+    /**
+     * `vuser3`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const vuser3 = new Vector();
+     * player.getVuser3(vuser3);
+     * ```
+     */
+    getVuser3(target: Vector): Vector;
     set vuser3(value: number[]);
     /**
      * Свободное поле: плагин хранит здесь своё значение, игра его не трогает.
@@ -1020,6 +1218,15 @@ export declare class Entity {
      * Pawn: `pev->vuser4`
      */
     get vuser4(): Vector;
+    /**
+     * `vuser4`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const vuser4 = new Vector();
+     * player.getVuser4(vuser4);
+     * ```
+     */
+    getVuser4(target: Vector): Vector;
     set vuser4(value: number[]);
     /**
      * Свободное поле: плагин хранит здесь своё значение, игра его не трогает.
@@ -1631,6 +1838,15 @@ export declare class PlayerFields extends Entity {
      * Pawn: `CBasePlayer::m_vBlastVector`
      */
     get blastVector(): Vector;
+    /**
+     * `blastVector`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const blastVector = new Vector();
+     * player.getBlastVector(blastVector);
+     * ```
+     */
+    getBlastVector(target: Vector): Vector;
     set blastVector(value: number[]);
     /**
      * `true`, если игрока убила граната.
@@ -1694,6 +1910,15 @@ export declare class PlayerFields extends Entity {
      * Pawn: `CBasePlayer::m_vLastOrigin`
      */
     get lastOrigin(): Vector;
+    /**
+     * `lastOrigin`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const lastOrigin = new Vector();
+     * player.getLastOrigin(lastOrigin);
+     * ```
+     */
+    getLastOrigin(target: Vector): Vector;
     set lastOrigin(value: number[]);
     /**
      * `userid` игрока, за кик которого проголосовал этот (команда `vote`); `0` — ни за кого.
@@ -2181,6 +2406,15 @@ export declare class PlayerFields extends Entity {
      * Pawn: `CBasePlayer::m_vecAutoAim`
      */
     get autoAim(): Vector;
+    /**
+     * `autoAim`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const autoAim = new Vector();
+     * player.getAutoAim(autoAim);
+     * ```
+     */
+    getAutoAim(target: Vector): Vector;
     set autoAim(value: number[]);
     /**
      * `true`, пока у автоприцела игрока есть цель под прицелом.
@@ -2279,6 +2513,15 @@ export declare class PlayerFields extends Entity {
      * Pawn: `CBasePlayer::m_prevgaitorigin`
      */
     get prevGaitOrigin(): Vector;
+    /**
+     * `prevGaitOrigin`, записанный в `target`, который и возвращается: новый `Vector` не создаётся — для кода, который работает каждый кадр.
+     *
+     * ```ts
+     * const prevGaitOrigin = new Vector();
+     * player.getPrevGaitOrigin(prevGaitOrigin);
+     * ```
+     */
+    getPrevGaitOrigin(target: Vector): Vector;
     set prevGaitOrigin(value: number[]);
     /**
      * Наклон верхней части тела, который игра вычислила для модели игрока.

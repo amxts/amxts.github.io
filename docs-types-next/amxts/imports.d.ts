@@ -31,6 +31,7 @@ declare global {
 	export import ArmorType = __0.ArmorType;
 	export import ArmorTypeMessage = __0.ArmorTypeMessage;
 	export import AttachToPlayerEvent = __0.AttachToPlayerEvent;
+	export import AuthType = __0.AuthType;
 	export import AutoaimVectorEvent = __0.AutoaimVectorEvent;
 	export import BalanceTeamsEvent = __0.BalanceTeamsEvent;
 	export import BarTimeMessage = __0.BarTimeMessage;
@@ -106,7 +107,6 @@ declare global {
 	export import ClientConnectEvent = __0.ClientConnectEvent;
 	export import ClientConnectedEvent = __0.ClientConnectedEvent;
 	export import ClientConnectexEvent = __0.ClientConnectexEvent;
-	export import ClientDisconnectEvent = __0.ClientDisconnectEvent;
 	export import ClientDisconnectedEvent = __0.ClientDisconnectedEvent;
 	export import ClientImpulseEvent = __0.ClientImpulseEvent;
 	export import ClientInfochangedEvent = __0.ClientInfochangedEvent;
@@ -114,8 +114,6 @@ declare global {
 	export import ClientMessage = __0.ClientMessage;
 	export import ClientPutinserverEvent = __0.ClientPutinserverEvent;
 	export import ClientRemoveEvent = __0.ClientRemoveEvent;
-	export import Client_PostThinkEvent = __0.Client_PostThinkEvent;
-	export import Client_PreThinkEvent = __0.Client_PreThinkEvent;
 	export import CommandInfo = __0.CommandInfo;
 	export import CommandOptions = __0.CommandOptions;
 	export import ConnectClientEvent = __0.ConnectClientEvent;
@@ -301,7 +299,6 @@ declare global {
 	export import PfnPlaybackeventEvent = __0.PfnPlaybackeventEvent;
 	export import PfnSpawnEvent = __0.PfnSpawnEvent;
 	export import PfnThinkEvent = __0.PfnThinkEvent;
-	export import PfnTouchEvent = __0.PfnTouchEvent;
 	export import PhysicsFlag = __0.PhysicsFlag;
 	export import PlantBombEvent = __0.PlantBombEvent;
 	export import PlayEmptySoundEvent = __0.PlayEmptySoundEvent;

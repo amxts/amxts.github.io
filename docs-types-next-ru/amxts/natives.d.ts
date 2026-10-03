@@ -621,6 +621,36 @@ export declare function GameConfGetClassOffset(handle: number, classname: string
 export declare function GameConfGetKeyValue(handle: number, key: string): string;
 /** GameConfGetOffset(GameConfig:handle, const any:key[]) */
 export declare function GameConfGetOffset(handle: number, key: string): number;
+/** geoip_city(const any:ip[], any:result[], any:len, any:id) */
+export declare function geoip_city(ip: string, id?: number): string;
+/** geoip_code2(const any:ip[], any:ccode[]) */
+export declare function geoip_code2(ip: string, ccode: number[]): number;
+/** geoip_code2_ex(const any:ip[], any:result[]) */
+export declare function geoip_code2_ex(ip: string, result: number[]): boolean;
+/** geoip_code3(const any:ip[], any:result[]) */
+export declare function geoip_code3(ip: string, result: number[]): number;
+/** geoip_code3_ex(const any:ip[], any:result[]) */
+export declare function geoip_code3_ex(ip: string, result: number[]): boolean;
+/** geoip_continent_code(const any:ip[], any:result[]) */
+export declare function geoip_continent_code(ip: string, result: number[]): number;
+/** geoip_continent_name(const any:ip[], any:result[], any:len, any:id) */
+export declare function geoip_continent_name(ip: string, id?: number): string;
+/** geoip_country(const any:ip[], any:result[], any:len) */
+export declare function geoip_country(ip: string): string;
+/** geoip_country_ex(const any:ip[], any:result[], any:len, any:id) */
+export declare function geoip_country_ex(ip: string, id?: number): string;
+/** geoip_distance(Float:lat1, Float:lon1, Float:lat2, Float:lon2, any:system) */
+export declare function geoip_distance(lat1: number, lon1: number, lat2: number, lon2: number, system?: number): number;
+/** geoip_latitude(const any:ip[]) */
+export declare function geoip_latitude(ip: string): number;
+/** geoip_longitude(const any:ip[]) */
+export declare function geoip_longitude(ip: string): number;
+/** geoip_region_code(const any:ip[], any:result[], any:len) */
+export declare function geoip_region_code(ip: string): string;
+/** geoip_region_name(const any:ip[], any:result[], any:len, any:id) */
+export declare function geoip_region_name(ip: string, id?: number): string;
+/** geoip_timezone(const any:ip[], any:result[], any:len) */
+export declare function geoip_timezone(ip: string): string;
 /** get_addr_val(any:addr) */
 export declare function get_addr_val(addr: number): number;
 /** get_amxx_verstring(any:buffer[], any:length) */
@@ -1315,6 +1345,8 @@ export declare function RegisterHamFromEntity(function_: number, EntityId: numbe
 export declare function RegisterHookChain(function_id: number, callback: string, post?: number): number;
 /** RegisterMessage(const any:msg_id, const any:callback[], any:post) */
 export declare function RegisterMessage(msg_id: number, callback: string, post?: number): number;
+/** RegisterQueryFile(const any:file[], const any:function[], const ResourceType:type, const any:hash) */
+export declare function RegisterQueryFile(file: string, function_: string, type_: number, hash?: number): number;
 /** remove_cvar_flags(const any:cvar[], any:flags) */
 export declare function remove_cvar_flags(cvar: string, flags?: number): number;
 /** remove_entity(any:iIndex) */
@@ -1349,6 +1381,14 @@ export declare function resemiclip_take_control(take: boolean): number;
 export declare function ResetModifiedMessageData(type_?: number, number_?: number): boolean;
 /** ResetPack(DataPack:pack, bool:clear) */
 export declare function ResetPack(pack: number, clear?: boolean): number;
+/** REU_GetAuthKey(const any:index, any:dest[], any:maxlen) */
+export declare function REU_GetAuthKey(index: number): string;
+/** REU_GetAuthtype(const any:index) */
+export declare function REU_GetAuthtype(index: number): number;
+/** REU_GetProtocol(const any:index) */
+export declare function REU_GetProtocol(index: number): number;
+/** REU_IsRevemuWithoutAdminRights(const any:index) */
+export declare function REU_IsRevemuWithoutAdminRights(index: number): boolean;
 /** rg_add_account(const any:index, any:amount, AccountSet:typeSet, const bool:bTrackChange) */
 export declare function rg_add_account(index: number, amount: number, typeSet?: number, bTrackChange?: boolean): number;
 /** rg_add_ammo_registry(const any:szAmmoname[]) */
@@ -1905,6 +1945,8 @@ export declare function unregister_think(registerid: number): number;
 export declare function unregister_touch(registerid: number): number;
 /** UnregisterMessage(const MessageHook:handle) */
 export declare function UnregisterMessage(handle: number): boolean;
+/** UnRegisterQueryFile(QueryFileHook:hook) */
+export declare function UnRegisterQueryFile(hook: number): boolean;
 /** user_has_weapon(any:index, any:weapon, any:setweapon) */
 export declare function user_has_weapon(index: number, weapon: number, setweapon?: number): number;
 /** user_kill(any:index, any:flag) */
@@ -1923,6 +1965,16 @@ export declare function vector_to_angle(fVector: number[], vReturn: number[]): n
 export declare function velocity_by_aim(iIndex: number, iVelocity: number, vRetValue: number[]): number;
 /** vformat(any:buffer[], any:len, const any:fmt[], any:vararg) */
 export declare function vformat(fmt: string, vararg: number): string;
+/** VTC_IsClientMuted(const any:index) */
+export declare function VTC_IsClientMuted(index: number): boolean;
+/** VTC_IsClientSpeaking(const any:index) */
+export declare function VTC_IsClientSpeaking(index: number): boolean;
+/** VTC_MuteClient(const any:index) */
+export declare function VTC_MuteClient(index: number): number;
+/** VTC_PlaySound(const any:receiver, const any:soundFilePath[]) */
+export declare function VTC_PlaySound(receiver: number, soundFilePath: string): number;
+/** VTC_UnmuteClient(const any:index) */
+export declare function VTC_UnmuteClient(index: number): number;
 /** write_angle(any:x) */
 export declare function write_angle(x: number): number;
 /** write_angle_f(Float:x) */

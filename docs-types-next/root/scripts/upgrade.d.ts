@@ -89,6 +89,24 @@ export declare function upgradeNames(file: string, text: string): {
     left: Left[];
 };
 /**
+ * A file's events by their names in the author's words. A server event's
+ * name in `server.addEventListener` is the new one (`"putinserver"` is
+ * `"putInServer"`), one that is a game event is heard through `game`
+ * (`server.addEventListener("PreThink", ...)` is
+ * `game.addEventListener("preThink", ...)`), and cstrike's buying is listed.
+ * An event's field named after reapi's or Pawn's parameter is the new one
+ * (`event.weapon_entity` is `event.weapon`) where the code says which event
+ * it is: a listener given to `addEventListener` by its name - written in
+ * place, or a function of the file - or a parameter annotated with the
+ * event's class. A field destructured keeps its local name:
+ * `({ weapon_entity })` is `({ weapon: weapon_entity })`.
+ */
+export declare function upgradeEvents(file: string, text: string): {
+    text: string;
+    changes: Change[];
+    left: Left[];
+};
+/**
  * A file's game messages brought to their own methods:
  * `addEventListener("message:DeathMsg", ...)` is
  * `addMessageListener("death", ...)`, and `removeEventListener` likewise. A

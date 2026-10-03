@@ -95,7 +95,7 @@ export declare class ClientInfochangedEvent {
     constructor(player: Player);
 }
 /**
- * A player started connecting. The player is not in the game yet: show him anything after `"putinserver"`.
+ * A player started connecting. The player is not in the game yet: show him anything after `"putInServer"`.
  *
  * Note: This forward is called too early to do anything that directly affects the client.
  *
@@ -145,7 +145,7 @@ export declare class ClientConnectexEvent {
     constructor(player: Client, name: string, ip: string, reason: string);
 }
 /**
- * A player's SteamID is known. May come before or after `"putinserver"`.
+ * A player's SteamID is known. May come before or after `"putInServer"`.
  *
  * Note: A bot's SteamID is `"BOT"`.
  *
@@ -159,26 +159,12 @@ export declare class ClientAuthorizedEvent {
      */
     player: Client;
     /**
-     * The player's SteamID, e.g. `"STEAM_0:1:12345"`. A bot has `"BOT"`, HLTV has `"HLTV"`; on a LAN server it is `"STEAM_ID_LAN"`.
+     * The player's SteamID, e.g. `"STEAM_0:1:12345"`. A bot has `"BOT"`, HLTV has `"HLTV"`; on a LAN server it is `"STEAM_ID_LAN"`. With Reunion a game without Steam gets one made from its key: `"STEAM_..."` or `"VALVE_..."`, as the server's Reunion settings say.
      *
      * Pawn: `authid[]`
      */
-    authid: string;
-    constructor(player: Client, authid: string);
-}
-/**
- * Old form of `"disconnected"` that misses some cases: use `"disconnected"`.
- *
- * Pawn: `client_disconnect(id)`
- */
-export declare class ClientDisconnectEvent {
-    /**
-     * The player the event is about.
-     *
-     * Pawn: `id`
-     */
-    player: Player;
-    constructor(player: Player);
+    steamId: string;
+    constructor(player: Client, steamId: string);
 }
 /**
  * A player left the server: quit, timed out or was kicked.
@@ -265,7 +251,7 @@ export declare class ClientCommandEvent {
  * Pawn: `client_putinserver(id)`
  *
  * @example
- * server.addEventListener("putinserver", (event) => {
+ * server.addEventListener("putInServer", (event) => {
  * 	print(event.player, "Welcome!");
  * });
  */
@@ -295,14 +281,14 @@ export declare class InconsistentFileEvent {
      *
      * Pawn: `filename[]`
      */
-    filename: string;
+    file: string;
     /**
      * Buffer storing the disconnect reason (can be overwritten)
      *
      * Pawn: `reason[64]`
      */
     reason: string;
-    constructor(player: Player, filename: string, reason: string);
+    constructor(player: Player, file: string, reason: string);
 }
 /**
  * Allows plugins to declare module dependencies using require_module()
@@ -349,8 +335,8 @@ export declare class CS_InternalCommandEvent {
      *
      * Pawn: `cmd[]`
      */
-    cmd: string;
-    constructor(player: Player, cmd: string);
+    command: string;
+    constructor(player: Player, command: string);
 }
 /**
  * Called when a client attempts to purchase an item.
@@ -399,26 +385,6 @@ export declare class CS_OnBuyEvent {
     constructor(player: Player, item: number);
 }
 /**
- * Two entities touched.
- *
- * Pawn: `pfn_touch(ptr, ptd)`
- */
-export declare class PfnTouchEvent {
-    /**
-     * The entity that moved into the other.
-     *
-     * Pawn: `ptr`
-     */
-    toucher: number;
-    /**
-     * The entity that was touched.
-     *
-     * Pawn: `ptd`
-     */
-    touched: number;
-    constructor(toucher: number, touched: number);
-}
-/**
  * A server frame, hundreds of times a second. Keep the listener tiny, or use `setInterval`.
  *
  * Note: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
@@ -433,38 +399,6 @@ export declare class ServerFrameEvent {
  * Pawn: `client_kill(id)`
  */
 export declare class ClientKillEvent {
-    /**
-     * The player the event is about.
-     *
-     * Pawn: `id`
-     */
-    player: Player;
-    constructor(player: Player);
-}
-/**
- * Called at the start of each client think.
- *
- * Note: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
- *
- * Pawn: `client_PreThink(id)`
- */
-export declare class Client_PreThinkEvent {
-    /**
-     * The player the event is about.
-     *
-     * Pawn: `id`
-     */
-    player: Player;
-    constructor(player: Player);
-}
-/**
- * Called after each client think.
- *
- * Note: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
- *
- * Pawn: `client_PostThink(id)`
- */
-export declare class Client_PostThinkEvent {
     /**
      * The player the event is about.
      *
@@ -510,7 +444,7 @@ export declare class ClientCmdStartEvent {
     constructor(player: Player);
 }
 /**
- * An entity thinks: its scheduled update has come.
+ * An entity thinks: its scheduled update has come. Any entity's; one class's is `game.addEventListener("think", listener, { classname })`.
  *
  * Pawn: `pfn_think(entid)`
  */
@@ -546,7 +480,7 @@ export declare class PfnPlaybackeventEvent {
      *
      * Pawn: `eventid`
      */
-    eventid: number;
+    eventIndex: number;
     /**
      * The seconds before the event plays.
      *
@@ -601,7 +535,7 @@ export declare class PfnPlaybackeventEvent {
      * Pawn: `bparam2`
      */
     bparam2: number;
-    constructor(flags: number, entity: number, eventid: number, delay: number, origin: Vector, angles: Vector, fparam1: number, fparam2: number, iparam1: number, iparam2: number, bparam1: number, bparam2: number);
+    constructor(flags: number, entity: number, eventIndex: number, delay: number, origin: Vector, angles: Vector, fparam1: number, fparam2: number, iparam1: number, iparam2: number, bparam1: number, bparam2: number);
 }
 /**
  * Called when a keyvalue pair is sent to an entity.
@@ -620,7 +554,7 @@ export declare class PfnKeyvalueEvent {
     constructor(entity: number);
 }
 /**
- * An entity is being spawned on the map.
+ * An entity is being spawned on the map, the map's own too as it loads. A player's spawn is `game.addEventListener("spawn", listener)`.
  *
  * Pawn: `pfn_spawn(entid)`
  */
@@ -2044,7 +1978,7 @@ export declare class WeapPickupMessage extends ClientMessage {
     get weapon(): WeaponKind;
     set weapon(value: WeaponKind);
 }
-/** Every event a server raises, by name: the short one and the Pawn one. */
+/** Every event a server raises, by name. */
 export interface ServerEventMap {
     /**
      * The plugin has loaded: register commands, events and hooks here.
@@ -2053,23 +1987,11 @@ export interface ServerEventMap {
      */
     init: PluginInitEvent;
     /**
-     * The plugin has loaded: register commands, events and hooks here.
-     *
-     * Pawn: `plugin_init`
-     */
-    plugin_init: PluginInitEvent;
-    /**
      * An admin paused this plugin.
      *
      * Pawn: `plugin_pause`
      */
     pause: PluginPauseEvent;
-    /**
-     * An admin paused this plugin.
-     *
-     * Pawn: `plugin_pause`
-     */
-    plugin_pause: PluginPauseEvent;
     /**
      * An admin resumed this plugin.
      *
@@ -2077,35 +1999,17 @@ export interface ServerEventMap {
      */
     unpause: PluginUnpauseEvent;
     /**
-     * An admin resumed this plugin.
-     *
-     * Pawn: `plugin_unpause`
-     */
-    plugin_unpause: PluginUnpauseEvent;
-    /**
      * The server is about to change the map.
      *
      * Pawn: `server_changelevel`
      */
-    changelevel: ServerChangelevelEvent;
-    /**
-     * The server is about to change the map.
-     *
-     * Pawn: `server_changelevel`
-     */
-    server_changelevel: ServerChangelevelEvent;
+    changeLevel: ServerChangelevelEvent;
     /**
      * Every config has been read and every plugin is loaded: the moment to read cvars and to create forwards other plugins listen to.
      *
      * Pawn: `plugin_cfg`
      */
-    cfg: PluginCfgEvent;
-    /**
-     * Every config has been read and every plugin is loaded: the moment to read cvars and to create forwards other plugins listen to.
-     *
-     * Pawn: `plugin_cfg`
-     */
-    plugin_cfg: PluginCfgEvent;
+    pluginsLoaded: PluginCfgEvent;
     /**
      * The map is ending or the server is shutting down: save what has to survive.
      *
@@ -2113,23 +2017,11 @@ export interface ServerEventMap {
      */
     end: PluginEndEvent;
     /**
-     * The map is ending or the server is shutting down: save what has to survive.
-     *
-     * Pawn: `plugin_end`
-     */
-    plugin_end: PluginEndEvent;
-    /**
      * Called when a message is about to be logged.
      *
      * Pawn: `plugin_log`
      */
     log: PluginLogEvent;
-    /**
-     * Called when a message is about to be logged.
-     *
-     * Pawn: `plugin_log`
-     */
-    plugin_log: PluginLogEvent;
     /**
      * The map is loading: the only moment models, sounds and sprites can be precached.
      *
@@ -2137,71 +2029,23 @@ export interface ServerEventMap {
      */
     precache: PluginPrecacheEvent;
     /**
-     * The map is loading: the only moment models, sounds and sprites can be precached.
-     *
-     * Pawn: `plugin_precache`
-     */
-    plugin_precache: PluginPrecacheEvent;
-    /**
-     * A player changed his info, usually the name.
-     *
-     * Pawn: `client_infochanged`
-     */
-    infochanged: ClientInfochangedEvent;
-    /**
-     * A player changed his info, usually the name.
-     *
-     * Pawn: `client_infochanged`
-     */
-    client_infochanged: ClientInfochangedEvent;
-    /**
-     * A player started connecting. The player is not in the game yet: show him anything after `"putinserver"`.
+     * A player started connecting. The player is not in the game yet: show him anything after `"putInServer"`.
      *
      * Pawn: `client_connect`
      */
     connect: ClientConnectEvent;
     /**
-     * A player started connecting. The player is not in the game yet: show him anything after `"putinserver"`.
-     *
-     * Pawn: `client_connect`
-     */
-    client_connect: ClientConnectEvent;
-    /**
      * A player started connecting, with a name and an address: the place to turn him away.
      *
      * Pawn: `client_connectex`
      */
-    connectex: ClientConnectexEvent;
+    connectAttempt: ClientConnectexEvent;
     /**
-     * A player started connecting, with a name and an address: the place to turn him away.
-     *
-     * Pawn: `client_connectex`
-     */
-    client_connectex: ClientConnectexEvent;
-    /**
-     * A player's SteamID is known. May come before or after `"putinserver"`.
+     * A player's SteamID is known. May come before or after `"putInServer"`.
      *
      * Pawn: `client_authorized`
      */
     authorized: ClientAuthorizedEvent;
-    /**
-     * A player's SteamID is known. May come before or after `"putinserver"`.
-     *
-     * Pawn: `client_authorized`
-     */
-    client_authorized: ClientAuthorizedEvent;
-    /**
-     * Old form of `"disconnected"` that misses some cases: use `"disconnected"`.
-     *
-     * Pawn: `client_disconnect`
-     */
-    disconnect: ClientDisconnectEvent;
-    /**
-     * Old form of `"disconnected"` that misses some cases: use `"disconnected"`.
-     *
-     * Pawn: `client_disconnect`
-     */
-    client_disconnect: ClientDisconnectEvent;
     /**
      * A player left the server: quit, timed out or was kicked.
      *
@@ -2209,23 +2053,11 @@ export interface ServerEventMap {
      */
     disconnected: ClientDisconnectedEvent;
     /**
-     * A player left the server: quit, timed out or was kicked.
-     *
-     * Pawn: `client_disconnected`
-     */
-    client_disconnected: ClientDisconnectedEvent;
-    /**
      * A player's slot is being freed, after `"disconnected"`.
      *
      * Pawn: `client_remove`
      */
     remove: ClientRemoveEvent;
-    /**
-     * A player's slot is being freed, after `"disconnected"`.
-     *
-     * Pawn: `client_remove`
-     */
-    client_remove: ClientRemoveEvent;
     /**
      * A player sent a console command. For one command, `server.addCommand("name", handler)` is simpler.
      *
@@ -2233,23 +2065,11 @@ export interface ServerEventMap {
      */
     command: ClientCommandEvent;
     /**
-     * A player sent a console command. For one command, `server.addCommand("name", handler)` is simpler.
-     *
-     * Pawn: `client_command`
-     */
-    client_command: ClientCommandEvent;
-    /**
      * A player has joined and is in the game: the moment to greet him.
      *
      * Pawn: `client_putinserver`
      */
-    putinserver: ClientPutinserverEvent;
-    /**
-     * A player has joined and is in the game: the moment to greet him.
-     *
-     * Pawn: `client_putinserver`
-     */
-    client_putinserver: ClientPutinserverEvent;
+    putInServer: ClientPutinserverEvent;
     /**
      * Called when an inconsistent file is encountered by the engine.
      *
@@ -2257,65 +2077,29 @@ export interface ServerEventMap {
      */
     inconsistentFile: InconsistentFileEvent;
     /**
-     * Called when an inconsistent file is encountered by the engine.
-     *
-     * Pawn: `inconsistent_file`
-     */
-    inconsistent_file: InconsistentFileEvent;
-    /**
      * Allows plugins to declare module dependencies using require_module()
      *
      * Pawn: `plugin_modules`
      */
     modules: PluginModulesEvent;
     /**
-     * Allows plugins to declare module dependencies using require_module()
-     *
-     * Pawn: `plugin_modules`
-     */
-    plugin_modules: PluginModulesEvent;
-    /**
      * Called when the map has loaded, and all configs are done executing. This includes servercfgfile (server.cfg), amxx.cfg, plugin's config, and per-map config.
      *
      * Pawn: `OnConfigsExecuted`
      */
-    OnConfigsExecuted: OnConfigsExecutedEvent;
+    configsExecuted: OnConfigsExecutedEvent;
     /**
      * Called when the map has loaded, right after plugin_cfg() but any time before OnConfigsExecuted. It's called after amxx.cfg and all AutoExecConfig() exec commands have been added to the server command buffer.
      *
      * Pawn: `OnAutoConfigsBuffered`
      */
-    OnAutoConfigsBuffered: OnAutoConfigsBufferedEvent;
+    configsQueued: OnAutoConfigsBufferedEvent;
     /**
      * Called when CS internally fires a command to a player.
      *
      * Pawn: `CS_InternalCommand`
      */
-    CS_InternalCommand: CS_InternalCommandEvent;
-    /**
-     * Called when a client attempts to purchase an item.
-     *
-     * Pawn: `CS_OnBuyAttempt`
-     */
-    CS_OnBuyAttempt: CS_OnBuyAttemptEvent;
-    /**
-     * Called when a client purchases an item.
-     *
-     * Pawn: `CS_OnBuy`
-     */
-    CS_OnBuy: CS_OnBuyEvent;
-    /**
-     * Two entities touched.
-     *
-     * Pawn: `pfn_touch`
-     */
-    pfnTouch: PfnTouchEvent;
-    /**
-     * Two entities touched.
-     *
-     * Pawn: `pfn_touch`
-     */
-    pfn_touch: PfnTouchEvent;
+    internalCommand: CS_InternalCommandEvent;
     /**
      * A server frame, hundreds of times a second. Keep the listener tiny, or use `setInterval`.
      *
@@ -2323,47 +2107,11 @@ export interface ServerEventMap {
      */
     frame: ServerFrameEvent;
     /**
-     * A server frame, hundreds of times a second. Keep the listener tiny, or use `setInterval`.
-     *
-     * Pawn: `server_frame`
-     */
-    server_frame: ServerFrameEvent;
-    /**
      * A player typed `"kill"` in the console to kill himself.
      *
      * Pawn: `client_kill`
      */
-    kill: ClientKillEvent;
-    /**
-     * A player typed `"kill"` in the console to kill himself.
-     *
-     * Pawn: `client_kill`
-     */
-    client_kill: ClientKillEvent;
-    /**
-     * Called at the start of each client think.
-     *
-     * Pawn: `client_PreThink`
-     */
-    PreThink: Client_PreThinkEvent;
-    /**
-     * Called at the start of each client think.
-     *
-     * Pawn: `client_PreThink`
-     */
-    client_PreThink: Client_PreThinkEvent;
-    /**
-     * Called after each client think.
-     *
-     * Pawn: `client_PostThink`
-     */
-    PostThink: Client_PostThinkEvent;
-    /**
-     * Called after each client think.
-     *
-     * Pawn: `client_PostThink`
-     */
-    client_PostThink: Client_PostThinkEvent;
+    suicide: ClientKillEvent;
     /**
      * A player sent an impulse: `100` is the flashlight, `201` the spray.
      *
@@ -2371,73 +2119,37 @@ export interface ServerEventMap {
      */
     impulse: ClientImpulseEvent;
     /**
-     * A player sent an impulse: `100` is the flashlight, `201` the spray.
-     *
-     * Pawn: `client_impulse`
-     */
-    client_impulse: ClientImpulseEvent;
-    /**
      * Called for CmdStart() on a client.
      *
      * Pawn: `client_cmdStart`
      */
     cmdStart: ClientCmdStartEvent;
     /**
-     * Called for CmdStart() on a client.
-     *
-     * Pawn: `client_cmdStart`
-     */
-    client_cmdStart: ClientCmdStartEvent;
-    /**
-     * An entity thinks: its scheduled update has come.
+     * An entity thinks: its scheduled update has come. Any entity's; one class's is `game.addEventListener("think", listener, { classname })`.
      *
      * Pawn: `pfn_think`
      */
-    pfnThink: PfnThinkEvent;
-    /**
-     * An entity thinks: its scheduled update has come.
-     *
-     * Pawn: `pfn_think`
-     */
-    pfn_think: PfnThinkEvent;
+    entityThink: PfnThinkEvent;
     /**
      * The engine plays an event to the clients: a shot, a weapon's sound and effects.
      *
      * Pawn: `pfn_playbackevent`
      */
-    pfnPlaybackevent: PfnPlaybackeventEvent;
-    /**
-     * The engine plays an event to the clients: a shot, a weapon's sound and effects.
-     *
-     * Pawn: `pfn_playbackevent`
-     */
-    pfn_playbackevent: PfnPlaybackeventEvent;
+    playbackEvent: PfnPlaybackeventEvent;
     /**
      * Called when a keyvalue pair is sent to an entity.
      *
      * Pawn: `pfn_keyvalue`
      */
-    pfnKeyvalue: PfnKeyvalueEvent;
+    keyValue: PfnKeyvalueEvent;
     /**
-     * Called when a keyvalue pair is sent to an entity.
-     *
-     * Pawn: `pfn_keyvalue`
-     */
-    pfn_keyvalue: PfnKeyvalueEvent;
-    /**
-     * An entity is being spawned on the map.
+     * An entity is being spawned on the map, the map's own too as it loads. A player's spawn is `game.addEventListener("spawn", listener)`.
      *
      * Pawn: `pfn_spawn`
      */
-    pfnSpawn: PfnSpawnEvent;
-    /**
-     * An entity is being spawned on the map.
-     *
-     * Pawn: `pfn_spawn`
-     */
-    pfn_spawn: PfnSpawnEvent;
+    entitySpawn: PfnSpawnEvent;
     /** A field plugins added to `Player` changed on a player; `{ field: "spawnProtected" }` hears one field. */
-    playerchange: PlayerChangeEvent;
+    playerChange: PlayerChangeEvent;
 }
 /** Every message the server sends its clients, by the name server.addMessageListener takes. */
 export interface ServerMessageMap {

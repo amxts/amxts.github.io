@@ -6,5 +6,5 @@ export interface EnumMember {
 export declare function enumsIn(files: string[]): Map<string, EnumMember[]>;
 /** The enums of the includes that carry the game's types: cssdk_const and reapi's. */
 export declare const GAME_ENUMS: Map<string, EnumMember[]>;
-/** ROUND_CTS_WIN -> ctsWin; Class_CT -> classCT; a flag's KILLER_BLIND -> KillerBlind. */
-export declare function memberName(suffix: string, flags: boolean): string;
+/** ROUND_CTS_WIN -> ctsWin; Class_CT -> classCT; a flag's KILLER_BLIND -> killerBlind: lowerCamelCase, as every union value of the API. */
+export declare function memberName(suffix: string): string;

@@ -195,6 +195,10 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    AuthType: {
+        en: string;
+        ru: string;
+    };
     WeaponName: {
         en: string;
         ru: string;
@@ -263,7 +267,19 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    'Client.authid': {
+    'Client.steamId': {
+        en: string;
+        ru: string;
+    };
+    'Client.authType': {
+        en: string;
+        ru: string;
+    };
+    'Client.protocol': {
+        en: string;
+        ru: string;
+    };
+    'Client.authKey': {
         en: string;
         ru: string;
     };
@@ -347,7 +363,19 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    'Player.authid': {
+    'Player.steamId': {
+        en: string;
+        ru: string;
+    };
+    'Player.authType': {
+        en: string;
+        ru: string;
+    };
+    'Player.protocol': {
+        en: string;
+        ru: string;
+    };
+    'Player.authKey': {
         en: string;
         ru: string;
     };

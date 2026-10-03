@@ -161,10 +161,10 @@ declare module "./facade" {
 		 * этого поля.
 		 */
 		// oxlint-disable-next-line typescript/method-signature-style -- an overload, merged into the class's method
-		addEventListener<F extends PlayerFieldName>(type: "playerchange", listener: (event: PlayerChangeEvent<F>) => void, options: { field: F }): void;
+		addEventListener<F extends PlayerFieldName>(type: "playerChange", listener: (event: PlayerChangeEvent<F>) => void, options: { field: F }): void;
 		/** Перестаёт вызывать обработчик, добавленный через `addEventListener`, — ту же функцию с тем же полем. */
 		// oxlint-disable-next-line typescript/method-signature-style -- an overload, merged into the class's method
-		removeEventListener<F extends PlayerFieldName>(type: "playerchange", listener: (event: PlayerChangeEvent<F>) => void, options: { field: F }): void;
+		removeEventListener<F extends PlayerFieldName>(type: "playerChange", listener: (event: PlayerChangeEvent<F>) => void, options: { field: F }): void;
 		/**
 		 * Добавляет команду, которую набирают игроки, по её использованию: имя,
 		 * затем аргументы, `<name>` — обязательный, `[name]` — необязательный.

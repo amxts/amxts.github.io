@@ -243,6 +243,15 @@ export declare class Entity {
      * Pawn: `pev->origin`
      */
     get origin(): Vector;
+    /**
+     * `origin`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const origin = new Vector();
+     * player.getOrigin(origin);
+     * ```
+     */
+    getOrigin(target: Vector): Vector;
     set origin(value: number[]);
     /**
      * The entity's saved position; what it holds depends on the entity (a breakable keeps its spawn point here).
@@ -250,6 +259,15 @@ export declare class Entity {
      * Pawn: `pev->oldorigin`
      */
     get oldOrigin(): Vector;
+    /**
+     * `oldOrigin`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const oldOrigin = new Vector();
+     * player.getOldOrigin(oldOrigin);
+     * ```
+     */
+    getOldOrigin(target: Vector): Vector;
     set oldOrigin(value: number[]);
     /**
      * The entity's velocity, units per second: a running player moves at about `250`.
@@ -257,6 +275,15 @@ export declare class Entity {
      * Pawn: `pev->velocity`
      */
     get velocity(): Vector;
+    /**
+     * `velocity`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const velocity = new Vector();
+     * player.getVelocity(velocity);
+     * ```
+     */
+    getVelocity(target: Vector): Vector;
     set velocity(value: number[]);
     /**
      * The extra velocity the entity gets from what it stands in — a conveyor, a `trigger_push`, a water current — on top of its own. Units per second.
@@ -264,6 +291,15 @@ export declare class Entity {
      * Pawn: `pev->basevelocity`
      */
     get baseVelocity(): Vector;
+    /**
+     * `baseVelocity`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const baseVelocity = new Vector();
+     * player.getBaseVelocity(baseVelocity);
+     * ```
+     */
+    getBaseVelocity(target: Vector): Vector;
     set baseVelocity(value: number[]);
     /**
      * The conveyor velocity the player's client uses to predict movement; the engine zeroes it every player frame.
@@ -271,6 +307,15 @@ export declare class Entity {
      * Pawn: `pev->clbasevelocity`
      */
     get clBaseVelocity(): Vector;
+    /**
+     * `clBaseVelocity`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const clBaseVelocity = new Vector();
+     * player.getClBaseVelocity(clBaseVelocity);
+     * ```
+     */
+    getClBaseVelocity(target: Vector): Vector;
     set clBaseVelocity(value: number[]);
     /**
      * The direction a door, a platform or a button moves in, worked out from its angles when it spawns.
@@ -278,6 +323,15 @@ export declare class Entity {
      * Pawn: `pev->movedir`
      */
     get moveDir(): Vector;
+    /**
+     * `moveDir`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const moveDir = new Vector();
+     * player.getMoveDir(moveDir);
+     * ```
+     */
+    getMoveDir(target: Vector): Vector;
     set moveDir(value: number[]);
     /**
      * The entity's rotation: pitch, yaw, roll in degrees. For a player it follows where he looks; to turn his view, set it together with `fixAngle`.
@@ -285,6 +339,15 @@ export declare class Entity {
      * Pawn: `pev->angles`
      */
     get angles(): Vector;
+    /**
+     * `angles`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const angles = new Vector();
+     * player.getAngles(angles);
+     * ```
+     */
+    getAngles(target: Vector): Vector;
     set angles(value: number[]);
     /**
      * The entity's rotation speed, degrees per second on each axis.
@@ -292,6 +355,15 @@ export declare class Entity {
      * Pawn: `pev->avelocity`
      */
     get angularVelocity(): Vector;
+    /**
+     * `angularVelocity`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const angularVelocity = new Vector();
+     * player.getAngularVelocity(angularVelocity);
+     * ```
+     */
+    getAngularVelocity(target: Vector): Vector;
     set angularVelocity(value: number[]);
     /**
      * The player's view kick from recoil or a hit, in degrees; the engine eases it back to zero by itself.
@@ -299,6 +371,15 @@ export declare class Entity {
      * Pawn: `pev->punchangle`
      */
     get punchAngle(): Vector;
+    /**
+     * `punchAngle`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const punchAngle = new Vector();
+     * player.getPunchAngle(punchAngle);
+     * ```
+     */
+    getPunchAngle(target: Vector): Vector;
     set punchAngle(value: number[]);
     /**
      * The player's view direction: pitch (down is positive), yaw, roll in degrees. Players only.
@@ -306,6 +387,15 @@ export declare class Entity {
      * Pawn: `pev->v_angle`
      */
     get viewAngle(): Vector;
+    /**
+     * `viewAngle`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const viewAngle = new Vector();
+     * player.getViewAngle(viewAngle);
+     * ```
+     */
+    getViewAngle(target: Vector): Vector;
     set viewAngle(value: number[]);
     /**
      * The end point of a predicted projectile; sent to the client with `startTime` and `impactTime`.
@@ -313,6 +403,15 @@ export declare class Entity {
      * Pawn: `pev->endpos`
      */
     get endPos(): Vector;
+    /**
+     * `endPos`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const endPos = new Vector();
+     * player.getEndPos(endPos);
+     * ```
+     */
+    getEndPos(target: Vector): Vector;
     set endPos(value: number[]);
     /**
      * The start point of a predicted projectile; sent to the client with `endPos`.
@@ -320,6 +419,15 @@ export declare class Entity {
      * Pawn: `pev->startpos`
      */
     get startPos(): Vector;
+    /**
+     * `startPos`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const startPos = new Vector();
+     * player.getStartPos(startPos);
+     * ```
+     */
+    getStartPos(target: Vector): Vector;
     set startPos(value: number[]);
     /**
      * The game time a predicted projectile reaches `endPos`.
@@ -404,6 +512,15 @@ export declare class Entity {
      * Pawn: `pev->absmin`
      */
     get absMin(): Vector;
+    /**
+     * `absMin`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const absMin = new Vector();
+     * player.getAbsMin(absMin);
+     * ```
+     */
+    getAbsMin(target: Vector): Vector;
     set absMin(value: number[]);
     /**
      * The high corner of the entity's bounding box in world coordinates; the engine recomputes it when the entity moves.
@@ -411,6 +528,15 @@ export declare class Entity {
      * Pawn: `pev->absmax`
      */
     get absMax(): Vector;
+    /**
+     * `absMax`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const absMax = new Vector();
+     * player.getAbsMax(absMax);
+     * ```
+     */
+    getAbsMax(target: Vector): Vector;
     set absMax(value: number[]);
     /**
      * The low corner of the entity's bounding box, relative to `origin`: `(-16, -16, -36)` for a standing player. Set it with `setSize(mins, maxs)`, so `size` and `absMin` follow.
@@ -418,6 +544,15 @@ export declare class Entity {
      * Pawn: `pev->mins`
      */
     get mins(): Vector;
+    /**
+     * `mins`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const mins = new Vector();
+     * player.getMins(mins);
+     * ```
+     */
+    getMins(target: Vector): Vector;
     set mins(value: number[]);
     /**
      * The high corner of the entity's bounding box, relative to `origin`: `(16, 16, 36)` for a standing player. Set it with `setSize(mins, maxs)`, so `size` and `absMax` follow.
@@ -425,6 +560,15 @@ export declare class Entity {
      * Pawn: `pev->maxs`
      */
     get maxs(): Vector;
+    /**
+     * `maxs`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const maxs = new Vector();
+     * player.getMaxs(maxs);
+     * ```
+     */
+    getMaxs(target: Vector): Vector;
     set maxs(value: number[]);
     /**
      * The dimensions of the entity's bounding box, maxs minus mins.
@@ -432,6 +576,15 @@ export declare class Entity {
      * Pawn: `pev->size`
      */
     get size(): Vector;
+    /**
+     * `size`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const size = new Vector();
+     * player.getSize(size);
+     * ```
+     */
+    getSize(target: Vector): Vector;
     set size(value: number[]);
     /**
      * The local clock of a door, platform or train: it runs only while the entity moves, and its `nextThink` counts in it.
@@ -565,6 +718,15 @@ export declare class Entity {
      * Pawn: `pev->rendercolor`
      */
     get renderColor(): Vector;
+    /**
+     * `renderColor`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const renderColor = new Vector();
+     * player.getRenderColor(renderColor);
+     * ```
+     */
+    getRenderColor(target: Vector): Vector;
     set renderColor(value: number[]);
     /**
      * The entity's render effect, one of: `"none"`; `"glowShell"` - a coloured shell around the model (colour `renderColor`, thickness `renderAmount`); `"pulseSlow"`, `"pulseFast"`, `"pulseSlowWide"`, `"pulseFastWide"` - the opacity pulses; `"fadeSlow"`, `"fadeFast"` - fades out; `"solidSlow"`, `"solidFast"` - fades in; `"strobeSlow"`, `"strobeFast"`, `"strobeFaster"`, `"flickerSlow"`, `"flickerFast"` - blinks; `"hologram"` - a flickering hologram that fades with distance; `"distort"`, `"noDissipation"`, `"deadPlayer"`, `"explode"`, `"clampMinScale"`, `"lightMultiplier"` - for sprites, corpses and special effects.
@@ -607,6 +769,15 @@ export declare class Entity {
      * Pawn: `pev->view_ofs`
      */
     get viewOffset(): Vector;
+    /**
+     * `viewOffset`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const viewOffset = new Vector();
+     * player.getViewOffset(viewOffset);
+     * ```
+     */
+    getViewOffset(target: Vector): Vector;
     set viewOffset(value: number[]);
     /**
      * The buttons the player holds this frame, e.g. `"attack"`, `"jump"`, `"duck"`, `"use"`.
@@ -999,6 +1170,15 @@ export declare class Entity {
      * Pawn: `pev->vuser1`
      */
     get vuser1(): Vector;
+    /**
+     * `vuser1`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const vuser1 = new Vector();
+     * player.getVuser1(vuser1);
+     * ```
+     */
+    getVuser1(target: Vector): Vector;
     set vuser1(value: number[]);
     /**
      * A free field: a plugin keeps its own value here; the game does not use it.
@@ -1006,6 +1186,15 @@ export declare class Entity {
      * Pawn: `pev->vuser2`
      */
     get vuser2(): Vector;
+    /**
+     * `vuser2`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const vuser2 = new Vector();
+     * player.getVuser2(vuser2);
+     * ```
+     */
+    getVuser2(target: Vector): Vector;
     set vuser2(value: number[]);
     /**
      * A free field: a plugin keeps its own value here; the game does not use it.
@@ -1013,6 +1202,15 @@ export declare class Entity {
      * Pawn: `pev->vuser3`
      */
     get vuser3(): Vector;
+    /**
+     * `vuser3`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const vuser3 = new Vector();
+     * player.getVuser3(vuser3);
+     * ```
+     */
+    getVuser3(target: Vector): Vector;
     set vuser3(value: number[]);
     /**
      * A free field: a plugin keeps its own value here; the game does not use it.
@@ -1020,6 +1218,15 @@ export declare class Entity {
      * Pawn: `pev->vuser4`
      */
     get vuser4(): Vector;
+    /**
+     * `vuser4`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const vuser4 = new Vector();
+     * player.getVuser4(vuser4);
+     * ```
+     */
+    getVuser4(target: Vector): Vector;
     set vuser4(value: number[]);
     /**
      * A free field: a plugin keeps its own value here; the game does not use it.
@@ -1631,6 +1838,15 @@ export declare class PlayerFields extends Entity {
      * Pawn: `CBasePlayer::m_vBlastVector`
      */
     get blastVector(): Vector;
+    /**
+     * `blastVector`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const blastVector = new Vector();
+     * player.getBlastVector(blastVector);
+     * ```
+     */
+    getBlastVector(target: Vector): Vector;
     set blastVector(value: number[]);
     /**
      * `true` if a grenade killed the player.
@@ -1694,6 +1910,15 @@ export declare class PlayerFields extends Entity {
      * Pawn: `CBasePlayer::m_vLastOrigin`
      */
     get lastOrigin(): Vector;
+    /**
+     * `lastOrigin`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const lastOrigin = new Vector();
+     * player.getLastOrigin(lastOrigin);
+     * ```
+     */
+    getLastOrigin(target: Vector): Vector;
     set lastOrigin(value: number[]);
     /**
      * The `userid` of the player this one voted to kick (the `vote` command); `0` for none.
@@ -2181,6 +2406,15 @@ export declare class PlayerFields extends Entity {
      * Pawn: `CBasePlayer::m_vecAutoAim`
      */
     get autoAim(): Vector;
+    /**
+     * `autoAim`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const autoAim = new Vector();
+     * player.getAutoAim(autoAim);
+     * ```
+     */
+    getAutoAim(target: Vector): Vector;
     set autoAim(value: number[]);
     /**
      * `true` while the player's aim assist has a target under the crosshair.
@@ -2279,6 +2513,15 @@ export declare class PlayerFields extends Entity {
      * Pawn: `CBasePlayer::m_prevgaitorigin`
      */
     get prevGaitOrigin(): Vector;
+    /**
+     * `prevGaitOrigin`, written into `target`, which is returned: no new `Vector` is made - for code that runs every frame.
+     *
+     * ```ts
+     * const prevGaitOrigin = new Vector();
+     * player.getPrevGaitOrigin(prevGaitOrigin);
+     * ```
+     */
+    getPrevGaitOrigin(target: Vector): Vector;
     set prevGaitOrigin(value: number[]);
     /**
      * The upper body's tilt the game worked out for the player's model.

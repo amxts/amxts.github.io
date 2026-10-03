@@ -62,7 +62,7 @@ export declare function ret(value: number): void;
  * имя, уникальное в пределах плагина. `fallback` — ответ, если обработчик
  * ничего не вернул: `0` почти везде, `1` там, где натив ждёт обработанное событие.
  *
- * Регистрируйте из события `"cfg"`, а не с верхнего уровня файла: консольная
+ * Регистрируйте из события `"pluginsLoaded"`, а не с верхнего уровня файла: консольная
  * команда, зарегистрированная так рано (`register_concmd`, `register_srvcmd`),
  * роняет сервер, когда её вводят.
  */
@@ -394,6 +394,8 @@ export declare function noOrigin(): number[];
 export declare const TEXT_MAX: i32;
 /** Команда Counter-Strike под именем, которое даёт ей игра: одно из `"TERRORIST"`, `"CT"`, `"SPECTATOR"`, `"UNASSIGNED"`. */
 export type Team = "TERRORIST" | "CT" | "SPECTATOR" | "UNASSIGNED";
+/** Способ, которым игра игрока подтверждает, кто он, по словам Reunion, например `"steam"` или `"revEmu"`; `"unknown"` на сервере без Reunion. */
+export type AuthType = "unknown" | "steam" | "steamEmu" | "revEmu" | "revEmu2013" | "oldRevEmu" | "sc2009" | "avsmp" | "sxei" | "sse3" | "dproto" | "hltv";
 /** Оружие, которое может держать игрок, по имени класса, например `"weapon_ak47"` или `"weapon_knife"`. */
 export type WeaponName = "weapon_p228" | "weapon_scout" | "weapon_hegrenade" | "weapon_xm1014" | "weapon_c4" | "weapon_mac10" | "weapon_aug" | "weapon_smokegrenade" | "weapon_elite" | "weapon_fiveseven" | "weapon_ump45" | "weapon_sg550" | "weapon_galil" | "weapon_famas" | "weapon_usp" | "weapon_glock18" | "weapon_awp" | "weapon_mp5navy" | "weapon_m249" | "weapon_m3" | "weapon_m4a1" | "weapon_tmp" | "weapon_g3sg1" | "weapon_flashbang" | "weapon_deagle" | "weapon_sg552" | "weapon_ak47" | "weapon_knife" | "weapon_p90";
 /** Предмет, который выдаёт `player.give`: оружие, броня (`"item_kevlar"`, `"item_assaultsuit"`) или набор сапёра (`"item_thighpack"`). */
@@ -442,12 +444,12 @@ export interface MoveOptions {
     msec?: number;
 }
 /**
- * Подключающийся игрок — в `"connect"`, `"authorized"` и `"putinserver"`: имя,
+ * Подключающийся игрок — в `"connect"`, `"authorized"` и `"putInServer"`: имя,
  * адрес, SteamID и команда, но ещё без здоровья и оружия. Любой Player — тоже
  * Client.
  *
  * ```ts
- * server.addEventListener("putinserver", (event) => {
+ * server.addEventListener("putInServer", (event) => {
  * 	print(event.player, `Welcome, ${event.player.name}!`);
  * });
  * ```
@@ -459,8 +461,14 @@ export interface Client {
     readonly name: string;
     /** IP-адрес игрока без порта, например `"192.168.0.10"`. */
     readonly ip: string;
-    /** SteamID игрока, например `"STEAM_0:1:12345"`. У бота — `"BOT"`, у HLTV — `"HLTV"`; пока Steam не подтвердил игрока — `"STEAM_ID_PENDING"` (дождитесь события `"authorized"`), на LAN-сервере — `"STEAM_ID_LAN"`. */
-    readonly authid: string;
+    /** SteamID игрока, например `"STEAM_0:1:12345"`. У бота — `"BOT"`, у HLTV — `"HLTV"`; пока Steam не подтвердил игрока — `"STEAM_ID_PENDING"` (дождитесь события `"authorized"`), на LAN-сервере — `"STEAM_ID_LAN"`. С Reunion игра без Steam получает SteamID, сделанный из её ключа (`authKey`): `"STEAM_..."` или `"VALVE_..."`, как скажут настройки Reunion на сервере. */
+    readonly steamId: string;
+    /** Способ, которым игра игрока подтвердила, кто он, по словам Reunion: одно из `"steam"` (игра из Steam), `"steamEmu"`, `"revEmu"`, `"revEmu2013"`, `"oldRevEmu"`, `"sc2009"`, `"avsmp"`, `"sxei"`, `"sse3"` (игра без Steam — по эмулятору, которым она подтвердила себя), `"dproto"`, `"hltv"` или `"unknown"` на сервере без Reunion. */
+    readonly authType: AuthType;
+    /** Сетевой протокол игры игрока: `48` у нынешней игры, `47` у старой, которую пускает Reunion. `0` на сервере без Reunion. */
+    readonly protocol: number;
+    /** Ключ, которым игра игрока подтвердила себя, как его прочитал Reunion: из него сделан SteamID игрока. `""` на сервере без Reunion. */
+    readonly authKey: string;
     /** `true`, если это бот. */
     readonly isBot: boolean;
     /** `true`, пока игрок на сервере. */
@@ -562,11 +570,29 @@ export declare class Player extends PlayerFields implements Client {
      */
     get ip(): string;
     /**
-     * SteamID игрока, например `"STEAM_0:1:12345"`. У бота — `"BOT"`, у HLTV — `"HLTV"`; пока Steam не подтвердил игрока — `"STEAM_ID_PENDING"` (дождитесь события `"authorized"`), на LAN-сервере — `"STEAM_ID_LAN"`.
+     * SteamID игрока, например `"STEAM_0:1:12345"`. У бота — `"BOT"`, у HLTV — `"HLTV"`; пока Steam не подтвердил игрока — `"STEAM_ID_PENDING"` (дождитесь события `"authorized"`), на LAN-сервере — `"STEAM_ID_LAN"`. С Reunion игра без Steam получает SteamID, сделанный из её ключа (`authKey`): `"STEAM_..."` или `"VALVE_..."`, как скажут настройки Reunion на сервере.
      *
      * Pawn: `get_user_authid`
      */
-    get authid(): string;
+    get steamId(): string;
+    /**
+     * Способ, которым игра игрока подтвердила, кто он, по словам Reunion: одно из `"steam"` (игра из Steam), `"steamEmu"`, `"revEmu"`, `"revEmu2013"`, `"oldRevEmu"`, `"sc2009"`, `"avsmp"`, `"sxei"`, `"sse3"` (игра без Steam — по эмулятору, которым она подтвердила себя), `"dproto"`, `"hltv"` или `"unknown"` на сервере без Reunion.
+     *
+     * Pawn: `REU_GetAuthtype`
+     */
+    get authType(): AuthType;
+    /**
+     * Сетевой протокол игры игрока: `48` у нынешней игры, `47` у старой, которую пускает Reunion. `0` на сервере без Reunion.
+     *
+     * Pawn: `REU_GetProtocol`
+     */
+    get protocol(): number;
+    /**
+     * Ключ, которым игра игрока подтвердила себя, как его прочитал Reunion: из него сделан SteamID игрока. `""` на сервере без Reunion.
+     *
+     * Pawn: `REU_GetAuthKey`
+     */
+    get authKey(): string;
     /**
      * `true`, пока игрок жив.
      *
@@ -1151,7 +1177,7 @@ export declare class ClientMessage {
  * записал любой плагин, на TypeScript или Pawn:
  *
  * ```ts
- * server.addEventListener("playerchange", (event) => {
+ * server.addEventListener("playerChange", (event) => {
  *   print(event.player, event.value ? "You are protected" : "Your spawn protection is over");
  * }, { field: "spawnProtected" });
  * ```
@@ -1181,7 +1207,7 @@ export declare class PlayerChangeEvent<F extends string = string> {
 /** Третий аргумент `server.addEventListener`. */
 export interface ServerListenerOptions {
     /**
-     * Для `"playerchange"`: поле, которое слушают, например `"spawnProtected"`,
+     * Для `"playerChange"`: поле, которое слушают, например `"spawnProtected"`,
      * или член поля-объекта, `"glow.enabled"`; имя поля-объекта слышит
      * каждый его член. Без него — любое поле.
      */
@@ -1272,7 +1298,7 @@ export declare class Cvar {
  * AMX Mod X. Используется через `server`:
  *
  * ```ts
- * server.addEventListener("putinserver", (event) => {
+ * server.addEventListener("putInServer", (event) => {
  *   print(event.player, "Welcome!");      // event — это PutinserverEvent
  * });
  * server.map;                             // "de_dust2"
@@ -1333,7 +1359,7 @@ export declare class Server {
     /**
      * Добавляет бота с именем `name`: игрока, которого ведёт сервер, — без игры за
      * ним и без своего разума: он стоит, где появился, пока плагин не двинет его
-     * через `bot.move()`. `null`, если свободного слота нет. `"putinserver"`
+     * через `bot.move()`. `null`, если свободного слота нет. `"putInServer"`
      * срабатывает для него, как для любого, `bot.isBot` равно `true`, а
      * `bot.kick()` убирает его.
      *
@@ -1836,7 +1862,7 @@ export declare class Ref<T> {
 export declare function __noArgument<T>(): T;
 /**
  * @hidden A native's `...` tail of up to twelve arguments of any kind, onto
- * `call`, and the call run: what the generated wrappers of ~/natives call.
+ * `call`, and the call run: what the generated wrappers of @amxts/core/natives call.
  * `floats` is the native's float table for this call (bit `i`: the tail's
  * argument `i` is a Float; TAIL_FLOAT_RESULT: so is the result) - a
  * plugin's number cannot say whether it is one. What the native wrote into

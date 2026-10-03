@@ -60,7 +60,7 @@ export declare function ret(value: number): void;
  * unique within the plugin. `fallback` is the answer when the handler returns
  * nothing: `0` for most natives, `1` where the native expects the event handled.
  *
- * Register from the `"cfg"` event, not at the top of the file: a console
+ * Register from the `"pluginsLoaded"` event, not at the top of the file: a console
  * command registered that early (`register_concmd`, `register_srvcmd`) crashes
  * the server when typed.
  */
@@ -392,6 +392,8 @@ export declare function noOrigin(): number[];
 export declare const TEXT_MAX: i32;
 /** A Counter-Strike team, by the name the game gives it: one of `"TERRORIST"`, `"CT"`, `"SPECTATOR"`, `"UNASSIGNED"`. */
 export type Team = "TERRORIST" | "CT" | "SPECTATOR" | "UNASSIGNED";
+/** The way a player's game proves who he is, as Reunion tells it, e.g. `"steam"` or `"revEmu"`; `"unknown"` on a server without Reunion. */
+export type AuthType = "unknown" | "steam" | "steamEmu" | "revEmu" | "revEmu2013" | "oldRevEmu" | "sc2009" | "avsmp" | "sxei" | "sse3" | "dproto" | "hltv";
 /** A weapon a player can hold, by its class name, e.g. `"weapon_ak47"` or `"weapon_knife"`. */
 export type WeaponName = "weapon_p228" | "weapon_scout" | "weapon_hegrenade" | "weapon_xm1014" | "weapon_c4" | "weapon_mac10" | "weapon_aug" | "weapon_smokegrenade" | "weapon_elite" | "weapon_fiveseven" | "weapon_ump45" | "weapon_sg550" | "weapon_galil" | "weapon_famas" | "weapon_usp" | "weapon_glock18" | "weapon_awp" | "weapon_mp5navy" | "weapon_m249" | "weapon_m3" | "weapon_m4a1" | "weapon_tmp" | "weapon_g3sg1" | "weapon_flashbang" | "weapon_deagle" | "weapon_sg552" | "weapon_ak47" | "weapon_knife" | "weapon_p90";
 /** An item `player.give` hands over: a weapon, armour (`"item_kevlar"`, `"item_assaultsuit"`) or the defuse kit (`"item_thighpack"`). */
@@ -440,12 +442,12 @@ export interface MoveOptions {
     msec?: number;
 }
 /**
- * A connecting player, in `"connect"`, `"authorized"` and `"putinserver"`: name,
+ * A connecting player, in `"connect"`, `"authorized"` and `"putInServer"`: name,
  * address, SteamID and team, but no health or weapons yet. Every Player is a
  * Client too.
  *
  * ```ts
- * server.addEventListener("putinserver", (event) => {
+ * server.addEventListener("putInServer", (event) => {
  * 	print(event.player, `Welcome, ${event.player.name}!`);
  * });
  * ```
@@ -457,8 +459,14 @@ export interface Client {
     readonly name: string;
     /** The player's IP address without the port, e.g. `"192.168.0.10"`. */
     readonly ip: string;
-    /** The player's SteamID, e.g. `"STEAM_0:1:12345"`. A bot has `"BOT"`, HLTV has `"HLTV"`; until Steam confirms the player it is `"STEAM_ID_PENDING"` (wait for the `"authorized"` event), and on a LAN server `"STEAM_ID_LAN"`. */
-    readonly authid: string;
+    /** The player's SteamID, e.g. `"STEAM_0:1:12345"`. A bot has `"BOT"`, HLTV has `"HLTV"`; until Steam confirms the player it is `"STEAM_ID_PENDING"` (wait for the `"authorized"` event), and on a LAN server `"STEAM_ID_LAN"`. With Reunion a game without Steam gets one made from its key (`authKey`): `"STEAM_..."` or `"VALVE_..."`, as the server's Reunion settings say. */
+    readonly steamId: string;
+    /** The way the player's game proved who he is, as Reunion tells it: one of `"steam"` (a Steam game), `"steamEmu"`, `"revEmu"`, `"revEmu2013"`, `"oldRevEmu"`, `"sc2009"`, `"avsmp"`, `"sxei"`, `"sse3"` (a game without Steam, by the emulator it proved itself with), `"dproto"`, `"hltv"`, or `"unknown"` on a server without Reunion. */
+    readonly authType: AuthType;
+    /** The network protocol of the player's game: `48` for today's game, `47` for an old one Reunion lets in. `0` on a server without Reunion. */
+    readonly protocol: number;
+    /** The key the player's game proved itself with, as Reunion read it: what his SteamID is made from. `""` on a server without Reunion. */
+    readonly authKey: string;
     /** `true` for a bot. */
     readonly isBot: boolean;
     /** `true` while the player is on the server. */
@@ -561,11 +569,29 @@ export declare class Player extends PlayerFields implements Client {
      */
     get ip(): string;
     /**
-     * The player's SteamID, e.g. `"STEAM_0:1:12345"`. A bot has `"BOT"`, HLTV has `"HLTV"`; until Steam confirms the player it is `"STEAM_ID_PENDING"` (wait for the `"authorized"` event), and on a LAN server `"STEAM_ID_LAN"`.
+     * The player's SteamID, e.g. `"STEAM_0:1:12345"`. A bot has `"BOT"`, HLTV has `"HLTV"`; until Steam confirms the player it is `"STEAM_ID_PENDING"` (wait for the `"authorized"` event), and on a LAN server `"STEAM_ID_LAN"`. With Reunion a game without Steam gets one made from its key (`authKey`): `"STEAM_..."` or `"VALVE_..."`, as the server's Reunion settings say.
      *
      * Pawn: `get_user_authid`
      */
-    get authid(): string;
+    get steamId(): string;
+    /**
+     * The way the player's game proved who he is, as Reunion tells it: one of `"steam"` (a Steam game), `"steamEmu"`, `"revEmu"`, `"revEmu2013"`, `"oldRevEmu"`, `"sc2009"`, `"avsmp"`, `"sxei"`, `"sse3"` (a game without Steam, by the emulator it proved itself with), `"dproto"`, `"hltv"`, or `"unknown"` on a server without Reunion.
+     *
+     * Pawn: `REU_GetAuthtype`
+     */
+    get authType(): AuthType;
+    /**
+     * The network protocol of the player's game: `48` for today's game, `47` for an old one Reunion lets in. `0` on a server without Reunion.
+     *
+     * Pawn: `REU_GetProtocol`
+     */
+    get protocol(): number;
+    /**
+     * The key the player's game proved itself with, as Reunion read it: what his SteamID is made from. `""` on a server without Reunion.
+     *
+     * Pawn: `REU_GetAuthKey`
+     */
+    get authKey(): string;
     /**
      * `true` while the player is alive.
      *
@@ -1148,7 +1174,7 @@ export declare class ClientMessage {
  * plugin, TypeScript or Pawn:
  *
  * ```ts
- * server.addEventListener("playerchange", (event) => {
+ * server.addEventListener("playerChange", (event) => {
  *   print(event.player, event.value ? "You are protected" : "Your spawn protection is over");
  * }, { field: "spawnProtected" });
  * ```
@@ -1178,7 +1204,7 @@ export declare class PlayerChangeEvent<F extends string = string> {
 /** The third argument of `server.addEventListener`. */
 export interface ServerListenerOptions {
     /**
-     * For `"playerchange"`: the field listened for, e.g. `"spawnProtected"`, or
+     * For `"playerChange"`: the field listened for, e.g. `"spawnProtected"`, or
      * an object field's member, `"glow.enabled"`; an object field's name
      * hears each of its members. Left out, every field.
      */
@@ -1269,7 +1295,7 @@ export declare class Cvar {
  * the folders AMX Mod X keeps. Used through `server`:
  *
  * ```ts
- * server.addEventListener("putinserver", (event) => {
+ * server.addEventListener("putInServer", (event) => {
  *   print(event.player, "Welcome!");      // event is a PutinserverEvent
  * });
  * server.map;                             // "de_dust2"
@@ -1330,7 +1356,7 @@ export declare class Server {
     /**
      * Adds a bot under `name`: a player the server runs, with no game behind
      * it and no mind of its own - it stands where it spawns until a plugin
-     * moves it with `bot.move()`. `null` when no slot is free. `"putinserver"`
+     * moves it with `bot.move()`. `null` when no slot is free. `"putInServer"`
      * fires for it as for anyone, `bot.isBot` is `true` and `bot.kick()`
      * removes it.
      *
@@ -1832,7 +1858,7 @@ export declare class Ref<T> {
 export declare function __noArgument<T>(): T;
 /**
  * @hidden A native's `...` tail of up to twelve arguments of any kind, onto
- * `call`, and the call run: what the generated wrappers of ~/natives call.
+ * `call`, and the call run: what the generated wrappers of @amxts/core/natives call.
  * `floats` is the native's float table for this call (bit `i`: the tail's
  * argument `i` is a Float; TAIL_FLOAT_RESULT: so is the result) - a
  * plugin's number cannot say whether it is one. What the native wrote into

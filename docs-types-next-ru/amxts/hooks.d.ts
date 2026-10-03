@@ -123,13 +123,13 @@ export type RoundEndReason = "none" | "targetBomb" | "vipEscaped" | "vipAssassin
  *
  * Pawn: `DeathMessageFlags`
  */
-export type DeathMessageFlag = "Position" | "Assistant" | "KillRarity";
+export type DeathMessageFlag = "position" | "assistant" | "killRarity";
 /**
  * The things that made a kill rare: a headshot, through smoke, in the air, ...
  *
  * Pawn: `KillRarity`
  */
-export type KillRarity = "Headshot" | "KillerBlind" | "NoScope" | "Penetrated" | "ThruSmoke" | "AssistedFlash" | "DominationBegan" | "Domination" | "Revenge" | "InAir";
+export type KillRarity = "headshot" | "killerBlind" | "noScope" | "penetrated" | "throughSmoke" | "assistedFlash" | "dominationBegan" | "domination" | "revenge" | "inAir";
 /**
  * An animation the game plays on a player's model: walking, jumping, attacking, reloading, ... "unknown" - a number the include does not name.
  *
@@ -318,8 +318,8 @@ export declare class AddResourceEvent extends HookEvent {
      *
      * Pawn: `filename[]`
      */
-    get filename(): string;
-    set filename(value: string);
+    get file(): string;
+    set file(value: string);
     /**
      * Аргумент 3.
      *
@@ -442,22 +442,22 @@ export declare class AirAccelerateEvent extends HookEvent {
      *
      * Pawn: `Float:wishdir[3]`
      */
-    get wishdir(): Vector;
-    set wishdir(value: Vector);
+    get direction(): Vector;
+    set direction(value: Vector);
     /**
      * Аргумент 2.
      *
      * Pawn: `Float:wishspeed`
      */
-    get wishspeed(): number;
-    set wishspeed(value: number);
+    get speed(): number;
+    set speed(value: number);
     /**
      * Аргумент 3.
      *
      * Pawn: `Float:accel`
      */
-    get accel(): number;
-    set accel(value: number);
+    get acceleration(): number;
+    set acceleration(value: number);
     /**
      * Аргумент 4, только чтение.
      *
@@ -803,7 +803,7 @@ export declare class BounceGibTouchEvent extends HookEvent {
     get other(): Entity;
 }
 /**
- * The player buys ammo. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `weapon_entity` читается как 0, `blinkMoney` — как `true`; ответ ничего не делает.
+ * The player buys ammo. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `weapon` читается как мир, `blinkMoney` — как `true`; ответ ничего не делает.
  *
  * Pawn: `RG_BuyGunAmmo` (const index, const weapon_entity, const bool:blinkMoney)
  */
@@ -816,12 +816,11 @@ export declare class BuyAmmoEvent extends HookEvent {
      */
     get player(): Player;
     /**
-     * Аргумент 2.
+     * Аргумент 2, только чтение.
      *
      * Pawn: `weapon_entity`
      */
-    get weapon_entity(): number;
-    set weapon_entity(value: number);
+    get weapon(): Weapon;
     /**
      * Аргумент 3.
      *
@@ -1077,8 +1076,8 @@ export declare class CanShootThroughEvent extends HookEvent {
      *
      * Pawn: `Float:vecSrc[3]`
      */
-    get src(): Vector;
-    set src(value: Vector);
+    get start(): Vector;
+    set start(value: Vector);
     /**
      * Аргумент 2.
      *
@@ -1263,8 +1262,8 @@ export declare class ChangeModelEvent extends HookEvent {
      *
      * Pawn: `infobuffer[]`
      */
-    get infobuffer(): string;
-    set infobuffer(value: string);
+    get info(): string;
+    set info(value: string);
     /**
      * Аргумент 3.
      *
@@ -1274,7 +1273,7 @@ export declare class ChangeModelEvent extends HookEvent {
     set newModel(value: string);
 }
 /**
- * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `infobuffer` читается как `""`; ответ ничего не делает.
+ * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`; ответ ничего не делает.
  *
  * Pawn: `RG_CBasePlayer_SetClientUserInfoName` (const this, infobuffer[], szNewName[])
  */
@@ -1291,8 +1290,8 @@ export declare class ChangeNameEvent extends HookEvent {
      *
      * Pawn: `infobuffer[]`
      */
-    get infobuffer(): string;
-    set infobuffer(value: string);
+    get info(): string;
+    set info(value: string);
     /**
      * Аргумент 3.
      *
@@ -1365,15 +1364,15 @@ export declare class ChatMessageEvent extends HookEvent {
      *
      * Pawn: `szCmd[]`
      */
-    get cmd(): string;
-    set cmd(value: string);
+    get command(): string;
+    set command(value: string);
     /**
      * `true`, когда сообщение получает только команда игрока.
      *
      * Pawn: `bool:teamonly`
      */
-    get teamonly(): boolean;
-    set teamonly(value: boolean);
+    get teamOnly(): boolean;
+    set teamOnly(value: boolean);
     /**
      * Сообщение, как его написал игрок. Присвойте, чтобы изменить.
      *
@@ -1451,8 +1450,8 @@ export declare class CheckUserInfoEvent extends HookEvent {
      *
      * Pawn: `adr`
      */
-    get adr(): number;
-    set adr(value: number);
+    get address(): number;
+    set address(value: number);
     /**
      * Аргумент 2.
      *
@@ -1662,8 +1661,8 @@ export declare class ConsoleMessageEvent extends HookEvent {
      *
      * Pawn: `string[]`
      */
-    get string(): string;
-    set string(value: string);
+    get text(): string;
+    set text(value: string);
 }
 /**
  * Called when a player drops a weapon (usually manual drop or death). Без ReAPI (чистый HLDS) его ничто не слышит.
@@ -1673,12 +1672,11 @@ export declare class ConsoleMessageEvent extends HookEvent {
 export declare class CreateWeaponBoxEvent extends HookEvent {
     private readonly kind;
     /**
-     * Аргумент 1.
+     * Аргумент 1, только чтение.
      *
      * Pawn: `weaponent`
      */
-    get weaponent(): number;
-    set weaponent(value: number);
+    get weapon(): Weapon;
     /**
      * Аргумент 2, только чтение.
      *
@@ -1873,22 +1871,22 @@ export declare class DefaultDeployEvent extends HookEvent {
      *
      * Pawn: `iAnim`
      */
-    get anim(): number;
-    set anim(value: number);
+    get animation(): number;
+    set animation(value: number);
     /**
      * Аргумент 5.
      *
      * Pawn: `szAnimExt[]`
      */
-    get animExt(): string;
-    set animExt(value: string);
+    get animationExtension(): string;
+    set animationExtension(value: string);
     /**
      * Аргумент 6.
      *
      * Pawn: `skiplocal`
      */
-    get skiplocal(): number;
-    set skiplocal(value: number);
+    get skipLocal(): number;
+    set skipLocal(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -1927,8 +1925,8 @@ export declare class DefaultReloadEvent extends HookEvent {
      *
      * Pawn: `iAnim`
      */
-    get anim(): number;
-    set anim(value: number);
+    get animation(): number;
+    set animation(value: number);
     /**
      * Аргумент 4.
      *
@@ -1967,15 +1965,15 @@ export declare class DefaultShotgunReloadEvent extends HookEvent {
      *
      * Pawn: `iAnim`
      */
-    get anim(): number;
-    set anim(value: number);
+    get animation(): number;
+    set animation(value: number);
     /**
      * Аргумент 3.
      *
      * Pawn: `iStartAnim`
      */
-    get startAnim(): number;
-    set startAnim(value: number);
+    get startAnimation(): number;
+    set startAnimation(value: number);
     /**
      * Аргумент 4.
      *
@@ -2133,7 +2131,7 @@ export declare class DisappearEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `crash` читается как `false`, а `fmt` — причина, которую узнал AMX Mod X.
+ * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `crash` читается как `false`, а `reason` — причина, которую узнал AMX Mod X.
  *
  * Pawn: `RH_SV_DropClient` (const client, bool:crash, const fmt[])
  */
@@ -2158,8 +2156,8 @@ export declare class DisconnectClientEvent extends HookEvent {
      *
      * Pawn: `fmt[]`
      */
-    get fmt(): string;
-    set fmt(value: string);
+    get reason(): string;
+    set reason(value: string);
 }
 /**
  * Оружие одного класса выбрасывают.
@@ -2340,7 +2338,7 @@ export declare class EarPositionEvent extends HookEvent {
     get result(): Vector;
 }
 /**
- * Called when a C4 goes to explodes. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `tracehandle` и `damageType` читаются как 0.
+ * Called when a C4 goes to explodes. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `trace` и `damageType` читаются как 0.
  *
  * Pawn: `RG_CGrenade_ExplodeBomb` (const this, tracehandle, const bitsDamageType)
  */
@@ -2357,8 +2355,8 @@ export declare class ExplodeBombEvent extends HookEvent {
      *
      * Pawn: `tracehandle`
      */
-    get tracehandle(): number;
-    set tracehandle(value: number);
+    get trace(): number;
+    set trace(value: number);
     /**
      * Аргумент 3.
      *
@@ -2385,8 +2383,8 @@ export declare class ExplodeFlashbangEvent extends HookEvent {
      *
      * Pawn: `tracehandle`
      */
-    get tracehandle(): number;
-    set tracehandle(value: number);
+    get trace(): number;
+    set trace(value: number);
     /**
      * Аргумент 3.
      *
@@ -2413,8 +2411,8 @@ export declare class ExplodeHeGrenadeEvent extends HookEvent {
      *
      * Pawn: `tracehandle`
      */
-    get tracehandle(): number;
-    set tracehandle(value: number);
+    get trace(): number;
+    set trace(value: number);
     /**
      * Аргумент 3.
      *
@@ -2592,15 +2590,15 @@ export declare class FireBulletsEvent extends HookEvent {
      *
      * Pawn: `Float:vecSrc[3]`
      */
-    get src(): Vector;
-    set src(value: Vector);
+    get start(): Vector;
+    set start(value: Vector);
     /**
      * Аргумент 4.
      *
      * Pawn: `Float:vecDirShooting[3]`
      */
-    get dirShooting(): Vector;
-    set dirShooting(value: Vector);
+    get direction(): Vector;
+    set direction(value: Vector);
     /**
      * Аргумент 5.
      *
@@ -4192,8 +4190,8 @@ export declare class PlayStepSoundEvent extends HookEvent {
      *
      * Pawn: `Float:fvol`
      */
-    get fvol(): number;
-    set fvol(value: number);
+    get volume(): number;
+    set volume(value: number);
     /**
      * Аргумент 3, только чтение.
      *
@@ -4298,7 +4296,7 @@ export declare class PrecacheEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called when a generic resource is being added to generic precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `string` ничего не делают.
+ * Called when a generic resource is being added to generic precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
  *
  * Pawn: `RH_PF_precache_generic_I` (const string[])
  */
@@ -4309,8 +4307,8 @@ export declare class PrecacheFileEvent extends HookEvent {
      *
      * Pawn: `string[]`
      */
-    get string(): string;
-    set string(value: string);
+    get file(): string;
+    set file(value: string);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -4325,7 +4323,7 @@ export declare class PrecacheFileEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a model is being added to model precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `string` ничего не делают.
+ * Called when a model is being added to model precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
  *
  * Pawn: `RH_PF_precache_model_I` (const string[])
  */
@@ -4336,8 +4334,8 @@ export declare class PrecacheModelEvent extends HookEvent {
      *
      * Pawn: `string[]`
      */
-    get string(): string;
-    set string(value: string);
+    get file(): string;
+    set file(value: string);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -4352,7 +4350,7 @@ export declare class PrecacheModelEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a sound is being added to sound precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `string` ничего не делают.
+ * Called when a sound is being added to sound precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
  *
  * Pawn: `RH_PF_precache_sound_I` (const string[])
  */
@@ -4363,8 +4361,8 @@ export declare class PrecacheSoundEvent extends HookEvent {
      *
      * Pawn: `string[]`
      */
-    get string(): string;
-    set string(value: string);
+    get file(): string;
+    set file(value: string);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -4447,8 +4445,8 @@ export declare class PrintfEvent extends HookEvent {
      *
      * Pawn: `string[]`
      */
-    get string(): string;
-    set string(value: string);
+    get text(): string;
+    set text(value: string);
 }
 /**
  * Отправляется радиосообщение. `preventDefault()` заглушит его. Без ReAPI (чистый HLDS) его ничто не слышит.
@@ -4468,15 +4466,15 @@ export declare class RadioEvent extends HookEvent {
      *
      * Pawn: `msg_id[]`
      */
-    get msg_id(): string;
-    set msg_id(value: string);
+    get sound(): string;
+    set sound(value: string);
     /**
      * Аргумент 3.
      *
      * Pawn: `msg_verbose[]`
      */
-    get msg_verbose(): string;
-    set msg_verbose(value: string);
+    get text(): string;
+    set text(value: string);
     /**
      * Аргумент 4.
      *
@@ -4510,50 +4508,50 @@ export declare class RecoilEvent extends HookEvent {
      *
      * Pawn: `Float:up_base`
      */
-    get up_base(): number;
-    set up_base(value: number);
+    get upBase(): number;
+    set upBase(value: number);
     /**
      * Аргумент 3.
      *
      * Pawn: `Float:lateral_base`
      */
-    get lateral_base(): number;
-    set lateral_base(value: number);
+    get lateralBase(): number;
+    set lateralBase(value: number);
     /**
      * Аргумент 4.
      *
      * Pawn: `Float:up_modifier`
      */
-    get up_modifier(): number;
-    set up_modifier(value: number);
+    get upModifier(): number;
+    set upModifier(value: number);
     /**
      * Аргумент 5.
      *
      * Pawn: `Float:lateral_modifier`
      */
-    get lateral_modifier(): number;
-    set lateral_modifier(value: number);
+    get lateralModifier(): number;
+    set lateralModifier(value: number);
     /**
      * Аргумент 6.
      *
      * Pawn: `Float:p_max`
      */
-    get p_max(): number;
-    set p_max(value: number);
+    get upMax(): number;
+    set upMax(value: number);
     /**
      * Аргумент 7.
      *
      * Pawn: `Float:lateral_max`
      */
-    get lateral_max(): number;
-    set lateral_max(value: number);
+    get lateralMax(): number;
+    set lateralMax(value: number);
     /**
      * Аргумент 8.
      *
      * Pawn: `direction_change`
      */
-    get direction_change(): number;
-    set direction_change(value: number);
+    get directionChange(): number;
+    set directionChange(value: number);
 }
 /**
  * Whether or not the entity can reflect gauss shots..
@@ -4937,7 +4935,7 @@ export declare class SelectSpawnPointEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра сообщает всем, кто кого убил. Без ReAPI (чистый HLDS): `preventDefault()` отменяет сообщение; `assister` и `inflictor` читаются как мир, `flags` пуст, в `rarity` бывает только `"Headshot"`; запись поля ничего не делает.
+ * Игра сообщает всем, кто кого убил. Без ReAPI (чистый HLDS): `preventDefault()` отменяет сообщение; `assister` и `inflictor` читаются как мир, `flags` пуст, в `rarity` бывает только `"headshot"`; запись поля ничего не делает.
  *
  * Pawn: `RG_CSGameRules_SendDeathMessage` (const pKiller, const pVictim, const pAssister, const pevInflictor, const killerWeaponName[], const DeathMessageFlags:iDeathMessageFlags, const KillRarity:iRarityOfKill)
  */
@@ -4975,7 +4973,7 @@ export declare class SendDeathMessageEvent extends HookEvent {
     get killerWeaponName(): string;
     set killerWeaponName(value: string);
     /**
-     * Дополнения к сообщению о смерти, любые из `"Position"`, `"Assistant"`, `"KillRarity"`.
+     * Дополнения к сообщению о смерти, любые из `"position"`, `"assistant"`, `"killRarity"`.
      *
      * Pawn: `DeathMessageFlags:iDeathMessageFlags`
      */
@@ -5008,15 +5006,15 @@ export declare class SendWeaponAnimEvent extends HookEvent {
      *
      * Pawn: `iAnim`
      */
-    get anim(): number;
-    set anim(value: number);
+    get animation(): number;
+    set animation(value: number);
     /**
      * Аргумент 3.
      *
      * Pawn: `skiplocal`
      */
-    get skiplocal(): number;
-    set skiplocal(value: number);
+    get skipLocal(): number;
+    set skipLocal(value: number);
 }
 /**
  * Called when a command is being sent to server. Без ReAPI (чистый HLDS) его ничто не слышит.
@@ -5030,8 +5028,8 @@ export declare class ServerCommandEvent extends HookEvent {
      *
      * Pawn: `cmd[]`
      */
-    get cmd(): string;
-    set cmd(value: string);
+    get command(): string;
+    set command(value: string);
     /**
      * Аргумент 2.
      *
@@ -5072,8 +5070,8 @@ export declare class SetAnimationEvent extends HookEvent {
      *
      * Pawn: `PLAYER_ANIM:playerAnim`
      */
-    get playerAnim(): PlayerAnimation;
-    set playerAnim(value: PlayerAnimation);
+    get animation(): PlayerAnimation;
+    set animation(value: PlayerAnimation);
 }
 /**
  * Called when a player dies to pack up the appropriate weapons and ammo items, and creates a weaponbox that falls to floor with sets specify the model or when a player drop the item. Без ReAPI (чистый HLDS): `preventDefault()` не даёт модели встать; запись `modelName` ничего не делает.
@@ -5172,15 +5170,15 @@ export declare class ShootEvent extends HookEvent {
      *
      * Pawn: `Float:vecSrc[3]`
      */
-    get src(): Vector;
-    set src(value: Vector);
+    get start(): Vector;
+    set start(value: Vector);
     /**
      * Аргумент 3.
      *
      * Pawn: `Float:vecDirShooting[3]`
      */
-    get dirShooting(): Vector;
-    set dirShooting(value: Vector);
+    get direction(): Vector;
+    set direction(value: Vector);
     /**
      * Аргумент 4.
      *
@@ -5241,8 +5239,8 @@ export declare class ShootEvent extends HookEvent {
      *
      * Pawn: `shared_rand`
      */
-    get shared_rand(): number;
-    set shared_rand(value: number);
+    get randomSeed(): number;
+    set randomSeed(value: number);
 }
 /**
  * Дробовик стреляет: игра ведёт каждую дробину и наносит её урон. Без ReAPI (чистый HLDS) его ничто не слышит.
@@ -5269,15 +5267,15 @@ export declare class ShootBuckshotEvent extends HookEvent {
      *
      * Pawn: `Float:vecSrc[3]`
      */
-    get src(): Vector;
-    set src(value: Vector);
+    get start(): Vector;
+    set start(value: Vector);
     /**
      * Аргумент 4.
      *
      * Pawn: `Float:vecDirShooting[3]`
      */
-    get dirShooting(): Vector;
-    set dirShooting(value: Vector);
+    get direction(): Vector;
+    set direction(value: Vector);
     /**
      * Аргумент 5.
      *
@@ -5619,8 +5617,8 @@ export declare class SpectateNextEvent extends HookEvent {
      *
      * Pawn: `bool bReverse`
      */
-    get arg2(): number;
-    set arg2(value: number);
+    get reverse(): boolean;
+    set reverse(value: boolean);
     /**
      * Аргумент 3.
      *
@@ -5690,8 +5688,8 @@ export declare class StartSoundEvent extends HookEvent {
      *
      * Pawn: `sample[]`
      */
-    get sample(): string;
-    set sample(value: string);
+    get sound(): string;
+    set sound(value: string);
     /**
      * Аргумент 5.
      *
@@ -5834,7 +5832,7 @@ export declare class TakeDamageEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velocityModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_TakeDamageImpulse` (const this, attacker, Float:flKnockbackForce, Float:flVelModifier)
  */
@@ -5864,8 +5862,8 @@ export declare class TakeDamageImpulseEvent extends HookEvent {
      *
      * Pawn: `Float:flVelModifier`
      */
-    get velModifier(): number;
-    set velModifier(value: number);
+    get velocityModifier(): number;
+    set velocityModifier(value: number);
 }
 /**
  * Called each time player tries to join a team to ensure availability. Без ReAPI (чистый HLDS) его ничто не слышит.
@@ -5879,8 +5877,8 @@ export declare class TeamFullEvent extends HookEvent {
      *
      * Pawn: `team_id`
      */
-    get team_id(): number;
-    set team_id(value: number);
+    get team(): number;
+    set team(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -5927,15 +5925,15 @@ export declare class TeamStackedEvent extends HookEvent {
      *
      * Pawn: `newTeam_id`
      */
-    get newTeam_id(): number;
-    set newTeam_id(value: number);
+    get newTeam(): number;
+    set newTeam(value: number);
     /**
      * Аргумент 2.
      *
      * Pawn: `curTeam_id`
      */
-    get curTeam_id(): number;
-    set curTeam_id(value: number);
+    get currentTeam(): number;
+    set currentTeam(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -6012,7 +6010,7 @@ export declare class ThrowFlashbangEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игрок бросает гранату. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `usEvent` читается как 0.
+ * Игрок бросает гранату. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
  *
  * Pawn: `RG_CBasePlayer_ThrowGrenade` (const this, const grenade, Float:vecSrc[3], Float:vecThrow[3], Float:time, const usEvent)
  */
@@ -6036,8 +6034,8 @@ export declare class ThrowGrenadeEvent extends HookEvent {
      *
      * Pawn: `Float:vecSrc[3]`
      */
-    get src(): Vector;
-    set src(value: Vector);
+    get start(): Vector;
+    set start(value: Vector);
     /**
      * Скорость гранаты, Vector.
      *
@@ -6057,8 +6055,8 @@ export declare class ThrowGrenadeEvent extends HookEvent {
      *
      * Pawn: `usEvent`
      */
-    get usEvent(): number;
-    set usEvent(value: number);
+    get eventIndex(): number;
+    set eventIndex(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -6073,7 +6071,7 @@ export declare class ThrowGrenadeEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `usEvent` читается как 0.
+ * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
  *
  * Pawn: `RG_ThrowHeGrenade` (const index, Float:vecStart[3], Float:vecVelocity[3], Float:time, const team, const usEvent)
  */
@@ -6118,8 +6116,8 @@ export declare class ThrowHeGrenadeEvent extends HookEvent {
      *
      * Pawn: `usEvent`
      */
-    get usEvent(): number;
-    set usEvent(value: number);
+    get eventIndex(): number;
+    set eventIndex(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -6134,7 +6132,7 @@ export declare class ThrowHeGrenadeEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `usEvent` читается как 0.
+ * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
  *
  * Pawn: `RG_ThrowSmokeGrenade` (const index, Float:vecStart[3], Float:vecVelocity[3], Float:time, const usEvent)
  */
@@ -6172,8 +6170,8 @@ export declare class ThrowSmokeGrenadeEvent extends HookEvent {
      *
      * Pawn: `usEvent`
      */
-    get usEvent(): number;
-    set usEvent(value: number);
+    get eventIndex(): number;
+    set eventIndex(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -6268,15 +6266,15 @@ export declare class TraceAttackEvent extends HookEvent {
      *
      * Pawn: `Float:vecDir[3]`
      */
-    get dir(): Vector;
-    set dir(value: Vector);
+    get direction(): Vector;
+    set direction(value: Vector);
     /**
      * Аргумент 5.
      *
      * Pawn: `tracehandle`
      */
-    get tracehandle(): number;
-    set tracehandle(value: number);
+    get trace(): number;
+    set trace(value: number);
     /**
      * Аргумент 6.
      *
@@ -6360,22 +6358,22 @@ export declare class TraceLineEvent extends HookEvent {
      *
      * Pawn: `Float:vecSrc[3]`
      */
-    get src(): Vector;
-    set src(value: Vector);
+    get start(): Vector;
+    set start(value: Vector);
     /**
      * Аргумент 5.
      *
      * Pawn: `Float:vecSpot[3]`
      */
-    get spot(): Vector;
-    set spot(value: Vector);
+    get end(): Vector;
+    set end(value: Vector);
     /**
      * Аргумент 6.
      *
      * Pawn: `tracehandle`
      */
-    get tracehandle(): number;
-    set tracehandle(value: number);
+    get trace(): number;
+    set trace(value: number);
 }
 /**
  * Called whenever player tries to unduck. Без ReAPI (чистый HLDS) его ничто не слышит.
@@ -6491,7 +6489,7 @@ export declare class UseEmptyEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * The player has changed userinfo; can change it now. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `infobuffer` читается как `""`.
+ * The player has changed userinfo; can change it now. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`.
  *
  * Pawn: `RG_CSGameRules_ClientUserInfoChanged` (const index, infobuffer[])
  */
@@ -6508,8 +6506,8 @@ export declare class UserInfoChangeEvent extends HookEvent {
      *
      * Pawn: `infobuffer[]`
      */
-    get infobuffer(): string;
-    set infobuffer(value: string);
+    get info(): string;
+    set info(value: string);
 }
 /**
  * Returns true if a line can be traced from the caller's eyes to the target.
@@ -6731,7 +6729,7 @@ export interface GameEventMap {
     /** Pawn: `RG_CGib_BounceGibTouch` */
     bounceGibTouch: BounceGibTouchEvent;
     /**
-     * The player buys ammo. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `weapon_entity` читается как 0, `blinkMoney` — как `true`; ответ ничего не делает.
+     * The player buys ammo. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `weapon` читается как мир, `blinkMoney` — как `true`; ответ ничего не делает.
      *
      * Pawn: `RG_BuyGunAmmo`
      */
@@ -6823,7 +6821,7 @@ export interface GameEventMap {
      */
     changeModel: ChangeModelEvent;
     /**
-     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `infobuffer` читается как `""`; ответ ничего не делает.
+     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`; ответ ничего не делает.
      *
      * Pawn: `RG_CBasePlayer_SetClientUserInfoName`
      */
@@ -6993,7 +6991,7 @@ export interface GameEventMap {
      */
     disappear: DisappearEvent;
     /**
-     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `crash` читается как `false`, а `fmt` — причина, которую узнал AMX Mod X.
+     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `crash` читается как `false`, а `reason` — причина, которую узнал AMX Mod X.
      *
      * Pawn: `RH_SV_DropClient`
      */
@@ -7047,7 +7045,7 @@ export interface GameEventMap {
      */
     earPosition: EarPositionEvent;
     /**
-     * Called when a C4 goes to explodes. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `tracehandle` и `damageType` читаются как 0.
+     * Called when a C4 goes to explodes. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `trace` и `damageType` читаются как 0.
      *
      * Pawn: `RG_CGrenade_ExplodeBomb`
      */
@@ -7499,19 +7497,19 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_Precache`, `Ham_Precache` */
     precache: PrecacheEvent;
     /**
-     * Called when a generic resource is being added to generic precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `string` ничего не делают.
+     * Called when a generic resource is being added to generic precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
      *
      * Pawn: `RH_PF_precache_generic_I`
      */
     precacheFile: PrecacheFileEvent;
     /**
-     * Called when a model is being added to model precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `string` ничего не делают.
+     * Called when a model is being added to model precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
      *
      * Pawn: `RH_PF_precache_model_I`
      */
     precacheModel: PrecacheModelEvent;
     /**
-     * Called when a sound is being added to sound precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `string` ничего не делают.
+     * Called when a sound is being added to sound precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
      *
      * Pawn: `RH_PF_precache_sound_I`
      */
@@ -7659,7 +7657,7 @@ export interface GameEventMap {
      */
     selectSpawnPoint: SelectSpawnPointEvent;
     /**
-     * Игра сообщает всем, кто кого убил. Без ReAPI (чистый HLDS): `preventDefault()` отменяет сообщение; `assister` и `inflictor` читаются как мир, `flags` пуст, в `rarity` бывает только `"Headshot"`; запись поля ничего не делает.
+     * Игра сообщает всем, кто кого убил. Без ReAPI (чистый HLDS): `preventDefault()` отменяет сообщение; `assister` и `inflictor` читаются как мир, `flags` пуст, в `rarity` бывает только `"headshot"`; запись поля ничего не делает.
      *
      * Pawn: `RG_CSGameRules_SendDeathMessage`
      */
@@ -7833,7 +7831,7 @@ export interface GameEventMap {
      */
     takeDamage: TakeDamageEvent;
     /**
-     * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velocityModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_TakeDamageImpulse`
      */
@@ -7869,19 +7867,19 @@ export interface GameEventMap {
      */
     throwFlashbang: ThrowFlashbangEvent;
     /**
-     * Игрок бросает гранату. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `usEvent` читается как 0.
+     * Игрок бросает гранату. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
      *
      * Pawn: `RG_CBasePlayer_ThrowGrenade`
      */
     throwGrenade: ThrowGrenadeEvent;
     /**
-     * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `usEvent` читается как 0.
+     * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
      *
      * Pawn: `RG_ThrowHeGrenade`
      */
     throwHeGrenade: ThrowHeGrenadeEvent;
     /**
-     * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `usEvent` читается как 0.
+     * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
      *
      * Pawn: `RG_ThrowSmokeGrenade`
      */
@@ -7949,7 +7947,7 @@ export interface GameEventMap {
      */
     useEmpty: UseEmptyEvent;
     /**
-     * The player has changed userinfo; can change it now. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `infobuffer` читается как `""`.
+     * The player has changed userinfo; can change it now. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`.
      *
      * Pawn: `RG_CSGameRules_ClientUserInfoChanged`
      */

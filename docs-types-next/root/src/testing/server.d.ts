@@ -152,6 +152,8 @@ export interface ServerOptions {
     platform?: 'win32' | 'linux';
     /** The server's time zone, what Date's local getters read: "Asia/Yerevan". This machine's unless said. */
     timeZone?: string;
+    /** Whether reapi finds Reunion, so a player's `authType`, `protocol` and `authKey` are his own. Not unless said. */
+    reunion?: boolean;
 }
 export type TeamName = 'UNASSIGNED' | 'TERRORIST' | 'CT' | 'SPECTATOR';
 export declare const TEAMS: TeamName[];
@@ -161,8 +163,15 @@ export interface JoinOptions {
     armor?: number;
     alive?: boolean;
     bot?: boolean;
-    authid?: string;
+    /** His SteamID: "STEAM_0:0:<id>" unless said, "BOT" for a bot. */
+    steamId?: string;
     ip?: string;
+    /** How Reunion says his game proved who he is, by its name in the player's API: "steam" unless said. */
+    authType?: string;
+    /** His game's protocol, as Reunion says: 48 unless said. */
+    protocol?: number;
+    /** The key Reunion read from his game: "" unless said. */
+    authKey?: string;
     /** Admin flags as users.ini writes them: "abcdefghijklmnopqrstu". "z" - a plain user - unless said. */
     flags?: string;
     origin?: number[];
@@ -199,8 +208,11 @@ export declare class FakePlayer extends FakeEntity {
     connected: boolean;
     alive: boolean;
     readonly bot: boolean;
-    readonly authid: string;
+    readonly steamId: string;
     readonly ip: string;
+    readonly authType: string;
+    readonly protocol: number;
+    readonly authKey: string;
     /** Admin flags as bits: ADMIN_* . */
     flags: number;
     /** SPEAK_* flags: `muted` is SPEAK_MUTED. */
@@ -313,6 +325,8 @@ export declare class FakeServer {
     readonly map: string;
     readonly maxPlayers: number;
     readonly modules: Set<string>;
+    /** Whether reapi finds Reunion (has_reunion). */
+    readonly reunion: boolean;
     /** Milliseconds since the map started; advance() moves it. */
     time: number;
     /** Date.now() when the map started. */
@@ -497,7 +511,7 @@ export declare class FakeServer {
     /** Which of those texts are lists of player ids ("3,5"), by `slot:key`: a player who leaves goes from them. */
     readonly playerLists: Set<string>;
     /**
-     * The playerchange listeners, as the module keeps them: per plugin, the
+     * The playerChange listeners, as the module keeps them: per plugin, the
      * fields it hears ("" for every one) and the trampoline that hands a change
      * to its listeners.
      */
