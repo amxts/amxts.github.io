@@ -252,6 +252,34 @@ function moduleImports(version: DocsVersion) {
 }
 
 /**
+ * The names an example declares, read with the TypeScript parser: its
+ * variables, functions, classes and types (`declared`), and its functions'
+ * parameters, destructured ones included (`parameters`). A call such as
+ * `print(player, ...)` declares nothing.
+ */
+function declaredIn(code: string) {
+  const declared = new Set<string>()
+  const parameters = new Set<string>()
+  const bind = (name: ts.BindingName, into: Set<string>) => {
+    if (ts.isIdentifier(name))
+      into.add(name.text)
+    else
+      name.elements.forEach(element => ts.isOmittedExpression(element) || bind(element.name, into))
+  }
+  const visit = (node: ts.Node) => {
+    if (ts.isParameter(node))
+      bind(node.name, parameters)
+    else if (ts.isVariableDeclaration(node))
+      bind(node.name, declared)
+    else if ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node) || ts.isEnumDeclaration(node)) && node.name)
+      declared.add(node.name.text)
+    ts.forEachChild(node, visit)
+  }
+  visit(ts.createSourceFile('example.ts', code, ts.ScriptTarget.Latest))
+  return { declared, parameters }
+}
+
+/**
  * A TypeScript example with hovers. A block reads the declarations of its
  * page's language and docs version: `types-ru`, `types-next`, `types-next-ru`
  * in its meta names the folder beside docs-types/ (docs-types-ru...), which
@@ -264,7 +292,7 @@ function twoslash(block: string, locale: Locale, version: DocsVersion) {
   const code = rest.join('\n')
   const names = facadeExports(version)
   // what the example declares itself stays its own: `const text` is not the facade's text
-  const declared = new Set([...code.matchAll(/\b(?:const|let|var|function|class|interface|type|enum)\s+(\w+)/g)].map(match => match[1]))
+  const { declared, parameters } = declaredIn(code)
   const hidden = names.length && !/from "(?:~\/facade|@amxts\/core)"/.test(block)
     ? [`import { ${names.filter(name => !declared.has(name)).join(', ')} } from "~/facade";`]
     : []
@@ -274,7 +302,7 @@ function twoslash(block: string, locale: Locale, version: DocsVersion) {
   }
   // An example that talks about `player` without declaring it gets one, so
   // what it reads from the player has its types too.
-  if (/\bplayer\b/.test(code) && !/(?:\b(?:const|let|var)\s+|[(,]\s*)player\b/.test(code))
+  if (/\bplayer\b/.test(code) && !declared.has('player') && !parameters.has('player'))
     hidden.push('declare const player: import("~/facade").Player;')
   const prelude = hidden.length ? [...hidden, '// ---cut---'] : []
   const folder = typesFolder(locale, version).slice('docs-'.length)
