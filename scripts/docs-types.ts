@@ -17,7 +17,8 @@
 // commit of the framework they were built from). After the copy every
 // TypeScript example of that version's docs - and, for the current version,
 // of the official modules' READMEs - is checked against them: a hover that
-// would say `any` fails this script.
+// would say `any` fails this script, and so does a TypeScript block the site
+// would show without hovers at all.
 import type { Locale } from '../modules/amxts-docs/markdown'
 import type { DocsVersion } from '../shared/docs'
 import { execFileSync } from 'node:child_process'
@@ -73,20 +74,39 @@ function read(path: string) {
 // which the site shows with the current docs only.
 const corePages = locales.flatMap(({ code }) => [`docs/${code}`, `docs/modules/${code}`]
   .flatMap(dir => markdown(join(corePath, dir)).map(file => `${dir}/${file}`))
-  .map(path => ({ from: path, locale: code, text: docsPage(read(join(corePath, path)), path, code, version) })))
+  .map((path) => {
+    const source = read(join(corePath, path))
+    return { from: path, locale: code, source, text: docsPage(source, path, code, version) }
+  }))
 
 const readmes = locales.flatMap(({ code }) => (modulesPath && version === 'current' ? readdirSync(modulesPath) : []).flatMap((name) => {
   const file = code === 'en' ? 'README.md' : `README.${code}.md`
   const path = modulesPath && join(modulesPath, name, file)
-  return path && existsSync(path) ? [{ from: `${name}/${file}`, locale: code, text: modulePage(read(path), name, `amxts/${name}`, code) }] : []
+  const source = path && existsSync(path) ? read(path) : undefined
+  return source ? [{ from: `${name}/${file}`, locale: code, source, text: modulePage(source, name, `amxts/${name}`, code) }] : []
 }))
 
-/** Every TypeScript example: the code Twoslash checks, the hidden prelude included. */
-const snippets = [...corePages, ...readmes].flatMap(page => splitFences(page.text)
-  .filter((_, i) => i % 2 === 1)
-  .map(part => unindent(part).text)
-  .filter(part => part.startsWith('```ts twoslash'))
-  .map(part => ({ from: page.from, locale: page.locale, code: part.split('\n').slice(1, -1).join('\n') })))
+/** Each page's TypeScript examples: the code Twoslash checks, the hidden prelude included. */
+const pages = [...corePages, ...readmes].map(page => ({
+  ...page,
+  examples: splitFences(page.text)
+    .filter((_, i) => i % 2 === 1)
+    .map(part => unindent(part).text)
+    .filter(part => part.startsWith('```ts twoslash'))
+    .map(part => part.split('\n').slice(1, -1).join('\n')),
+}))
+
+const snippets = pages.flatMap(page => page.examples.map(code => ({ from: page.from, locale: page.locale, code })))
+
+/**
+ * A TypeScript block the page writes but the site shows without hovers: one
+ * that markdown.ts did not find - in a list item, a quote, anywhere - and so
+ * this check would not see either. Counted on the page's own text.
+ */
+const unchecked = pages.flatMap((page) => {
+  const written = page.source.match(/^[\t >]*```ts(?:\s|$)/gm)?.length ?? 0
+  return written === page.examples.length ? [] : [`${page.from} (${page.locale}): ${written - page.examples.length} of ${written}`]
+})
 
 /**
  * An example's files: Twoslash's `// @filename: x.ts` lines split one block
@@ -147,10 +167,11 @@ function checkSnippets() {
 }
 
 const problems = checkSnippets()
-if (problems.length) {
+if (unchecked.length)
+  console.error(`TypeScript examples the site shows without hovers (it did not find them):\n${unchecked.map(page => `  ${page}`).join('\n')}`)
+if (problems.length)
   console.error(`${problems.length} example(s) would show \`any\` on hover:\n${problems.map(problem => `  ${problem}`).join('\n')}`)
+if (unchecked.length || problems.length)
   process.exitCode = 1
-}
-else {
+else
   console.log(`examples: ${snippets.length} typed`)
-}
