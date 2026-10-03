@@ -9,6 +9,10 @@ const route = useRoute()
 // like the tabs' indicator, instead of a line per link that just appears.
 const nav = useTemplateRef('nav')
 const indicator = ref<{ top: number, left: number, height: number } | null>(null)
+// The list of the current link: a move into another section's list jumps
+// instead of sliding across its heading.
+let lastList: HTMLElement | null = null
+const jump = ref(false)
 
 function place() {
   const box = nav.value
@@ -16,8 +20,11 @@ function place() {
   const list = link?.closest('ul')
   if (!box || !link || !list) {
     indicator.value = null
+    lastList = null
     return
   }
+  jump.value = lastList !== null && list !== lastList
+  lastList = list
   const origin = box.getBoundingClientRect()
   const rect = link.getBoundingClientRect()
   indicator.value = {
@@ -47,7 +54,8 @@ useResizeObserver(nav, place)
 
             <span
               v-if="indicator"
-              class="pointer-events-none absolute w-px rounded-full bg-primary transition-[top,height,left] duration-300 ease-out motion-reduce:transition-none"
+              class="pointer-events-none absolute w-px rounded-full bg-primary"
+              :class="jump ? 'transition-none' : 'transition-[top,height,left] duration-300 ease-out motion-reduce:transition-none'"
               :style="{ top: `${indicator.top}px`, left: `${indicator.left}px`, height: `${indicator.height}px` }"
             />
           </div>
