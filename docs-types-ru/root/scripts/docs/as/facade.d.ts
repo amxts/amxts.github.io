@@ -663,6 +663,14 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    ProgressBarOptions: {
+        en: string;
+        ru: string;
+    };
+    'ProgressBarOptions.startPercent': {
+        en: string;
+        ru: string;
+    };
     StatusIconState: {
         en: string;
         ru: string;

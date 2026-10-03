@@ -726,11 +726,11 @@ export declare class ArmorTypeMessage extends ClientMessage {
     set helmet(value: boolean);
 }
 /**
- * Полосу прогресса посреди экрана игрока показывают или прячут.
+ * Полосу прогресса посреди экрана игрока показывают или прячут — пустой или заполненной не с нуля.
  *
- * Сообщение игры `BarTime`.
+ * Сообщения игры `BarTime` и `BarTime2`.
  *
- * Pawn: `register_message(get_user_msgid("BarTime"), ...)`
+ * Pawn: `register_message(get_user_msgid("BarTime"), ...)`, `register_message(get_user_msgid("BarTime2"), ...)`
  */
 export declare class BarTimeMessage extends ClientMessage {
     private readonly kind;
@@ -741,25 +741,8 @@ export declare class BarTimeMessage extends ClientMessage {
      */
     get seconds(): number;
     set seconds(value: number);
-}
-/**
- * Полоса прогресса посреди экрана игрока, начатая не с нуля.
- *
- * Сообщение игры `BarTime2`.
- *
- * Pawn: `register_message(get_user_msgid("BarTime2"), ...)`
- */
-export declare class BarTime2Message extends ClientMessage {
-    private readonly kind;
     /**
-     * Секунды, которые показывают полоса или часы. Присвойте, чтобы изменить.
-     *
-     * Pawn: `get_msg_arg_*(1)`
-     */
-    get seconds(): number;
-    set seconds(value: number);
-    /**
-     * Заполненность полосы в начале, в процентах.
+     * Заполненность полосы в начале, в процентах. В `BarTime` его нет: там он читается как `0`, а запись ничего не делает.
      *
      * Pawn: `get_msg_arg_*(2)`
      */
@@ -1159,9 +1142,9 @@ export declare class HostagePosMessage extends ClientMessage {
 /**
  * Подсказка посреди экрана игрока.
  *
- * Сообщение игры `HudText`.
+ * Сообщения игры `HudText`, `HudTextArgs` и `HudTextPro`.
  *
- * Pawn: `register_message(get_user_msgid("HudText"), ...)`
+ * Pawn: `register_message(get_user_msgid("HudText"), ...)`, `register_message(get_user_msgid("HudTextArgs"), ...)`, `register_message(get_user_msgid("HudTextPro"), ...)`
  */
 export declare class HudTextMessage extends ClientMessage {
     private readonly kind;
@@ -1172,47 +1155,13 @@ export declare class HudTextMessage extends ClientMessage {
      */
     get text(): string;
     set text(value: string);
-}
-/**
- * Подсказка посреди экрана игрока из собственных текстов игры.
- *
- * Сообщение игры `HudTextArgs`.
- *
- * Pawn: `register_message(get_user_msgid("HudTextArgs"), ...)`
- */
-export declare class HudTextArgsMessage extends ClientMessage {
-    private readonly kind;
     /**
-     * Текст или собственный текст игры, например `"#Hint_press_buy_to_purchase"`.
-     *
-     * Pawn: `get_msg_arg_*(1)`
-     */
-    get text(): string;
-    set text(value: string);
-    /**
-     * Тексты, которые подставляются в текст игры вместо `%s1`, `%s2`, ... — например, имя игрока. Присвойте, чтобы изменить; их число остаётся.
+     * Тексты, которые подставляются в текст игры вместо `%s1`, `%s2`, ... — например, имя игрока. Присвойте, чтобы изменить; их число остаётся. В `HudText` и `HudTextPro` его нет: там он читается как `[]`, а запись ничего не делает.
      *
      * Pawn: `get_msg_arg_*(4)`
      */
     get params(): string[];
     set params(value: string[]);
-}
-/**
- * Подсказка посреди экрана игрока — для новичка.
- *
- * Сообщение игры `HudTextPro`.
- *
- * Pawn: `register_message(get_user_msgid("HudTextPro"), ...)`
- */
-export declare class HudTextProMessage extends ClientMessage {
-    private readonly kind;
-    /**
-     * Текст или собственный текст игры, например `"#Hint_press_buy_to_purchase"`.
-     *
-     * Pawn: `get_msg_arg_*(1)`
-     */
-    get text(): string;
-    set text(value: string);
 }
 /**
  * HUD игрока готовится, когда он входит в игру.
@@ -1724,9 +1673,9 @@ export declare class ShowTimerMessage extends ClientMessage {
 /**
  * Здоровье игрока, за которым следит наблюдатель.
  *
- * Сообщение игры `SpecHealth`.
+ * Сообщения игры `SpecHealth` и `SpecHealth2`.
  *
- * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`
+ * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`, `register_message(get_user_msgid("SpecHealth2"), ...)`
  */
 export declare class SpecHealthMessage extends ClientMessage {
     private readonly kind;
@@ -1737,25 +1686,8 @@ export declare class SpecHealthMessage extends ClientMessage {
      */
     get health(): number;
     set health(value: number);
-}
-/**
- * Здоровье игрока, за которым следит наблюдатель, и кто это.
- *
- * Сообщение игры `SpecHealth2`.
- *
- * Pawn: `register_message(get_user_msgid("SpecHealth2"), ...)`
- */
-export declare class SpecHealth2Message extends ClientMessage {
-    private readonly kind;
     /**
-     * Показанное здоровье.
-     *
-     * Pawn: `get_msg_arg_*(1)`
-     */
-    get health(): number;
-    set health(value: number);
-    /**
-     * Игрок, за которым следят.
+     * Игрок, за которым следят. В `SpecHealth` его нет: там он читается как `null`, а запись ничего не делает.
      *
      * Pawn: `get_msg_arg_*(2)`
      */
@@ -2550,21 +2482,13 @@ export interface ServerMessageMap {
      */
     armorType: ArmorTypeMessage;
     /**
-     * Полосу прогресса посреди экрана игрока показывают или прячут.
+     * Полосу прогресса посреди экрана игрока показывают или прячут — пустой или заполненной не с нуля.
      *
-     * Сообщение игры `BarTime`.
+     * Сообщения игры `BarTime` и `BarTime2`.
      *
-     * Pawn: `register_message(get_user_msgid("BarTime"), ...)`
+     * Pawn: `register_message(get_user_msgid("BarTime"), ...)`, `register_message(get_user_msgid("BarTime2"), ...)`
      */
     progressBar: BarTimeMessage;
-    /**
-     * Полоса прогресса посреди экрана игрока, начатая не с нуля.
-     *
-     * Сообщение игры `BarTime2`.
-     *
-     * Pawn: `register_message(get_user_msgid("BarTime2"), ...)`
-     */
-    progressBarPartial: BarTime2Message;
     /**
      * Меняется броня игрока на его HUD.
      *
@@ -2784,27 +2708,11 @@ export interface ServerMessageMap {
     /**
      * Подсказка посреди экрана игрока.
      *
-     * Сообщение игры `HudText`.
+     * Сообщения игры `HudText`, `HudTextArgs` и `HudTextPro`.
      *
-     * Pawn: `register_message(get_user_msgid("HudText"), ...)`
+     * Pawn: `register_message(get_user_msgid("HudText"), ...)`, `register_message(get_user_msgid("HudTextArgs"), ...)`, `register_message(get_user_msgid("HudTextPro"), ...)`
      */
     hint: HudTextMessage;
-    /**
-     * Подсказка посреди экрана игрока из собственных текстов игры.
-     *
-     * Сообщение игры `HudTextArgs`.
-     *
-     * Pawn: `register_message(get_user_msgid("HudTextArgs"), ...)`
-     */
-    hintWithParams: HudTextArgsMessage;
-    /**
-     * Подсказка посреди экрана игрока — для новичка.
-     *
-     * Сообщение игры `HudTextPro`.
-     *
-     * Pawn: `register_message(get_user_msgid("HudTextPro"), ...)`
-     */
-    newPlayerHint: HudTextProMessage;
     /**
      * HUD игрока готовится, когда он входит в игру.
      *
@@ -3008,19 +2916,11 @@ export interface ServerMessageMap {
     /**
      * Здоровье игрока, за которым следит наблюдатель.
      *
-     * Сообщение игры `SpecHealth`.
+     * Сообщения игры `SpecHealth` и `SpecHealth2`.
      *
-     * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`
+     * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`, `register_message(get_user_msgid("SpecHealth2"), ...)`
      */
     spectatedHealth: SpecHealthMessage;
-    /**
-     * Здоровье игрока, за которым следит наблюдатель, и кто это.
-     *
-     * Сообщение игры `SpecHealth2`.
-     *
-     * Pawn: `register_message(get_user_msgid("SpecHealth2"), ...)`
-     */
-    spectatedPlayerHealth: SpecHealth2Message;
     /**
      * Игрок становится наблюдателем или перестаёт им быть — в таблице счёта.
      *
@@ -3166,8 +3066,8 @@ export interface ServerMessageMap {
      */
     weaponPickup: WeapPickupMessage;
 }
-/** The game's name of a message, by the name server.addMessageListener takes; a name it does not know as it is. */
-export declare function protocolMessageName(name: string): string;
+/** The game's names of the messages a name server.addMessageListener takes hears; a name it does not know as it is. */
+export declare function protocolMessageNames(name: string): string[];
 /** Adds a listener for the event E - server.addEventListener's hood. */
 export declare function addServerListener<E>(listener: (event: E) => void): void;
 /** Takes a listener off again - server.removeEventListener's hood. */

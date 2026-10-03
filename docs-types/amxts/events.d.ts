@@ -726,11 +726,11 @@ export declare class ArmorTypeMessage extends ClientMessage {
     set helmet(value: boolean);
 }
 /**
- * The progress bar in the middle of a player's screen is shown or hidden.
+ * The progress bar in the middle of a player's screen is shown or hidden, from empty or part of the way full.
  *
- * The game's `BarTime` message.
+ * The game's `BarTime` and `BarTime2` messages.
  *
- * Pawn: `register_message(get_user_msgid("BarTime"), ...)`
+ * Pawn: `register_message(get_user_msgid("BarTime"), ...)`, `register_message(get_user_msgid("BarTime2"), ...)`
  */
 export declare class BarTimeMessage extends ClientMessage {
     private readonly kind;
@@ -741,25 +741,8 @@ export declare class BarTimeMessage extends ClientMessage {
      */
     get seconds(): number;
     set seconds(value: number);
-}
-/**
- * The progress bar in the middle of a player's screen, starting part of the way full.
- *
- * The game's `BarTime2` message.
- *
- * Pawn: `register_message(get_user_msgid("BarTime2"), ...)`
- */
-export declare class BarTime2Message extends ClientMessage {
-    private readonly kind;
     /**
-     * The seconds the bar or the clock shows. Assign to change them.
-     *
-     * Pawn: `get_msg_arg_*(1)`
-     */
-    get seconds(): number;
-    set seconds(value: number);
-    /**
-     * The bar's fill at the start, in percent.
+     * The bar's fill at the start, in percent. `BarTime` does not carry it: there it reads as `0`, and writing it does nothing.
      *
      * Pawn: `get_msg_arg_*(2)`
      */
@@ -1159,9 +1142,9 @@ export declare class HostagePosMessage extends ClientMessage {
 /**
  * A hint in the middle of a player's screen.
  *
- * The game's `HudText` message.
+ * The game's `HudText`, `HudTextArgs` and `HudTextPro` messages.
  *
- * Pawn: `register_message(get_user_msgid("HudText"), ...)`
+ * Pawn: `register_message(get_user_msgid("HudText"), ...)`, `register_message(get_user_msgid("HudTextArgs"), ...)`, `register_message(get_user_msgid("HudTextPro"), ...)`
  */
 export declare class HudTextMessage extends ClientMessage {
     private readonly kind;
@@ -1172,47 +1155,13 @@ export declare class HudTextMessage extends ClientMessage {
      */
     get text(): string;
     set text(value: string);
-}
-/**
- * A hint in the middle of a player's screen, from the game's own texts.
- *
- * The game's `HudTextArgs` message.
- *
- * Pawn: `register_message(get_user_msgid("HudTextArgs"), ...)`
- */
-export declare class HudTextArgsMessage extends ClientMessage {
-    private readonly kind;
     /**
-     * The text, or the game's own for it, e.g. `"#Hint_press_buy_to_purchase"`.
-     *
-     * Pawn: `get_msg_arg_*(1)`
-     */
-    get text(): string;
-    set text(value: string);
-    /**
-     * The texts put into the game's text in place of `%s1`, `%s2`, ... - e.g. a player's name. Assign to change them; their number stays.
+     * The texts put into the game's text in place of `%s1`, `%s2`, ... - e.g. a player's name. Assign to change them; their number stays. `HudText` or `HudTextPro` does not carry it: there it reads as `[]`, and writing it does nothing.
      *
      * Pawn: `get_msg_arg_*(4)`
      */
     get params(): string[];
     set params(value: string[]);
-}
-/**
- * A hint in the middle of a player's screen, for a player new to the game.
- *
- * The game's `HudTextPro` message.
- *
- * Pawn: `register_message(get_user_msgid("HudTextPro"), ...)`
- */
-export declare class HudTextProMessage extends ClientMessage {
-    private readonly kind;
-    /**
-     * The text, or the game's own for it, e.g. `"#Hint_press_buy_to_purchase"`.
-     *
-     * Pawn: `get_msg_arg_*(1)`
-     */
-    get text(): string;
-    set text(value: string);
 }
 /**
  * A player's HUD is set up, when he enters the game.
@@ -1724,9 +1673,9 @@ export declare class ShowTimerMessage extends ClientMessage {
 /**
  * The health of the player a spectator watches.
  *
- * The game's `SpecHealth` message.
+ * The game's `SpecHealth` and `SpecHealth2` messages.
  *
- * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`
+ * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`, `register_message(get_user_msgid("SpecHealth2"), ...)`
  */
 export declare class SpecHealthMessage extends ClientMessage {
     private readonly kind;
@@ -1737,25 +1686,8 @@ export declare class SpecHealthMessage extends ClientMessage {
      */
     get health(): number;
     set health(value: number);
-}
-/**
- * The health of the player a spectator watches, and who it is.
- *
- * The game's `SpecHealth2` message.
- *
- * Pawn: `register_message(get_user_msgid("SpecHealth2"), ...)`
- */
-export declare class SpecHealth2Message extends ClientMessage {
-    private readonly kind;
     /**
-     * The health shown.
-     *
-     * Pawn: `get_msg_arg_*(1)`
-     */
-    get health(): number;
-    set health(value: number);
-    /**
-     * The player watched.
+     * The player watched. `SpecHealth` does not carry it: there it reads as `null`, and writing it does nothing.
      *
      * Pawn: `get_msg_arg_*(2)`
      */
@@ -2550,21 +2482,13 @@ export interface ServerMessageMap {
      */
     armorType: ArmorTypeMessage;
     /**
-     * The progress bar in the middle of a player's screen is shown or hidden.
+     * The progress bar in the middle of a player's screen is shown or hidden, from empty or part of the way full.
      *
-     * The game's `BarTime` message.
+     * The game's `BarTime` and `BarTime2` messages.
      *
-     * Pawn: `register_message(get_user_msgid("BarTime"), ...)`
+     * Pawn: `register_message(get_user_msgid("BarTime"), ...)`, `register_message(get_user_msgid("BarTime2"), ...)`
      */
     progressBar: BarTimeMessage;
-    /**
-     * The progress bar in the middle of a player's screen, starting part of the way full.
-     *
-     * The game's `BarTime2` message.
-     *
-     * Pawn: `register_message(get_user_msgid("BarTime2"), ...)`
-     */
-    progressBarPartial: BarTime2Message;
     /**
      * A player's armour on his HUD changes.
      *
@@ -2784,27 +2708,11 @@ export interface ServerMessageMap {
     /**
      * A hint in the middle of a player's screen.
      *
-     * The game's `HudText` message.
+     * The game's `HudText`, `HudTextArgs` and `HudTextPro` messages.
      *
-     * Pawn: `register_message(get_user_msgid("HudText"), ...)`
+     * Pawn: `register_message(get_user_msgid("HudText"), ...)`, `register_message(get_user_msgid("HudTextArgs"), ...)`, `register_message(get_user_msgid("HudTextPro"), ...)`
      */
     hint: HudTextMessage;
-    /**
-     * A hint in the middle of a player's screen, from the game's own texts.
-     *
-     * The game's `HudTextArgs` message.
-     *
-     * Pawn: `register_message(get_user_msgid("HudTextArgs"), ...)`
-     */
-    hintWithParams: HudTextArgsMessage;
-    /**
-     * A hint in the middle of a player's screen, for a player new to the game.
-     *
-     * The game's `HudTextPro` message.
-     *
-     * Pawn: `register_message(get_user_msgid("HudTextPro"), ...)`
-     */
-    newPlayerHint: HudTextProMessage;
     /**
      * A player's HUD is set up, when he enters the game.
      *
@@ -3008,19 +2916,11 @@ export interface ServerMessageMap {
     /**
      * The health of the player a spectator watches.
      *
-     * The game's `SpecHealth` message.
+     * The game's `SpecHealth` and `SpecHealth2` messages.
      *
-     * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`
+     * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`, `register_message(get_user_msgid("SpecHealth2"), ...)`
      */
     spectatedHealth: SpecHealthMessage;
-    /**
-     * The health of the player a spectator watches, and who it is.
-     *
-     * The game's `SpecHealth2` message.
-     *
-     * Pawn: `register_message(get_user_msgid("SpecHealth2"), ...)`
-     */
-    spectatedPlayerHealth: SpecHealth2Message;
     /**
      * A player becomes a spectator, or stops being one, on the scoreboard.
      *
@@ -3166,8 +3066,8 @@ export interface ServerMessageMap {
      */
     weaponPickup: WeapPickupMessage;
 }
-/** The game's name of a message, by the name server.addMessageListener takes; a name it does not know as it is. */
-export declare function protocolMessageName(name: string): string;
+/** The game's names of the messages a name server.addMessageListener takes hears; a name it does not know as it is. */
+export declare function protocolMessageNames(name: string): string[];
 /** Adds a listener for the event E - server.addEventListener's hood. */
 export declare function addServerListener<E>(listener: (event: E) => void): void;
 /** Takes a listener off again - server.removeEventListener's hood. */

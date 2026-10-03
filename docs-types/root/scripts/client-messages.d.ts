@@ -29,6 +29,9 @@ export declare const CLIENT_MESSAGES: string[];
  * Every message's name in the player's words, by the game's: lowerCamelCase,
  * without the protocol's `Msg`, an abbreviation spelled out (`CurWeapon` is
  * `currentWeapon`, `SetFOV` `fov`) and an opaque name given its meaning
- * (`SayText` is `chat`, `Battery` `armor`, `ShowMenu` `menu`).
+ * (`SayText` is `chat`, `Battery` `armor`, `ShowMenu` `menu`). Messages that
+ * are one thing to an author share a name (`BarTime`, `BarTime2`).
  */
 export declare const MESSAGE_NAMES: Record<string, string>;
+/** The names server.addMessageListener takes, each with the game's messages it hears, in the game's order. */
+export declare const MESSAGE_GROUPS: Map<string, string[]>;

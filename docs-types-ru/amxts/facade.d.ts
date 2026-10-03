@@ -924,6 +924,11 @@ export interface ShakeOptions {
     /** Частота тряски — толчков в секунду; по умолчанию `5`. */
     frequency?: number;
 }
+/** Параметры `player.screen.progressBar`. */
+export interface ProgressBarOptions {
+    /** Заполненность полосы в начале, в процентах; по умолчанию `0` — пустая. */
+    startPercent?: number;
+}
 /** Состояние иконки статуса, одно из: `"hide"` — убрана, `"show"` — горит, `"flash"` — мигает. */
 export type StatusIconState = "hide" | "show" | "flash";
 /**
@@ -936,7 +941,8 @@ export type StatusIconState = "hide" | "show" | "flash";
  * player.screen.statusIcon("dmg_cold", "show", [0, 160, 255]);
  * ```
  *
- * Время — в секундах.
+ * Время — в секундах. Обработчик сообщений слышит то, что шлёт экран, как
+ * слышит сообщения игры: `"progressBar"` слышит `progressBar(seconds)`.
  *
  * Pawn: `ScreenFade`, `ScreenShake`, `StatusIcon`, ...
  */
@@ -993,11 +999,16 @@ export declare class Screen {
     flashlight(on: boolean, battery?: number): void;
     /**
      * Показывает полосу прогресса посреди экрана игрока, которая заполняется за
-     * `seconds` секунд; `0` её убирает.
+     * `seconds` секунд; `0` её убирает. С `startPercent` она начинается уже
+     * частично заполненной и заполняет остаток `seconds`:
      *
-     * Pawn: `BarTime`, `rg_send_bartime`
+     * ```ts
+     * player.screen.progressBar(4, { startPercent: 50 });   // наполовину полна, заполнится за 2 секунды
+     * ```
+     *
+     * Pawn: `BarTime`, `BarTime2`, `rg_send_bartime`, `rg_send_bartime2`
      */
-    progressBar(seconds: number): void;
+    progressBar(seconds: number, options?: ProgressBarOptions): void;
 }
 /**
  * Канал, на котором играет звук, одно из `"auto"` (по умолчанию), `"weapon"`,
@@ -1286,7 +1297,9 @@ export declare class Server {
      * ```
      *
      * Редактор подсказывает имена, и в описании каждого — собственное имя у игры:
-     * `death` — это `DeathMsg` игры.
+     * `death` — это `DeathMsg` игры. Одно имя может слышать несколько
+     * сообщений игры, которые означают одно и то же: `progressBar` — это
+     * `BarTime` и `BarTime2`, а `event.name` говорит, какое из них пришло.
      *
      * Pawn: `register_message`
      */

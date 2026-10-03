@@ -921,6 +921,11 @@ export interface ShakeOptions {
     /** The shake's frequency, in jolts a second; `5` by default. */
     frequency?: number;
 }
+/** The options of `player.screen.progressBar`. */
+export interface ProgressBarOptions {
+    /** The bar's fill at the start, in percent; `0`, empty, by default. */
+    startPercent?: number;
+}
 /** A status icon's state, one of `"hide"`, `"show"` (lit) or `"flash"`. */
 export type StatusIconState = "hide" | "show" | "flash";
 /**
@@ -933,7 +938,8 @@ export type StatusIconState = "hide" | "show" | "flash";
  * player.screen.statusIcon("dmg_cold", "show", [0, 160, 255]);
  * ```
  *
- * Times are in seconds.
+ * Times are in seconds. A message listener hears what the screen sends, as
+ * it hears the game's: `"progressBar"` hears `progressBar(seconds)`.
  *
  * Pawn: `ScreenFade`, `ScreenShake`, `StatusIcon`, ...
  */
@@ -990,11 +996,16 @@ export declare class Screen {
     flashlight(on: boolean, battery?: number): void;
     /**
      * Shows the progress bar in the middle of the player's screen, filling up
-     * over `seconds`; `0` hides it.
+     * over `seconds`; `0` hides it. With `startPercent` it starts part of the
+     * way full and fills the rest of `seconds`:
      *
-     * Pawn: `BarTime`, `rg_send_bartime`
+     * ```ts
+     * player.screen.progressBar(4, { startPercent: 50 });   // half full, full in 2 seconds
+     * ```
+     *
+     * Pawn: `BarTime`, `BarTime2`, `rg_send_bartime`, `rg_send_bartime2`
      */
-    progressBar(seconds: number): void;
+    progressBar(seconds: number, options?: ProgressBarOptions): void;
 }
 /**
  * The channel a sound plays on, one of `"auto"` (the default), `"weapon"`,
@@ -1283,7 +1294,9 @@ export declare class Server {
      * ```
      *
      * The editor lists the names, each with the game's own one in its words:
-     * `death` is the game's `DeathMsg`.
+     * `death` is the game's `DeathMsg`. A name may hear a few of the game's
+     * messages that are one thing: `progressBar` is `BarTime` and
+     * `BarTime2`, and `event.name` says which one came.
      *
      * Pawn: `register_message`
      */

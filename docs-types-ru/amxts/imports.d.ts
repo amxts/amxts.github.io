@@ -33,7 +33,6 @@ declare global {
 	export import AttachToPlayerEvent = __0.AttachToPlayerEvent;
 	export import AutoaimVectorEvent = __0.AutoaimVectorEvent;
 	export import BalanceTeamsEvent = __0.BalanceTeamsEvent;
-	export import BarTime2Message = __0.BarTime2Message;
 	export import BarTimeMessage = __0.BarTimeMessage;
 	export import BatteryMessage = __0.BatteryMessage;
 	export import BeamCircleOptions = __0.BeamCircleOptions;
@@ -224,9 +223,7 @@ declare global {
 	export import HudEffect = __0.HudEffect;
 	export import HudLine = __0.HudLine;
 	export import HudOptions = __0.HudOptions;
-	export import HudTextArgsMessage = __0.HudTextArgsMessage;
 	export import HudTextMessage = __0.HudTextMessage;
-	export import HudTextProMessage = __0.HudTextProMessage;
 	export import IgnoredChat = __0.IgnoredChat;
 	export import IlluminationEvent = __0.IlluminationEvent;
 	export import ImplosionOptions = __0.ImplosionOptions;
@@ -342,6 +339,7 @@ declare global {
 	export import PrimaryAmmoIndexEvent = __0.PrimaryAmmoIndexEvent;
 	export import PrimaryAttackEvent = __0.PrimaryAttackEvent;
 	export import PrintfEvent = __0.PrintfEvent;
+	export import ProgressBarOptions = __0.ProgressBarOptions;
 	export import ProjectileOptions = __0.ProjectileOptions;
 	export import RadarMessage = __0.RadarMessage;
 	export import RadioEvent = __0.RadioEvent;
@@ -426,7 +424,6 @@ declare global {
 	export import SpawnHeadGibEvent = __0.SpawnHeadGibEvent;
 	export import SpawnRandomGibsEvent = __0.SpawnRandomGibsEvent;
 	export import SpawnSpotEvent = __0.SpawnSpotEvent;
-	export import SpecHealth2Message = __0.SpecHealth2Message;
 	export import SpecHealthMessage = __0.SpecHealthMessage;
 	export import SpectateNextEvent = __0.SpectateNextEvent;
 	export import SpectatorMessage = __0.SpectatorMessage;
