@@ -645,7 +645,7 @@ export declare const EF_OWNER_VISIBILITY: i32;
 export declare const EF_OWNER_NO_VISIBILITY: i32;
 export declare const EF_NOSLERP: i32;
 export declare const EF_FOLLOWKEEPRENDER: i32;
-/** Temp entity bounce sound types */
+/** "Brass" message and TE_MODEL soundtype */
 export declare const TE_BOUNCE_NULL: i32;
 export declare const TE_BOUNCE_SHELL: i32;
 export declare const TE_BOUNCE_SHOTSHELL: i32;
@@ -935,6 +935,7 @@ export declare const GR_PLR_DROP_GUN_NO: i32;
 export declare const GR_PLR_DROP_AMMO_ALL: i32;
 export declare const GR_PLR_DROP_AMMO_ACTIVE: i32;
 export declare const GR_PLR_DROP_AMMO_NO: i32;
+export declare const GR_PLR_DROP_GUN_BEST: i32;
 export declare const WEAPON_NONE: i32;
 export declare const WEAPON_P228: i32;
 export declare const WEAPON_GLOCK: i32;
@@ -2498,6 +2499,7 @@ export declare const CS_HINT_IN_ESCAPE_ZONE: i32;
 export declare const CS_HINT_IN_VIPSAFETY_ZONE: i32;
 export declare const CS_HINT_NIGHTVISION: i32;
 export declare const CS_HINT_HOSTAGE_CTMOVE: i32;
+export declare const CS_HINT_SPEC_DUCK: i32;
 /** Constants for use with m_iIgnoreGlobalChat (ignoremsg client's command) */
 export declare const CS_IGNOREMSG_NONE: i32;
 export declare const CS_IGNOREMSG_ENEMY: i32;
@@ -2909,11 +2911,16 @@ export declare const TRIM_INNER: i32;
 export declare const TRIM_OUTER: i32;
 export declare const TRIM_FULL: i32;
 /** Destination types for message_begin() */
+export declare const MSG_BROADCAST: i32;
+export declare const MSG_ONE: i32;
+export declare const MSG_ALL: i32;
+export declare const MSG_INIT: i32;
 export declare const MSG_PVS: i32;
 export declare const MSG_PAS: i32;
 export declare const MSG_PVS_R: i32;
 export declare const MSG_PAS_R: i32;
 export declare const MSG_ONE_UNRELIABLE: i32;
+export declare const MSG_SPEC: i32;
 /** Hardcoded message types for message_begin() */
 export declare const SVC_BAD: i32;
 export declare const SVC_NOP: i32;
@@ -2978,14 +2985,36 @@ export declare const SVC_SENDCVARVALUE2: i32;
 export declare const BLOCK_NOT: i32;
 export declare const BLOCK_ONCE: i32;
 export declare const BLOCK_SET: i32;
+/** Beam effect between two points */
+export declare const TE_BEAMPOINTS: i32;
 /** Beam effect between a point and an entity */
 export declare const TE_BEAMENTPOINT: i32;
+/** Particle effect plus ricochet sound */
+export declare const TE_GUNSHOT: i32;
+/** Additive sprite, 2 dynamic lights, flickering particles, explosion sound, */
+export declare const TE_EXPLOSION: i32;
 /** Flags for the TE_EXPLOSION effect, controlling its performance and aesthetic */
 export declare const TE_EXPLFLAG_NONE: i32;
 export declare const TE_EXPLFLAG_NOADDITIVE: i32;
 export declare const TE_EXPLFLAG_NODLIGHTS: i32;
 export declare const TE_EXPLFLAG_NOSOUND: i32;
 export declare const TE_EXPLFLAG_NOPARTICLES: i32;
+/** Quake1 "tarbaby" explosion with sound */
+export declare const TE_TAREXPLOSION: i32;
+/** Alphablend sprite, move vertically 30pps */
+export declare const TE_SMOKE: i32;
+/** Tracer effect from point to point */
+export declare const TE_TRACER: i32;
+/** TE_BEAMPOINTS with simplified parameters */
+export declare const TE_LIGHTNING: i32;
+/** TE_BEAMENTS */
+export declare const TE_BEAMENTS: i32;
+/** 8 random tracers with gravity, ricochet sprite */
+export declare const TE_SPARKS: i32;
+/** Quake1 lava splash */
+export declare const TE_LAVASPLASH: i32;
+/** Quake1 teleport splash */
+export declare const TE_TELEPORT: i32;
 /** Quake1 colormaped (base palette) particle explosion with sound */
 export declare const TE_EXPLOSION2: i32;
 /** Decal from the .BSP file */
@@ -3026,6 +3055,10 @@ export declare const TE_BOX: i32;
 export declare const TE_KILLBEAM: i32;
 /** TE_LARGEFUNNEL */
 export declare const TE_LARGEFUNNEL: i32;
+/** Particle spray */
+export declare const TE_BLOODSTREAM: i32;
+/** Line of particles every 5 units, dies in 30 seconds */
+export declare const TE_SHOWLINE: i32;
 /** Particle spray */
 export declare const TE_BLOOD: i32;
 /** Decal applied to a brush entity (not the world) */
@@ -3093,6 +3126,7 @@ export declare const DRC_CMD_MESSAGE: i32;
 export declare const DRC_CMD_SOUND: i32;
 export declare const DRC_CMD_STATUS: i32;
 export declare const DRC_CMD_BANNER: i32;
+export declare const DRC_CMD_FADE: i32;
 export declare const DRC_CMD_SHAKE: i32;
 export declare const DRC_CMD_STUFFTEXT: i32;
 export declare const DRC_CMD_LAST: i32;
@@ -3405,6 +3439,7 @@ export declare const RG_ClearMultiDamage: i32;
 export declare const RG_AddMultiDamage: i32;
 export declare const RG_ApplyMultiDamage: i32;
 export declare const RG_BuyItem: i32;
+export declare const RG_SendSayMessage: i32;
 export declare const RG_CBaseAnimating_ResetSequenceInfo: i32;
 export declare const RG_CGrenade_DefuseBombStart: i32;
 export declare const RG_CGrenade_DefuseBombEnd: i32;
@@ -3472,6 +3507,8 @@ export declare const RG_CBasePlayer_EntSelectSpawnPoint: i32;
 export declare const RG_CBasePlayer_PlayerDeathThink: i32;
 export declare const RG_CBasePlayer_Observer_Think: i32;
 export declare const RG_CBasePlayer_RemoveAllItems: i32;
+export declare const RG_CBasePlayer_UpdateStatusBar: i32;
+export declare const RG_CBasePlayer_TakeDamageImpulse: i32;
 export declare const RG_CBasePlayerWeapon_CanDeploy: i32;
 export declare const RG_CBasePlayerWeapon_DefaultDeploy: i32;
 export declare const RG_CBasePlayerWeapon_DefaultReload: i32;
@@ -4280,8 +4317,5 @@ export declare function flagOf(name: string): i32;
  * The numbers are reapi's own, computed from its includes, and they move
  * between releases - take the includes from the release your server runs.
  */
-export type HookName = "activate_server" | "add_account" | "add_multi_damage" | "add_player_item" | "add_points" | "add_points_to_team" | "add_resource" | "air_accelerate" | "air_move" | "alloc" | "allow_physent" | "apply_multi_damage" | "balance_teams" | "base_player_duck" | "base_player_jump" | "base_player_spawn" | "blind" | "bounce_gib_touch" | "buy_gun_ammo" | "buy_item" | "buy_weapon_by_weapon_id" | "can_deploy" | "can_have_player_item" | "can_player_hear_player" | "can_switch_team" | "change_level" | "check_map_conditions" | "check_time_based_damage" | "check_user_info" | "check_water_jump" | "check_win_conditions" | "choose_appearance" | "choose_team" | "classify" | "clean_up_map" | "clear_multi_damage" | "client_connected" | "client_printf" | "client_user_info_changed" | "connect_client" | "create_weapon_box" | "dead_player_weapons" | "death_notice" | "death_sound" | "default_deploy" | "default_reload" | "default_shotgun_reload" | "defuse_bomb_end" | "defuse_bomb_start" | "direct_set" | "disappear" | "drop_client" | "drop_idle_player" | "drop_player_item" | "drop_shield" | "emit_pings" | "ent_select_spawn_point" | "execute_server_string_cmd" | "explode_bomb" | "explode_flashbang" | "explode_he_grenade" | "explode_smoke_grenade" | "f_player_can_respawn" | "f_player_can_take_damage" | "f_should_switch_weapon" | "fire_buckshots" | "fire_bullets" | "fire_bullets3" | "fl_player_fall_damage" | "free" | "get_entity_init" | "get_force_camera" | "get_into_game" | "get_next_best_weapon" | "get_player_spawn_spot" | "gib_spawn" | "give_ammo" | "give_c4" | "give_default_items" | "give_named_item" | "give_shield" | "go_to_intermission" | "has_restrict_item" | "hint_message_ex" | "impulse_commands" | "is_penetrable_entity" | "item_post_frame" | "joining_think" | "kick_back" | "killed" | "ladder_move" | "make_bomber" | "make_vip" | "move" | "object_caps" | "observer_find_next_player" | "observer_is_valid_target" | "observer_set_mode" | "observer_think" | "on_event" | "on_round_freeze_end" | "on_spawn_equip" | "pain" | "plant_bomb" | "play_step_sound" | "player_blind" | "player_death_think" | "player_got_weapon" | "player_killed" | "player_spawn" | "pm_duck" | "pm_jump" | "post_think" | "pre_think" | "precache" | "precache_generic_i" | "precache_model_i" | "precache_sound_i" | "printf" | "radio" | "remove_all_items" | "remove_guns" | "remove_player_item" | "remove_spawn_protection" | "reset_max_speed" | "reset_sequence_info" | "restart_round" | "round_end" | "round_respawn" | "send_death_message" | "send_resources" | "send_weapon_anim" | "server_deactivate" | "set_animation" | "set_client_user_info_model" | "set_client_user_info_name" | "set_model" | "set_spawn_protection" | "show_menu" | "show_vgui_menu" | "spawn_head_gib" | "spawn_random_gibs" | "start_death_cam" | "start_observer" | "start_sound" | "switch_team" | "take_damage" | "take_health" | "team_full" | "team_stacked" | "think" | "throw_flashbang" | "throw_grenade" | "throw_he_grenade" | "throw_smoke_grenade" | "trace_attack" | "trace_line" | "un_duck" | "update_client_data" | "use_empty" | "wait_till_land" | "water_jump" | "write_full_client_update";
+export type HookName = "activate_server" | "add_account" | "add_multi_damage" | "add_player_item" | "add_points" | "add_points_to_team" | "add_resource" | "air_accelerate" | "air_move" | "alloc" | "allow_physent" | "apply_multi_damage" | "balance_teams" | "base_player_duck" | "base_player_jump" | "base_player_spawn" | "blind" | "bounce_gib_touch" | "buy_gun_ammo" | "buy_item" | "buy_weapon_by_weapon_id" | "can_deploy" | "can_have_player_item" | "can_player_hear_player" | "can_switch_team" | "change_level" | "check_map_conditions" | "check_time_based_damage" | "check_user_info" | "check_water_jump" | "check_win_conditions" | "choose_appearance" | "choose_team" | "classify" | "clean_up_map" | "clear_multi_damage" | "client_connected" | "client_printf" | "client_user_info_changed" | "connect_client" | "create_weapon_box" | "dead_player_weapons" | "death_notice" | "death_sound" | "default_deploy" | "default_reload" | "default_shotgun_reload" | "defuse_bomb_end" | "defuse_bomb_start" | "direct_set" | "disappear" | "drop_client" | "drop_idle_player" | "drop_player_item" | "drop_shield" | "emit_pings" | "ent_select_spawn_point" | "execute_server_string_cmd" | "explode_bomb" | "explode_flashbang" | "explode_he_grenade" | "explode_smoke_grenade" | "f_player_can_respawn" | "f_player_can_take_damage" | "f_should_switch_weapon" | "fire_buckshots" | "fire_bullets" | "fire_bullets3" | "fl_player_fall_damage" | "free" | "get_entity_init" | "get_force_camera" | "get_into_game" | "get_next_best_weapon" | "get_player_spawn_spot" | "gib_spawn" | "give_ammo" | "give_c4" | "give_default_items" | "give_named_item" | "give_shield" | "go_to_intermission" | "has_restrict_item" | "hint_message_ex" | "impulse_commands" | "is_penetrable_entity" | "item_post_frame" | "joining_think" | "kick_back" | "killed" | "ladder_move" | "make_bomber" | "make_vip" | "move" | "object_caps" | "observer_find_next_player" | "observer_is_valid_target" | "observer_set_mode" | "observer_think" | "on_event" | "on_round_freeze_end" | "on_spawn_equip" | "pain" | "plant_bomb" | "play_step_sound" | "player_blind" | "player_death_think" | "player_got_weapon" | "player_killed" | "player_spawn" | "pm_duck" | "pm_jump" | "post_think" | "pre_think" | "precache" | "precache_generic_i" | "precache_model_i" | "precache_sound_i" | "printf" | "radio" | "remove_all_items" | "remove_guns" | "remove_player_item" | "remove_spawn_protection" | "reset_max_speed" | "reset_sequence_info" | "restart_round" | "round_end" | "round_respawn" | "send_death_message" | "send_resources" | "send_say_message" | "send_weapon_anim" | "server_deactivate" | "set_animation" | "set_client_user_info_model" | "set_client_user_info_name" | "set_model" | "set_spawn_protection" | "show_menu" | "show_vgui_menu" | "spawn_head_gib" | "spawn_random_gibs" | "start_death_cam" | "start_observer" | "start_sound" | "switch_team" | "take_damage" | "take_damage_impulse" | "take_health" | "team_full" | "team_stacked" | "think" | "throw_flashbang" | "throw_grenade" | "throw_he_grenade" | "throw_smoke_grenade" | "trace_attack" | "trace_line" | "un_duck" | "update_client_data" | "update_status_bar" | "use_empty" | "wait_till_land" | "water_jump" | "write_full_client_update";
 export declare function hookIdOf(name: string): i32;
-/** The same for Ham Sandwich. */
-export type HamName = "activate" | "add_attacks" | "add_beam_box_crosshair" | "add_blind_fx" | "add_duplicate" | "add_player_item" | "add_points_add_points" | "add_points_to_team_add_points_to_team" | "add_to_player" | "add_weapon" | "alert_sound" | "area_send_status" | "area_set_index" | "attach_to_player" | "award_kill" | "barnacle_victim_bitten" | "barnacle_victim_released" | "become_dead" | "begin_revive" | "best_visible_enemy" | "blocked" | "blood_color" | "body_target" | "breakable_respawn" | "build_nearest_route" | "calc_emp_dmg_rad" | "call_gib_monster" | "can_block" | "can_deploy" | "can_holster" | "can_jump" | "can_play_sentence2_can_play_sentence2" | "can_play_sequence_can_play_sequence" | "can_primary_fire" | "can_raise_ki" | "can_raise_stamina" | "can_secondary_fire" | "can_start_fly" | "can_start_powerup" | "can_stop_fly" | "can_teleport" | "can_turbo" | "can_used_through_walls" | "can_wall_jump" | "center" | "change_yaw" | "check_ammo" | "check_and_apply_generic_attacks" | "check_attacker" | "check_creature_danger" | "check_enemy" | "check_fall_damage" | "check_lightning" | "check_local_move" | "check_melee_attack1" | "check_melee_attack1_move" | "check_melee_attack2" | "check_melee_attack2_move" | "check_range_attack1" | "check_range_attack1_move" | "check_range_attack2" | "check_range_attack2_move" | "check_revival" | "check_scared" | "check_tank_usage" | "check_wall_jump" | "classify" | "client_remove_weapon" | "concuss" | "cover_radius" | "critical_remove" | "damage_decal" | "db_get_item_name" | "death_notice" | "death_sound" | "deploy" | "disable_ps_bar" | "disable_wall_jump" | "dod_item_can_drop" | "dod_round_respawn" | "dod_weapon_send_weapon_anim" | "does_primary_attack" | "does_secondary_attack" | "draw_charge_bar" | "draw_ps_bar" | "draw_ps_win_bonus" | "drop" | "duck" | "ear_position" | "effective_player_class_changed" | "emit_class_sound" | "emit_null_sound" | "emit_sound" | "emp_explode" | "emp_remove" | "enable_objective" | "enable_wall_jump" | "end_revive" | "engineer_use" | "esf_check_time_based_damage" | "extract_ammo" | "extract_clip_ammo" | "eye_position" | "f_become_prone_f_become_prone" | "f_can_active_idle" | "f_can_check_attacks" | "f_in_bullet_cone" | "f_in_view_cone" | "f_triangulate_extension" | "f_triangulate_f_triangulate" | "f_validate_cover" | "f_validate_hint_type" | "f_vec_in_view_cone" | "f_vec_visible_f_vec_visible" | "f_visible_f_visible" | "f_visible_from_pos" | "f_visible_gun_pos" | "fade_monster" | "find_attack_point" | "find_cover" | "find_cover_distance" | "find_cover_grenade" | "finished" | "freeze_controls" | "get_adrenaline_factor" | "get_animation_for_activity" | "get_authentication_mask" | "get_can_use_weapon" | "get_classification" | "get_damage_points" | "get_death_activity" | "get_delay" | "get_effective_player_class" | "get_gun_position" | "get_hull" | "get_ideal_state" | "get_item_info" | "get_max_speed" | "get_max_walk_speed" | "get_move_forward" | "get_move_right" | "get_move_up" | "get_next_target" | "get_point_value" | "get_points_for_damage" | "get_power_level" | "get_state" | "get_state_ent" | "get_stopped_activity" | "get_teleport_dir" | "get_toggle_state" | "get_wall_jump_anim" | "get_wall_jump_anim2" | "get_weapon_ptr" | "gib_monster" | "give_ammo_give_ammo" | "give_named_item" | "give_slow_mul" | "go_slow" | "has_alien_gibs" | "has_human_gibs" | "has_target_has_target" | "hearing_sensitivity" | "hide_weapon" | "holster" | "i_flags" | "i_id" | "i_max_ammo1" | "i_max_ammo2" | "i_max_clip" | "i_position" | "i_relationship" | "i_slot" | "i_sound_mask" | "i_weight" | "idle_sound" | "ignore_conditions" | "illumination" | "impulse_commands" | "in_slow" | "increase_pl" | "increase_strength" | "init_player_from_spawn" | "is_alive_is_alive" | "is_breakable" | "is_bsp_model_is_bsp_model" | "is_buddy" | "is_env_model" | "is_facing" | "is_fighter" | "is_fly_move_type" | "is_in_world_is_in_world" | "is_locked_by_master" | "is_machine" | "is_monster" | "is_move_back" | "is_moving_is_moving" | "is_net_client_is_net_client" | "is_objective" | "is_phys_x" | "is_player_following" | "is_player_is_player" | "is_point_entity" | "is_revivable" | "is_sneaking_is_sneaking" | "is_super_jump" | "is_triggered_is_triggered" | "is_usable" | "is_valid_entity" | "is_walk_move_type" | "item_add_ammo_from_item" | "item_add_duplicate" | "item_add_to_player" | "item_can_collect" | "item_can_deploy" | "item_can_have_duplicates" | "item_can_holster" | "item_collect" | "item_deploy" | "item_detach_from_player" | "item_drop_gren" | "item_get_item_info" | "item_get_max_speed" | "item_get_pickup_sound" | "item_get_respawn_time" | "item_inactive_item_post_frame" | "item_inactive_item_pre_frame" | "item_is_weapon" | "item_materialize" | "item_set_dmg_time" | "item_slot" | "item_spawn_deploy" | "item_update_client_data" | "jump" | "keyvalue" | "kill" | "killed_killed" | "lock_crosshair" | "look" | "medic_call_sound" | "monster_init" | "monster_init_dead" | "monster_think" | "move" | "move_execute" | "my_custom_pointer" | "my_item_pointer" | "my_monster_pointer" | "my_squad_monster_pointer" | "my_squad_talk_monster_pointer" | "needs_team_update" | "no_friendly_fire1" | "no_friendly_fire2" | "no_friendly_fire3" | "no_friendly_fire_to_pos" | "ns_update_on_remove" | "object_caps" | "on_controls_on_controls" | "on_create" | "on_destroy" | "on_free_ent_private_data" | "on_key_value_update" | "on_set_origin_by_map" | "override_reset" | "pack_dead_player_items" | "pain_sound" | "play_animation" | "play_empty_sound" | "play_scripted_sentence_play_scripted_sentence" | "play_sentence" | "player_blind" | "player_can_start_next_vote" | "player_can_touch_player" | "player_disable_collision_with_player" | "player_enable_collision_with_player" | "player_entered_observer" | "player_get_autoaim_vector" | "player_get_log_frequency" | "player_has_voted" | "player_init_vote" | "player_is_bot" | "player_is_connected" | "player_is_menu_input_done" | "player_is_observer" | "player_is_valid_info_entity" | "player_last_vote_input" | "player_left_observer" | "player_level_end" | "player_log_player_stats" | "player_menu_input_performed" | "player_on_touching_weapon" | "player_reset_max_speed" | "player_reset_view" | "player_reset_vote" | "player_should_fade_on_death" | "player_special_spawn" | "player_time_to_start_next_vote" | "player_update_client_data" | "player_vote" | "player_vote_started" | "post_frame" | "post_spawn" | "post_think" | "pre_frame" | "pre_spawn" | "pre_think" | "precache" | "preschedule_think" | "primary_ammo_index" | "primary_attack" | "psz_ammo1" | "psz_ammo2" | "psz_name" | "radius_damage" | "radius_damage2" | "reflect_gauss_reflect_gauss" | "reload" | "remove_all_other_weapons" | "remove_beam_box_crosshair" | "remove_blind_fx" | "remove_player_item_remove_player_item" | "remove_special_modes" | "report_ai_state" | "reset_empty_sound" | "reset_entity" | "reset_wall_jump_vars" | "respawn" | "respawn_wait" | "restart" | "retire_weapon" | "revive" | "revive_think" | "ride_monster" | "rotate_crosshair" | "round_respawn_ent" | "round_store" | "run_ai" | "s_item_can_drop" | "s_round_respawn" | "s_weapon_send_weapon_anim" | "save_data_for_reset" | "sc_add_points" | "sc_add_points_to_team" | "sc_can_play_sentence2" | "sc_can_play_sequence" | "sc_check_time_based_damage" | "sc_f_become_prone" | "sc_f_triangulate" | "sc_f_vec_visible" | "sc_f_visible" | "sc_give_ammo" | "sc_has_target" | "sc_is_alive" | "sc_is_bsp_model" | "sc_is_in_world" | "sc_is_moving" | "sc_is_net_client" | "sc_is_player" | "sc_is_sneaking" | "sc_is_triggered" | "sc_on_controls" | "sc_play_scripted_sentence" | "sc_reflect_gauss" | "sc_remove_player_item" | "sc_should_fade_on_death" | "sc_take_health" | "sc_update_on_remove" | "schedule_change" | "secondary_ammo_index" | "secondary_attack" | "send_clients_custom_model" | "send_team_update" | "send_weapon_anim" | "send_weapon_update" | "sentence_stop" | "set_activity" | "set_animation" | "set_bone_controller" | "set_classification" | "set_death_animation" | "set_fly_move_type" | "set_gait_activity" | "set_max_power_level" | "set_model" | "set_object_collision_box" | "set_player_ally" | "set_power_level" | "set_script_reset" | "set_team_id" | "set_toggle_state" | "set_walk_move_type" | "set_wall_jump_animation" | "set_yaw_speed" | "setup_friendly" | "should_advance_route" | "should_collide" | "should_weapon_idle" | "spawn" | "start_block" | "start_fly" | "start_monster" | "start_observer" | "start_player_following" | "start_sneaking" | "stop" | "stop_ani_trigger" | "stop_block" | "stop_fly" | "stop_following" | "stop_observer" | "stop_player_following" | "stop_sneaking" | "stop_swoop" | "stop_turbo" | "sub_use_targets" | "suicide" | "take_armor" | "take_bean" | "take_concussion_blast" | "take_damage" | "take_damage2" | "take_emp_blast" | "take_health_take_health" | "team_id" | "tfc_is_triggered" | "tfc_killed" | "tfc_weapon_send_weapon_anim" | "think" | "touch" | "trace_attack" | "trace_bleed" | "un_freeze_controls" | "un_lock_crosshair" | "un_rotate_crosshair" | "un_use_sound" | "update_health" | "update_item_info" | "update_ki" | "update_owner" | "use" | "use_decrement" | "use_sound" | "water_move" | "weapon_add_weapon" | "weapon_aim" | "weapon_alternate_attack" | "weapon_bullet_accuracy" | "weapon_burst_supplement" | "weapon_change_fov" | "weapon_change_weapon_skin" | "weapon_custom_decrement" | "weapon_default_deploy" | "weapon_default_reload" | "weapon_extract_ammo_from_item" | "weapon_f_can_run" | "weapon_f_runfuncs" | "weapon_finish_reload" | "weapon_fl_aim" | "weapon_get_ammo1_drop" | "weapon_get_ammo2_drop" | "weapon_get_deploy_time" | "weapon_get_fov" | "weapon_get_is_weapon_primed" | "weapon_get_is_weapon_priming" | "weapon_get_next_attack_delay" | "weapon_get_p_model" | "weapon_get_v_model" | "weapon_get_w_model" | "weapon_get_weapon_prime_time" | "weapon_holster_when_meleed" | "weapon_idle" | "weapon_is_multiplayer" | "weapon_is_usable" | "weapon_is_useable" | "weapon_play_empty_sound" | "weapon_player_is_water_sniping" | "weapon_precache_custom_models" | "weapon_prime_weapon" | "weapon_remove_stamina" | "weapon_set_fov" | "weapon_set_p_model" | "weapon_set_v_model" | "weapon_should_reload" | "weapon_should_weapon_idle" | "weapon_special" | "weapon_tertiary_attack" | "weapon_time_base" | "weapon_update_zoom_speed" | "weapon_use_decrement" | "weapon_zoom_in" | "weapon_zoom_out";
-export declare function hamIdOf(name: string): i32;

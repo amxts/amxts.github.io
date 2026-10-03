@@ -11,6 +11,22 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    AmxtsModuleImport: {
+        en: string;
+        ru: string;
+    };
+    'AmxtsModuleImport.from': {
+        en: string;
+        ru: string;
+    };
+    'AmxtsModuleImport.as': {
+        en: string;
+        ru: string;
+    };
+    'AmxtsModuleImport.name': {
+        en: string;
+        ru: string;
+    };
     AmxtsModule: {
         en: string;
         ru: string;
@@ -24,6 +40,10 @@ declare const _default: {
         ru: string;
     };
     'AmxtsModule.defaults': {
+        en: string;
+        ru: string;
+    };
+    'AmxtsModule.imports': {
         en: string;
         ru: string;
     };
@@ -51,11 +71,43 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'AmxtsConfig.imports': {
+        en: string;
+        ru: string;
+    };
+    AmxtsImports: {
+        en: string;
+        ru: string;
+    };
+    'AmxtsImports.autoImport': {
+        en: string;
+        ru: string;
+    };
+    'AmxtsConfig.pawn': {
+        en: string;
+        ru: string;
+    };
     defineModule: {
         en: string;
         ru: string;
     };
     defineConfig: {
+        en: string;
+        ru: string;
+    };
+    'PlayerChangeEvent.value': {
+        en: string;
+        ru: string;
+    };
+    'PlayerChangeEvent.previous': {
+        en: string;
+        ru: string;
+    };
+    'Server.addEventListener': {
+        en: string;
+        ru: string;
+    };
+    'Server.removeEventListener': {
         en: string;
         ru: string;
     };

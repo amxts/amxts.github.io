@@ -78,6 +78,11 @@ export interface ModuleAnalysis {
     }[];
     handles: ClassInfo[];
     classes: ClassInfo[];
+    /** The objects the module exports, `export const semiclip = new Semiclip()`: handles numbered 1, 2, ... in this order. */
+    objects: {
+        name: string;
+        cls: ClassInfo;
+    }[];
     fns: Wire[];
     hash: number;
 }

@@ -1579,10 +1579,14 @@ export declare function rg_multidmg_add(inflictor: number, victim: number, flDam
 export declare function rg_multidmg_apply(inflictor: number, attacker: number): number;
 /** rg_multidmg_clear() */
 export declare function rg_multidmg_clear(): number;
+/** rg_observer_find_next_player(const anyplayer, const boolbReverse, const anyname[]) */
+export declare function rg_observer_find_next_player(player: number, bReverse?: boolean, name?: string): number;
 /** rg_plant_bomb(const anyindex, FloatvecOrigin[], FloatvecAngles[]) */
 export declare function rg_plant_bomb(index: number, vecOrigin: number[], vecAngles?: number[]): number;
 /** rg_player_relationship(const anyplayer, const anytarget) */
 export declare function rg_player_relationship(player: number, target: number): number;
+/** rg_player_takedamage_impulse(const anyplayer, const anyattacker, const FloatflKnockbackForce, const FloatflVelModifier) */
+export declare function rg_player_takedamage_impulse(player: number, attacker: number, flKnockbackForce: number, flVelModifier: number): number;
 /** rg_remove_all_items(const anyindex, const boolremoveSuit) */
 export declare function rg_remove_all_items(index: number, removeSuit?: boolean): number;
 /** rg_remove_entity(const anypEntity) */
@@ -1645,6 +1649,10 @@ export declare function rg_switch_best_weapon(player: number, currentWeapon?: nu
 export declare function rg_switch_team(index: number): number;
 /** rg_switch_weapon(const anyindex, const anyweapon) */
 export declare function rg_switch_weapon(index: number, weapon: number): number;
+/** rg_trace_hull(FloatvecStart[], FloatvecEnd[], const anyignoreMonsters, const anyhullNumber, const anyignoreEntity, const anyptr, const anytraceFlags) */
+export declare function rg_trace_hull(vecStart: number[], vecEnd: number[], ignoreMonsters: number, hullNumber: number, ignoreEntity: number, ptr: number, traceFlags?: number): number;
+/** rg_trace_line(FloatvecStart[], FloatvecEnd[], const anyignoreMonsters, const anyignoreEntity, const anyptr, const anytraceFlags) */
+export declare function rg_trace_line(vecStart: number[], vecEnd: number[], ignoreMonsters: number, ignoreEntity: number, ptr: number, traceFlags?: number): number;
 /** rg_transfer_c4(const anyindex, const anyreceiver) */
 export declare function rg_transfer_c4(index: number, receiver?: number): number;
 /** rg_update_teamscores(const anyiCtsWins, const anyiTsWins, const boolbAdd) */
@@ -1673,10 +1681,14 @@ export declare function rh_get_net_from(): string;
 export declare function rh_get_realtime(): number;
 /** rh_is_entity_fullpacked(const anyhost, const anyentity, const anyframe) */
 export declare function rh_is_entity_fullpacked(host: number, entity: number, frame?: number): boolean;
+/** rh_is_server_paused() */
+export declare function rh_is_server_paused(): boolean;
 /** rh_reset_mapname() */
 export declare function rh_reset_mapname(): number;
 /** rh_set_mapname(const anymapname[]) */
 export declare function rh_set_mapname(mapname: string): number;
+/** rh_set_server_pause(const boolstatus) */
+export declare function rh_set_server_pause(status: boolean): number;
 /** rh_update_user_info(const anyindex) */
 export declare function rh_update_user_info(index: number): number;
 /** rmdir(const anypath[]) */
@@ -2041,6 +2053,24 @@ export declare function WritePackFloat(pack: number, val: number): number;
 export declare function WritePackString(pack: number, str: string): number;
 /** xvar_exists(const anyname[]) */
 export declare function xvar_exists(name: string): number;
+/** What a field of get_entvar holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_entvar_kind(field: i32): i32;
+/** What a field of get_ucmd holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_ucmd_kind(field: i32): i32;
+/** What a field of get_netadr holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_netadr_kind(field: i32): i32;
+/** What a field of get_netchan holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_netchan_kind(field: i32): i32;
+/** What a field of get_member_game holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_member_game_kind(field: i32): i32;
+/** What a field of get_member holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_member_kind(field: i32): i32;
+/** What a field of get_pmove holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_pmove_kind(field: i32): i32;
+/** What a field of get_movevar holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_movevar_kind(field: i32): i32;
+/** What a field of get_pmtrace holds: 0 a whole number, 1 a Float, 2 a vector, 3 text; 4 more for an array member. */
+export declare function __get_pmtrace_kind(field: i32): i32;
 /** abort(error, fmt, ...) - the dispatcher's id for it */
 export declare const NATIVE_abort: i32;
 /** abort(anyerror, const anyfmt[], ...) */
@@ -2124,43 +2154,43 @@ export declare function fprintf(file: number, fmt: string): number;
 /** get_entvar(index, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_entvar: i32;
 /** get_entvar(const anyindex, const EntVarsvar, ...) */
-export declare function get_entvar(index: number, var_: number, ...args: number[]): number;
+export declare function get_entvar<T = number>(index: number, var_: number, element?: number): T;
 /** get_member(index, member, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_member: i32;
 /** get_member(const anyindex, anymember, ...) */
-export declare function get_member(index: number, member: number, ...args: number[]): number;
+export declare function get_member<T = number>(index: number, member: number, element?: number): T;
 /** get_member_game(member, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_member_game: i32;
 /** get_member_game(CSGameRules_Membersmember, ...) */
-export declare function get_member_game(member: number, ...args: number[]): number;
+export declare function get_member_game<T = number>(member: number, element?: number): T;
 /** get_member_s(index, member, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_member_s: i32;
 /** get_member_s(const anyindex, anymember, ...) */
-export declare function get_member_s(index: number, member: number, ...args: number[]): number;
+export declare function get_member_s<T = number>(index: number, member: number, element?: number): T;
 /** get_movevar(var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_movevar: i32;
 /** get_movevar(const MoveVarsvar, ...) */
-export declare function get_movevar(var_: number, ...args: number[]): number;
+export declare function get_movevar<T = number>(var_: number, element?: number): T;
 /** get_netadr(adr, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_netadr: i32;
 /** get_netadr(const anyadr, const NetAdrVarsvar, ...) */
-export declare function get_netadr(adr: number, var_: number, ...args: number[]): number;
+export declare function get_netadr<T = number>(adr: number, var_: number, element?: number): T;
 /** get_netchan(index, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_netchan: i32;
 /** get_netchan(const anyindex, const NetChanvar, ...) */
-export declare function get_netchan(index: number, var_: number, ...args: number[]): number;
+export declare function get_netchan<T = number>(index: number, var_: number, element?: number): T;
 /** get_pmove(var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_pmove: i32;
 /** get_pmove(const PlayerMovevar, ...) */
-export declare function get_pmove(var_: number, ...args: number[]): number;
+export declare function get_pmove<T = number>(var_: number, element?: number): T;
 /** get_pmtrace(tracehandle, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_pmtrace: i32;
 /** get_pmtrace(const anytracehandle, const PMTracevar, ...) */
-export declare function get_pmtrace(tracehandle: number, var_: number, ...args: number[]): number;
+export declare function get_pmtrace<T = number>(tracehandle: number, var_: number, element?: number): T;
 /** get_ucmd(ucmd, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_ucmd: i32;
 /** get_ucmd(const anyucmd, const UCmdvar, ...) */
-export declare function get_ucmd(ucmd: number, var_: number, ...args: number[]): number;
+export declare function get_ucmd<T = number>(ucmd: number, var_: number, element?: number): T;
 /** get_user_attacker(index, ...) - the dispatcher's id for it */
 export declare const NATIVE_get_user_attacker: i32;
 /** get_user_attacker(anyindex, ...) */
@@ -2272,7 +2302,7 @@ export declare function server_print(message: string): number;
 /** set_entvar(index, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_entvar: i32;
 /** set_entvar(const anyindex, const EntVarsvar, ...) */
-export declare function set_entvar(index: number, var_: number, ...args: number[]): number;
+export declare function set_entvar<T = number>(index: number, var_: number, value: T, element?: number): number;
 /** set_fail_state(fmt, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_fail_state: i32;
 /** set_fail_state(const anyfmt[], ...) */
@@ -2280,39 +2310,39 @@ export declare function set_fail_state(fmt: string): number;
 /** set_member(index, member, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_member: i32;
 /** set_member(const anyindex, anymember, ...) */
-export declare function set_member(index: number, member: number, ...args: number[]): number;
+export declare function set_member<T = number>(index: number, member: number, value: T, element?: number): number;
 /** set_member_game(member, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_member_game: i32;
 /** set_member_game(CSGameRules_Membersmember, ...) */
-export declare function set_member_game(member: number, ...args: number[]): number;
+export declare function set_member_game<T = number>(member: number, value: T, element?: number): number;
 /** set_member_s(index, member, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_member_s: i32;
 /** set_member_s(const anyindex, anymember, ...) */
-export declare function set_member_s(index: number, member: number, ...args: number[]): number;
+export declare function set_member_s<T = number>(index: number, member: number, value: T, element?: number): number;
 /** set_movevar(var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_movevar: i32;
 /** set_movevar(const MoveVarsvar, ...) */
-export declare function set_movevar(var_: number, ...args: number[]): number;
+export declare function set_movevar<T = number>(var_: number, value: T, element?: number): number;
 /** set_netadr(adr, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_netadr: i32;
 /** set_netadr(const anyadr, const NetAdrVarsvar, ...) */
-export declare function set_netadr(adr: number, var_: number, ...args: number[]): number;
+export declare function set_netadr<T = number>(adr: number, var_: number, value: T, element?: number): number;
 /** set_netchan(index, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_netchan: i32;
 /** set_netchan(const anyindex, const NetChanvar, ...) */
-export declare function set_netchan(index: number, var_: number, ...args: number[]): number;
+export declare function set_netchan<T = number>(index: number, var_: number, value: T, element?: number): number;
 /** set_pmove(var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_pmove: i32;
 /** set_pmove(const PlayerMovevar, ...) */
-export declare function set_pmove(var_: number, ...args: number[]): number;
+export declare function set_pmove<T = number>(var_: number, value: T, element?: number): number;
 /** set_pmtrace(tracehandle, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_pmtrace: i32;
 /** set_pmtrace(const anytracehandle, const PMTracevar, ...) */
-export declare function set_pmtrace(tracehandle: number, var_: number, ...args: number[]): number;
+export declare function set_pmtrace<T = number>(tracehandle: number, var_: number, value: T, element?: number): number;
 /** set_ucmd(ucmd, var, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_ucmd: i32;
 /** set_ucmd(const anyucmd, const UCmdvar, ...) */
-export declare function set_ucmd(ucmd: number, var_: number, ...args: number[]): number;
+export declare function set_ucmd<T = number>(ucmd: number, var_: number, value: T, element?: number): number;
 /** set_usercmd(type, ...) - the dispatcher's id for it */
 export declare const NATIVE_set_usercmd: i32;
 /** set_usercmd(anytype, ...) */

@@ -1,11 +1,12 @@
 /// <reference path="../as-types.d.ts" />
 // The globals a module file and amxts.config.ts use without an import:
-// defineModule and defineConfig.
+// defineModule and defineConfig; and the types of a field's change the
+// editor reads off Player, which the compiler has from the build.
 //
 // Only the editor reads this file. The build reads a module's definition from
 // its source and evaluates amxts.config.ts with a defineConfig of its own
 // (scripts/project.ts); asc never compiles either call.
-import type { ModuleOptions } from "./facade";
+import type { ModuleOptions, Player, PlayerChangeEvent } from "./facade";
 
 declare global {
 	/** Имя модуля и ключ его настроек. */
@@ -16,20 +17,43 @@ declare global {
 		configKey?: string;
 	}
 
-	/** Описание модуля для `defineModule`: meta, модули, от которых он зависит, настройки и setup. */
+	/** API модуля, каким плагины пользуются без импорта: пространство имён и его имя (`as`) или один из его экспортов под своим именем (`name`). */
+	interface AmxtsModuleImport {
+		/** Собственный пакет модуля, например `"@amxts/menu-core"`. */
+		from: string;
+		/** Имя, под которым его используют плагины, например `"menus"`: `menus.create(...)`. */
+		as?: string;
+		/** Один экспорт, которым плагины пользуются под его собственным именем, например `"semiclip"`: `semiclip.rule = ...`. */
+		name?: string;
+	}
+
+	/** Описание модуля для `defineModule`: meta, модули, от которых он зависит, настройки, что он даёт плагинам, и setup. */
 	interface AmxtsModule<T> {
 		/** Имя модуля и его `configKey`. */
 		meta: AmxtsModuleMeta;
-		/** Пакеты модулей, от которых зависит этот, например `"@amxts/config-core"`. Они тоже должны быть в `amxts.config.ts` и загружаются раньше. */
+		/** Пакеты модулей, от которых зависит этот, например `"@amxts/config-core"`. Они подключаются вместе с ним — в `amxts.config.ts` достаточно указать этот — и загружаются раньше. */
 		requires?: string[];
 		/** Настройки модуля по умолчанию: значения, если `amxts.config.ts` их не задаёт. */
 		defaults?: T;
 		/**
+		 * API модуля, каким плагины пользуются без импорта, например `[{ from: "@amxts/menu-core", as: "menus" }]`:
+		 * плагин пишет `menus.create(...)`, а сборка добавляет импорт только в
+		 * этот плагин. `{ from, name }` вместо этого даёт один экспорт под его
+		 * именем — объект, свойство которого плагин присваивает, как `semiclip.rule = ...`.
+		 */
+		imports?: AmxtsModuleImport[];
+		/**
 		 * Выполняется один раз, в плагине модуля, когда сервер его загружает.
-		 * Получает defaults, поверх которых наложено то, что `amxts.config.ts`
+		 * Получает `defaults`, поверх которых наложено то, что `amxts.config.ts`
 		 * задаёт под `configKey`.
 		 */
 		setup?: (options: T) => void;
+	}
+
+	/** Автоимпорты проекта: `imports` в `amxts.config.ts`. */
+	interface AmxtsImports {
+		/** `false`: плагины импортируют всё сами. По умолчанию `true`. */
+		autoImport?: boolean;
 	}
 
 	/** Настройки проекта, которые экспортирует `amxts.config.ts`: модули проекта и их настройки. */
@@ -47,6 +71,18 @@ declare global {
 		 * сервером сборка берёт его собственные.
 		 */
 		target?: "rehlds" | "hlds";
+		/**
+		 * Автоимпорты: сборка добавляет импорты того, что плагин использует без
+		 * импорта, - API ядра и того, что дают модули. `{ autoImport: false }`
+		 * выключает их; плагины импортируют всё сами.
+		 */
+		imports?: AmxtsImports;
+		/**
+		 * Модули, чьи нативы вызывают Pawn-плагины, по имени пакета, например
+		 * `"@amxts/menu-core"`. Модуль, которым не пользуется ни один плагин
+		 * проекта, в сборку не попадает; перечисленный здесь собирается всё равно.
+		 */
+		pawn?: string[];
 	}
 
 	/**
@@ -57,6 +93,7 @@ declare global {
 	 *   meta: { name: "menu-core", configKey: "menus" },
 	 *   requires: ["@amxts/config-core"],
 	 *   defaults: { file: "menu" },
+	 *   imports: [{ from: "@amxts/menu-core", as: "menus" }],
 	 *   setup(options) { ... },
 	 * });
 	 * ```
@@ -74,6 +111,46 @@ declare global {
 	 * ```
 	 */
 	function defineConfig(config: AmxtsConfig): AmxtsConfig;
+}
+
+// A field's change, typed by the field. The compiler gives a listener with
+// `{ field: "spawnProtected" }` the field's own event class (scripts/player-fields.ts);
+// the editor reads the same types off the fields plugins declare on Player.
+
+/** A field plugins added to `Player` - `"spawnProtected"` - or a member of an object field, `"glow.enabled"`. */
+type PlayerFieldName = {
+	[K in keyof Player & string]: Player[K] extends (...args: never[]) => unknown ? never
+		: Player[K] extends readonly unknown[] ? K
+			: Player[K] extends object ? K | `${K}.${keyof Player[K] & string}`
+				: K
+}[keyof Player & string];
+
+/** The type of the field `F` names; `never` when it names none. */
+type PlayerFieldValue<F extends string> = F extends `${infer O}.${infer M}`
+	? O extends keyof Player ? (M extends keyof Player[O] ? Player[O][M] : never) : never
+	: F extends keyof Player ? Player[F] : never;
+
+declare module "./facade" {
+	interface PlayerChangeEvent<F extends string = string> {
+		/** Значение поля после изменения; с `{ field }` — типа этого поля. */
+		readonly value: PlayerFieldValue<F>;
+		/** Значение поля до изменения. */
+		readonly previous: PlayerFieldValue<F>;
+	}
+
+	interface Server {
+		/**
+		 * Вызывает `listener` каждый раз, когда у игрока меняется поле `field`,
+		 * которое плагины добавили в `Player`, например
+		 * `{ field: "spawnProtected" }`: у `event.value` и `event.previous` тип
+		 * этого поля.
+		 */
+		// oxlint-disable-next-line typescript/method-signature-style -- an overload, merged into the class's method
+		addEventListener<F extends PlayerFieldName>(type: "playerchange", listener: (event: PlayerChangeEvent<F>) => void, options: { field: F }): void;
+		/** Перестаёт вызывать обработчик, добавленный через `addEventListener`, — ту же функцию с тем же полем. */
+		// oxlint-disable-next-line typescript/method-signature-style -- an overload, merged into the class's method
+		removeEventListener<F extends PlayerFieldName>(type: "playerchange", listener: (event: PlayerChangeEvent<F>) => void, options: { field: F }): void;
+	}
 }
 
 export {};

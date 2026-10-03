@@ -17,7 +17,7 @@ export interface SetupOptions extends ServerOptions {
     start?: boolean;
 }
 /**
- * A new fake server with the project on it: its modules in load order, each
- * with its test kit, then its plugins, then the map started.
+ * A new fake server with the project on it: the modules its plugins use, in
+ * load order, each with its test kit, then its plugins, then the map started.
  */
 export declare function setup(options?: SetupOptions): Promise<FakeServer>;

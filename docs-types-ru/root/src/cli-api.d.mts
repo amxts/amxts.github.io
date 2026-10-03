@@ -15,7 +15,9 @@ export function localModules(): Record<string, string>;
  * How to run one of the core's tasks in the current folder:
  *
  * - `prepare` writes .amxts/tsconfig.json;
- * - `build` builds the plugins and the modules (`--deploy`, `--watch`);
+ * - `build` builds the plugins and the modules (`--deploy`, `--watch`, and
+ *   `--docker`: for the Docker server that mounts the project - no deploy,
+ *   Linux only, its console shown);
  * - `check` checks a module package before it is published;
  * - `typecheck` runs TypeScript over the project, after `prepare`.
  *
@@ -81,7 +83,7 @@ export const version: string;
  * returns changes in a way an older command would misread; the command says
  * which of the two to update when they differ.
  */
-export const cliApi: 2;
+export const cliApi: 3;
 /** Whether the core runs from a checkout (a .git folder beside it) rather than from npm. */
 export const fromSource: boolean;
 export type Task = {

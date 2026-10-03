@@ -1,24 +1,47 @@
 /// <reference path="../as-types.d.ts" />
-import { Player, RoundWinner, Team, Vector } from "./facade";
+import { Player, RoundWinner, Team, TouchEvent, UseType, Vector } from "./facade";
 import { Entity, Weapon, WeaponKind } from "./entities";
 import { Damage } from "./flags";
-/** What every hookchain event can do. */
+/** What every game event can do. */
 export declare class HookEvent {
+    /** @hidden Ham Sandwich delivered the event rather than reapi: the arguments and the answer go back its way. */
+    __ham: bool;
     private written;
     private writtenText;
+    private writtenVector;
     /** An argument as the handler sees it now: its own write, or what came in. */
     protected __cell(index: i32): i32;
     protected __text(index: i32): string;
-    protected __wrote(index: i32, value: i32): void;
-    protected __wroteText(index: i32, value: string): void;
+    protected __vector(index: i32): Vector;
+    /** Writes a number argument back: `atype` says how it is read, a float as its bits. */
+    protected __set(index: i32, atype: i32, cell: i32): void;
+    protected __setText(index: i32, value: string): void;
+    protected __setEntity(index: i32, id: number): void;
+    protected __setVector(index: i32, value: Vector): void;
+    /** The game's answer as a cell - ATYPE_EDICT is an entity. */
+    protected __resultCell(atype: i32): i32;
+    protected __resultText(): string;
+    protected __resultVector(): Vector;
+    /** @hidden A listener's answer: the game's function's result, and in a pre listener the function blocked. */
+    __answer(atype: i32, cell: i32, post: bool): void;
+    /** @hidden */
+    __answerText(value: string, post: bool): void;
+    /** @hidden */
+    __answerVector(value: Vector, post: bool): void;
     /**
-     * Blocks the game's function this chain hooks. For a chain that answers, return the answer from the handler instead; this is for blocking without one.
+     * Blocks a function that answers: reapi wants the answer set first -
+     * "Can't suppress original function call without new return value set" -
+     * so it is the neutral one.
+     */
+    protected __block(atype: i32): void;
+    /**
+     * Blocks the game's function this event is about. For one that answers, return the answer from the handler instead; this is for blocking without one.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
     /**
-     * Stops the chain: neither the hooks after this one nor the game's function run. Rarely what is wanted; preventDefault() usually is.
+     * Stops the event: the game's function does not run, and neither do other plugins' listeners where the game can stop them. Rarely what is wanted; preventDefault() usually is.
      *
      * Pawn: `HC_BREAK`
      */
@@ -90,6 +113,21 @@ export type KillRarity = "Headshot" | "KillerBlind" | "NoScope" | "Penetrated" |
  */
 export type VguiMenu = "team" | "mapBriefing" | "classT" | "classCT" | "buy" | "buyPistol" | "buyShotGun" | "buyRifle" | "buySubMachineGun" | "buyMachineGun" | "buyItem" | "unknown";
 /**
+ * Usually called to activate some objects.
+ *
+ * Pawn: `Ham_Activate`
+ */
+export declare class ActivateEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+}
+/**
  * Pawn: `RH_SV_ActivateServer` (const runPhysics)
  */
 export declare class ActivateServerEvent extends HookEvent {
@@ -138,6 +176,40 @@ export declare class AddAccountEvent extends HookEvent {
     set trackChange(value: boolean);
 }
 /**
+ * Unsure.
+ *
+ * Pawn: `Ham_Item_AddDuplicate`
+ */
+export declare class AddDuplicateEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `original`
+     */
+    get original(): Weapon;
+    set original(value: Weapon);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
  * Called inside TraceAttack to store entity damage to multidamage data
  *
  * Pawn: `RG_AddMultiDamage` (const pevInflictor, const pEntity, Float:flDamage, bitsDamageType)
@@ -172,10 +244,11 @@ export declare class AddMultiDamageEvent extends HookEvent {
     set damageType(values: Damage[]);
 }
 /**
- * Pawn: `RG_CBasePlayer_AddPlayerItem` (const this, const pItem)
+ * Pawn: `RG_CBasePlayer_AddPlayerItem` (const this, const pItem), `Ham_AddPlayerItem`
  */
 export declare class AddPlayerItemEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
@@ -195,17 +268,18 @@ export declare class AddPlayerItemEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
 /**
- * Pawn: `RG_CBasePlayer_AddPoints` (const this, score, bAllowNegativeScore)
+ * Pawn: `RG_CBasePlayer_AddPoints` (const this, score, bAllowNegativeScore), `Ham_AddPoints`
  */
 export declare class AddPointsEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
@@ -228,10 +302,11 @@ export declare class AddPointsEvent extends HookEvent {
     set allowNegativeScore(value: number);
 }
 /**
- * Pawn: `RG_CBasePlayer_AddPointsToTeam` (const this, score, bAllowNegativeScore)
+ * Pawn: `RG_CBasePlayer_AddPointsToTeam` (const this, score, bAllowNegativeScore), `Ham_AddPointsToTeam`
  */
 export declare class AddPointsToTeamEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
@@ -297,6 +372,67 @@ export declare class AddResourceEvent extends HookEvent {
     set resourceIndex(value: number);
 }
 /**
+ * A weapon of one class goes to a player - picked up or given. Return `false` to refuse it.
+ *
+ * Pawn: `Ham_Item_AddToPlayer`
+ */
+export declare class AddToPlayerEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The weapon the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The player who gets it.
+     *
+     * Pawn: `player`
+     */
+    get player(): Player;
+    set player(value: Player);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Unsure.
+ *
+ * Pawn: `Ham_Weapon_AddWeapon`
+ */
+export declare class AddWeaponEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
  * Called whenever player is on air (not touching floor)
  *
  * Pawn: `RG_PM_AirAccelerate` (Float:wishdir[3], Float:wishspeed, Float:accel, const playerIndex)
@@ -356,9 +492,9 @@ export declare class AllocEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -389,9 +525,9 @@ export declare class AllowPhysentEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -416,52 +552,136 @@ export declare class ApplyMultiDamageEvent extends HookEvent {
     get attacker(): Player;
 }
 /**
+ * Called when an entity starts being attached to (normally invisible and "following") a player.
+ *
+ * Pawn: `Ham_Item_AttachToPlayer`
+ */
+export declare class AttachToPlayerEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `player`
+     */
+    get player(): Player;
+    set player(value: Player);
+}
+/**
+ * Returns a vector that tells the autoaim direction.
+ *
+ * Pawn: `Ham_CS_Player_GetAutoaimVector`
+ */
+export declare class AutoaimVectorEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `Float:delta`
+     */
+    get delta(): number;
+    set delta(value: number);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Vector)
+     */
+    get result(): Vector;
+}
+/**
  * Pawn: `RG_CSGameRules_BalanceTeams` ()
  */
 export declare class BalanceTeamsEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Pawn: `RG_CBasePlayer_Duck` (const this)
+ * Called when monster dies and prepares its entity to become a corpse.
+ *
+ * Pawn: `Ham_BecomeDead`
  */
-export declare class BasePlayerDuckEvent extends HookEvent {
+export declare class BecomeDeadEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
      * Pawn: `this`
      */
-    get player(): Player;
+    get entity(): Entity;
 }
 /**
- * Pawn: `RG_CBasePlayer_Jump` (const this)
+ * Normally called whenever a barnacle grabs the entity.
+ *
+ * Pawn: `Ham_FBecomeProne`
  */
-export declare class BasePlayerJumpEvent extends HookEvent {
+export declare class BecomeProneEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
      * Pawn: `this`
      */
-    get player(): Player;
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
- * Pawn: `RG_CBasePlayer_Spawn` (const this)
+ * This functions searches the link list whose head is the caller's m_pLink field.
+ *
+ * Pawn: `Ham_BestVisibleEnemy`
  */
-export declare class BasePlayerSpawnEvent extends HookEvent {
+export declare class BestVisibleEnemyEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
      * Pawn: `this`
      */
-    get player(): Player;
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Entity)
+     */
+    get result(): Entity;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
- * Pawn: `RG_CBasePlayer_Blind` (const this, Float:flUntilTime, Float:flHoldTime, Float:flFadeTime, iAlpha)
+ * Pawn: `RG_CBasePlayer_Blind` (const this, Float:flUntilTime, Float:flHoldTime, Float:flFadeTime, iAlpha), `Ham_CS_Player_Blind`
  */
 export declare class BlindEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
@@ -496,6 +716,83 @@ export declare class BlindEvent extends HookEvent {
      */
     get alpha(): number;
     set alpha(value: number);
+}
+/**
+ * A moving entity of one class - a door, a train - is blocked by another in its way.
+ *
+ * Pawn: `Ham_Blocked`
+ */
+export declare class BlockedEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The entity the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The entity in the way.
+     *
+     * Pawn: `other`
+     */
+    get other(): Entity;
+    set other(value: Entity);
+}
+/**
+ * Normally returns the blood color of the entity.
+ *
+ * Pawn: `Ham_BloodColor`
+ */
+export declare class BloodColorEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Position to shoot at.
+ *
+ * Pawn: `Ham_BodyTarget`
+ */
+export declare class BodyTargetEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `Float:from[3]`
+     */
+    get from(): Vector;
+    set from(value: Vector);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Vector)
+     */
+    get result(): Vector;
 }
 /**
  * Pawn: `RG_CGib_BounceGibTouch` (const this, pOther)
@@ -549,9 +846,9 @@ export declare class BuyGunAmmoEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -603,17 +900,18 @@ export declare class BuyWeaponByWeaponIdEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
 /**
- * Pawn: `RG_CBasePlayerWeapon_CanDeploy` (const this)
+ * Pawn: `RG_CBasePlayerWeapon_CanDeploy` (const this), `Ham_Item_CanDeploy`
  */
 export declare class CanDeployEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
@@ -627,9 +925,36 @@ export declare class CanDeployEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the player can drop the specified item.
+ *
+ * Pawn: `Ham_CS_Item_CanDrop`
+ */
+export declare class CanDropEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -659,9 +984,36 @@ export declare class CanHavePlayerItemEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the entity can be holstered.
+ *
+ * Pawn: `Ham_Item_CanHolster`
+ */
+export declare class CanHolsterEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -691,9 +1043,9 @@ export declare class CanPlayerHearPlayerEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -724,17 +1076,72 @@ export declare class CanSwitchTeamEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
+}
+/**
+ * Returns the center of the entity.
+ *
+ * Pawn: `Ham_Center`
+ */
+export declare class CenterEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Vector)
+     */
+    get result(): Vector;
 }
 /**
  * Pawn: `RG_CSGameRules_ChangeLevel` ()
  */
 export declare class ChangeLevelEvent extends HookEvent {
     private readonly kind;
+}
+/**
+ * Turns a monster towards its ideal_yaw.
+ *
+ * Pawn: `Ham_ChangeYaw`
+ */
+export declare class ChangeYawEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `speed`
+     */
+    get speed(): number;
+    set speed(value: number);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
  * Pawn: `RG_CSGameRules_CheckMapConditions` ()
@@ -805,9 +1212,9 @@ export declare class CheckUserInfoEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -832,6 +1239,28 @@ export declare class CheckWaterJumpEvent extends HookEvent {
  */
 export declare class CheckWinConditionsEvent extends HookEvent {
     private readonly kind;
+}
+/**
+ * Typically called when an entity dies to notify any children entities about the death.
+ *
+ * Pawn: `Ham_DeathNotice`
+ */
+export declare class ChildDeathNoticeEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `child`
+     */
+    get child(): Entity;
+    set child(value: Entity);
 }
 /**
  * Pawn: `RG_HandleMenu_ChooseAppearance` (const index, const slot)
@@ -879,23 +1308,26 @@ export declare class ChooseTeamEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
 /**
- * Pawn: `RG_CBasePlayer_Classify` (const this)
+ * Pawn: `RG_CBasePlayer_Classify` (const this), `Ham_Classify`
  */
 export declare class ClassifyEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
      * Pawn: `this`
      */
     get player(): Player;
+    /** The entity the event is about, whatever its class - the one `classname` names; for a player, `event.player`. */
+    get entity(): Entity;
     /**
      * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
      *
@@ -903,9 +1335,9 @@ export declare class ClassifyEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -1050,9 +1482,43 @@ export declare class CreateWeaponBoxEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Returns the damage decal of the entity for the damage type.
+ *
+ * Pawn: `Ham_DamageDecal`
+ */
+export declare class DamageDecalEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `damageType`
+     */
+    get damageType(): Damage[];
+    set damageType(values: Damage[]);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -1076,9 +1542,36 @@ export declare class DeadPlayerWeaponsEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Determines the best type of death animation to play.
+ *
+ * Pawn: `Ham_GetDeathActivity`
+ */
+export declare class DeathActivityEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -1111,7 +1604,7 @@ export declare class DeathNoticeEvent extends HookEvent {
 /**
  * Called when a client emits a "death sound" after death.
  *
- * Pawn: `RG_CBasePlayer_DeathSound` (const this, lastHitGroup, bool:hasArmour)
+ * Pawn: `RG_CBasePlayer_DeathSound` (const this)
  */
 export declare class DeathSoundEvent extends HookEvent {
     private readonly kind;
@@ -1121,20 +1614,6 @@ export declare class DeathSoundEvent extends HookEvent {
      * Pawn: `this`
      */
     get player(): Player;
-    /**
-     * Argument 2.
-     *
-     * Pawn: `lastHitGroup`
-     */
-    get lastHitGroup(): number;
-    set lastHitGroup(value: number);
-    /**
-     * Argument 3.
-     *
-     * Pawn: `bool:hasArmour`
-     */
-    get hasArmour(): boolean;
-    set hasArmour(value: boolean);
 }
 /**
  * A weapon is being taken out. Assign `event.viewModel` / `weaponModel` to change what is shown.
@@ -1191,9 +1670,9 @@ export declare class DefaultDeployEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -1236,9 +1715,9 @@ export declare class DefaultReloadEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -1302,9 +1781,9 @@ export declare class DefaultShotgunReloadEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -1356,6 +1835,60 @@ export declare class DefuseBombStartEvent extends HookEvent {
     get player(): Player;
 }
 /**
+ * Unsure, I believe this is the delay between activation for an entity.
+ *
+ * Pawn: `Ham_GetDelay`
+ */
+export declare class DelayEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Float)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * A weapon of one class is drawn. Return `false` to refuse it.
+ *
+ * Pawn: `Ham_Item_Deploy`
+ */
+export declare class DeployEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The weapon the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
  * Pawn: `RH_Cvar_DirectSet` (pcvar, const value[])
  */
 export declare class DirectSetEvent extends HookEvent {
@@ -1388,6 +1921,21 @@ export declare class DisappearEvent extends HookEvent {
      * Pawn: `this`
      */
     get player(): Player;
+}
+/**
+ * A weapon of one class is dropped.
+ *
+ * Pawn: `Ham_Item_Drop`
+ */
+export declare class DropEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The weapon the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
 }
 /**
  * Pawn: `RH_SV_DropClient` (const client, bool:crash, const fmt[])
@@ -1464,9 +2012,9 @@ export declare class DropPlayerItemEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -1497,11 +2045,47 @@ export declare class DropShieldEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
+}
+/**
+ * A player ducks.
+ *
+ * Pawn: `RG_CBasePlayer_Duck` (const this), `Ham_Player_Duck`
+ */
+export declare class DuckEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+}
+/**
+ * Returns the ear position of the entity.
+ *
+ * Pawn: `Ham_EarPosition`
+ */
+export declare class EarPositionEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Vector)
+     */
+    get result(): Vector;
 }
 /**
  * Called when client it's in the scoreboard
@@ -1538,9 +2122,9 @@ export declare class EntSelectSpawnPointEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -1671,94 +2255,108 @@ export declare class ExplodeSmokeGrenadeEvent extends HookEvent {
     get grenade(): Entity;
 }
 /**
- * Is this player allowed to respawn now?
+ * Gets ammo from the target weapon.
  *
- * Pawn: `RG_CSGameRules_FPlayerCanRespawn` (const index)
+ * Pawn: `Ham_Weapon_ExtractAmmo`
  */
-export declare class FPlayerCanRespawnEvent extends HookEvent {
+export declare class ExtractAmmoEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
-     * Pawn: `index`
-     */
-    get player(): Player;
-    /**
-     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
-     *
-     * Pawn: `GetHookChainReturn` (BOOL)
-     */
-    get result(): number;
-    /**
-     * Blocks the game's function; the chain answers 0.
-     *
-     * Pawn: `HC_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Can this player take damage from this attacker?
- *
- * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage` (const index, const attacker)
- */
-export declare class FPlayerCanTakeDamageEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Argument 1, read only.
-     *
-     * Pawn: `index`
-     */
-    get player(): Player;
-    /**
-     * Argument 2, read only.
-     *
-     * Pawn: `attacker`
-     */
-    get attacker(): Player;
-    /**
-     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
-     *
-     * Pawn: `GetHookChainReturn` (BOOL)
-     */
-    get result(): number;
-    /**
-     * Blocks the game's function; the chain answers 0.
-     *
-     * Pawn: `HC_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Should the player switch to this weapon?
- *
- * Pawn: `RG_CSGameRules_FShouldSwitchWeapon` (const index, const weapon)
- */
-export declare class FShouldSwitchWeaponEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Argument 1, read only.
-     *
-     * Pawn: `index`
-     */
-    get player(): Player;
-    /**
-     * Argument 2, read only.
-     *
-     * Pawn: `weapon`
+     * Pawn: `this`
      */
     get weapon(): Weapon;
     /**
+     * Argument 2.
+     *
+     * Pawn: `target`
+     */
+    get target(): Weapon;
+    set target(value: Weapon);
+    /**
      * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
      *
-     * Pawn: `GetHookChainReturn` (BOOL)
+     * Pawn: `GetHookChainReturn` (Integer)
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
+}
+/**
+ * Gets clip ammo from the target weapon.
+ *
+ * Pawn: `Ham_Weapon_ExtractClipAmmo`
+ */
+export declare class ExtractClipAmmoEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `target`
+     */
+    get target(): Weapon;
+    set target(value: Weapon);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Returns the eye position of the entity.
+ *
+ * Pawn: `Ham_EyePosition`
+ */
+export declare class EyePositionEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Vector)
+     */
+    get result(): Vector;
+}
+/**
+ * Slowly fades a entity out, then removes it.
+ *
+ * Pawn: `Ham_FadeMonster`
+ */
+export declare class FadeMonsterEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
 }
 /**
  * Pawn: `RG_CBaseEntity_FireBuckshots` (pEntity, cShots, Float:vecSrc[3], Float:vecDirShooting[3], Float:vecSpread[3], Float:flDistance, iTracerFreq, iDamage, pevAttacker)
@@ -2001,9 +2599,67 @@ export declare class FlPlayerFallDamageEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Is this player allowed to respawn now?
+ *
+ * Pawn: `RG_CSGameRules_FPlayerCanRespawn` (const index)
+ */
+export declare class FPlayerCanRespawnEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `index`
+     */
+    get player(): Player;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (BOOL)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Can this player take damage from this attacker?
+ *
+ * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage` (const index, const attacker)
+ */
+export declare class FPlayerCanTakeDamageEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `index`
+     */
+    get player(): Player;
+    /**
+     * Argument 2, read only.
+     *
+     * Pawn: `attacker`
+     */
+    get attacker(): Player;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (BOOL)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -2020,6 +2676,46 @@ export declare class FreeEvent extends HookEvent {
      * Pawn: `entity`
      */
     get entity(): Entity;
+}
+/**
+ * Should the player switch to this weapon?
+ *
+ * Pawn: `RG_CSGameRules_FShouldSwitchWeapon` (const index, const weapon)
+ */
+export declare class FShouldSwitchWeaponEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `index`
+     */
+    get player(): Player;
+    /**
+     * Argument 2, read only.
+     *
+     * Pawn: `weapon`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (BOOL)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * The game rules' think: every frame, the round's clock and win conditions checked.
+ *
+ * Pawn: `RG_CSGameRules_Think` ()
+ */
+export declare class GameThinkEvent extends HookEvent {
+    private readonly kind;
 }
 /**
  * Pawn: `RH_GetEntityInit` (const classname[])
@@ -2052,9 +2748,9 @@ export declare class GetForceCameraEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -2078,9 +2774,9 @@ export declare class GetIntoGameEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -2111,9 +2807,9 @@ export declare class GetNextBestWeaponEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -2137,11 +2833,26 @@ export declare class GetPlayerSpawnSpotEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
+}
+/**
+ * Create some gore and get rid of a monster's model.
+ *
+ * Pawn: `Ham_GibMonster`
+ */
+export declare class GibMonsterEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
 }
 /**
  * Pawn: `RG_CGib_Spawn` (const this, const szGibModel[])
@@ -2163,10 +2874,11 @@ export declare class GibSpawnEvent extends HookEvent {
     set gibModel(value: string);
 }
 /**
- * Pawn: `RG_CBasePlayer_GiveAmmo` (const this, iAmount, szName[], iMax)
+ * Pawn: `RG_CBasePlayer_GiveAmmo` (const this, iAmount, szName[], iMax), `Ham_GiveAmmo`
  */
 export declare class GiveAmmoEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
@@ -2201,9 +2913,9 @@ export declare class GiveAmmoEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -2219,9 +2931,9 @@ export declare class GiveC4Event extends HookEvent {
      */
     get result(): Player;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -2264,9 +2976,9 @@ export declare class GiveNamedItemEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -2294,6 +3006,81 @@ export declare class GiveShieldEvent extends HookEvent {
  */
 export declare class GoToIntermissionEvent extends HookEvent {
     private readonly kind;
+}
+/**
+ * Returns a vector that tells the gun position.
+ *
+ * Pawn: `Ham_Player_GetGunPosition`
+ */
+export declare class GunPositionEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Vector)
+     */
+    get result(): Vector;
+}
+/**
+ * Returns if monster has alien gibs.
+ *
+ * Pawn: `Ham_HasAlienGibs`
+ */
+export declare class HasAlienGibsEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Returns if monster has human gibs.
+ *
+ * Pawn: `Ham_HasHumanGibs`
+ */
+export declare class HasHumanGibsEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
  * The game asks if an item is forbidden to a player. Return `true` to forbid it.
@@ -2328,9 +3115,43 @@ export declare class HasRestrictItemEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the target is the same as the one passed.
+ *
+ * Pawn: `Ham_HasTarget`
+ */
+export declare class HasTargetEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `target`
+     */
+    get target(): number;
+    set target(value: number);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -2382,25 +3203,264 @@ export declare class HintMessageExEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * A weapon of one class is put away.
+ *
+ * Pawn: `Ham_Item_Holster`
+ */
+export declare class HolsterEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The weapon the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+}
+/**
+ * Returns the illumination of the entity.
+ *
+ * Pawn: `Ham_Illumination`
+ */
+export declare class IlluminationEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
 /**
  * A player sends an impulse: `100` is the flashlight, `201` the spray.
  *
- * Pawn: `RG_CBasePlayer_ImpulseCommands` (const this)
+ * Pawn: `RG_CBasePlayer_ImpulseCommands` (const this), `Ham_Player_ImpulseCommands`
  */
 export declare class ImpulseCommandsEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * The player the event is about.
      *
      * Pawn: `this`
      */
     get player(): Player;
+}
+/**
+ * Returns true if the passed ent is in the caller's forward view cone.
+ *
+ * Pawn: `Ham_FInViewCone`
+ */
+export declare class InViewConeEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `other`
+     */
+    get other(): Entity;
+    set other(value: Entity);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the entity is alive.
+ *
+ * Pawn: `Ham_IsAlive`
+ */
+export declare class IsAliveEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the player is a bot.
+ *
+ * Pawn: `Ham_CS_Player_IsBot`
+ */
+export declare class IsBotEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the entity uses a BSP model.
+ *
+ * Pawn: `Ham_IsBSPModel`
+ */
+export declare class IsBspModelEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the entity is in the world.
+ *
+ * Pawn: `Ham_IsInWorld`
+ */
+export declare class IsInWorldEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the entity is moving.
+ *
+ * Pawn: `Ham_IsMoving`
+ */
+export declare class IsMovingEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the entity is a net client.
+ *
+ * Pawn: `Ham_IsNetClient`
+ */
+export declare class IsNetClientEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
  * Called when a player hit to entity.
@@ -2440,25 +3500,244 @@ export declare class IsPenetrableEntityEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
 /**
- * Called every client frame (PlayerPostThink) for the player's active weapon
+ * Whether or not the entity is a player.
  *
- * Pawn: `RG_CBasePlayerWeapon_ItemPostFrame` (const this)
+ * Pawn: `Ham_IsPlayer`
  */
-export declare class ItemPostFrameEvent extends HookEvent {
+export declare class IsPlayerEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the entity is sneaking.
+ *
+ * Pawn: `Ham_IsSneaking`
+ */
+export declare class IsSneakingEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Returns whether an entity is activated.
+ *
+ * Pawn: `Ham_IsTriggered`
+ */
+export declare class IsTriggeredEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `activator`
+     */
+    get activator(): Entity;
+    set activator(value: Entity);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the weapon is usable (has ammo, etc.)
+ *
+ * Pawn: `Ham_Weapon_IsUsable`
+ */
+export declare class IsUsableEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
      * Pawn: `this`
      */
     get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * -
+ *
+ * Pawn: `Ham_CS_Item_IsWeapon`
+ */
+export declare class IsWeaponEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Called every client frame (PlayerPostThink) for the player's active weapon
+ *
+ * Pawn: `RG_CBasePlayerWeapon_ItemPostFrame` (const this), `Ham_Item_PostFrame`
+ */
+export declare class ItemPostFrameEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+}
+/**
+ * A weapon of one class is thought over in its owner's hands, every frame before his move.
+ *
+ * Pawn: `Ham_Item_PreFrame`
+ */
+export declare class ItemPreFrameEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The weapon the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+}
+/**
+ * Returns the item slot for the item.
+ *
+ * Pawn: `Ham_Item_ItemSlot`
+ */
+export declare class ItemSlotEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Updates item data for the client.
+ *
+ * Pawn: `Ham_Item_UpdateClientData`
+ */
+export declare class ItemUpdateClientDataEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `player`
+     */
+    get player(): Player;
+    set player(value: Player);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
  * Called when a client "thinks for the join status".
@@ -2469,6 +3748,21 @@ export declare class JoiningThinkEvent extends HookEvent {
     private readonly kind;
     /**
      * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+}
+/**
+ * A player jumps.
+ *
+ * Pawn: `RG_CBasePlayer_Jump` (const this), `Ham_Player_Jump`
+ */
+export declare class JumpEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The player the event is about.
      *
      * Pawn: `this`
      */
@@ -2538,29 +3832,49 @@ export declare class KickBackEvent extends HookEvent {
     set direction_change(value: number);
 }
 /**
- * Pawn: `RG_CBasePlayer_Killed` (const this, pevAttacker, iGib)
+ * Normally called when an item gets deleted.
+ *
+ * Pawn: `Ham_Item_Kill`
  */
-export declare class KilledEvent extends HookEvent {
+export declare class KillEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
      * Pawn: `this`
      */
+    get weapon(): Weapon;
+}
+/**
+ * An entity dies - a player, or with `classname` a breakable, a hostage. `preventDefault()` keeps it alive.
+ *
+ * Pawn: `RG_CBasePlayer_Killed` (const this, pevAttacker, iGib), `Ham_Killed`
+ */
+export declare class KilledEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The player who dies; for another class, `event.entity`.
+     *
+     * Pawn: `this`
+     */
     get player(): Player;
     /**
-     * Argument 2, read only.
+     * The killer.
      *
      * Pawn: `pevAttacker`
      */
     get attacker(): Player;
     /**
-     * Argument 3.
+     * The body's fate: `0` the usual death, `1` never torn apart, `2` always.
      *
      * Pawn: `iGib`
      */
     get gib(): number;
     set gib(value: number);
+    /** The entity the event is about, whatever its class - the one `classname` names; for a player, `event.player`. */
+    get entity(): Entity;
 }
 /**
  * Called when a player is on a ladder.
@@ -2583,6 +3897,28 @@ export declare class LadderMoveEvent extends HookEvent {
     get player(): Player;
 }
 /**
+ * Function to find enemies or food by sight.
+ *
+ * Pawn: `Ham_Look`
+ */
+export declare class LookEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `distance`
+     */
+    get distance(): number;
+    set distance(value: number);
+}
+/**
  * Makes a random player the bomber.
  *
  * Pawn: `RG_CBasePlayer_MakeBomber` (const this)
@@ -2602,9 +3938,9 @@ export declare class MakeBomberEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -2623,6 +3959,48 @@ export declare class MakeVipEvent extends HookEvent {
     get player(): Player;
 }
 /**
+ * Gets the maximum speed for whenever a player has the item deployed.
+ *
+ * Pawn: `Ham_CS_Item_GetMaxSpeed`
+ */
+export declare class MaxSpeedEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Float)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Called when monster has died.
+ *
+ * Pawn: `Ham_MonsterInitDead`
+ */
+export declare class MonsterInitDeadEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+}
+/**
  * Pawn: `RG_PM_Move` (const playerIndex)
  */
 export declare class MoveEvent extends HookEvent {
@@ -2635,16 +4013,46 @@ export declare class MoveEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Pawn: `RG_CBasePlayer_ObjectCaps` (const this)
+ * Returns the next target of this.
+ *
+ * Pawn: `Ham_GetNextTarget`
+ */
+export declare class NextTargetEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Entity)
+     */
+    get result(): Entity;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Pawn: `RG_CBasePlayer_ObjectCaps` (const this), `Ham_ObjectCaps`
  */
 export declare class ObjectCapsEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
      * Pawn: `this`
      */
     get player(): Player;
+    /** The entity the event is about, whatever its class - the one `classname` names; for a player, `event.player`. */
+    get entity(): Entity;
     /**
      * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
      *
@@ -2652,9 +4060,9 @@ export declare class ObjectCapsEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -2718,9 +4126,9 @@ export declare class ObserverIsValidTargetEvent extends HookEvent {
      */
     get result(): Player;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -2756,6 +4164,40 @@ export declare class ObserverThinkEvent extends HookEvent {
      * Pawn: `this`
      */
     get player(): Player;
+}
+/**
+ * Not entirely sure.
+ *
+ * Pawn: `Ham_OnControls`
+ */
+export declare class OnControlsEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `on`
+     */
+    get on(): Entity;
+    set on(value: Entity);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
  * The game tells the bots something happened.
@@ -2821,9 +4263,24 @@ export declare class OnSpawnEquipEvent extends HookEvent {
     set equipGame(value: boolean);
 }
 /**
+ * Unsure.
+ *
+ * Pawn: `Ham_OverrideReset`
+ */
+export declare class OverrideResetEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+}
+/**
  * Called when a client emits a "pain sound" after received damage.
  *
- * Pawn: `RG_CBasePlayer_Pain` (const this)
+ * Pawn: `RG_CBasePlayer_Pain` (const this, HitBoxGroup:lastHitGroup, bool:hasArmour)
  */
 export declare class PainEvent extends HookEvent {
     private readonly kind;
@@ -2833,6 +4290,35 @@ export declare class PainEvent extends HookEvent {
      * Pawn: `this`
      */
     get player(): Player;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `HitBoxGroup:lastHitGroup`
+     */
+    get lastHitGroup(): number;
+    set lastHitGroup(value: number);
+    /**
+     * Argument 3.
+     *
+     * Pawn: `bool:hasArmour`
+     */
+    get hasArmour(): boolean;
+    set hasArmour(value: boolean);
+}
+/**
+ * Called when monster is about to emit pain sound.
+ *
+ * Pawn: `Ham_PainSound`
+ */
+export declare class PainSoundEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
 }
 /**
  * Called when a player plant's the bomb on the ground.
@@ -2866,39 +4352,38 @@ export declare class PlantBombEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
 /**
- * Called whenever player emits an step sound
+ * Plays the weapon's empty sound.
  *
- * Pawn: `RG_PM_PlayStepSound` (step, Float:fvol, const playerIndex)
+ * Pawn: `Ham_Weapon_PlayEmptySound`
  */
-export declare class PlayStepSoundEvent extends HookEvent {
+export declare class PlayEmptySoundEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
-     * Argument 1.
+     * Argument 1, read only.
      *
-     * Pawn: `step`
+     * Pawn: `this`
      */
-    get step(): number;
-    set step(value: number);
+    get weapon(): Weapon;
     /**
-     * Argument 2.
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
      *
-     * Pawn: `Float:fvol`
+     * Pawn: `GetHookChainReturn` (Integer)
      */
-    get fvol(): number;
-    set fvol(value: number);
+    get result(): boolean;
     /**
-     * Argument 3, read only.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `playerIndex`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
-    get player(): Player;
+    preventDefault(): void;
 }
 /**
  * A flashbang is blinding a player. `preventDefault()` keeps the player's eyes clear.
@@ -3026,6 +4511,34 @@ export declare class PlayerSpawnEvent extends HookEvent {
     get player(): Player;
 }
 /**
+ * Called whenever player emits an step sound
+ *
+ * Pawn: `RG_PM_PlayStepSound` (step, Float:fvol, const playerIndex)
+ */
+export declare class PlayStepSoundEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Argument 1.
+     *
+     * Pawn: `step`
+     */
+    get step(): number;
+    set step(value: number);
+    /**
+     * Argument 2.
+     *
+     * Pawn: `Float:fvol`
+     */
+    get fvol(): number;
+    set fvol(value: number);
+    /**
+     * Argument 3, read only.
+     *
+     * Pawn: `playerIndex`
+     */
+    get player(): Player;
+}
+/**
  * Called on every frame to check player ducking
  *
  * Pawn: `RG_PM_Duck` (const playerIndex)
@@ -3054,10 +4567,79 @@ export declare class PmJumpEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Pawn: `RG_CBasePlayer_PostThink` (const this)
+ * Returns true if the passed ent is in the caller's forward view cone.
+ *
+ * Pawn: `Ham_FVecInViewCone`
+ */
+export declare class PointInViewConeEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `Float:point[3]`
+     */
+    get point(): Vector;
+    set point(value: Vector);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Returns true if a line can be traced from the caller's eyes to given vector.
+ *
+ * Pawn: `Ham_FVecVisible`
+ */
+export declare class PointVisibleEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `Float:point[3]`
+     */
+    get point(): Vector;
+    set point(value: Vector);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Pawn: `RG_CBasePlayer_PostThink` (const this), `Ham_Player_PostThink`
  */
 export declare class PostThinkEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
@@ -3066,30 +4648,19 @@ export declare class PostThinkEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * A player's frame, before he moves: every frame for every player, hundreds of times a second. Keep the listener tiny.
- *
- * Pawn: `RG_CBasePlayer_PreThink` (const this)
- */
-export declare class PreThinkEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * The player the event is about.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-}
-/**
- * Pawn: `RG_CBasePlayer_Precache` (const this)
+ * Pawn: `RG_CBasePlayer_Precache` (const this), `Ham_Precache`
  */
 export declare class PrecacheEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
      * Pawn: `this`
      */
     get player(): Player;
+    /** The entity the event is about, whatever its class - the one `classname` names; for a player, `event.player`. */
+    get entity(): Entity;
 }
 /**
  * Called when a generic resource is being added to generic precache list.
@@ -3112,9 +4683,9 @@ export declare class PrecacheGenericIEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -3139,9 +4710,9 @@ export declare class PrecacheModelIEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -3166,11 +4737,68 @@ export declare class PrecacheSoundIEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
+}
+/**
+ * A player's frame, before he moves: every frame for every player, hundreds of times a second. Keep the listener tiny.
+ *
+ * Pawn: `RG_CBasePlayer_PreThink` (const this), `Ham_Player_PreThink`
+ */
+export declare class PreThinkEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The player the event is about.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+}
+/**
+ * Returns the ammo index of the item.
+ *
+ * Pawn: `Ham_Item_PrimaryAmmoIndex`
+ */
+export declare class PrimaryAmmoIndexEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * A weapon of one class fires its primary attack - a shot, a knife's slash: `{ classname: "weapon_knife" }`. `preventDefault()` stops it.
+ *
+ * Pawn: `Ham_Weapon_PrimaryAttack`
+ */
+export declare class PrimaryAttackEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The weapon the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
 }
 /**
  * Called when a message is being sent to the server's console.
@@ -3230,6 +4858,82 @@ export declare class RadioEvent extends HookEvent {
     set showIcon(value: boolean);
 }
 /**
+ * Whether or not the entity can reflect gauss shots..
+ *
+ * Pawn: `Ham_ReflectGauss`
+ */
+export declare class ReflectGaussEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Checks relation ship between two monsters.
+ *
+ * Pawn: `Ham_IRelationship`
+ */
+export declare class RelationshipEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `other`
+     */
+    get other(): Entity;
+    set other(value: Entity);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * A weapon of one class reloads. `preventDefault()` stops it.
+ *
+ * Pawn: `Ham_Weapon_Reload`
+ */
+export declare class ReloadEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The weapon the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+}
+/**
  * Pawn: `RG_CBasePlayer_RemoveAllItems` (const this, bool:removeSuit)
  */
 export declare class RemoveAllItemsEvent extends HookEvent {
@@ -3255,10 +4959,11 @@ export declare class RemoveGunsEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Pawn: `RG_CBasePlayer_RemovePlayerItem` (const this, const pItem)
+ * Pawn: `RG_CBasePlayer_RemovePlayerItem` (const this, const pItem), `Ham_RemovePlayerItem`
  */
 export declare class RemovePlayerItemEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
@@ -3278,9 +4983,9 @@ export declare class RemovePlayerItemEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -3299,12 +5004,43 @@ export declare class RemoveSpawnProtectionEvent extends HookEvent {
     get player(): Player;
 }
 /**
+ * Prints debug information about monster to console. (state, activity, and other)
+ *
+ * Pawn: `Ham_ReportAIState`
+ */
+export declare class ReportAiStateEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+}
+/**
+ * Sets the weapon so that it can play empty sound again.
+ *
+ * Pawn: `Ham_Weapon_ResetEmptySound`
+ */
+export declare class ResetEmptySoundEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+}
+/**
  * The game resets a player's speed, on spawn and on every weapon switch. `preventDefault()` keeps the speed you set.
  *
- * Pawn: `RG_CBasePlayer_ResetMaxSpeed` (const this)
+ * Pawn: `RG_CBasePlayer_ResetMaxSpeed` (const this), `Ham_CS_Player_ResetMaxSpeed`
  */
 export declare class ResetMaxSpeedEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * The player the event is about.
      *
@@ -3325,12 +5061,69 @@ export declare class ResetSequenceInfoEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
+ * Normally called when a map-based item respawns, such as a health kit or something.
+ *
+ * Pawn: `Ham_Respawn`
+ */
+export declare class RespawnEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Entity)
+     */
+    get result(): Entity;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * This is called on a map reset for most map based entities.
+ *
+ * Pawn: `Ham_CS_Restart`
+ */
+export declare class RestartEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+}
+/**
  * A new round is starting.
  *
  * Pawn: `RG_CSGameRules_RestartRound` ()
  */
 export declare class RestartRoundEvent extends HookEvent {
     private readonly kind;
+}
+/**
+ * There is no more ammo for this gun, so switch to the next best one.
+ *
+ * Pawn: `Ham_Weapon_RetireWeapon`
+ */
+export declare class RetireWeaponEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
 }
 /**
  * The round is ending.
@@ -3367,23 +5160,66 @@ export declare class RoundEndEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
 /**
- * Pawn: `RG_CBasePlayer_RoundRespawn` (const this)
+ * Pawn: `RG_CBasePlayer_RoundRespawn` (const this), `Ham_CS_RoundRespawn`
  */
 export declare class RoundRespawnEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
      * Pawn: `this`
      */
     get player(): Player;
+}
+/**
+ * Returns the secondary ammo index of the item.
+ *
+ * Pawn: `Ham_Item_SecondaryAmmoIndex`
+ */
+export declare class SecondaryAmmoIndexEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * A weapon of one class fires its secondary attack - a knife's stab, a scope. `preventDefault()` stops it.
+ *
+ * Pawn: `Ham_Weapon_SecondaryAttack`
+ */
+export declare class SecondaryAttackEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The weapon the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
 }
 /**
  * The game tells everyone who killed whom.
@@ -3454,12 +5290,83 @@ export declare class SendResourcesEvent extends HookEvent {
     set client(value: number);
 }
 /**
+ * A player's chat message goes out to the players and to the server console. Assign `event.text` to change what they read, or call `preventDefault()` so nobody gets it.
+ *
+ * Pawn: `RG_SendSayMessage` (const pPlayer, const szCmd[], bool:teamonly, const szText[], const pszFormat[], const pszConsoleFormat[], bool:bSenderDead, const placeName[], bool:consoleUsesPlaceName)
+ */
+export declare class SendSayMessageEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * The player who wrote the message.
+     *
+     * Pawn: `pPlayer`
+     */
+    get player(): Player;
+    /**
+     * The command the message came with, `"say"` or `"say_team"`.
+     *
+     * Pawn: `szCmd[]`
+     */
+    get cmd(): string;
+    set cmd(value: string);
+    /**
+     * `true` when only the player's team gets the message.
+     *
+     * Pawn: `bool:teamonly`
+     */
+    get teamonly(): boolean;
+    set teamonly(value: boolean);
+    /**
+     * The message as the player wrote it. Assign to change it.
+     *
+     * Pawn: `szText[]`
+     */
+    get text(): string;
+    set text(value: string);
+    /**
+     * The chat's format that puts the name, the place and the message together, e.g. `"#Cstrike_Chat_All"`.
+     *
+     * Pawn: `pszFormat[]`
+     */
+    get format(): string;
+    set format(value: string);
+    /**
+     * The format of the line the server console prints for the message.
+     *
+     * Pawn: `pszConsoleFormat[]`
+     */
+    get consoleFormat(): string;
+    set consoleFormat(value: string);
+    /**
+     * `true` when the player who wrote the message is dead.
+     *
+     * Pawn: `bool:bSenderDead`
+     */
+    get senderDead(): boolean;
+    set senderDead(value: boolean);
+    /**
+     * The name of the place on the map where the player is, e.g. `"BombsiteA"`.
+     *
+     * Pawn: `placeName[]`
+     */
+    get placeName(): string;
+    set placeName(value: string);
+    /**
+     * `true` when the console's line carries the place's name too.
+     *
+     * Pawn: `bool:consoleUsesPlaceName`
+     */
+    get consoleUsesPlaceName(): boolean;
+    set consoleUsesPlaceName(value: boolean);
+}
+/**
  * Called whenever game sends an animation to his current holder (player)
  *
- * Pawn: `RG_CBasePlayerWeapon_SendWeaponAnim` (const this, iAnim, skiplocal)
+ * Pawn: `RG_CBasePlayerWeapon_SendWeaponAnim` (const this, iAnim, skiplocal), `Ham_CS_Weapon_SendWeaponAnim`
  */
 export declare class SendWeaponAnimEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
@@ -3563,9 +5470,9 @@ export declare class SetClientUserInfoNameEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -3591,6 +5498,21 @@ export declare class SetModelEvent extends HookEvent {
     set modelName(value: string);
 }
 /**
+ * Usually called after the engine call with the same name.
+ *
+ * Pawn: `Ham_SetObjectCollisionBox`
+ */
+export declare class SetObjectCollisionBoxEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+}
+/**
  * Called when a player's set protection.
  *
  * Pawn: `RG_CBasePlayer_SetSpawnProtection` (const this, Float:time)
@@ -3610,6 +5532,82 @@ export declare class SetSpawnProtectionEvent extends HookEvent {
      */
     get time(): number;
     set time(value: number);
+}
+/**
+ * Sets the toggle state of the entity.
+ *
+ * Pawn: `Ham_SetToggleState`
+ */
+export declare class SetToggleStateEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `state`
+     */
+    get state(): number;
+    set state(value: number);
+}
+/**
+ * Whether or not the player should fade on death.
+ *
+ * Pawn: `Ham_Player_ShouldFadeOnDeath`
+ */
+export declare class ShouldFadeOnDeathEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the weapon should idle.
+ *
+ * Pawn: `Ham_Weapon_ShouldWeaponIdle`
+ */
+export declare class ShouldWeaponIdleEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
  * The game shows a player a menu.
@@ -3689,6 +5687,23 @@ export declare class ShowVguiMenuEvent extends HookEvent {
     set oldMenu(value: string);
 }
 /**
+ * An entity spawns - a player at the start of his life, a weapon, anything the map or a plugin makes. Without `classname` it is a player's; `{ classname: "weaponbox" }` hears that class's.
+ *
+ * Pawn: `RG_CBasePlayer_Spawn` (const this), `Ham_Spawn`
+ */
+export declare class SpawnEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The player who spawns; for another class, `event.entity`.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /** The entity the event is about, whatever its class - the one `classname` names; for a player, `event.player`. */
+    get entity(): Entity;
+}
+/**
  * Pawn: `RG_SpawnHeadGib` (pevVictim)
  */
 export declare class SpawnHeadGibEvent extends HookEvent {
@@ -3706,9 +5721,9 @@ export declare class SpawnHeadGibEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -3779,6 +5794,21 @@ export declare class StartObserverEvent extends HookEvent {
     get viewAngle(): Vector;
 }
 /**
+ * Not entirely sure what this does.
+ *
+ * Pawn: `Ham_StartSneaking`
+ */
+export declare class StartSneakingEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+}
+/**
  * A sound is about to play. Assign `event.sample` to change it, or call `preventDefault()` to keep it silent.
  *
  * Pawn: `RH_SV_StartSound` (const recipients, const entity, const channel, const sample[], const volume, Float:attenuation, const fFlags, const pitch)
@@ -3842,6 +5872,21 @@ export declare class StartSoundEvent extends HookEvent {
     set pitch(value: number);
 }
 /**
+ * Not entirely sure what this does.
+ *
+ * Pawn: `Ham_StopSneaking`
+ */
+export declare class StopSneakingEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+}
+/**
  * Called when a player goes switch to opposite team after auto-teambalance or caused by 3rd-party things.
  *
  * Pawn: `RG_CBasePlayer_SwitchTeam` (const this)
@@ -3858,10 +5903,11 @@ export declare class SwitchTeamEvent extends HookEvent {
 /**
  * A player is about to take damage. Assign `event.damage` to change how much, or call `preventDefault()` to take none.
  *
- * Pawn: `RG_CBasePlayer_TakeDamage` (const this, pevInflictor, pevAttacker, Float:flDamage, bitsDamageType)
+ * Pawn: `RG_CBasePlayer_TakeDamage` (const this, pevInflictor, pevAttacker, Float:flDamage, bitsDamageType), `Ham_TakeDamage`
  */
 export declare class TakeDamageEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * The player who is hurt.
      *
@@ -3894,6 +5940,8 @@ export declare class TakeDamageEvent extends HookEvent {
      */
     get damageType(): Damage[];
     set damageType(values: Damage[]);
+    /** The entity the event is about, whatever its class - the one `classname` names; for a player, `event.player`. */
+    get entity(): Entity;
     /**
      * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
      *
@@ -3901,17 +5949,52 @@ export declare class TakeDamageEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
 /**
- * Pawn: `RG_CBasePlayer_TakeHealth` (const this, Float:flHealth, bitsDamageType)
+ * A hurt player is pushed back and slowed down by the hit, after the damage. Assign `event.knockbackForce` or `event.velModifier` to change how much, or call `preventDefault()` for neither.
+ *
+ * Pawn: `RG_CBasePlayer_TakeDamageImpulse` (const this, attacker, Float:flKnockbackForce, Float:flVelModifier)
+ */
+export declare class TakeDamageImpulseEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * The player who is hurt.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * The player who did the damage.
+     *
+     * Pawn: `attacker`
+     */
+    get attacker(): Player;
+    /**
+     * The force that pushes the player away from the attacker. Assign to change it.
+     *
+     * Pawn: `Float:flKnockbackForce`
+     */
+    get knockbackForce(): number;
+    set knockbackForce(value: number);
+    /**
+     * The share of speed the player keeps while slowed by the hit, e.g. `0.5` for half. Assign to change it.
+     *
+     * Pawn: `Float:flVelModifier`
+     */
+    get velModifier(): number;
+    set velModifier(value: number);
+}
+/**
+ * Pawn: `RG_CBasePlayer_TakeHealth` (const this, Float:flHealth, bitsDamageType), `Ham_TakeHealth`
  */
 export declare class TakeHealthEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
@@ -3932,6 +6015,8 @@ export declare class TakeHealthEvent extends HookEvent {
      */
     get damageType(): Damage[];
     set damageType(values: Damage[]);
+    /** The entity the event is about, whatever its class - the one `classname` names; for a player, `event.player`. */
+    get entity(): Entity;
     /**
      * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
      *
@@ -3939,9 +6024,9 @@ export declare class TakeHealthEvent extends HookEvent {
      */
     get result(): number;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -3966,11 +6051,32 @@ export declare class TeamFullEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
+}
+/**
+ * Get the entity's team id.
+ *
+ * Pawn: `Ham_TeamId`
+ */
+export declare class TeamIdEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (String)
+     */
+    get result(): string;
 }
 /**
  * Called each time player tries to join a team to ensure a fair distribution of players (based on mp_limitteams cvar)
@@ -4000,19 +6106,26 @@ export declare class TeamStackedEvent extends HookEvent {
      */
     get result(): boolean;
     /**
-     * Blocks the game's function; the chain answers false.
+     * Blocks the game's function; it answers false.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
 /**
- * Called every server frame to process game rules
+ * An entity of one class thinks - when its `nextThink` comes: `{ classname: "info_target" }`.
  *
- * Pawn: `RG_CSGameRules_Think` ()
+ * Pawn: `Ham_Think`
  */
 export declare class ThinkEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
+    /**
+     * The entity the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
 }
 /**
  * A player threw a flashbang. In a post listener `event.result` is the grenade.
@@ -4053,9 +6166,9 @@ export declare class ThrowFlashbangEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -4112,9 +6225,9 @@ export declare class ThrowGrenadeEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -4171,9 +6284,9 @@ export declare class ThrowHeGrenadeEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
@@ -4223,19 +6336,69 @@ export declare class ThrowSmokeGrenadeEvent extends HookEvent {
      */
     get result(): Entity;
     /**
-     * Blocks the game's function; the chain answers 0.
+     * Blocks the game's function; it answers 0.
      *
-     * Pawn: `HC_SUPERCEDE`
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
 }
 /**
+ * Returns the toggle state of the entity.
+ *
+ * Pawn: `Ham_GetToggleState`
+ */
+export declare class ToggleStateEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): number;
+    /**
+     * Blocks the game's function; it answers 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Whether or not the player is touching a weapon on the ground.
+ *
+ * Pawn: `Ham_CS_Player_OnTouchingWeapon`
+ */
+export declare class TouchingWeaponEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `weapon`
+     */
+    get weapon(): Weapon;
+    set weapon(value: Weapon);
+}
+/**
  * A shot or a knife hit a player, before the damage. `preventDefault()` makes it miss.
  *
- * Pawn: `RG_CBasePlayer_TraceAttack` (const this, pevAttacker, Float:flDamage, Float:vecDir[3], tracehandle, bitsDamageType)
+ * Pawn: `RG_CBasePlayer_TraceAttack` (const this, pevAttacker, Float:flDamage, Float:vecDir[3], tracehandle, bitsDamageType), `Ham_TraceAttack`
  */
 export declare class TraceAttackEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
@@ -4272,6 +6435,51 @@ export declare class TraceAttackEvent extends HookEvent {
      * Argument 6.
      *
      * Pawn: `bitsDamageType`
+     */
+    get damageType(): Damage[];
+    set damageType(values: Damage[]);
+    /** The entity the event is about, whatever its class - the one `classname` names; for a player, `event.player`. */
+    get entity(): Entity;
+}
+/**
+ * Traces where blood should appear.
+ *
+ * Pawn: `Ham_TraceBleed`
+ */
+export declare class TraceBleedEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `Float:damage`
+     */
+    get damage(): number;
+    set damage(value: number);
+    /**
+     * Argument 3.
+     *
+     * Pawn: `Float:direction[3]`
+     */
+    get direction(): Vector;
+    set direction(value: Vector);
+    /**
+     * Argument 4.
+     *
+     * Pawn: `trace`
+     */
+    get trace(): number;
+    set trace(value: number);
+    /**
+     * Argument 5.
+     *
+     * Pawn: `damageType`
      */
     get damageType(): Damage[];
     set damageType(values: Damage[]);
@@ -4334,16 +6542,131 @@ export declare class UnDuckEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Pawn: `RG_CBasePlayer_UpdateClientData` (const this)
+ * Pawn: `RG_CBasePlayer_UpdateClientData` (const this), `Ham_Player_UpdateClientData`
  */
 export declare class UpdateClientDataEvent extends HookEvent {
     private readonly kind;
+    private static readonly ham;
     /**
      * Argument 1, read only.
      *
      * Pawn: `this`
      */
     get player(): Player;
+}
+/**
+ * Updates the HUD info about this item.
+ *
+ * Pawn: `Ham_Item_UpdateItemInfo`
+ */
+export declare class UpdateItemInfoEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+}
+/**
+ * Used in Half-Life to update a monster's owner.
+ *
+ * Pawn: `Ham_UpdateOwner`
+ */
+export declare class UpdateOwnerEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+}
+/**
+ * The game updates a player's status bar: the name and health of the player under the crosshair, at the bottom of the screen. `preventDefault()` leaves it as it is.
+ *
+ * Pawn: `RG_CBasePlayer_UpdateStatusBar` (const this)
+ */
+export declare class UpdateStatusBarEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * The player whose status bar it is.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+}
+/**
+ * An entity of one class is used - a button pressed, a door opened. `preventDefault()` keeps it as it is.
+ *
+ * Pawn: `Ham_Use`
+ */
+export declare class UseEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The entity the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * The entity that passes the use on, e.g. a button to its door.
+     *
+     * Pawn: `caller`
+     */
+    get caller(): Entity;
+    set caller(value: Entity);
+    /**
+     * The entity that started it, e.g. the player who pressed the button.
+     *
+     * Pawn: `activator`
+     */
+    get activator(): Entity;
+    set activator(value: Entity);
+    /**
+     * The way it is used, one of `"off"`, `"on"`, `"set"` or `"toggle"`.
+     *
+     * Pawn: `useType`
+     */
+    get useType(): UseType;
+    set useType(value: UseType);
+    /**
+     * A number the use carries, for `"set"`.
+     *
+     * Pawn: `Float:value`
+     */
+    get value(): number;
+    set value(value: number);
+}
+/**
+ * Unsure.
+ *
+ * Pawn: `Ham_Weapon_UseDecrement`
+ */
+export declare class UseDecrementEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
  * Called when a player press use and if a suitable candidate is not found.
@@ -4358,6 +6681,40 @@ export declare class UseEmptyEvent extends HookEvent {
      * Pawn: `this`
      */
     get player(): Player;
+}
+/**
+ * Returns true if a line can be traced from the caller's eyes to the target.
+ *
+ * Pawn: `Ham_FVisible`
+ */
+export declare class VisibleEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Argument 1, read only.
+     *
+     * Pawn: `this`
+     */
+    get entity(): Entity;
+    /**
+     * Argument 2.
+     *
+     * Pawn: `other`
+     */
+    get other(): Entity;
+    set other(value: Entity);
+    /**
+     * The game's answer, read in a post hook. To answer yourself, return a value from the handler.
+     *
+     * Pawn: `GetHookChainReturn` (Integer)
+     */
+    get result(): boolean;
+    /**
+     * Blocks the game's function; it answers false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
  * Pawn: `RG_CGib_WaitTillLand` (const this)
@@ -4384,6 +6741,21 @@ export declare class WaterJumpEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+}
+/**
+ * A weapon of one class idles, playing its idle animation.
+ *
+ * Pawn: `Ham_Weapon_WeaponIdle`
+ */
+export declare class WeaponIdleEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * The weapon the event is about - one of the class `classname` names.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
 }
 /**
  * Receiver is player index or 0 when update will be sended to all.
@@ -4414,11 +6786,17 @@ export declare class WriteFullClientUpdateEvent extends HookEvent {
     get receiver(): Player;
 }
 /**
- * Every reapi hookchain, by the name game.addEventListener takes - the event
+ * Every game event, by the name game.addEventListener takes - the event
  * it hands the listener. What an editor completes; the compiler reads it
  * through the same patch as ServerEventMap (runtime/patches).
  */
 export interface GameEventMap {
+    /**
+     * Usually called to activate some objects.
+     *
+     * Pawn: `Ham_Activate`
+     */
+    activate: ActivateEvent;
     /** Pawn: `RH_SV_ActivateServer` */
     activateServer: ActivateServerEvent;
     /**
@@ -4428,16 +6806,22 @@ export interface GameEventMap {
      */
     addAccount: AddAccountEvent;
     /**
+     * Unsure.
+     *
+     * Pawn: `Ham_Item_AddDuplicate`
+     */
+    addDuplicate: AddDuplicateEvent;
+    /**
      * Called inside TraceAttack to store entity damage to multidamage data
      *
      * Pawn: `RG_AddMultiDamage`
      */
     addMultiDamage: AddMultiDamageEvent;
-    /** Pawn: `RG_CBasePlayer_AddPlayerItem` */
+    /** Pawn: `RG_CBasePlayer_AddPlayerItem`, `Ham_AddPlayerItem` */
     addPlayerItem: AddPlayerItemEvent;
-    /** Pawn: `RG_CBasePlayer_AddPoints` */
+    /** Pawn: `RG_CBasePlayer_AddPoints`, `Ham_AddPoints` */
     addPoints: AddPointsEvent;
-    /** Pawn: `RG_CBasePlayer_AddPointsToTeam` */
+    /** Pawn: `RG_CBasePlayer_AddPointsToTeam`, `Ham_AddPointsToTeam` */
     addPointsToTeam: AddPointsToTeamEvent;
     /**
      * A file is added to what clients download.
@@ -4445,6 +6829,18 @@ export interface GameEventMap {
      * Pawn: `RH_SV_AddResource`
      */
     addResource: AddResourceEvent;
+    /**
+     * A weapon of one class goes to a player - picked up or given. Return `false` to refuse it.
+     *
+     * Pawn: `Ham_Item_AddToPlayer`
+     */
+    addToPlayer: AddToPlayerEvent;
+    /**
+     * Unsure.
+     *
+     * Pawn: `Ham_Weapon_AddWeapon`
+     */
+    addWeapon: AddWeaponEvent;
     /**
      * Called whenever player is on air (not touching floor)
      *
@@ -4471,16 +6867,58 @@ export interface GameEventMap {
      * Pawn: `RG_ApplyMultiDamage`
      */
     applyMultiDamage: ApplyMultiDamageEvent;
+    /**
+     * Called when an entity starts being attached to (normally invisible and "following") a player.
+     *
+     * Pawn: `Ham_Item_AttachToPlayer`
+     */
+    attachToPlayer: AttachToPlayerEvent;
+    /**
+     * Returns a vector that tells the autoaim direction.
+     *
+     * Pawn: `Ham_CS_Player_GetAutoaimVector`
+     */
+    autoaimVector: AutoaimVectorEvent;
     /** Pawn: `RG_CSGameRules_BalanceTeams` */
     balanceTeams: BalanceTeamsEvent;
-    /** Pawn: `RG_CBasePlayer_Duck` */
-    basePlayerDuck: BasePlayerDuckEvent;
-    /** Pawn: `RG_CBasePlayer_Jump` */
-    basePlayerJump: BasePlayerJumpEvent;
-    /** Pawn: `RG_CBasePlayer_Spawn` */
-    basePlayerSpawn: BasePlayerSpawnEvent;
-    /** Pawn: `RG_CBasePlayer_Blind` */
+    /**
+     * Called when monster dies and prepares its entity to become a corpse.
+     *
+     * Pawn: `Ham_BecomeDead`
+     */
+    becomeDead: BecomeDeadEvent;
+    /**
+     * Normally called whenever a barnacle grabs the entity.
+     *
+     * Pawn: `Ham_FBecomeProne`
+     */
+    becomeProne: BecomeProneEvent;
+    /**
+     * This functions searches the link list whose head is the caller's m_pLink field.
+     *
+     * Pawn: `Ham_BestVisibleEnemy`
+     */
+    bestVisibleEnemy: BestVisibleEnemyEvent;
+    /** Pawn: `RG_CBasePlayer_Blind`, `Ham_CS_Player_Blind` */
     blind: BlindEvent;
+    /**
+     * A moving entity of one class - a door, a train - is blocked by another in its way.
+     *
+     * Pawn: `Ham_Blocked`
+     */
+    blocked: BlockedEvent;
+    /**
+     * Normally returns the blood color of the entity.
+     *
+     * Pawn: `Ham_BloodColor`
+     */
+    bloodColor: BloodColorEvent;
+    /**
+     * Position to shoot at.
+     *
+     * Pawn: `Ham_BodyTarget`
+     */
+    bodyTarget: BodyTargetEvent;
     /** Pawn: `RG_CGib_BounceGibTouch` */
     bounceGibTouch: BounceGibTouchEvent;
     /**
@@ -4501,14 +6939,26 @@ export interface GameEventMap {
      * Pawn: `RG_BuyWeaponByWeaponID`
      */
     buyWeaponByWeaponId: BuyWeaponByWeaponIdEvent;
-    /** Pawn: `RG_CBasePlayerWeapon_CanDeploy` */
+    /** Pawn: `RG_CBasePlayerWeapon_CanDeploy`, `Ham_Item_CanDeploy` */
     canDeploy: CanDeployEvent;
+    /**
+     * Whether or not the player can drop the specified item.
+     *
+     * Pawn: `Ham_CS_Item_CanDrop`
+     */
+    canDrop: CanDropEvent;
     /**
      * The player is touching a CBasePlayerItem, do I give it to him?
      *
      * Pawn: `RG_CSGameRules_CanHavePlayerItem`
      */
     canHavePlayerItem: CanHavePlayerItemEvent;
+    /**
+     * Whether or not the entity can be holstered.
+     *
+     * Pawn: `Ham_Item_CanHolster`
+     */
+    canHolster: CanHolsterEvent;
     /**
      * The game asks if one player hears another on voice. Return `true` or `false` to decide.
      *
@@ -4521,8 +6971,20 @@ export interface GameEventMap {
      * Pawn: `RG_CBasePlayer_CanSwitchTeam`
      */
     canSwitchTeam: CanSwitchTeamEvent;
+    /**
+     * Returns the center of the entity.
+     *
+     * Pawn: `Ham_Center`
+     */
+    center: CenterEvent;
     /** Pawn: `RG_CSGameRules_ChangeLevel` */
     changeLevel: ChangeLevelEvent;
+    /**
+     * Turns a monster towards its ideal_yaw.
+     *
+     * Pawn: `Ham_ChangeYaw`
+     */
+    changeYaw: ChangeYawEvent;
     /** Pawn: `RG_CSGameRules_CheckMapConditions` */
     checkMapConditions: CheckMapConditionsEvent;
     /**
@@ -4549,6 +7011,12 @@ export interface GameEventMap {
      * Pawn: `RG_CSGameRules_CheckWinConditions`
      */
     checkWinConditions: CheckWinConditionsEvent;
+    /**
+     * Typically called when an entity dies to notify any children entities about the death.
+     *
+     * Pawn: `Ham_DeathNotice`
+     */
+    childDeathNotice: ChildDeathNoticeEvent;
     /** Pawn: `RG_HandleMenu_ChooseAppearance` */
     chooseAppearance: ChooseAppearanceEvent;
     /**
@@ -4557,7 +7025,7 @@ export interface GameEventMap {
      * Pawn: `RG_HandleMenu_ChooseTeam`
      */
     chooseTeam: ChooseTeamEvent;
-    /** Pawn: `RG_CBasePlayer_Classify` */
+    /** Pawn: `RG_CBasePlayer_Classify`, `Ham_Classify` */
     classify: ClassifyEvent;
     /**
      * Recreate all the map entities from the map data (preserving their indices),
@@ -4602,11 +7070,23 @@ export interface GameEventMap {
      */
     createWeaponBox: CreateWeaponBoxEvent;
     /**
+     * Returns the damage decal of the entity for the damage type.
+     *
+     * Pawn: `Ham_DamageDecal`
+     */
+    damageDecal: DamageDecalEvent;
+    /**
      * What do I do with player's weapons when he's killed?
      *
      * Pawn: `RG_CSGameRules_DeadPlayerWeapons`
      */
     deadPlayerWeapons: DeadPlayerWeaponsEvent;
+    /**
+     * Determines the best type of death animation to play.
+     *
+     * Pawn: `Ham_GetDeathActivity`
+     */
+    deathActivity: DeathActivityEvent;
     /**
      * Call this from within a GameRules class to report an obituary.
      *
@@ -4641,6 +7121,18 @@ export interface GameEventMap {
      * Pawn: `RG_CGrenade_DefuseBombStart`
      */
     defuseBombStart: DefuseBombStartEvent;
+    /**
+     * Unsure, I believe this is the delay between activation for an entity.
+     *
+     * Pawn: `Ham_GetDelay`
+     */
+    delay: DelayEvent;
+    /**
+     * A weapon of one class is drawn. Return `false` to refuse it.
+     *
+     * Pawn: `Ham_Item_Deploy`
+     */
+    deploy: DeployEvent;
     /** Pawn: `RH_Cvar_DirectSet` */
     directSet: DirectSetEvent;
     /**
@@ -4649,6 +7141,12 @@ export interface GameEventMap {
      * Pawn: `RG_CBasePlayer_Disappear`
      */
     disappear: DisappearEvent;
+    /**
+     * A weapon of one class is dropped.
+     *
+     * Pawn: `Ham_Item_Drop`
+     */
+    drop: DropEvent;
     /** Pawn: `RH_SV_DropClient` */
     dropClient: DropClientEvent;
     /**
@@ -4669,6 +7167,18 @@ export interface GameEventMap {
      * Pawn: `RG_CBasePlayer_DropShield`
      */
     dropShield: DropShieldEvent;
+    /**
+     * A player ducks.
+     *
+     * Pawn: `RG_CBasePlayer_Duck`, `Ham_Player_Duck`
+     */
+    duck: DuckEvent;
+    /**
+     * Returns the ear position of the entity.
+     *
+     * Pawn: `Ham_EarPosition`
+     */
+    earPosition: EarPositionEvent;
     /**
      * Called when client it's in the scoreboard
      *
@@ -4712,23 +7222,29 @@ export interface GameEventMap {
      */
     explodeSmokeGrenade: ExplodeSmokeGrenadeEvent;
     /**
-     * Is this player allowed to respawn now?
+     * Gets ammo from the target weapon.
      *
-     * Pawn: `RG_CSGameRules_FPlayerCanRespawn`
+     * Pawn: `Ham_Weapon_ExtractAmmo`
      */
-    fPlayerCanRespawn: FPlayerCanRespawnEvent;
+    extractAmmo: ExtractAmmoEvent;
     /**
-     * Can this player take damage from this attacker?
+     * Gets clip ammo from the target weapon.
      *
-     * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage`
+     * Pawn: `Ham_Weapon_ExtractClipAmmo`
      */
-    fPlayerCanTakeDamage: FPlayerCanTakeDamageEvent;
+    extractClipAmmo: ExtractClipAmmoEvent;
     /**
-     * Should the player switch to this weapon?
+     * Returns the eye position of the entity.
      *
-     * Pawn: `RG_CSGameRules_FShouldSwitchWeapon`
+     * Pawn: `Ham_EyePosition`
      */
-    fShouldSwitchWeapon: FShouldSwitchWeaponEvent;
+    eyePosition: EyePositionEvent;
+    /**
+     * Slowly fades a entity out, then removes it.
+     *
+     * Pawn: `Ham_FadeMonster`
+     */
+    fadeMonster: FadeMonsterEvent;
     /** Pawn: `RG_CBaseEntity_FireBuckshots` */
     fireBuckshots: FireBuckshotsEvent;
     /** Pawn: `RG_CBaseEntity_FireBullets` */
@@ -4742,11 +7258,35 @@ export interface GameEventMap {
      */
     flPlayerFallDamage: FlPlayerFallDamageEvent;
     /**
+     * Is this player allowed to respawn now?
+     *
+     * Pawn: `RG_CSGameRules_FPlayerCanRespawn`
+     */
+    fPlayerCanRespawn: FPlayerCanRespawnEvent;
+    /**
+     * Can this player take damage from this attacker?
+     *
+     * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage`
+     */
+    fPlayerCanTakeDamage: FPlayerCanTakeDamageEvent;
+    /**
      * Called when an entity is removed (freed from server).
      *
      * Pawn: `RH_ED_Free`
      */
     free: FreeEvent;
+    /**
+     * Should the player switch to this weapon?
+     *
+     * Pawn: `RG_CSGameRules_FShouldSwitchWeapon`
+     */
+    fShouldSwitchWeapon: FShouldSwitchWeaponEvent;
+    /**
+     * The game rules' think: every frame, the round's clock and win conditions checked.
+     *
+     * Pawn: `RG_CSGameRules_Think`
+     */
+    gameThink: GameThinkEvent;
     /** Pawn: `RH_GetEntityInit` */
     getEntityInit: GetEntityInitEvent;
     /** Pawn: `RG_GetForceCamera` */
@@ -4769,9 +7309,15 @@ export interface GameEventMap {
      * Pawn: `RG_CSGameRules_GetPlayerSpawnSpot`
      */
     getPlayerSpawnSpot: GetPlayerSpawnSpotEvent;
+    /**
+     * Create some gore and get rid of a monster's model.
+     *
+     * Pawn: `Ham_GibMonster`
+     */
+    gibMonster: GibMonsterEvent;
     /** Pawn: `RG_CGib_Spawn` */
     gibSpawn: GibSpawnEvent;
-    /** Pawn: `RG_CBasePlayer_GiveAmmo` */
+    /** Pawn: `RG_CBasePlayer_GiveAmmo`, `Ham_GiveAmmo` */
     giveAmmo: GiveAmmoEvent;
     /** Pawn: `RG_CSGameRules_GiveC4` */
     giveC4: GiveC4Event;
@@ -4788,11 +7334,35 @@ export interface GameEventMap {
     /** Pawn: `RG_CSGameRules_GoToIntermission` */
     goToIntermission: GoToIntermissionEvent;
     /**
+     * Returns a vector that tells the gun position.
+     *
+     * Pawn: `Ham_Player_GetGunPosition`
+     */
+    gunPosition: GunPositionEvent;
+    /**
+     * Returns if monster has alien gibs.
+     *
+     * Pawn: `Ham_HasAlienGibs`
+     */
+    hasAlienGibs: HasAlienGibsEvent;
+    /**
+     * Returns if monster has human gibs.
+     *
+     * Pawn: `Ham_HasHumanGibs`
+     */
+    hasHumanGibs: HasHumanGibsEvent;
+    /**
      * The game asks if an item is forbidden to a player. Return `true` to forbid it.
      *
      * Pawn: `RG_CBasePlayer_HasRestrictItem`
      */
     hasRestrictItem: HasRestrictItemEvent;
+    /**
+     * Whether or not the target is the same as the one passed.
+     *
+     * Pawn: `Ham_HasTarget`
+     */
+    hasTarget: HasTargetEvent;
     /**
      * The game shows a player a hint.
      *
@@ -4800,11 +7370,65 @@ export interface GameEventMap {
      */
     hintMessageEx: HintMessageExEvent;
     /**
+     * A weapon of one class is put away.
+     *
+     * Pawn: `Ham_Item_Holster`
+     */
+    holster: HolsterEvent;
+    /**
+     * Returns the illumination of the entity.
+     *
+     * Pawn: `Ham_Illumination`
+     */
+    illumination: IlluminationEvent;
+    /**
      * A player sends an impulse: `100` is the flashlight, `201` the spray.
      *
-     * Pawn: `RG_CBasePlayer_ImpulseCommands`
+     * Pawn: `RG_CBasePlayer_ImpulseCommands`, `Ham_Player_ImpulseCommands`
      */
     impulseCommands: ImpulseCommandsEvent;
+    /**
+     * Returns true if the passed ent is in the caller's forward view cone.
+     *
+     * Pawn: `Ham_FInViewCone`
+     */
+    inViewCone: InViewConeEvent;
+    /**
+     * Whether or not the entity is alive.
+     *
+     * Pawn: `Ham_IsAlive`
+     */
+    isAlive: IsAliveEvent;
+    /**
+     * Whether or not the player is a bot.
+     *
+     * Pawn: `Ham_CS_Player_IsBot`
+     */
+    isBot: IsBotEvent;
+    /**
+     * Whether or not the entity uses a BSP model.
+     *
+     * Pawn: `Ham_IsBSPModel`
+     */
+    isBspModel: IsBspModelEvent;
+    /**
+     * Whether or not the entity is in the world.
+     *
+     * Pawn: `Ham_IsInWorld`
+     */
+    isInWorld: IsInWorldEvent;
+    /**
+     * Whether or not the entity is moving.
+     *
+     * Pawn: `Ham_IsMoving`
+     */
+    isMoving: IsMovingEvent;
+    /**
+     * Whether or not the entity is a net client.
+     *
+     * Pawn: `Ham_IsNetClient`
+     */
+    isNetClient: IsNetClientEvent;
     /**
      * Called when a player hit to entity.
      *
@@ -4812,11 +7436,59 @@ export interface GameEventMap {
      */
     isPenetrableEntity: IsPenetrableEntityEvent;
     /**
+     * Whether or not the entity is a player.
+     *
+     * Pawn: `Ham_IsPlayer`
+     */
+    isPlayer: IsPlayerEvent;
+    /**
+     * Whether or not the entity is sneaking.
+     *
+     * Pawn: `Ham_IsSneaking`
+     */
+    isSneaking: IsSneakingEvent;
+    /**
+     * Returns whether an entity is activated.
+     *
+     * Pawn: `Ham_IsTriggered`
+     */
+    isTriggered: IsTriggeredEvent;
+    /**
+     * Whether or not the weapon is usable (has ammo, etc.)
+     *
+     * Pawn: `Ham_Weapon_IsUsable`
+     */
+    isUsable: IsUsableEvent;
+    /**
+     * -
+     *
+     * Pawn: `Ham_CS_Item_IsWeapon`
+     */
+    isWeapon: IsWeaponEvent;
+    /**
      * Called every client frame (PlayerPostThink) for the player's active weapon
      *
-     * Pawn: `RG_CBasePlayerWeapon_ItemPostFrame`
+     * Pawn: `RG_CBasePlayerWeapon_ItemPostFrame`, `Ham_Item_PostFrame`
      */
     itemPostFrame: ItemPostFrameEvent;
+    /**
+     * A weapon of one class is thought over in its owner's hands, every frame before his move.
+     *
+     * Pawn: `Ham_Item_PreFrame`
+     */
+    itemPreFrame: ItemPreFrameEvent;
+    /**
+     * Returns the item slot for the item.
+     *
+     * Pawn: `Ham_Item_ItemSlot`
+     */
+    itemSlot: ItemSlotEvent;
+    /**
+     * Updates item data for the client.
+     *
+     * Pawn: `Ham_Item_UpdateClientData`
+     */
+    itemUpdateClientData: ItemUpdateClientDataEvent;
     /**
      * Called when a client "thinks for the join status".
      *
@@ -4824,12 +7496,28 @@ export interface GameEventMap {
      */
     joiningThink: JoiningThinkEvent;
     /**
+     * A player jumps.
+     *
+     * Pawn: `RG_CBasePlayer_Jump`, `Ham_Player_Jump`
+     */
+    jump: JumpEvent;
+    /**
      * Called whenever player fires a weapon and shakes player screen (punchangles altering)
      *
      * Pawn: `RG_CBasePlayerWeapon_KickBack`
      */
     kickBack: KickBackEvent;
-    /** Pawn: `RG_CBasePlayer_Killed` */
+    /**
+     * Normally called when an item gets deleted.
+     *
+     * Pawn: `Ham_Item_Kill`
+     */
+    kill: KillEvent;
+    /**
+     * An entity dies - a player, or with `classname` a breakable, a hostage. `preventDefault()` keeps it alive.
+     *
+     * Pawn: `RG_CBasePlayer_Killed`, `Ham_Killed`
+     */
     killed: KilledEvent;
     /**
      * Called when a player is on a ladder.
@@ -4837,6 +7525,12 @@ export interface GameEventMap {
      * Pawn: `RG_PM_LadderMove`
      */
     ladderMove: LadderMoveEvent;
+    /**
+     * Function to find enemies or food by sight.
+     *
+     * Pawn: `Ham_Look`
+     */
+    look: LookEvent;
     /**
      * Makes a random player the bomber.
      *
@@ -4849,9 +7543,27 @@ export interface GameEventMap {
      * Pawn: `RG_CBasePlayer_MakeVIP`
      */
     makeVip: MakeVipEvent;
+    /**
+     * Gets the maximum speed for whenever a player has the item deployed.
+     *
+     * Pawn: `Ham_CS_Item_GetMaxSpeed`
+     */
+    maxSpeed: MaxSpeedEvent;
+    /**
+     * Called when monster has died.
+     *
+     * Pawn: `Ham_MonsterInitDead`
+     */
+    monsterInitDead: MonsterInitDeadEvent;
     /** Pawn: `RG_PM_Move` */
     move: MoveEvent;
-    /** Pawn: `RG_CBasePlayer_ObjectCaps` */
+    /**
+     * Returns the next target of this.
+     *
+     * Pawn: `Ham_GetNextTarget`
+     */
+    nextTarget: NextTargetEvent;
+    /** Pawn: `RG_CBasePlayer_ObjectCaps`, `Ham_ObjectCaps` */
     objectCaps: ObjectCapsEvent;
     /**
      * Called when a client attempt to find the next observer.
@@ -4869,6 +7581,12 @@ export interface GameEventMap {
     observerSetMode: ObserverSetModeEvent;
     /** Pawn: `RG_CBasePlayer_Observer_Think` */
     observerThink: ObserverThinkEvent;
+    /**
+     * Not entirely sure.
+     *
+     * Pawn: `Ham_OnControls`
+     */
+    onControls: OnControlsEvent;
     /**
      * The game tells the bots something happened.
      *
@@ -4888,11 +7606,23 @@ export interface GameEventMap {
      */
     onSpawnEquip: OnSpawnEquipEvent;
     /**
+     * Unsure.
+     *
+     * Pawn: `Ham_OverrideReset`
+     */
+    overrideReset: OverrideResetEvent;
+    /**
      * Called when a client emits a "pain sound" after received damage.
      *
      * Pawn: `RG_CBasePlayer_Pain`
      */
     pain: PainEvent;
+    /**
+     * Called when monster is about to emit pain sound.
+     *
+     * Pawn: `Ham_PainSound`
+     */
+    painSound: PainSoundEvent;
     /**
      * Called when a player plant's the bomb on the ground.
      *
@@ -4900,11 +7630,11 @@ export interface GameEventMap {
      */
     plantBomb: PlantBombEvent;
     /**
-     * Called whenever player emits an step sound
+     * Plays the weapon's empty sound.
      *
-     * Pawn: `RG_PM_PlayStepSound`
+     * Pawn: `Ham_Weapon_PlayEmptySound`
      */
-    playStepSound: PlayStepSoundEvent;
+    playEmptySound: PlayEmptySoundEvent;
     /**
      * A flashbang is blinding a player. `preventDefault()` keeps the player's eyes clear.
      *
@@ -4932,6 +7662,12 @@ export interface GameEventMap {
      */
     playerSpawn: PlayerSpawnEvent;
     /**
+     * Called whenever player emits an step sound
+     *
+     * Pawn: `RG_PM_PlayStepSound`
+     */
+    playStepSound: PlayStepSoundEvent;
+    /**
      * Called on every frame to check player ducking
      *
      * Pawn: `RG_PM_Duck`
@@ -4943,15 +7679,21 @@ export interface GameEventMap {
      * Pawn: `RG_PM_Jump`
      */
     pmJump: PmJumpEvent;
-    /** Pawn: `RG_CBasePlayer_PostThink` */
-    postThink: PostThinkEvent;
     /**
-     * A player's frame, before he moves: every frame for every player, hundreds of times a second. Keep the listener tiny.
+     * Returns true if the passed ent is in the caller's forward view cone.
      *
-     * Pawn: `RG_CBasePlayer_PreThink`
+     * Pawn: `Ham_FVecInViewCone`
      */
-    preThink: PreThinkEvent;
-    /** Pawn: `RG_CBasePlayer_Precache` */
+    pointInViewCone: PointInViewConeEvent;
+    /**
+     * Returns true if a line can be traced from the caller's eyes to given vector.
+     *
+     * Pawn: `Ham_FVecVisible`
+     */
+    pointVisible: PointVisibleEvent;
+    /** Pawn: `RG_CBasePlayer_PostThink`, `Ham_Player_PostThink` */
+    postThink: PostThinkEvent;
+    /** Pawn: `RG_CBasePlayer_Precache`, `Ham_Precache` */
     precache: PrecacheEvent;
     /**
      * Called when a generic resource is being added to generic precache list.
@@ -4972,6 +7714,24 @@ export interface GameEventMap {
      */
     precacheSoundI: PrecacheSoundIEvent;
     /**
+     * A player's frame, before he moves: every frame for every player, hundreds of times a second. Keep the listener tiny.
+     *
+     * Pawn: `RG_CBasePlayer_PreThink`, `Ham_Player_PreThink`
+     */
+    preThink: PreThinkEvent;
+    /**
+     * Returns the ammo index of the item.
+     *
+     * Pawn: `Ham_Item_PrimaryAmmoIndex`
+     */
+    primaryAmmoIndex: PrimaryAmmoIndexEvent;
+    /**
+     * A weapon of one class fires its primary attack - a shot, a knife's slash: `{ classname: "weapon_knife" }`. `preventDefault()` stops it.
+     *
+     * Pawn: `Ham_Weapon_PrimaryAttack`
+     */
+    primaryAttack: PrimaryAttackEvent;
+    /**
      * Called when a message is being sent to the server's console.
      *
      * Pawn: `RH_Con_Printf`
@@ -4983,11 +7743,29 @@ export interface GameEventMap {
      * Pawn: `RG_CBasePlayer_Radio`
      */
     radio: RadioEvent;
+    /**
+     * Whether or not the entity can reflect gauss shots..
+     *
+     * Pawn: `Ham_ReflectGauss`
+     */
+    reflectGauss: ReflectGaussEvent;
+    /**
+     * Checks relation ship between two monsters.
+     *
+     * Pawn: `Ham_IRelationship`
+     */
+    relationship: RelationshipEvent;
+    /**
+     * A weapon of one class reloads. `preventDefault()` stops it.
+     *
+     * Pawn: `Ham_Weapon_Reload`
+     */
+    reload: ReloadEvent;
     /** Pawn: `RG_CBasePlayer_RemoveAllItems` */
     removeAllItems: RemoveAllItemsEvent;
     /** Pawn: `RG_CSGameRules_RemoveGuns` */
     removeGuns: RemoveGunsEvent;
-    /** Pawn: `RG_CBasePlayer_RemovePlayerItem` */
+    /** Pawn: `RG_CBasePlayer_RemovePlayerItem`, `Ham_RemovePlayerItem` */
     removePlayerItem: RemovePlayerItemEvent;
     /**
      * Called when a player's remove protection.
@@ -4996,13 +7774,37 @@ export interface GameEventMap {
      */
     removeSpawnProtection: RemoveSpawnProtectionEvent;
     /**
+     * Prints debug information about monster to console. (state, activity, and other)
+     *
+     * Pawn: `Ham_ReportAIState`
+     */
+    reportAiState: ReportAiStateEvent;
+    /**
+     * Sets the weapon so that it can play empty sound again.
+     *
+     * Pawn: `Ham_Weapon_ResetEmptySound`
+     */
+    resetEmptySound: ResetEmptySoundEvent;
+    /**
      * The game resets a player's speed, on spawn and on every weapon switch. `preventDefault()` keeps the speed you set.
      *
-     * Pawn: `RG_CBasePlayer_ResetMaxSpeed`
+     * Pawn: `RG_CBasePlayer_ResetMaxSpeed`, `Ham_CS_Player_ResetMaxSpeed`
      */
     resetMaxSpeed: ResetMaxSpeedEvent;
     /** Pawn: `RG_CBaseAnimating_ResetSequenceInfo` */
     resetSequenceInfo: ResetSequenceInfoEvent;
+    /**
+     * Normally called when a map-based item respawns, such as a health kit or something.
+     *
+     * Pawn: `Ham_Respawn`
+     */
+    respawn: RespawnEvent;
+    /**
+     * This is called on a map reset for most map based entities.
+     *
+     * Pawn: `Ham_CS_Restart`
+     */
+    restart: RestartEvent;
     /**
      * A new round is starting.
      *
@@ -5010,13 +7812,31 @@ export interface GameEventMap {
      */
     restartRound: RestartRoundEvent;
     /**
+     * There is no more ammo for this gun, so switch to the next best one.
+     *
+     * Pawn: `Ham_Weapon_RetireWeapon`
+     */
+    retireWeapon: RetireWeaponEvent;
+    /**
      * The round is ending.
      *
      * Pawn: `RG_RoundEnd`
      */
     roundEnd: RoundEndEvent;
-    /** Pawn: `RG_CBasePlayer_RoundRespawn` */
+    /** Pawn: `RG_CBasePlayer_RoundRespawn`, `Ham_CS_RoundRespawn` */
     roundRespawn: RoundRespawnEvent;
+    /**
+     * Returns the secondary ammo index of the item.
+     *
+     * Pawn: `Ham_Item_SecondaryAmmoIndex`
+     */
+    secondaryAmmoIndex: SecondaryAmmoIndexEvent;
+    /**
+     * A weapon of one class fires its secondary attack - a knife's stab, a scope. `preventDefault()` stops it.
+     *
+     * Pawn: `Ham_Weapon_SecondaryAttack`
+     */
+    secondaryAttack: SecondaryAttackEvent;
     /**
      * The game tells everyone who killed whom.
      *
@@ -5030,9 +7850,15 @@ export interface GameEventMap {
      */
     sendResources: SendResourcesEvent;
     /**
+     * A player's chat message goes out to the players and to the server console. Assign `event.text` to change what they read, or call `preventDefault()` so nobody gets it.
+     *
+     * Pawn: `RG_SendSayMessage`
+     */
+    sendSayMessage: SendSayMessageEvent;
+    /**
      * Called whenever game sends an animation to his current holder (player)
      *
-     * Pawn: `RG_CBasePlayerWeapon_SendWeaponAnim`
+     * Pawn: `RG_CBasePlayerWeapon_SendWeaponAnim`, `Ham_CS_Weapon_SendWeaponAnim`
      */
     sendWeaponAnim: SendWeaponAnimEvent;
     /** Pawn: `RG_CSGameRules_ServerDeactivate` */
@@ -5050,11 +7876,35 @@ export interface GameEventMap {
      */
     setModel: SetModelEvent;
     /**
+     * Usually called after the engine call with the same name.
+     *
+     * Pawn: `Ham_SetObjectCollisionBox`
+     */
+    setObjectCollisionBox: SetObjectCollisionBoxEvent;
+    /**
      * Called when a player's set protection.
      *
      * Pawn: `RG_CBasePlayer_SetSpawnProtection`
      */
     setSpawnProtection: SetSpawnProtectionEvent;
+    /**
+     * Sets the toggle state of the entity.
+     *
+     * Pawn: `Ham_SetToggleState`
+     */
+    setToggleState: SetToggleStateEvent;
+    /**
+     * Whether or not the player should fade on death.
+     *
+     * Pawn: `Ham_Player_ShouldFadeOnDeath`
+     */
+    shouldFadeOnDeath: ShouldFadeOnDeathEvent;
+    /**
+     * Whether or not the weapon should idle.
+     *
+     * Pawn: `Ham_Weapon_ShouldWeaponIdle`
+     */
+    shouldWeaponIdle: ShouldWeaponIdleEvent;
     /**
      * The game shows a player a menu.
      *
@@ -5067,6 +7917,12 @@ export interface GameEventMap {
      * Pawn: `RG_ShowVGUIMenu`
      */
     showVguiMenu: ShowVguiMenuEvent;
+    /**
+     * An entity spawns - a player at the start of his life, a weapon, anything the map or a plugin makes. Without `classname` it is a player's; `{ classname: "weaponbox" }` hears that class's.
+     *
+     * Pawn: `RG_CBasePlayer_Spawn`, `Ham_Spawn`
+     */
+    spawn: SpawnEvent;
     /** Pawn: `RG_SpawnHeadGib` */
     spawnHeadGib: SpawnHeadGibEvent;
     /** Pawn: `RG_SpawnRandomGibs` */
@@ -5084,11 +7940,23 @@ export interface GameEventMap {
      */
     startObserver: StartObserverEvent;
     /**
+     * Not entirely sure what this does.
+     *
+     * Pawn: `Ham_StartSneaking`
+     */
+    startSneaking: StartSneakingEvent;
+    /**
      * A sound is about to play. Assign `event.sample` to change it, or call `preventDefault()` to keep it silent.
      *
      * Pawn: `RH_SV_StartSound`
      */
     startSound: StartSoundEvent;
+    /**
+     * Not entirely sure what this does.
+     *
+     * Pawn: `Ham_StopSneaking`
+     */
+    stopSneaking: StopSneakingEvent;
     /**
      * Called when a player goes switch to opposite team after auto-teambalance or caused by 3rd-party things.
      *
@@ -5098,10 +7966,16 @@ export interface GameEventMap {
     /**
      * A player is about to take damage. Assign `event.damage` to change how much, or call `preventDefault()` to take none.
      *
-     * Pawn: `RG_CBasePlayer_TakeDamage`
+     * Pawn: `RG_CBasePlayer_TakeDamage`, `Ham_TakeDamage`
      */
     takeDamage: TakeDamageEvent;
-    /** Pawn: `RG_CBasePlayer_TakeHealth` */
+    /**
+     * A hurt player is pushed back and slowed down by the hit, after the damage. Assign `event.knockbackForce` or `event.velModifier` to change how much, or call `preventDefault()` for neither.
+     *
+     * Pawn: `RG_CBasePlayer_TakeDamageImpulse`
+     */
+    takeDamageImpulse: TakeDamageImpulseEvent;
+    /** Pawn: `RG_CBasePlayer_TakeHealth`, `Ham_TakeHealth` */
     takeHealth: TakeHealthEvent;
     /**
      * Called each time player tries to join a team to ensure availability
@@ -5110,15 +7984,21 @@ export interface GameEventMap {
      */
     teamFull: TeamFullEvent;
     /**
+     * Get the entity's team id.
+     *
+     * Pawn: `Ham_TeamId`
+     */
+    teamId: TeamIdEvent;
+    /**
      * Called each time player tries to join a team to ensure a fair distribution of players (based on mp_limitteams cvar)
      *
      * Pawn: `RG_CSGameRules_TeamStacked`
      */
     teamStacked: TeamStackedEvent;
     /**
-     * Called every server frame to process game rules
+     * An entity of one class thinks - when its `nextThink` comes: `{ classname: "info_target" }`.
      *
-     * Pawn: `RG_CSGameRules_Think`
+     * Pawn: `Ham_Think`
      */
     think: ThinkEvent;
     /**
@@ -5146,11 +8026,29 @@ export interface GameEventMap {
      */
     throwSmokeGrenade: ThrowSmokeGrenadeEvent;
     /**
+     * Returns the toggle state of the entity.
+     *
+     * Pawn: `Ham_GetToggleState`
+     */
+    toggleState: ToggleStateEvent;
+    /**
+     * Whether or not the player is touching a weapon on the ground.
+     *
+     * Pawn: `Ham_CS_Player_OnTouchingWeapon`
+     */
+    touchingWeapon: TouchingWeaponEvent;
+    /**
      * A shot or a knife hit a player, before the damage. `preventDefault()` makes it miss.
      *
-     * Pawn: `RG_CBasePlayer_TraceAttack`
+     * Pawn: `RG_CBasePlayer_TraceAttack`, `Ham_TraceAttack`
      */
     traceAttack: TraceAttackEvent;
+    /**
+     * Traces where blood should appear.
+     *
+     * Pawn: `Ham_TraceBleed`
+     */
+    traceBleed: TraceBleedEvent;
     /** Pawn: `RG_RadiusFlash_TraceLine` */
     traceLine: TraceLineEvent;
     /**
@@ -5159,14 +8057,50 @@ export interface GameEventMap {
      * Pawn: `RG_PM_UnDuck`
      */
     unDuck: UnDuckEvent;
-    /** Pawn: `RG_CBasePlayer_UpdateClientData` */
+    /** Pawn: `RG_CBasePlayer_UpdateClientData`, `Ham_Player_UpdateClientData` */
     updateClientData: UpdateClientDataEvent;
+    /**
+     * Updates the HUD info about this item.
+     *
+     * Pawn: `Ham_Item_UpdateItemInfo`
+     */
+    updateItemInfo: UpdateItemInfoEvent;
+    /**
+     * Used in Half-Life to update a monster's owner.
+     *
+     * Pawn: `Ham_UpdateOwner`
+     */
+    updateOwner: UpdateOwnerEvent;
+    /**
+     * The game updates a player's status bar: the name and health of the player under the crosshair, at the bottom of the screen. `preventDefault()` leaves it as it is.
+     *
+     * Pawn: `RG_CBasePlayer_UpdateStatusBar`
+     */
+    updateStatusBar: UpdateStatusBarEvent;
+    /**
+     * An entity of one class is used - a button pressed, a door opened. `preventDefault()` keeps it as it is.
+     *
+     * Pawn: `Ham_Use`
+     */
+    use: UseEvent;
+    /**
+     * Unsure.
+     *
+     * Pawn: `Ham_Weapon_UseDecrement`
+     */
+    useDecrement: UseDecrementEvent;
     /**
      * Called when a player press use and if a suitable candidate is not found.
      *
      * Pawn: `RG_CBasePlayer_UseEmpty`
      */
     useEmpty: UseEmptyEvent;
+    /**
+     * Returns true if a line can be traced from the caller's eyes to the target.
+     *
+     * Pawn: `Ham_FVisible`
+     */
+    visible: VisibleEvent;
     /** Pawn: `RG_CGib_WaitTillLand` */
     waitTillLand: WaitTillLandEvent;
     /**
@@ -5176,49 +8110,75 @@ export interface GameEventMap {
      */
     waterJump: WaterJumpEvent;
     /**
+     * A weapon of one class idles, playing its idle animation.
+     *
+     * Pawn: `Ham_Weapon_WeaponIdle`
+     */
+    weaponIdle: WeaponIdleEvent;
+    /**
      * Receiver is player index or 0 when update will be sended to all.
      *
      * Pawn: `RH_SV_WriteFullClientUpdate`
      */
     writeFullClientUpdate: WriteFullClientUpdateEvent;
+    /**
+     * An entity touched another: `event.toucher` moved into `event.touched`. Pass the classes it is about as the third argument - `{ toucher: "player", touched: "player" }` - so only those touches reach the plugin; `event.preventDefault()` blocks the touch.
+     *
+     * Pawn: `register_touch`
+     */
+    touch: TouchEvent;
 }
 /**
- * What a listener may return for each chain: the chain's answer type, or
+ * What a listener may return for each event: the game's answer type, or
  * void for one that answers nothing. Only the editor reads this - it is the
  * constraint on a listener's return type.
  */
 export interface GameAnswerMap {
+    activate: void;
     activateServer: void;
     addAccount: void;
+    addDuplicate: boolean;
     addMultiDamage: void;
     addPlayerItem: number;
     addPoints: void;
     addPointsToTeam: void;
     addResource: void;
+    addToPlayer: boolean;
+    addWeapon: boolean;
     airAccelerate: void;
     airMove: void;
     alloc: Entity;
     allowPhysent: boolean;
     applyMultiDamage: void;
+    attachToPlayer: void;
+    autoaimVector: Vector;
     balanceTeams: void;
-    basePlayerDuck: void;
-    basePlayerJump: void;
-    basePlayerSpawn: void;
+    becomeDead: void;
+    becomeProne: boolean;
+    bestVisibleEnemy: Entity;
     blind: void;
+    blocked: void;
+    bloodColor: number;
+    bodyTarget: Vector;
     bounceGibTouch: void;
     buyGunAmmo: boolean;
     buyItem: void;
     buyWeaponByWeaponId: Entity;
     canDeploy: number;
+    canDrop: boolean;
     canHavePlayerItem: number;
+    canHolster: boolean;
     canPlayerHearPlayer: boolean;
     canSwitchTeam: boolean;
+    center: Vector;
     changeLevel: void;
+    changeYaw: number;
     checkMapConditions: void;
     checkTimeBasedDamage: void;
     checkUserInfo: number;
     checkWaterJump: void;
     checkWinConditions: void;
+    childDeathNotice: void;
     chooseAppearance: void;
     chooseTeam: number;
     classify: number;
@@ -5229,7 +8189,9 @@ export interface GameAnswerMap {
     clientUserInfoChanged: void;
     connectClient: void;
     createWeaponBox: Entity;
+    damageDecal: number;
     deadPlayerWeapons: number;
+    deathActivity: number;
     deathNotice: void;
     deathSound: void;
     defaultDeploy: number;
@@ -5237,12 +8199,17 @@ export interface GameAnswerMap {
     defaultShotgunReload: boolean;
     defuseBombEnd: void;
     defuseBombStart: void;
+    delay: number;
+    deploy: boolean;
     directSet: void;
     disappear: void;
+    drop: void;
     dropClient: void;
     dropIdlePlayer: void;
     dropPlayerItem: Entity;
     dropShield: Entity;
+    duck: void;
+    earPosition: Vector;
     emitPings: void;
     entSelectSpawnPoint: Entity;
     executeServerStringCmd: void;
@@ -5250,19 +8217,25 @@ export interface GameAnswerMap {
     explodeFlashbang: void;
     explodeHeGrenade: void;
     explodeSmokeGrenade: void;
-    fPlayerCanRespawn: number;
-    fPlayerCanTakeDamage: number;
-    fShouldSwitchWeapon: number;
+    extractAmmo: number;
+    extractClipAmmo: number;
+    eyePosition: Vector;
+    fadeMonster: void;
     fireBuckshots: void;
     fireBullets: void;
     fireBullets3: void;
     flPlayerFallDamage: number;
+    fPlayerCanRespawn: number;
+    fPlayerCanTakeDamage: number;
     free: void;
+    fShouldSwitchWeapon: number;
+    gameThink: void;
     getEntityInit: void;
     getForceCamera: number;
     getIntoGame: boolean;
     getNextBestWeapon: number;
     getPlayerSpawnSpot: Entity;
+    gibMonster: void;
     gibSpawn: void;
     giveAmmo: number;
     giveC4: Player;
@@ -5270,89 +8243,159 @@ export interface GameAnswerMap {
     giveNamedItem: Entity;
     giveShield: void;
     goToIntermission: void;
+    gunPosition: Vector;
+    hasAlienGibs: boolean;
+    hasHumanGibs: boolean;
     hasRestrictItem: boolean;
+    hasTarget: boolean;
     hintMessageEx: boolean;
+    holster: void;
+    illumination: number;
     impulseCommands: void;
+    inViewCone: boolean;
+    isAlive: boolean;
+    isBot: boolean;
+    isBspModel: boolean;
+    isInWorld: boolean;
+    isMoving: boolean;
+    isNetClient: boolean;
     isPenetrableEntity: boolean;
+    isPlayer: boolean;
+    isSneaking: boolean;
+    isTriggered: boolean;
+    isUsable: boolean;
+    isWeapon: boolean;
     itemPostFrame: void;
+    itemPreFrame: void;
+    itemSlot: number;
+    itemUpdateClientData: number;
     joiningThink: void;
+    jump: void;
     kickBack: void;
+    kill: void;
     killed: void;
     ladderMove: void;
+    look: void;
     makeBomber: boolean;
     makeVip: void;
+    maxSpeed: number;
+    monsterInitDead: void;
     move: void;
+    nextTarget: Entity;
     objectCaps: number;
     observerFindNextPlayer: void;
     observerIsValidTarget: Player;
     observerSetMode: void;
     observerThink: void;
+    onControls: boolean;
     onEvent: void;
     onRoundFreezeEnd: void;
     onSpawnEquip: void;
+    overrideReset: void;
     pain: void;
+    painSound: void;
     plantBomb: Entity;
-    playStepSound: void;
+    playEmptySound: boolean;
     playerBlind: void;
     playerDeathThink: void;
     playerGotWeapon: void;
     playerKilled: void;
     playerSpawn: void;
+    playStepSound: void;
     pmDuck: void;
     pmJump: void;
+    pointInViewCone: boolean;
+    pointVisible: boolean;
     postThink: void;
-    preThink: void;
     precache: void;
     precacheGenericI: number;
     precacheModelI: number;
     precacheSoundI: number;
+    preThink: void;
+    primaryAmmoIndex: number;
+    primaryAttack: void;
     printf: void;
     radio: void;
+    reflectGauss: boolean;
+    relationship: number;
+    reload: void;
     removeAllItems: void;
     removeGuns: void;
     removePlayerItem: number;
     removeSpawnProtection: void;
+    reportAiState: void;
+    resetEmptySound: void;
     resetMaxSpeed: void;
     resetSequenceInfo: void;
+    respawn: Entity;
+    restart: void;
     restartRound: void;
+    retireWeapon: void;
     roundEnd: boolean;
     roundRespawn: void;
+    secondaryAmmoIndex: number;
+    secondaryAttack: void;
     sendDeathMessage: void;
     sendResources: void;
+    sendSayMessage: void;
     sendWeaponAnim: void;
     serverDeactivate: void;
     setAnimation: void;
     setClientUserInfoModel: void;
     setClientUserInfoName: boolean;
     setModel: void;
+    setObjectCollisionBox: void;
     setSpawnProtection: void;
+    setToggleState: void;
+    shouldFadeOnDeath: boolean;
+    shouldWeaponIdle: boolean;
     showMenu: void;
     showVguiMenu: void;
+    spawn: void;
     spawnHeadGib: Entity;
     spawnRandomGibs: void;
     startDeathCam: void;
     startObserver: void;
+    startSneaking: void;
     startSound: void;
+    stopSneaking: void;
     switchTeam: void;
     takeDamage: number;
+    takeDamageImpulse: void;
     takeHealth: number;
     teamFull: boolean;
+    teamId: string;
     teamStacked: boolean;
     think: void;
     throwFlashbang: Entity;
     throwGrenade: Entity;
     throwHeGrenade: Entity;
     throwSmokeGrenade: Entity;
+    toggleState: number;
+    touchingWeapon: void;
     traceAttack: void;
+    traceBleed: void;
     traceLine: void;
     unDuck: void;
     updateClientData: void;
+    updateItemInfo: void;
+    updateOwner: void;
+    updateStatusBar: void;
+    use: void;
+    useDecrement: boolean;
     useEmpty: void;
+    visible: boolean;
     waitTillLand: void;
     waterJump: void;
+    weaponIdle: void;
     writeFullClientUpdate: void;
+    touch: void;
 }
-/** Adds a listener for the chain whose event is E - game.addEventListener's hood. */
-export declare function addGameListener<E, R>(listener: (event: E) => R, post: bool): void;
+/**
+ * Adds a listener for the event E - game.addEventListener's hood. `classname`
+ * picks the class an event of Ham Sandwich's is listened for on; "" is the
+ * reapi chain's own.
+ */
+export declare function addGameListener<E, R>(listener: (event: E) => R, post: bool, classname: string): void;
 /** Takes a listener off again - game.removeEventListener's hood. */
-export declare function removeGameListener<E, R>(listener: (event: E) => R, post: bool): void;
+export declare function removeGameListener<E, R>(listener: (event: E) => R, post: bool, classname: string): void;

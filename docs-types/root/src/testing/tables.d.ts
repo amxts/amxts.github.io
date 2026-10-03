@@ -10,6 +10,8 @@ export interface HookShape {
     texts: Set<number>;
     /** The ATYPE_* the chain answers with, or -1 for a chain that answers nothing. */
     answer: number;
+    /** The Ham_* function a Ham Sandwich hook of the event is on, when it has one. */
+    ham?: number;
 }
 export interface Tables {
     /** Every `export const X: i32 = N` in as/constants.ts. */
@@ -24,6 +26,8 @@ export interface Tables {
     floatFields: Set<number>;
     /** Entvars and members that hold three floats. */
     vectorFields: Set<number>;
+    /** Entvars and members that hold text: var_classname, m_szTeamName. */
+    stringFields: Set<number>;
     /** Members read with an element index: m_rgpPlayerItems. */
     arrayFields: Set<number>;
 }

@@ -1,5 +1,5 @@
 /// <reference path="../as-types.d.ts" />
-import { Player } from "./facade";
+import { ActionOptions, Player, RoundWinner, SoundOptions, UseType, WeaponName } from "./facade";
 import { Vector } from "./vector";
 import { EntityFlag, Effect, Button, HideHud, Damage, PhysicsFlag, WeaponState } from "./flags";
 /**
@@ -163,6 +163,14 @@ export type MonsterState = "none" | "idle" | "combat" | "alert" | "hunt" | "pron
  */
 export type MusicState = "silent" | "calm" | "intense" | "unknown";
 /**
+ * Whether the map has a VIP safety zone - `game.mapHasVipSafetyZone`.
+ *
+ * "unknown" - a number no name stands for (a Pawn plugin or a mod wrote it); writing "unknown" leaves the field as it is.
+ *
+ * Pawn: `MAP_HAVE_VIP_SAFETYZONE_*`
+ */
+export type VipSafetyZone = "notChecked" | "yes" | "no" | "unknown";
+/**
  * Which entities `Entity.findAll` returns. Every field is optional, and an
  * entity has to match all that are given:
  * `Entity.findAll({ classname: "info_target", near: player.origin, radius: 200 })`.
@@ -197,6 +205,24 @@ export declare class Entity {
      * where nothing is holding them.
      */
     remove(): void;
+    /**
+     * `true` while the entity is in the world: `false` once the engine has freed it (`remove()` has it freed at the end of the frame), for a player who has left, and for `0`, no entity. An id that came from an event or a hook may name an entity that is gone.
+     *
+     * Pawn: `is_valid_ent`, `is_entity`
+     */
+    get exists(): bool;
+    /**
+     * Sets the entity's bounding box, the corners relative to its `origin`: `box.setSize([-16, -16, 0], [16, 16, 72])`. `mins`, `maxs`, `size` and where it collides follow. A box whose `mins` is above its `maxs` on any axis is refused, with an error in the console.
+     *
+     * Pawn: `entity_set_size`
+     */
+    setSize(mins: number[], maxs: number[]): void;
+    /**
+     * Plays a sound from the entity, heard by everyone near and fading with distance: `player.emitSound("myplugin/hit.wav")`. The path is under `sound/`, as `server.precache` takes it; `options` set the channel, the volume, the attenuation and the pitch.
+     *
+     * Pawn: `emit_sound`, `rh_emit_sound2`
+     */
+    emitSound(sample: string, options?: SoundOptions): void;
     /**
      * The entity's class name, e.g. `"player"`, `"weaponbox"`, `"grenade"`, `"func_door"`.
      *
@@ -352,7 +378,7 @@ export declare class Entity {
     get modelIndex(): number;
     set modelIndex(value: number);
     /**
-     * The entity's model path, e.g. `"models/w_c4.mdl"`; a map brush has its number, e.g. `"*12"`. Writing it changes only the text; the native `entity_set_model` also sets `modelIndex` and the `size`.
+     * The entity's model path, e.g. `"models/w_c4.mdl"`; a map brush has its number, e.g. `"*12"`. Writing it sets the model as the game does: `modelIndex` and the size follow. The model has to be precached (`server.precache`), or the server stops.
      *
      * Pawn: `pev->model`
      */
@@ -387,14 +413,14 @@ export declare class Entity {
     get absMax(): Vector;
     set absMax(value: number[]);
     /**
-     * The low corner of the entity's bounding box, relative to `origin`: `(-16, -16, -36)` for a standing player. Set it with the native `entity_set_size`, so `size` and `absMin` follow.
+     * The low corner of the entity's bounding box, relative to `origin`: `(-16, -16, -36)` for a standing player. Set it with `setSize(mins, maxs)`, so `size` and `absMin` follow.
      *
      * Pawn: `pev->mins`
      */
     get mins(): Vector;
     set mins(value: number[]);
     /**
-     * The high corner of the entity's bounding box, relative to `origin`: `(16, 16, 36)` for a standing player. Set it with the native `entity_set_size`, so `size` and `absMax` follow.
+     * The high corner of the entity's bounding box, relative to `origin`: `(16, 16, 36)` for a standing player. Set it with `setSize(mins, maxs)`, so `size` and `absMax` follow.
      *
      * Pawn: `pev->maxs`
      */
@@ -547,6 +573,13 @@ export declare class Entity {
      */
     get renderFx(): RenderFx;
     set renderFx(value: RenderFx);
+    /**
+     * The entity's health: a breakable breaks and a hostage dies when damage takes it to `0` or below, e.g. `box.health = 50`. A player's is his own property, a whole number that kills him at `0`.
+     *
+     * Pawn: `pev->health`
+     */
+    get health(): number;
+    set health(value: number);
     /**
      * The player's weapons, as a list of weapon kinds, e.g. [`"knife"`, `"usp"`]. Writing it does not give or take weapons, and keeps the suit the HUD needs.
      *
@@ -828,7 +861,7 @@ export declare class Entity {
     get maxSpeed(): number;
     set maxSpeed(value: number);
     /**
-     * The player's field of view in degrees, `90` is normal. The game keeps its own copy for the zoom and writes it back here when the zoom changes.
+     * The entity's field of view in degrees. On a player `fov` is his own, which the game zooms by and writes here too.
      *
      * Pawn: `pev->fov`
      */
@@ -1023,6 +1056,54 @@ export declare class Entity {
      */
     get euser4(): number;
     set euser4(value: number);
+    /**
+     * Runs the entity's spawn, as the game does when it makes one: an entity made with `Entity.create` is set up by it.
+     *
+     * Pawn: `ExecuteHamB(Ham_Spawn, ...)`, `ExecuteHam`
+     */
+    spawn(options?: ActionOptions): void;
+    /**
+     * Activates the entity, as the game does once the map has loaded.
+     *
+     * Pawn: `ExecuteHamB(Ham_Activate, ...)`, `ExecuteHam`
+     */
+    activate(options?: ActionOptions): void;
+    /**
+     * Heals the entity as the game does, up to its maximum: `true` when it took any.
+     *
+     * Pawn: `ExecuteHamB(Ham_TakeHealth, ...)`, `ExecuteHam`
+     */
+    takeHealth(health: number, damageType: Damage[], options?: ActionOptions): bool;
+    /**
+     * Kills the entity as the game does, with the killer it names; `gib` is `0` for the usual death, `1` never torn apart, `2` always.
+     *
+     * Pawn: `ExecuteHamB(Ham_Killed, ...)`, `ExecuteHam`
+     */
+    killed(attacker: Entity, gib: number, options?: ActionOptions): void;
+    /**
+     * Runs the entity's think now, without waiting for its `nextThink`.
+     *
+     * Pawn: `ExecuteHamB(Ham_Think, ...)`, `ExecuteHam`
+     */
+    think(options?: ActionOptions): void;
+    /**
+     * Uses the entity - a button pressed, a door opened - as `activator` would, through `caller`.
+     *
+     * Pawn: `ExecuteHamB(Ham_Use, ...)`, `ExecuteHam`
+     */
+    use(caller: Entity, activator: Entity, useType: UseType, value: number, options?: ActionOptions): void;
+    /**
+     * Tells a moving entity - a door, a train - that `other` is in its way.
+     *
+     * Pawn: `ExecuteHamB(Ham_Blocked, ...)`, `ExecuteHam`
+     */
+    blocked(other: Entity, options?: ActionOptions): void;
+    /**
+     * Puts the entity back as a new round finds it.
+     *
+     * Pawn: `ExecuteHamB(Ham_CS_Restart, ...)`, `ExecuteHam`
+     */
+    restart(options?: ActionOptions): void;
 }
 /** A player's members - CBaseEntity up to CBasePlayer - on top of its entvars. */
 export declare class PlayerFields extends Entity {
@@ -1776,6 +1857,13 @@ export declare class PlayerFields extends Entity {
     get hasChangedName(): boolean;
     set hasChangedName(value: boolean);
     /**
+     * The name the player takes at his next respawn: a name he changed while dead waits here.
+     *
+     * Pawn: `CBasePlayer::m_szNewName`
+     */
+    get newName(): string;
+    set newName(value: string);
+    /**
      * `true` while the player defuses the bomb.
      *
      * Pawn: `CBasePlayer::m_bIsDefusing`
@@ -1979,6 +2067,13 @@ export declare class PlayerFields extends Entity {
     get igeigerRangePrev(): number;
     set igeigerRangePrev(value: number);
     /**
+     * The name of the texture the player last stood on, which his footsteps sound by.
+     *
+     * Pawn: `CBasePlayer::m_szTextureName`
+     */
+    get textureName(): string;
+    set textureName(value: string);
+    /**
      * The type of texture under the player, for step sounds. CS does not use the field.
      *
      * Pawn: `CBasePlayer::m_chTextureType`
@@ -2105,6 +2200,13 @@ export declare class PlayerFields extends Entity {
     get clientHideHud(): HideHud[];
     set clientHideHud(values: HideHud[]);
     /**
+     * The player's field of view in degrees: `90` is normal, `40` and `10` through a sniper scope. Setting it widens or narrows his view - `110` shows more - until the game sets it again: at spawn, when he draws a weapon, when he zooms.
+     *
+     * Pawn: `CBasePlayer::m_iFOV`
+     */
+    get fov(): number;
+    set fov(value: number);
+    /**
      * The field of view last sent to the player; when the game's own copy differs, the game sends that one.
      *
      * Pawn: `CBasePlayer::m_iClientFOV`
@@ -2172,6 +2274,13 @@ export declare class PlayerFields extends Entity {
     get statusBarDisappearDelay(): number;
     set statusBarDisappearDelay(value: number);
     /**
+     * The status bar text the game last sent the player - the line that names whom he aims at, as a format his client fills in.
+     *
+     * Pawn: `CBasePlayer::m_SbarString0`
+     */
+    get sbarString0(): string;
+    set sbarString0(value: string);
+    /**
      * The horizontal aim assist correction last sent to the player's client.
      *
      * Pawn: `CBasePlayer::m_lastx`
@@ -2200,12 +2309,26 @@ export declare class PlayerFields extends Entity {
     get nextDecalTime(): number;
     set nextDecalTime(value: number);
     /**
+     * A team name the game keeps for Half-Life's team play; Counter-Strike leaves it empty. The player's team is `player.team`.
+     *
+     * Pawn: `CBasePlayer::m_szTeamName`
+     */
+    get teamName(): string;
+    set teamName(value: string);
+    /**
      * The index of the player's own model; the game sets `modelIndex` back to it, at spawn for one.
      *
      * Pawn: `CBasePlayer::m_modelIndexPlayer`
      */
     get modelIndexPlayer(): number;
     set modelIndexPlayer(value: number);
+    /**
+     * The animation set the player's model holds his weapon with, e.g. `"knife"`, `"rifle"`, `"c4"`.
+     *
+     * Pawn: `CBasePlayer::m_szAnimExtention`
+     */
+    get animExtension(): string;
+    set animExtension(value: string);
     /**
      * The legs' animation the game picked for the player this frame.
      *
@@ -2354,6 +2477,20 @@ export declare class PlayerFields extends Entity {
     get allowAutoFollowTime(): number;
     set allowAutoFollowTime(value: number);
     /**
+     * The player's autobuy list: the items his client sent for `autobuy`.
+     *
+     * Pawn: `CBasePlayer::m_autoBuyString`
+     */
+    get autoBuyString(): string;
+    set autoBuyString(value: string);
+    /**
+     * The player's rebuy list: the items his client sent for `rebuy`.
+     *
+     * Pawn: `CBasePlayer::m_rebuyString`
+     */
+    get rebuyString(): string;
+    set rebuyString(value: string);
+    /**
      * `true` while the rebuy command is buying the player's last equipment.
      *
      * Pawn: `CBasePlayer::m_bIsInRebuy`
@@ -2367,6 +2504,13 @@ export declare class PlayerFields extends Entity {
      */
     get lastUpdateTime(): number;
     set lastUpdateTime(value: number);
+    /**
+     * The name of the place on the map the player was last in, which the radio and team chat name, e.g. `"BombsiteA"`.
+     *
+     * Pawn: `CBasePlayer::m_lastLocation`
+     */
+    get lastLocation(): string;
+    set lastLocation(value: string);
     /**
      * The game time when the player's progress bar (defusing, planting) started; `0` for none.
      *
@@ -2445,18 +2589,660 @@ export declare class PlayerFields extends Entity {
     get nextAccountHealthUpdate(): number;
     set nextAccountHealthUpdate(value: number);
     /**
-     * The player's spectator mode, one of: `"none"` - not spectating; `"chaseLocked"` - a camera behind the target that turns with him; `"chaseFree"` - a camera behind the target that turns freely; `"roaming"` - flies freely; `"inEye"` - first person, through the target's eyes; `"mapFree"` - the overview map, moving freely; `"mapChase"` - the overview map, following the target. The game sets it; the target is iuser2.
+     * The player's spectator mode, one of: `"none"` - not spectating; `"chaseLocked"` - a camera behind the target that turns with him; `"chaseFree"` - a camera behind the target that turns freely; `"roaming"` - flies freely; `"inEye"` - first person, through the target's eyes; `"mapFree"` - the overview map, moving freely; `"mapChase"` - the overview map, following the target. Setting a mode switches his camera as the game does when he picks it: onto someone he may watch, `"roaming"` when there is nobody; the target is iuser2. Setting `"none"` only clears the field: the game ends spectating when he spawns.
      *
-     * Pawn: `pev->iuser1`, `OBS_*`
+     * Pawn: `pev->iuser1`, `OBS_*`, `rg_set_observer_mode`
      */
     get observerMode(): ObserverMode;
     set observerMode(value: ObserverMode);
+    /**
+     * Adds points to the player's score, as a kill does; `allowNegative` lets the score go below `0`.
+     *
+     * Pawn: `ExecuteHamB(Ham_AddPoints, ...)`, `ExecuteHam`
+     */
+    addPoints(points: number, allowNegative: boolean, options?: ActionOptions): void;
+    /**
+     * Adds points to the scores of the player's team, as the game does for an objective.
+     *
+     * Pawn: `ExecuteHamB(Ham_AddPointsToTeam, ...)`, `ExecuteHam`
+     */
+    addPointsToTeam(points: number, allowNegative: boolean, options?: ActionOptions): void;
+    /**
+     * Puts a weapon entity into the player's inventory; `true` when it went in. To give a weapon by name, `player.give`.
+     *
+     * Pawn: `ExecuteHamB(Ham_AddPlayerItem, ...)`, `ExecuteHam`
+     */
+    addPlayerItem(item: Weapon, options?: ActionOptions): bool;
+    /**
+     * Takes a weapon entity out of the player's inventory, leaving the entity; `true` when it was there.
+     *
+     * Pawn: `ExecuteHamB(Ham_RemovePlayerItem, ...)`, `ExecuteHam`
+     */
+    removePlayerItem(item: Weapon, options?: ActionOptions): bool;
+    /**
+     * Gives the player ammo of a kind by the game's name, e.g. `"buckshot"`, up to `max`; returns the ammo's index, `-1` when none went in.
+     *
+     * Pawn: `ExecuteHamB(Ham_GiveAmmo, ...)`, `ExecuteHam`
+     */
+    giveAmmo(amount: number, name: string, max: number, options?: ActionOptions): number;
+    /**
+     * Runs the game's jump for the player, as when he presses jump.
+     *
+     * Pawn: `ExecuteHamB(Ham_Player_Jump, ...)`, `ExecuteHam`
+     */
+    jump(options?: ActionOptions): void;
+    /**
+     * Runs the game's duck for the player, as when he holds duck.
+     *
+     * Pawn: `ExecuteHamB(Ham_Player_Duck, ...)`, `ExecuteHam`
+     */
+    duck(options?: ActionOptions): void;
     /**
      * Every weapon the player carries: the first item of each of the six
      * slots (m_rgpPlayerItems), and the ones chained behind it (m_pNext) -
      * the grenades all share slot four.
      */
     get items(): Weapon[];
+}
+/**
+ * The game rules' members, the fields of `game`: `game.freezePeriod`,
+ * `game.numCtWins`. The facade's Game extends this.
+ */
+export declare class GameFields {
+    /**
+     * `true` during the freeze time at a round's start, while players cannot move or shoot. Writing `false` ends it for the game's own checks.
+     *
+     * Pawn: `CSGameRules::m_bFreezePeriod`
+     */
+    get freezePeriod(): boolean;
+    set freezePeriod(value: boolean);
+    /**
+     * `true` while the bomb lies on the ground, dropped by its carrier.
+     *
+     * Pawn: `CSGameRules::m_bBombDropped`
+     */
+    get bombDropped(): boolean;
+    set bombDropped(value: boolean);
+    /**
+     * The game's name in the server browser, e.g. `"Counter-Strike"`.
+     *
+     * Pawn: `CSGameRules::m_GameDesc`
+     */
+    get gameDesc(): string;
+    set gameDesc(value: string);
+    /**
+     * The number of the user message that tells a player whose voice he hears.
+     *
+     * Pawn: `CSGameRules::m_msgPlayerVoiceMask`
+     */
+    get msgPlayerVoiceMask(): number;
+    set msgPlayerVoiceMask(value: number);
+    /**
+     * The number of the user message that asks a player's game for its voice settings.
+     *
+     * Pawn: `CSGameRules::m_msgRequestState`
+     */
+    get msgRequestState(): number;
+    set msgRequestState(value: number);
+    /**
+     * The number of player slots, as the game's voice code counts them.
+     *
+     * Pawn: `CSGameRules::m_nMaxPlayers`
+     */
+    get maxPlayers(): number;
+    set maxPlayers(value: number);
+    /**
+     * The seconds between the game's updates of who hears whom on the voice chat.
+     *
+     * Pawn: `CSGameRules::m_UpdateInterval`
+     */
+    get updateInterval(): number;
+    set updateInterval(value: number);
+    /**
+     * The game time the next round starts at, after a round's end or a restart; `0` when none is due.
+     *
+     * Pawn: `CSGameRules::m_flRestartRoundTime`
+     */
+    get restartRoundTime(): number;
+    set restartRoundTime(value: number);
+    /**
+     * The game time of the game's next check whether a side has won; `0` when none is due.
+     *
+     * Pawn: `CSGameRules::m_flCheckWinConditions`
+     */
+    get checkWinConditionsTime(): number;
+    set checkWinConditionsTime(value: number);
+    /**
+     * The game time the round's play began: the end of the freeze time.
+     *
+     * Pawn: `CSGameRules::m_fRoundStartTime`
+     */
+    get roundStartTime(): number;
+    set roundStartTime(value: number);
+    /**
+     * The round's length in seconds; during the freeze time, the freeze time's.
+     *
+     * Pawn: `CSGameRules::m_iRoundTime`
+     */
+    get roundTime(): number;
+    set roundTime(value: number);
+    /**
+     * The round's length in seconds, from `mp_roundtime`.
+     *
+     * Pawn: `CSGameRules::m_iRoundTimeSecs`
+     */
+    get roundTimeSecs(): number;
+    set roundTimeSecs(value: number);
+    /**
+     * The freeze time's length in seconds, from `mp_freezetime`.
+     *
+     * Pawn: `CSGameRules::m_iIntroRoundTime`
+     */
+    get introRoundTime(): number;
+    set introRoundTime(value: number);
+    /**
+     * The game time the round started, the freeze time included.
+     *
+     * Pawn: `CSGameRules::m_fRoundStartTimeReal`
+     */
+    get roundStartTimeReal(): number;
+    set roundStartTimeReal(value: number);
+    /**
+     * The money every terrorist is paid when the next round starts, for how this one went.
+     *
+     * Pawn: `CSGameRules::m_iAccountTerrorist`
+     */
+    get accountTerrorist(): number;
+    set accountTerrorist(value: number);
+    /**
+     * The money every counter-terrorist is paid when the next round starts, for how this one went.
+     *
+     * Pawn: `CSGameRules::m_iAccountCT`
+     */
+    get accountCt(): number;
+    set accountCt(value: number);
+    /**
+     * The number of terrorists, counted when a round ends.
+     *
+     * Pawn: `CSGameRules::m_iNumTerrorist`
+     */
+    get numTerrorist(): number;
+    set numTerrorist(value: number);
+    /**
+     * The number of counter-terrorists, counted when a round ends.
+     *
+     * Pawn: `CSGameRules::m_iNumCT`
+     */
+    get numCt(): number;
+    set numCt(value: number);
+    /**
+     * The number of terrorists who can spawn in the next round, counted when a round ends.
+     *
+     * Pawn: `CSGameRules::m_iNumSpawnableTerrorist`
+     */
+    get numSpawnableTerrorist(): number;
+    set numSpawnableTerrorist(value: number);
+    /**
+     * The number of counter-terrorists who can spawn in the next round, counted when a round ends.
+     *
+     * Pawn: `CSGameRules::m_iNumSpawnableCT`
+     */
+    get numSpawnableCt(): number;
+    set numSpawnableCt(value: number);
+    /**
+     * The number of the map's terrorist spawn points.
+     *
+     * Pawn: `CSGameRules::m_iSpawnPointCount_Terrorist`
+     */
+    get spawnPointCountTerrorist(): number;
+    set spawnPointCountTerrorist(value: number);
+    /**
+     * The number of the map's counter-terrorist spawn points.
+     *
+     * Pawn: `CSGameRules::m_iSpawnPointCount_CT`
+     */
+    get spawnPointCountCt(): number;
+    set spawnPointCountCt(value: number);
+    /**
+     * The number of hostages rescued this round.
+     *
+     * Pawn: `CSGameRules::m_iHostagesRescued`
+     */
+    get hostagesRescued(): number;
+    set hostagesRescued(value: number);
+    /**
+     * The number of hostages a counter-terrorist has led away this round.
+     *
+     * Pawn: `CSGameRules::m_iHostagesTouched`
+     */
+    get hostagesTouched(): number;
+    set hostagesTouched(value: number);
+    /**
+     * The last round's winner, one of `"CT"`, `"TERRORIST"`, `"draw"`, or `"none"` while the round goes on.
+     *
+     * Pawn: `CSGameRules::m_iRoundWinStatus`
+     */
+    get roundWinner(): RoundWinner;
+    set roundWinner(value: RoundWinner);
+    /**
+     * The counter-terrorists' score: the rounds they have won. Writing it changes the score, and the scoreboard shows it at once.
+     *
+     * Pawn: `CSGameRules::m_iNumCTWins`, `rg_update_teamscores`
+     */
+    get numCtWins(): number;
+    set numCtWins(value: number);
+    /**
+     * The terrorists' score: the rounds they have won. Writing it changes the score, and the scoreboard shows it at once.
+     *
+     * Pawn: `CSGameRules::m_iNumTerroristWins`, `rg_update_teamscores`
+     */
+    get numTerroristWins(): number;
+    set numTerroristWins(value: number);
+    /**
+     * `true` once the bomb has blown a target up this round.
+     *
+     * Pawn: `CSGameRules::m_bTargetBombed`
+     */
+    get targetBombed(): boolean;
+    set targetBombed(value: boolean);
+    /**
+     * `true` once the bomb has been defused this round.
+     *
+     * Pawn: `CSGameRules::m_bBombDefused`
+     */
+    get bombDefused(): boolean;
+    set bombDefused(value: boolean);
+    /**
+     * `true` when the map has a bomb site.
+     *
+     * Pawn: `CSGameRules::m_bMapHasBombTarget`
+     */
+    get mapHasBombTarget(): boolean;
+    set mapHasBombTarget(value: boolean);
+    /**
+     * `true` when the map has a bomb zone a planter must stand in.
+     *
+     * Pawn: `CSGameRules::m_bMapHasBombZone`
+     */
+    get mapHasBombZone(): boolean;
+    set mapHasBombZone(value: boolean);
+    /**
+     * `true` when the map has buy zones of its own.
+     *
+     * Pawn: `CSGameRules::m_bMapHasBuyZone`
+     */
+    get mapHasBuyZone(): boolean;
+    set mapHasBuyZone(value: boolean);
+    /**
+     * `true` when the map has a hostage rescue zone.
+     *
+     * Pawn: `CSGameRules::m_bMapHasRescueZone`
+     */
+    get mapHasRescueZone(): boolean;
+    set mapHasRescueZone(value: boolean);
+    /**
+     * `true` when the map has an escape zone for the terrorists.
+     *
+     * Pawn: `CSGameRules::m_bMapHasEscapeZone`
+     */
+    get mapHasEscapeZone(): boolean;
+    set mapHasEscapeZone(value: boolean);
+    /**
+     * Whether the map has a VIP safety zone, one of `"yes"`, `"no"`, or `"notChecked"` until the game has looked.
+     *
+     * Pawn: `CSGameRules::m_bMapHasVIPSafetyZone`
+     */
+    get mapHasVipSafetyZone(): VipSafetyZone;
+    set mapHasVipSafetyZone(value: VipSafetyZone);
+    /**
+     * `true` when the map has spectator cameras.
+     *
+     * Pawn: `CSGameRules::m_bMapHasCameras`
+     */
+    get mapHasCameras(): boolean;
+    set mapHasCameras(value: boolean);
+    /**
+     * The bomb's timer in seconds, from `mp_c4timer`.
+     *
+     * Pawn: `CSGameRules::m_iC4Timer`
+     */
+    get c4Timer(): number;
+    set c4Timer(value: number);
+    /**
+     * The terrorist who got the bomb this round, or `null`. Read only.
+     *
+     * Pawn: `CSGameRules::m_iC4Guy`
+     */
+    get c4Guy(): Player | null;
+    /**
+     * The money the side that loses a round is paid; it grows with each loss in a row.
+     *
+     * Pawn: `CSGameRules::m_iLoserBonus`
+     */
+    get loserBonus(): number;
+    set loserBonus(value: number);
+    /**
+     * The number of rounds the counter-terrorists have lost in a row.
+     *
+     * Pawn: `CSGameRules::m_iNumConsecutiveCTLoses`
+     */
+    get numConsecutiveCtLoses(): number;
+    set numConsecutiveCtLoses(value: number);
+    /**
+     * The number of rounds the terrorists have lost in a row.
+     *
+     * Pawn: `CSGameRules::m_iNumConsecutiveTerroristLoses`
+     */
+    get numConsecutiveTerroristLoses(): number;
+    set numConsecutiveTerroristLoses(value: number);
+    /**
+     * The seconds a player may stand idle before he is kicked, with `mp_autokick` on.
+     *
+     * Pawn: `CSGameRules::m_fMaxIdlePeriod`
+     */
+    get maxIdlePeriod(): number;
+    set maxIdlePeriod(value: number);
+    /**
+     * The most one side may outnumber the other by, from `mp_limitteams`.
+     *
+     * Pawn: `CSGameRules::m_iLimitTeams`
+     */
+    get limitTeams(): number;
+    set limitTeams(value: number);
+    /**
+     * `true` once the game has looked the map over for its bomb sites, buy zones and hostages.
+     *
+     * Pawn: `CSGameRules::m_bLevelInitialized`
+     */
+    get levelInitialized(): boolean;
+    set levelInitialized(value: boolean);
+    /**
+     * `true` from a round's end until the next round starts.
+     *
+     * Pawn: `CSGameRules::m_bRoundTerminating`
+     */
+    get roundTerminating(): boolean;
+    set roundTerminating(value: boolean);
+    /**
+     * `true` when the next restart resets everything, the scores too, as `sv_restart` does.
+     *
+     * Pawn: `CSGameRules::m_bCompleteReset`
+     */
+    get completeReset(): boolean;
+    set completeReset(value: boolean);
+    /**
+     * The share of terrorists, `0` to `1`, who must escape for them to win on an escape map.
+     *
+     * Pawn: `CSGameRules::m_flRequiredEscapeRatio`
+     */
+    get requiredEscapeRatio(): number;
+    set requiredEscapeRatio(value: number);
+    /**
+     * The number of terrorists who can escape, on an escape map.
+     *
+     * Pawn: `CSGameRules::m_iNumEscapers`
+     */
+    get numEscapers(): number;
+    set numEscapers(value: number);
+    /**
+     * The number of terrorists who have escaped this round.
+     *
+     * Pawn: `CSGameRules::m_iHaveEscaped`
+     */
+    get haveEscaped(): number;
+    set haveEscaped(value: number);
+    /**
+     * `true` while the counter-terrorists may not buy.
+     *
+     * Pawn: `CSGameRules::m_bCTCantBuy`
+     */
+    get ctCantBuy(): boolean;
+    set ctCantBuy(value: boolean);
+    /**
+     * `true` while the terrorists may not buy.
+     *
+     * Pawn: `CSGameRules::m_bTCantBuy`
+     */
+    get tCantBuy(): boolean;
+    set tCantBuy(value: boolean);
+    /**
+     * The bomb's blast radius, in units, as the map sets it.
+     *
+     * Pawn: `CSGameRules::m_flBombRadius`
+     */
+    get bombRadius(): number;
+    set bombRadius(value: number);
+    /**
+     * The number of rounds in a row the same player has been the VIP.
+     *
+     * Pawn: `CSGameRules::m_iConsecutiveVIP`
+     */
+    get consecutiveVip(): number;
+    set consecutiveVip(value: number);
+    /**
+     * The number of guns the game has counted lying on the map.
+     *
+     * Pawn: `CSGameRules::m_iTotalGunCount`
+     */
+    get totalGunCount(): number;
+    set totalGunCount(value: number);
+    /**
+     * The number of grenades the game has counted lying on the map.
+     *
+     * Pawn: `CSGameRules::m_iTotalGrenadeCount`
+     */
+    get totalGrenadeCount(): number;
+    set totalGrenadeCount(value: number);
+    /**
+     * The number of armour pieces the game has counted lying on the map.
+     *
+     * Pawn: `CSGameRules::m_iTotalArmourCount`
+     */
+    get totalArmourCount(): number;
+    set totalArmourCount(value: number);
+    /**
+     * The number of rounds in a row one side has outnumbered the other by more than two; the game balances the sides after enough of them.
+     *
+     * Pawn: `CSGameRules::m_iUnBalancedRounds`
+     */
+    get unBalancedRounds(): number;
+    set unBalancedRounds(value: number);
+    /**
+     * The number of escape rounds played in a row; the sides swap after 8.
+     *
+     * Pawn: `CSGameRules::m_iNumEscapeRounds`
+     */
+    get numEscapeRounds(): number;
+    set numEscapeRounds(value: number);
+    /**
+     * The number of the map the last map vote picked.
+     *
+     * Pawn: `CSGameRules::m_iLastPick`
+     */
+    get lastPick(): number;
+    set lastPick(value: number);
+    /**
+     * The map's time limit, from `mp_timelimit`.
+     *
+     * Pawn: `CSGameRules::m_iMaxMapTime`
+     */
+    get maxMapTime(): number;
+    set maxMapTime(value: number);
+    /**
+     * The number of rounds the map lasts, from `mp_maxrounds`; `0` for no limit.
+     *
+     * Pawn: `CSGameRules::m_iMaxRounds`
+     */
+    get maxRounds(): number;
+    set maxRounds(value: number);
+    /**
+     * The number of rounds played on the map.
+     *
+     * Pawn: `CSGameRules::m_iTotalRoundsPlayed`
+     */
+    get totalRoundsPlayed(): number;
+    set totalRoundsPlayed(value: number);
+    /**
+     * The number of rounds a side must win to end the map, from `mp_winlimit`; `0` for no limit.
+     *
+     * Pawn: `CSGameRules::m_iMaxRoundsWon`
+     */
+    get maxRoundsWon(): number;
+    set maxRoundsWon(value: number);
+    /**
+     * The value of `allow_spectators` the game remembers to notice when it changes.
+     *
+     * Pawn: `CSGameRules::m_iStoredSpectValue`
+     */
+    get storedSpectValue(): number;
+    set storedSpectValue(value: number);
+    /**
+     * The value of `mp_forcecamera` the game remembers to notice when it changes.
+     *
+     * Pawn: `CSGameRules::m_flForceCameraValue`
+     */
+    get forceCameraValue(): number;
+    set forceCameraValue(value: number);
+    /**
+     * The value of `mp_forcechasecam` the game remembers to notice when it changes.
+     *
+     * Pawn: `CSGameRules::m_flForceChaseCamValue`
+     */
+    get forceChaseCamValue(): number;
+    set forceChaseCamValue(value: number);
+    /**
+     * The value of `mp_fadetoblack` the game remembers to notice when it changes.
+     *
+     * Pawn: `CSGameRules::m_flFadeToBlackValue`
+     */
+    get fadeToBlackValue(): number;
+    set fadeToBlackValue(value: number);
+    /**
+     * The VIP on an assassination map, a player `id`; `0` for none.
+     *
+     * Pawn: `CSGameRules::m_pVIP`
+     */
+    get vip(): number;
+    set vip(value: number);
+    /**
+     * The game time the intermission at the map's end is over and the next map loads.
+     *
+     * Pawn: `CSGameRules::m_flIntermissionEndTime`
+     */
+    get intermissionEndTime(): number;
+    set intermissionEndTime(value: number);
+    /**
+     * The game time the intermission at the map's end began.
+     *
+     * Pawn: `CSGameRules::m_flIntermissionStartTime`
+     */
+    get intermissionStartTime(): number;
+    set intermissionStartTime(value: number);
+    /**
+     * `true` once a player has pressed a button to end the intermission early.
+     *
+     * Pawn: `CSGameRules::m_iEndIntermissionButtonHit`
+     */
+    get endIntermissionButtonHit(): boolean;
+    set endIntermissionButtonHit(value: boolean);
+    /**
+     * The game time of the game's next periodic check of its limits and cvars.
+     *
+     * Pawn: `CSGameRules::m_tmNextPeriodicThink`
+     */
+    get nextPeriodicThink(): number;
+    set nextPeriodicThink(value: number);
+    /**
+     * `true` once the game has begun: both sides have had players. Until then a round ends with “Game Commencing”.
+     *
+     * Pawn: `CSGameRules::m_bGameStarted`
+     */
+    get gameStarted(): boolean;
+    set gameStarted(value: boolean);
+    /**
+     * `true` in a Condition Zero career game.
+     *
+     * Pawn: `CSGameRules::m_bInCareerGame`
+     */
+    get inCareerGame(): boolean;
+    set inCareerGame(value: boolean);
+    /**
+     * The game time the Condition Zero career's menu after a round shows.
+     *
+     * Pawn: `CSGameRules::m_fCareerRoundMenuTime`
+     */
+    get careerRoundMenuTime(): number;
+    set careerRoundMenuTime(value: number);
+    /**
+     * The number of rounds to win a Condition Zero career match.
+     *
+     * Pawn: `CSGameRules::m_iCareerMatchWins`
+     */
+    get careerMatchWins(): number;
+    set careerMatchWins(value: number);
+    /**
+     * The lead in rounds a Condition Zero career match needs to be won.
+     *
+     * Pawn: `CSGameRules::m_iRoundWinDifference`
+     */
+    get roundWinDifference(): number;
+    set roundWinDifference(value: number);
+    /**
+     * The game time the Condition Zero career's menu after a match shows.
+     *
+     * Pawn: `CSGameRules::m_fCareerMatchMenuTime`
+     */
+    get careerMatchMenuTime(): number;
+    set careerMatchMenuTime(value: number);
+    /**
+     * `true` when the next round starts without respawning the players.
+     *
+     * Pawn: `CSGameRules::m_bSkipSpawn`
+     */
+    get skipSpawn(): boolean;
+    set skipSpawn(value: boolean);
+    /**
+     * `true` while a joining player is not shown the team menu.
+     *
+     * Pawn: `CSGameRules::m_bSkipShowMenu`
+     */
+    get skipShowMenu(): boolean;
+    set skipShowMenu(value: boolean);
+    /**
+     * `true` while the game waits for players because a side is empty.
+     *
+     * Pawn: `CSGameRules::m_bNeededPlayers`
+     */
+    get neededPlayers(): boolean;
+    set neededPlayers(value: boolean);
+    /**
+     * The share of terrorists, `0` to `1`, who have escaped this round.
+     *
+     * Pawn: `CSGameRules::m_flEscapeRatio`
+     */
+    get escapeRatio(): number;
+    set escapeRatio(value: number);
+    /**
+     * The game time the map ends by `mp_timelimit`; `0` for no limit.
+     *
+     * Pawn: `CSGameRules::m_flTimeLimit`
+     */
+    get timeLimit(): number;
+    set timeLimit(value: number);
+    /**
+     * The game time the game began, after “Game Commencing”.
+     *
+     * Pawn: `CSGameRules::m_flGameStartTime`
+     */
+    get gameStartTime(): number;
+    set gameStartTime(value: number);
+    /**
+     * `true` when the sides were balanced at this round's start.
+     *
+     * Pawn: `CSGameRules::m_bTeamBalanced`
+     */
+    get teamBalanced(): boolean;
+    set teamBalanced(value: boolean);
 }
 /** What a weapon is, by the name CS gives it without the WEAPON_ prefix. */
 export type WeaponKind = "none" | "p228" | "glock" | "scout" | "hegrenade" | "xm1014" | "c4" | "mac10" | "aug" | "smokegrenade" | "elite" | "fiveseven" | "ump45" | "sg550" | "galil" | "famas" | "usp" | "glock18" | "awp" | "mp5n" | "m249" | "m3" | "m4a1" | "tmp" | "g3sg1" | "flashbang" | "deagle" | "sg552" | "ak47" | "knife" | "p90" | "shieldgun";
@@ -2468,6 +3254,13 @@ export declare class Weapon extends Entity {
     get kind(): WeaponKind;
     /** m_iId as the number WEAPON_* constants hold. */
     get kindId(): number;
+    /**
+     * The weapon's class name, e.g. `"weapon_ak47"`: the name `player.give`, `setAmmo`, `getAmmo` and `switchWeapon` take - `player.give(weapon.classname)`.
+     *
+     * Pawn: `pev->classname`, `get_weaponname`
+     */
+    get classname(): WeaponName;
+    set classname(value: WeaponName);
     /**
      * The player holding the weapon, or `null` if it lies on the ground. Read only.
      *
@@ -2704,4 +3497,88 @@ export declare class Weapon extends Entity {
      */
     get lastFireTime(): number;
     set lastFireTime(value: number);
+    /**
+     * Gives the weapon to the player, as picking it up does; `true` when he took it.
+     *
+     * Pawn: `ExecuteHamB(Ham_Item_AddToPlayer, ...)`, `ExecuteHam`
+     */
+    addToPlayer(player: Player, options?: ActionOptions): bool;
+    /**
+     * Draws the weapon in its owner's hands, as switching to it does - the model and the animation shown again: `knife.deploy()`. `true` when it was drawn.
+     *
+     * Pawn: `ExecuteHamB(Ham_Item_Deploy, ...)`, `ExecuteHam`
+     */
+    deploy(options?: ActionOptions): bool;
+    /**
+     * Puts the weapon away, as switching from it does.
+     *
+     * Pawn: `ExecuteHamB(Ham_Item_Holster, ...)`, `ExecuteHam`
+     */
+    holster(options?: ActionOptions): void;
+    /**
+     * Drops the weapon out of its owner's inventory.
+     *
+     * Pawn: `ExecuteHamB(Ham_Item_Drop, ...)`, `ExecuteHam`
+     */
+    drop(options?: ActionOptions): void;
+    /**
+     * Attaches the weapon to the player as his, without the pick-up.
+     *
+     * Pawn: `ExecuteHamB(Ham_Item_AttachToPlayer, ...)`, `ExecuteHam`
+     */
+    attachToPlayer(player: Player, options?: ActionOptions): void;
+    /**
+     * Moves this weapon's ammo into `target`, as picking up a second one of a kind does; the ammo moved.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_ExtractAmmo, ...)`, `ExecuteHam`
+     */
+    extractAmmo(target: Weapon, options?: ActionOptions): number;
+    /**
+     * Moves the ammo in this weapon's clip into `target`; the ammo moved.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_ExtractClipAmmo, ...)`, `ExecuteHam`
+     */
+    extractClipAmmo(target: Weapon, options?: ActionOptions): number;
+    /**
+     * Lets the empty click sound again on the next try.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_ResetEmptySound, ...)`, `ExecuteHam`
+     */
+    resetEmptySound(options?: ActionOptions): void;
+    /**
+     * Fires the weapon's primary attack - a shot, a knife's slash - as the left click does.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_PrimaryAttack, ...)`, `ExecuteHam`
+     */
+    primaryAttack(options?: ActionOptions): void;
+    /**
+     * Fires the weapon's secondary attack - a knife's stab, a scope - as the right click does: `knife.secondaryAttack()`.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_SecondaryAttack, ...)`, `ExecuteHam`
+     */
+    secondaryAttack(options?: ActionOptions): void;
+    /**
+     * Reloads the weapon, as the reload key does.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_Reload, ...)`, `ExecuteHam`
+     */
+    reload(options?: ActionOptions): void;
+    /**
+     * Runs the weapon's idle, which plays its idle animation.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_WeaponIdle, ...)`, `ExecuteHam`
+     */
+    weaponIdle(options?: ActionOptions): void;
+    /**
+     * Retires the weapon - one out of ammo - and switches its owner to his next best.
+     *
+     * Pawn: `ExecuteHamB(Ham_Weapon_RetireWeapon, ...)`, `ExecuteHam`
+     */
+    retireWeapon(options?: ActionOptions): void;
+    /**
+     * Plays one of the weapon's view-model animations by its number; `skipLocal` leaves out a client that predicts it himself.
+     *
+     * Pawn: `ExecuteHamB(Ham_CS_Weapon_SendWeaponAnim, ...)`, `ExecuteHam`
+     */
+    sendWeaponAnim(anim: number, skipLocal: boolean, options?: ActionOptions): void;
 }

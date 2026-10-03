@@ -40,8 +40,8 @@ export declare function numberOf(node: TreeNode | null): number;
  * 1 for true, yes, on (in any case) or a number other than 0; 0 for false,
  * no, off or 0; -1 for anything else.
  */
-export declare function booleanText(text: string): 1 | 0 | -1;
+export declare function booleanText(text: string): 0 | 1 | -1;
 /** A value as a boolean: 1 true, 0 false, -1 neither - true or false, a number (0 is false), or text as `booleanText()` reads it. */
-export declare function booleanOf(node: TreeNode | null): 1 | 0 | -1;
-/** Adds a line to the comment and blank lines written before the node. */
-export declare function addComment(node: TreeNode, comment: string): void;
+export declare function booleanOf(node: TreeNode | null): 0 | 1 | -1;
+/** The comment and blank lines written before a node, at its indentation. */
+export declare function writeComments(lines: string[], comments: string[] | null, pad: string): void;
