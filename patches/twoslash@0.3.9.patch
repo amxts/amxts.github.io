@@ -1,8 +1,8 @@
 diff --git a/dist/core.cjs b/dist/core.cjs
-index b504d7a..3d24c71 100644
+index b504d7a03f92365007fed3a123f7c7dc7aa6e668..da7dc092e51b2654d7bd04248f31f32113a10078 100644
 --- a/dist/core.cjs
 +++ b/dist/core.cjs
-@@ -156,9 +156,143 @@ ${unknownFlags.map((i) => `@${i.name}`).join(", ")}`,
+@@ -156,9 +156,149 @@ ${unknownFlags.map((i) => `@${i.name}`).join(", ")}`,
        return meta.virtualFiles.find((i) => twoslashProtocol.isInRange(pos, [i.offset, i.offset + i.content.length]));
      }
      function getQuickInfo(file, start, target) {
@@ -26,7 +26,13 @@ index b504d7a..3d24c71 100644
 +      // xen-site: a hover on a value of a named type, or on a class, shows what
 +      // the type holds (TypeScript's verbosityLevel 1), written as an interface
 +      if (quickInfo?.displayParts) {
-+        const expanded = ls.getQuickInfoAtPosition(file.filepath, offset, void 0, 1);
++        // TypeScript itself can throw while it expands a hover (the namespace
++        // `lang` of the framework's declarations): that hover is not expanded
++        let expanded;
++        try {
++          expanded = ls.getQuickInfoAtPosition(file.filepath, offset, void 0, 1);
++        }
++        catch {}
 +        const short = quickInfo.displayParts.map((dp) => dp.text).join("");
 +        const long = expanded?.displayParts?.map((dp) => dp.text).join("") ?? "";
 +        // an import adds lines after the type ("import server"): the same tail on both
@@ -149,10 +155,10 @@ index b504d7a..3d24c71 100644
          const tags = quickInfo.tags?.map((t) => [t.name, t.text?.map((i) => i.text).join("")]);
          return {
 diff --git a/dist/core.mjs b/dist/core.mjs
-index a7b02c6..f3541c5 100644
+index a7b02c6406d4f451da31f75407c7c3d4b70666bd..8ecefd7f6364b5bfdc4688bc746e3ba1a7b176c3 100644
 --- a/dist/core.mjs
 +++ b/dist/core.mjs
-@@ -155,9 +155,143 @@ ${unknownFlags.map((i) => `@${i.name}`).join(", ")}`,
+@@ -155,9 +155,149 @@ ${unknownFlags.map((i) => `@${i.name}`).join(", ")}`,
        return meta.virtualFiles.find((i) => isInRange(pos, [i.offset, i.offset + i.content.length]));
      }
      function getQuickInfo(file, start, target) {
@@ -176,7 +182,13 @@ index a7b02c6..f3541c5 100644
 +      // xen-site: a hover on a value of a named type, or on a class, shows what
 +      // the type holds (TypeScript's verbosityLevel 1), written as an interface
 +      if (quickInfo?.displayParts) {
-+        const expanded = ls.getQuickInfoAtPosition(file.filepath, offset, void 0, 1);
++        // TypeScript itself can throw while it expands a hover (the namespace
++        // `lang` of the framework's declarations): that hover is not expanded
++        let expanded;
++        try {
++          expanded = ls.getQuickInfoAtPosition(file.filepath, offset, void 0, 1);
++        }
++        catch {}
 +        const short = quickInfo.displayParts.map((dp) => dp.text).join("");
 +        const long = expanded?.displayParts?.map((dp) => dp.text).join("") ?? "";
 +        // an import adds lines after the type ("import server"): the same tail on both
