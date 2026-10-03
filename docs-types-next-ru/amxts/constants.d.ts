@@ -4876,7 +4876,7 @@ export declare namespace Flag {
  * fails the build. AssemblyScript needs runtime/patches for that; the numbers
  * above are the same flags for anything that wants one.
  */
-export type FlagName = "ALL" | "IMMUNITY" | "RESERVATION" | "KICK" | "BAN" | "SLAY" | "MAP" | "CVAR" | "CFG" | "CHAT" | "VOTE" | "PASSWORD" | "RCON" | "LEVEL_A" | "LEVEL_B" | "LEVEL_C" | "LEVEL_D" | "LEVEL_E" | "LEVEL_F" | "LEVEL_G" | "LEVEL_H" | "MENU" | "BAN_TEMP" | "ADMIN" | "USER";
+export type FlagName = "all" | "immunity" | "reservation" | "kick" | "ban" | "slay" | "map" | "cvar" | "cfg" | "chat" | "vote" | "password" | "rcon" | "levelA" | "levelB" | "levelC" | "levelD" | "levelE" | "levelF" | "levelG" | "levelH" | "menu" | "banTemp" | "admin" | "user";
 /** The bit a flag name stands for. */
 export declare function flagOf(name: string): i32;
 /**

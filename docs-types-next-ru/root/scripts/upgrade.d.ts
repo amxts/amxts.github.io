@@ -56,6 +56,18 @@ export declare function upgradeHandlers(file: string, text: string): {
     changes: Change[];
     left: Left[];
 };
+/** A piece of a file's text to replace: where, with what, and what it was. */
+export interface Edit {
+    start: number;
+    end: number;
+    with: string;
+    from: string;
+}
+/** The text with its edits made - from the end, so every earlier position stays where it was - and each as a change. */
+export declare function applyEdits(file: string, text: string, source: ts.SourceFile, edits: Edit[]): {
+    text: string;
+    changes: Change[];
+};
 /**
  * A file brought to the API's names. `Player.all()` is `server.players`, and
  * its options a `filter` of what each one tested. A field or a method named
@@ -87,8 +99,28 @@ export declare function upgradeMessages(file: string, text: string): {
     changes: Change[];
     left: Left[];
 };
-/** Rewrites the project in `dir`: every change, in the order of the files, and what is left to do by hand. */
-export declare function upgradeProject(dir: string): {
+/**
+ * A file's flag names brought to lowerCamelCase: `player.buttons.includes("Jump")`
+ * is `includes("jump")`. A string is a flag's name where the code says so
+ * without a type checker: assigned to a flag field (`player.hideHud =
+ * ["Money"]`) or an option (`{ buttons: ["Jump"] }`, `{ access: "Kick" }`),
+ * given to `includes`, `push` or `concat` of one, to `screen.hideHud`,
+ * `heal` or `cmd`, compared with an element of one (`flag != "Bomb"` in its
+ * `filter`, a `for of` over it, a `switch`), or held by a name annotated with
+ * a family (`const parts: HideHud[] = ["Money"]`, a parameter `button:
+ * Button`, and what the file's own function takes there). A name given where a
+ * flag goes is followed to the literal it was declared with; one the file
+ * does not say - a parameter, an import, a function's result - is listed.
+ */
+export declare function upgradeFlags(file: string, text: string): {
+    text: string;
+    changes: Change[];
+    left: Left[];
+};
+/** Rewrites the project in `dir`: every change, in the order of the files, and what is left to do by hand. `write: false` only lists them. */
+export declare function upgradeProject(dir: string, { write }?: {
+    write?: boolean | undefined;
+}): {
     changes: Change[];
     left: Left[];
 };

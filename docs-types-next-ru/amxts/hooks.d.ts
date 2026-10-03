@@ -5812,7 +5812,7 @@ export declare class TakeDamageEvent extends HookEvent {
     get damage(): number;
     set damage(value: number);
     /**
-     * Виды урона, например `"Fall"`, `"Bullet"`, `"Burn"`.
+     * Виды урона, например `"fall"`, `"bullet"`, `"burn"`.
      *
      * Pawn: `bitsDamageType`
      */

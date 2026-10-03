@@ -476,7 +476,7 @@ export declare class Entity {
     get body(): number;
     set body(value: number);
     /**
-     * The entity's visual effects, for example: `"NoDraw"` hides it, `"DimLight"` and `"BrightLight"` light up around it, `"MuzzleFlash"` flashes once.
+     * The entity's visual effects, for example: `"noDraw"` hides it, `"dimLight"` and `"brightLight"` light up around it, `"muzzleFlash"` flashes once.
      *
      * Pawn: `pev->effects`
      */
@@ -609,7 +609,7 @@ export declare class Entity {
     get viewOffset(): Vector;
     set viewOffset(value: number[]);
     /**
-     * The buttons the player holds this frame, e.g. `"Attack"`, `"Jump"`, `"Duck"`, `"Use"`.
+     * The buttons the player holds this frame, e.g. `"attack"`, `"jump"`, `"duck"`, `"use"`.
      *
      * Pawn: `pev->button`
      */
@@ -672,7 +672,7 @@ export declare class Entity {
     get spawnFlags(): number;
     set spawnFlags(value: number);
     /**
-     * The entity's state flags, for example `"OnGround"`, `"Ducking"`, `"InWater"`, `"Frozen"`, `"FakeClient"` for a bot, `"KillMe"` to be removed.
+     * The entity's state flags, for example `"onGround"`, `"ducking"`, `"inWater"`, `"frozen"`, `"fakeClient"` for a bot, `"killMe"` to be removed.
      *
      * Pawn: `pev->flags`
      */
@@ -1311,7 +1311,7 @@ export declare class PlayerFields extends Entity {
     get lastHitGroup(): HitGroup;
     set lastHitGroup(value: HitGroup);
     /**
-     * The kinds of damage the player took since the HUD was last told, e.g. `"Fall"`, `"Bullet"`, `"Burn"`; the game clears all but the lasting ones after the damage indicator is sent.
+     * The kinds of damage the player took since the HUD was last told, e.g. `"fall"`, `"bullet"`, `"burn"`; the game clears all but the lasting ones after the damage indicator is sent.
      *
      * Pawn: `CBaseMonster::m_bitsDamageType`
      */
@@ -1871,21 +1871,21 @@ export declare class PlayerFields extends Entity {
     get flashlightBattery(): number;
     set flashlightBattery(value: number);
     /**
-     * The buttons the player held the frame before: `["Jump"]`.
+     * The buttons the player held the frame before: `["jump"]`.
      *
      * Pawn: `CBasePlayer::m_afButtonLast`
      */
     get buttonLast(): Button[];
     set buttonLast(values: Button[]);
     /**
-     * The buttons the player pressed this frame: `["Jump"]`.
+     * The buttons the player pressed this frame: `["jump"]`.
      *
      * Pawn: `CBasePlayer::m_afButtonPressed`
      */
     get buttonPressed(): Button[];
     set buttonPressed(values: Button[]);
     /**
-     * The buttons the player let go this frame: `["Jump"]`.
+     * The buttons the player let go this frame: `["jump"]`.
      *
      * Pawn: `CBasePlayer::m_afButtonReleased`
      */
@@ -1920,7 +1920,7 @@ export declare class PlayerFields extends Entity {
     get newAmmo(): number;
     set newAmmo(value: number);
     /**
-     * The player's physics state, a list of any of: `"OnLadder"`, `"OnTrain"`, `"OnBarnacle"`, `"Ducking"` - crouching down right now, `"Using"` - holding an object's use key, `"Observer"` - a spectator locked in place.
+     * The player's physics state, a list of any of: `"onLadder"`, `"onTrain"`, `"onBarnacle"`, `"ducking"` - crouching down right now, `"using"` - holding an object's use key, `"observer"` - a spectator locked in place.
      *
      * Pawn: `CBasePlayer::m_afPhysicsFlags`, `PFLAG_*`
      */
@@ -2116,7 +2116,7 @@ export declare class PlayerFields extends Entity {
     get batterySent(): number;
     set batterySent(value: number);
     /**
-     * The parts of the player's HUD that are hidden: `["Money", "Timer"]`; the game sends the change itself.
+     * The parts of the player's HUD that are hidden: `["money", "timer"]`; the game sends the change itself.
      *
      * Pawn: `CBasePlayer::m_iHideHUD`
      */
@@ -3316,7 +3316,7 @@ export declare class Weapon extends Entity {
     get burstSpread(): number;
     set burstSpread(value: number);
     /**
-     * The weapon's modes, a list of any of: `"UspSilenced"` - the USP's silencer is on, `"Glock18Burst"` - the Glock fires bursts, `"M4a1Silenced"` - the M4A1's silencer is on, `"EliteLeft"` - the Elites fire the left gun next, `"FamasBurst"` - the FAMAS fires bursts, `"ShieldDrawn"` - the shield is up.
+     * The weapon's modes, a list of any of: `"uspSilenced"` - the USP's silencer is on, `"glock18Burst"` - the Glock fires bursts, `"m4a1Silenced"` - the M4A1's silencer is on, `"eliteLeft"` - the Elites fire the left gun next, `"famasBurst"` - the FAMAS fires bursts, `"shieldDrawn"` - the shield is up.
      *
      * Pawn: `CBasePlayerWeapon::m_iWeaponState` (reapi `m_Weapon_iWeaponState`), `WPNSTATE_*`
      */

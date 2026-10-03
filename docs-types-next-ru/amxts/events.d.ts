@@ -954,7 +954,7 @@ export declare class DamageMessage extends ClientMessage {
     get damage(): number;
     set damage(value: number);
     /**
-     * Виды урона, например `"Fall"`, `"Bullet"`.
+     * Виды урона, например `"fall"`, `"bullet"`.
      *
      * Pawn: `get_msg_arg_*(3)`
      */
@@ -1091,7 +1091,7 @@ export declare class HealthMessage extends ClientMessage {
 export declare class HideWeaponMessage extends ClientMessage {
     private readonly kind;
     /**
-     * Скрытые части, например `"Money"`, `"Timer"`. Присвойте, чтобы изменить.
+     * Скрытые части, например `"money"`, `"timer"`. Присвойте, чтобы изменить.
      *
      * Pawn: `get_msg_arg_*(1)`
      */
@@ -1443,7 +1443,7 @@ export declare class ScoreAttribMessage extends ClientMessage {
     get target(): Player | null;
     set target(value: Player | null);
     /**
-     * Отметки в строке, например `"Dead"`, `"Bomb"`, `"Vip"`.
+     * Отметки в строке, например `"dead"`, `"bomb"`, `"vip"`.
      *
      * Pawn: `get_msg_arg_*(2)`
      */

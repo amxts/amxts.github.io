@@ -20,6 +20,8 @@ export function localModules(): Record<string, string>;
  *   Linux only, its console shown);
  * - `check` checks a module package before it is published;
  * - `upgrade` rewrites the project's code to this core's API, listing each change;
+ *   `--dry-run` writes nothing, `--report <file>` writes `{ changes, left }` there as JSON
+ *   and leaves what is left to do by hand to the caller to print;
  * - `typecheck` runs TypeScript over the project, after `prepare`.
  *
  * A failure is printed by the task itself and ends it with a non-zero code.
@@ -59,6 +61,27 @@ export function includeSources(): Record<string, {
  * @returns {string | null} the binary's path
  */
 export function bunBinary(): string | null;
+/**
+ * This version's GitHub Release, for a server of one system: `url` is where
+ * its files are (AMXTS_RELEASE_URL - a URL or a folder - takes another),
+ * `manifest` the file there that lists each one's sha256, `files` the ones a
+ * server runs and where they go under its game folder (cstrike), the module
+ * first; a `tool` only where the server has one. `image` is the server image
+ * of this version, for a server in Docker.
+ *
+ * @param {'windows' | 'linux'} system
+ */
+export function release(system: "windows" | "linux"): {
+    version: string;
+    url: string;
+    manifest: string;
+    files: {
+        asset: string;
+        path: string;
+        tool: boolean;
+    }[];
+    image: string;
+};
 /** The TypeScript the core builds with: the command reads amxts.config.ts with its parser. */
 export function typescript(): any;
 /**
@@ -84,7 +107,7 @@ export const version: string;
  * returns changes in a way an older command would misread; the command says
  * which of the two to update when they differ.
  */
-export const cliApi: 4;
+export const cliApi: 5;
 /** Whether the core runs from a checkout (a .git folder beside it) rather than from npm. */
 export const fromSource: boolean;
 export type Task = {
@@ -97,4 +120,4 @@ export type Task = {
      */
     args: string[];
 };
-export { describeSystem, serverSystem } from "./system.mjs";
+export { describeSystem, serverSystem, moduleVersion } from "./system.mjs";

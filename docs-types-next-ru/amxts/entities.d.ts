@@ -476,7 +476,7 @@ export declare class Entity {
     get body(): number;
     set body(value: number);
     /**
-     * Визуальные эффекты сущности, например: `"NoDraw"` прячет её, `"DimLight"` и `"BrightLight"` освещают вокруг, `"MuzzleFlash"` — одна вспышка.
+     * Визуальные эффекты сущности, например: `"noDraw"` прячет её, `"dimLight"` и `"brightLight"` освещают вокруг, `"muzzleFlash"` — одна вспышка.
      *
      * Pawn: `pev->effects`
      */
@@ -609,7 +609,7 @@ export declare class Entity {
     get viewOffset(): Vector;
     set viewOffset(value: number[]);
     /**
-     * Кнопки, которые игрок держит в этом кадре, например `"Attack"`, `"Jump"`, `"Duck"`, `"Use"`.
+     * Кнопки, которые игрок держит в этом кадре, например `"attack"`, `"jump"`, `"duck"`, `"use"`.
      *
      * Pawn: `pev->button`
      */
@@ -672,7 +672,7 @@ export declare class Entity {
     get spawnFlags(): number;
     set spawnFlags(value: number);
     /**
-     * Флаги состояния сущности, например `"OnGround"`, `"Ducking"`, `"InWater"`, `"Frozen"`, `"FakeClient"` у бота, `"KillMe"` — на удаление.
+     * Флаги состояния сущности, например `"onGround"`, `"ducking"`, `"inWater"`, `"frozen"`, `"fakeClient"` у бота, `"killMe"` — на удаление.
      *
      * Pawn: `pev->flags`
      */
@@ -1311,7 +1311,7 @@ export declare class PlayerFields extends Entity {
     get lastHitGroup(): HitGroup;
     set lastHitGroup(value: HitGroup);
     /**
-     * Виды урона, полученного игроком с последнего обновления HUD, например `"Fall"`, `"Bullet"`, `"Burn"`; отправив индикатор урона, игра оставляет только длительные.
+     * Виды урона, полученного игроком с последнего обновления HUD, например `"fall"`, `"bullet"`, `"burn"`; отправив индикатор урона, игра оставляет только длительные.
      *
      * Pawn: `CBaseMonster::m_bitsDamageType`
      */
@@ -1871,21 +1871,21 @@ export declare class PlayerFields extends Entity {
     get flashlightBattery(): number;
     set flashlightBattery(value: number);
     /**
-     * Кнопки, которые игрок держал в прошлом кадре: `["Jump"]`.
+     * Кнопки, которые игрок держал в прошлом кадре: `["jump"]`.
      *
      * Pawn: `CBasePlayer::m_afButtonLast`
      */
     get buttonLast(): Button[];
     set buttonLast(values: Button[]);
     /**
-     * Кнопки, которые игрок нажал в этом кадре: `["Jump"]`.
+     * Кнопки, которые игрок нажал в этом кадре: `["jump"]`.
      *
      * Pawn: `CBasePlayer::m_afButtonPressed`
      */
     get buttonPressed(): Button[];
     set buttonPressed(values: Button[]);
     /**
-     * Кнопки, которые игрок отпустил в этом кадре: `["Jump"]`.
+     * Кнопки, которые игрок отпустил в этом кадре: `["jump"]`.
      *
      * Pawn: `CBasePlayer::m_afButtonReleased`
      */
@@ -1920,7 +1920,7 @@ export declare class PlayerFields extends Entity {
     get newAmmo(): number;
     set newAmmo(value: number);
     /**
-     * Физическое состояние игрока, список, любые из: `"OnLadder"` — на лестнице, `"OnTrain"` — на поезде, `"OnBarnacle"` — схвачен барнаклом, `"Ducking"` — приседает прямо сейчас, `"Using"` — держит клавишу использования на объекте, `"Observer"` — закреплённый наблюдатель.
+     * Физическое состояние игрока, список, любые из: `"onLadder"` — на лестнице, `"onTrain"` — на поезде, `"onBarnacle"` — схвачен барнаклом, `"ducking"` — приседает прямо сейчас, `"using"` — держит клавишу использования на объекте, `"observer"` — закреплённый наблюдатель.
      *
      * Pawn: `CBasePlayer::m_afPhysicsFlags`, `PFLAG_*`
      */
@@ -2116,7 +2116,7 @@ export declare class PlayerFields extends Entity {
     get batterySent(): number;
     set batterySent(value: number);
     /**
-     * Скрытые части HUD игрока: `["Money", "Timer"]`; изменение игра отправляет сама.
+     * Скрытые части HUD игрока: `["money", "timer"]`; изменение игра отправляет сама.
      *
      * Pawn: `CBasePlayer::m_iHideHUD`
      */
@@ -3316,7 +3316,7 @@ export declare class Weapon extends Entity {
     get burstSpread(): number;
     set burstSpread(value: number);
     /**
-     * Режимы оружия, список, любые из: `"UspSilenced"` — глушитель на USP, `"Glock18Burst"` — Glock стреляет очередями, `"M4a1Silenced"` — глушитель на M4A1, `"EliteLeft"` — Elites следующим стреляют из левого, `"FamasBurst"` — FAMAS стреляет очередями, `"ShieldDrawn"` — щит поднят.
+     * Режимы оружия, список, любые из: `"uspSilenced"` — глушитель на USP, `"glock18Burst"` — Glock стреляет очередями, `"m4a1Silenced"` — глушитель на M4A1, `"eliteLeft"` — Elites следующим стреляют из левого, `"famasBurst"` — FAMAS стреляет очередями, `"shieldDrawn"` — щит поднят.
      *
      * Pawn: `CBasePlayerWeapon::m_iWeaponState` (reapi `m_Weapon_iWeaponState`), `WPNSTATE_*`
      */

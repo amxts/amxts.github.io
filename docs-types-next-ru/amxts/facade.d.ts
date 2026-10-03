@@ -318,12 +318,12 @@ export declare function __cellText(pointer: usize, max: i32): string;
 export declare function __writeCellText(text: string, cells: StaticArray<i32>, at?: i32): i32;
 /** @hidden Text as a Pawn string in a buffer of its own size. */
 export declare function __cellsOf(text: string): StaticArray<i32>;
-/** Читает текст, который сырой натив из `~/natives` записал в массив ячеек. Обратно — `stringToCells`. */
+/** Читает текст, который сырой натив из `@amxts/core/natives` записал в массив ячеек. Обратно — `stringToCells`. */
 export declare function cellsToString(cells: StaticArray<i32>): string;
 /** Записывает текст в массив ячеек как строку Pawn — для сырого натива. */
 export declare function stringToCells(text: string, cells: StaticArray<i32>): void;
 /**
- * Передаёт строку сырому нативу из `~/natives` без объявления буфера под неё:
+ * Передаёт строку сырому нативу из `@amxts/core/natives` без объявления буфера под неё:
  *
  *   cfg_set_base_dir(cells("myplugin"));
  *
@@ -434,7 +434,7 @@ export interface MoveOptions {
     side?: number;
     /** Вверх, или вниз, если число отрицательное: в воде и на лестнице. */
     up?: number;
-    /** Кнопки, зажатые на время шага: `["Jump", "Duck"]`. */
+    /** Кнопки, зажатые на время шага: `["jump", "duck"]`. */
     buttons?: Button[];
     /** Направление взгляда бота, `[pitch, yaw, roll]` или Vector; если не задано — куда он смотрит сейчас. */
     angles?: number[];
@@ -465,7 +465,7 @@ export interface Client {
     readonly isBot: boolean;
     /** `true`, пока игрок на сервере. */
     readonly isConnected: boolean;
-    /** Права админа у игрока — по буквам из `users.ini`: `client.access.includes("Cvar")`. */
+    /** Права админа у игрока — по буквам из `users.ini`: `client.access.includes("cvar")`. */
     readonly access: Access[];
     /** Команда игрока, одно из `"TERRORIST"`, `"CT"`, `"SPECTATOR"` или `"UNASSIGNED"` (пока игрок ни в одну не вступил). Запись переводит игрока, как и `player.team`. */
     team: Team;
@@ -691,7 +691,7 @@ export declare class Player extends PlayerFields implements Client {
     kill(options?: KillOptions): void;
     /**
      * Права админа у игрока — по буквам из `users.ini`:
-     * `player.access.includes("Cvar")`.
+     * `player.access.includes("cvar")`.
      *
      * Pawn: `get_user_flags`
      */
@@ -727,7 +727,7 @@ export declare class Player extends PlayerFields implements Client {
     kick(reason?: string): void;
     /**
      * Двигает бота, созданного `server.addBot`, как клавиши и мышь игрока за один
-     * кадр: `bot.move({ forward: 250, buttons: ["Jump"] })`. Сам бот ничего не
+     * кадр: `bot.move({ forward: 250, buttons: ["jump"] })`. Сам бот ничего не
      * делает, поэтому его двигают каждый кадр — в событии `"frame"`, — иначе он
      * стоит на месте. Игрока, который не бот, метод отклоняет с ошибкой.
      *
@@ -829,7 +829,7 @@ export declare class __CommandWords {
 }
 /**
  * Переводит буквы из `users.ini` в права: `accessOf("abc")` —
- * [`"Immunity"`, `"Reservation"`, `"Kick"`]. Неизвестные буквы пропускаются.
+ * [`"immunity"`, `"reservation"`, `"kick"`]. Неизвестные буквы пропускаются.
  *
  * Pawn: `read_flags`
  */
@@ -1744,7 +1744,7 @@ export declare function clearTimeout(handle: number): void;
 export declare function clearInterval(handle: number): void;
 /**
  * Вызов Pawn-натива с хвостом `...`, собираемый по одному аргументу, —
- * низкоуровневый способ. Натив из `~/natives` — обычная функция, и ему это
+ * низкоуровневый способ. Натив из `@amxts/core/natives` — обычная функция, и ему это
  * не нужно.
  *
  *   new Call(NATIVE_server_print).str("%s").str(text).run();

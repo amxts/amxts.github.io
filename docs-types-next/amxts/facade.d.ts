@@ -314,12 +314,12 @@ export declare function __cellText(pointer: usize, max: i32): string;
 export declare function __writeCellText(text: string, cells: StaticArray<i32>, at?: i32): i32;
 /** @hidden Text as a Pawn string in a buffer of its own size. */
 export declare function __cellsOf(text: string): StaticArray<i32>;
-/** Reads the text a raw native from `~/natives` wrote into a cell array. `stringToCells` is the other way. */
+/** Reads the text a raw native from `@amxts/core/natives` wrote into a cell array. `stringToCells` is the other way. */
 export declare function cellsToString(cells: StaticArray<i32>): string;
 /** Writes text into a cell array as a Pawn string, for a raw native. */
 export declare function stringToCells(text: string, cells: StaticArray<i32>): void;
 /**
- * Passes a string to a raw native from `~/natives` without declaring a
+ * Passes a string to a raw native from `@amxts/core/natives` without declaring a
  * buffer for it:
  *
  *   cfg_set_base_dir(cells("myplugin"));
@@ -432,7 +432,7 @@ export interface MoveOptions {
     side?: number;
     /** Up, or down when negative: swimming and climbing a ladder. */
     up?: number;
-    /** The buttons held during the move: `["Jump", "Duck"]`. */
+    /** The buttons held during the move: `["jump", "duck"]`. */
     buttons?: Button[];
     /** The direction the bot looks in, `[pitch, yaw, roll]` or a Vector; where it looks now when left out. */
     angles?: number[];
@@ -463,7 +463,7 @@ export interface Client {
     readonly isBot: boolean;
     /** `true` while the player is on the server. */
     readonly isConnected: boolean;
-    /** The player's admin rights, from the letters in `users.ini`: `client.access.includes("Cvar")`. */
+    /** The player's admin rights, from the letters in `users.ini`: `client.access.includes("cvar")`. */
     readonly access: Access[];
     /** The player's team, one of `"TERRORIST"`, `"CT"`, `"SPECTATOR"` or `"UNASSIGNED"` (until the player joins a team). Setting it moves the player, as `player.team` does. */
     team: Team;
@@ -689,7 +689,7 @@ export declare class Player extends PlayerFields implements Client {
     kill(options?: KillOptions): void;
     /**
      * The player's admin rights, from the letters in `users.ini`:
-     * `player.access.includes("Cvar")`.
+     * `player.access.includes("cvar")`.
      *
      * Pawn: `get_user_flags`
      */
@@ -725,7 +725,7 @@ export declare class Player extends PlayerFields implements Client {
     kick(reason?: string): void;
     /**
      * Moves a bot `server.addBot` made, as a player's keys and mouse would for
-     * one frame: `bot.move({ forward: 250, buttons: ["Jump"] })`. A bot does
+     * one frame: `bot.move({ forward: 250, buttons: ["jump"] })`. A bot does
      * nothing by itself, so it is moved every frame - in the `"frame"` event -
      * or it stands still. A player who is not a bot is refused with an error.
      *
@@ -827,7 +827,7 @@ export declare class __CommandWords {
 }
 /**
  * Converts `users.ini` letters to rights: `accessOf("abc")` is
- * [`"Immunity"`, `"Reservation"`, `"Kick"`]. An unknown letter is skipped.
+ * [`"immunity"`, `"reservation"`, `"kick"`]. An unknown letter is skipped.
  *
  * Pawn: `read_flags`
  */
@@ -1739,7 +1739,7 @@ export declare function clearTimeout(handle: number): void;
 export declare function clearInterval(handle: number): void;
 /**
  * A call of a Pawn native with a `...` tail, built one argument at a time -
- * the low-level way. A native from `~/natives` is an ordinary function and
+ * the low-level way. A native from `@amxts/core/natives` is an ordinary function and
  * needs none of this.
  *
  *   new Call(NATIVE_server_print).str("%s").str(text).run();

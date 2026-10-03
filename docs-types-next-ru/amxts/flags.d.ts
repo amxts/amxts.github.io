@@ -42,7 +42,7 @@ export declare class MemberFlags extends FlagStore {
  * The flags a mask holds, as an array of names.
  *
  * `push` sets the bit where the mask lives as well, so
- * `player.hideHud.push("Money")` hides the money. Everything else is a plain
+ * `player.hideHud.push("money")` hides the money. Everything else is a plain
  * array: `includes`, `filter`, `length`, a for loop. To take flags away,
  * assign the array back - `player.hideHud = player.hideHud.filter(...)`.
  */
@@ -54,38 +54,38 @@ export declare class FlagList<T> extends Array<T> {
 /** The names set in the mask `store` holds now, as a list that writes back. */
 export declare function flagList<T>(store: FlagStore, family: FlagFamily): FlagList<T>;
 /** Parts of the HUD a player does not see - m_iHideHUD. */
-export type HideHud = "Weapons" | "Flashlight" | "All" | "Health" | "Timer" | "Money" | "Crosshair" | "ObserverCrosshair";
+export type HideHud = "weapons" | "flashlight" | "all" | "health" | "timer" | "money" | "crosshair" | "observerCrosshair";
 /** The HideHud names and their bits, for the hood. */
 export declare const HIDE_HUD: FlagFamily;
 /** Buttons a player holds - var_button, var_oldbuttons. */
-export type Button = "Attack" | "Jump" | "Duck" | "Forward" | "Back" | "Use" | "Cancel" | "Left" | "Right" | "MoveLeft" | "MoveRight" | "Attack2" | "Run" | "Reload" | "Alt1" | "Score";
+export type Button = "attack" | "jump" | "duck" | "forward" | "back" | "use" | "cancel" | "left" | "right" | "moveLeft" | "moveRight" | "attack2" | "run" | "reload" | "alt1" | "score";
 /** The Button names and their bits, for the hood. */
 export declare const BUTTON: FlagFamily;
 /** Visual effects on an entity - var_effects. */
-export type Effect = "BrightField" | "MuzzleFlash" | "BrightLight" | "DimLight" | "InvLight" | "NoInterp" | "Light" | "NoDraw" | "ForceVisibility" | "OwnerVisibility" | "OwnerNoVisibility" | "NoSlerp" | "FollowKeepRender";
+export type Effect = "brightField" | "muzzleFlash" | "brightLight" | "dimLight" | "invLight" | "noInterp" | "light" | "noDraw" | "forceVisibility" | "ownerVisibility" | "ownerNoVisibility" | "noSlerp" | "followKeepRender";
 /** The Effect names and their bits, for the hood. */
 export declare const EFFECT: FlagFamily;
 /** Engine flags of an entity - var_flags. */
-export type EntityFlag = "Fly" | "Swim" | "Conveyor" | "Client" | "InWater" | "Monster" | "GodMode" | "NoTarget" | "SkipLocalHost" | "OnGround" | "PartialGround" | "WaterJump" | "Frozen" | "FakeClient" | "Ducking" | "Float" | "Graphed" | "ImmuneWater" | "ImmuneSlime" | "ImmuneLava" | "Proxy" | "AlwaysThink" | "BaseVelocity" | "MonsterClip" | "OnTrain" | "WorldBrush" | "Spectator" | "CustomEntity" | "KillMe" | "Dormant";
+export type EntityFlag = "fly" | "swim" | "conveyor" | "client" | "inWater" | "monster" | "godMode" | "noTarget" | "skipLocalHost" | "onGround" | "partialGround" | "waterJump" | "frozen" | "fakeClient" | "ducking" | "float" | "graphed" | "immuneWater" | "immuneSlime" | "immuneLava" | "proxy" | "alwaysThink" | "baseVelocity" | "monsterClip" | "onTrain" | "worldBrush" | "spectator" | "customEntity" | "killMe" | "dormant";
 /** The EntityFlag names and their bits, for the hood. */
 export declare const ENTITY_FLAG: FlagFamily;
 /** Kinds of damage - the damage type a hook receives. */
-export type Damage = "Crush" | "Bullet" | "Slash" | "Burn" | "Freeze" | "Fall" | "Blast" | "Club" | "Shock" | "Sonic" | "EnergyBeam" | "NeverGib" | "AlwaysGib" | "Drown" | "Paralyze" | "NerveGas" | "Poison" | "Radiation" | "DrownRecover" | "Acid" | "SlowBurn" | "SlowFreeze" | "Mortar" | "Grenade";
+export type Damage = "crush" | "bullet" | "slash" | "burn" | "freeze" | "fall" | "blast" | "club" | "shock" | "sonic" | "energyBeam" | "neverGib" | "alwaysGib" | "drown" | "paralyze" | "nerveGas" | "poison" | "radiation" | "drownRecover" | "acid" | "slowBurn" | "slowFreeze" | "mortar" | "grenade";
 /** The Damage names and their bits, for the hood. */
 export declare const DAMAGE: FlagFamily;
 /** What an admin may do - get_user_flags, users.ini letters. */
-export type Access = "Immunity" | "Reservation" | "Kick" | "Ban" | "Slay" | "Map" | "Cvar" | "Cfg" | "Chat" | "Vote" | "Password" | "Rcon" | "LevelA" | "LevelB" | "LevelC" | "LevelD" | "LevelE" | "LevelF" | "LevelG" | "LevelH" | "Menu" | "BanTemp" | "Admin" | "User";
+export type Access = "immunity" | "reservation" | "kick" | "ban" | "slay" | "map" | "cvar" | "cfg" | "chat" | "vote" | "password" | "rcon" | "levelA" | "levelB" | "levelC" | "levelD" | "levelE" | "levelF" | "levelG" | "levelH" | "menu" | "banTemp" | "admin" | "user";
 /** The Access names and their bits, for the hood. */
 export declare const ACCESS: FlagFamily;
 /** What the scoreboard shows beside a player - the ScoreAttrib message: dead, the bomb, the VIP, a defuse kit. */
-export type ScoreStatus = "Dead" | "Bomb" | "Vip" | "DefuseKit";
+export type ScoreStatus = "dead" | "bomb" | "vip" | "defuseKit";
 /** The ScoreStatus names and their bits, for the hood. */
 export declare const SCORE_STATUS: FlagFamily;
 /** Modes a weapon is in - m_iWeaponState: a silencer on, burst fire, the shield drawn. */
-export type WeaponState = "UspSilenced" | "Glock18Burst" | "M4a1Silenced" | "EliteLeft" | "FamasBurst" | "ShieldDrawn";
+export type WeaponState = "uspSilenced" | "glock18Burst" | "m4a1Silenced" | "eliteLeft" | "famasBurst" | "shieldDrawn";
 /** The WeaponState names and their bits, for the hood. */
 export declare const WEAPON_STATE: FlagFamily;
 /** The physics state of a player - m_afPhysicsFlags: on a ladder, on a train, ducking. */
-export type PhysicsFlag = "OnLadder" | "OnTrain" | "OnBarnacle" | "Ducking" | "Using" | "Observer";
+export type PhysicsFlag = "onLadder" | "onTrain" | "onBarnacle" | "ducking" | "using" | "observer";
 /** The PhysicsFlag names and their bits, for the hood. */
 export declare const PHYSICS_FLAG: FlagFamily;

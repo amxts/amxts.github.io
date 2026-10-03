@@ -1,4 +1,29 @@
 /**
+ * The files of a system's GitHub Release that a server runs: the name each is
+ * attached under, and where it goes under the game folder (cstrike). A `tool`
+ * is the compiler for `.ts` plugins written on the server, which a server has
+ * only when its kit put it there.
+ * @param {System} system
+ * @returns {{ asset: string, path: string, tool: boolean }[]} the module first, then the tools
+ */
+export function serverFiles(system: System): {
+    asset: string;
+    path: string;
+    tool: boolean;
+}[];
+/** A system's release manifest, attached beside its files: the version, and each file's size and sha256. */
+export function manifestName(system: any): string;
+/** The server image of a version. */
+export function serverImage(version: any): string;
+/**
+ * The amxts release a module file is of, read from the ABI string it
+ * carries - the file is read, not loaded, so a module a running server holds
+ * is read as well. Null when there is no file or no such string.
+ * @param {string} file
+ * @returns {string | null} the version: `0.2.0`
+ */
+export function moduleVersion(file: string): string | null;
+/**
  * `windows`, `win32`, `linux`, any case; null for anything else.
  * @param {string | undefined | null} value
  * @returns {System | null} the system, or null

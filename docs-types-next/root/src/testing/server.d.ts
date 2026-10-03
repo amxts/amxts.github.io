@@ -909,7 +909,7 @@ export declare class FakeServer {
         arg_length(this: FakeServer, plugin: PluginInstance, index: number): number;
         arg_array(this: FakeServer, plugin: PluginInstance, index: number, out: number, count: number): number;
         set_arg_array(this: FakeServer, plugin: PluginInstance, index: number, cells: number, count: number): number;
-        set_arg(this: FakeServer, plugin: PluginInstance, index: number, value: number): 0 | 1;
+        set_arg(this: FakeServer, plugin: PluginInstance, index: number, value: number): 1 | 0;
         set_arg_text(this: FakeServer, plugin: PluginInstance, index: number, text: number, max: number): number;
         ent_get(this: FakeServer, plugin: PluginInstance, id: number, offset: number): number;
         ent_set(this: FakeServer, plugin: PluginInstance, id: number, offset: number, cell: number): void;

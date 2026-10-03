@@ -954,7 +954,7 @@ export declare class DamageMessage extends ClientMessage {
     get damage(): number;
     set damage(value: number);
     /**
-     * The kinds of damage, e.g. `"Fall"`, `"Bullet"`.
+     * The kinds of damage, e.g. `"fall"`, `"bullet"`.
      *
      * Pawn: `get_msg_arg_*(3)`
      */
@@ -1091,7 +1091,7 @@ export declare class HealthMessage extends ClientMessage {
 export declare class HideWeaponMessage extends ClientMessage {
     private readonly kind;
     /**
-     * The hidden parts, e.g. `"Money"`, `"Timer"`. Assign to change them.
+     * The hidden parts, e.g. `"money"`, `"timer"`. Assign to change them.
      *
      * Pawn: `get_msg_arg_*(1)`
      */
@@ -1443,7 +1443,7 @@ export declare class ScoreAttribMessage extends ClientMessage {
     get target(): Player | null;
     set target(value: Player | null);
     /**
-     * The marks on the row, e.g. `"Dead"`, `"Bomb"`, `"Vip"`.
+     * The marks on the row, e.g. `"dead"`, `"bomb"`, `"vip"`.
      *
      * Pawn: `get_msg_arg_*(2)`
      */
