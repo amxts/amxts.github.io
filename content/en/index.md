@@ -196,7 +196,7 @@ amxts does not translate anything into Pawn. The plugin is compiled to WebAssemb
   Machine code, not an interpreter
 
   #description
-  On the hot path of a real plugin, identical logic runs about three times faster than the Pawn version.
+  Plugins are compiled before the server loads them: their own logic runs as machine code, and math with fractions is about twenty times faster than in Pawn.
   :::
 
   :::u-page-feature
