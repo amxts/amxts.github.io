@@ -28,7 +28,7 @@ import process from 'node:process'
 import * as ts from 'typescript'
 import { docsPage, modulePage, splitFences, unindent } from '../modules/amxts-docs/markdown'
 import { corePath, modulesPath } from '../modules/amxts-docs/sources'
-import { typesFolder } from '../shared/docs'
+import { examplesOptions, typesFolder } from '../shared/docs'
 
 if (!corePath)
   throw new Error('No checkout of the framework: set AMXTS_CORE_PATH, or put it at ../amxts')
@@ -143,13 +143,7 @@ function checkSnippets() {
   return locales.flatMap(({ code, types }) => {
     const root = resolve(types).replaceAll('\\', '/')
     const files = new Map(snippets.filter(snippet => snippet.locale === code).flatMap((snippet, i) => filesOf(snippet, i)))
-    const options: ts.CompilerOptions = {
-      lib: ['lib.esnext.d.ts'],
-      strict: true,
-      noEmit: true,
-      types: [],
-      paths: { '~/*': [`${root}/amxts/*`], '@amxts/core': [`${root}/amxts/facade.d.ts`], '@amxts/core/test-utils': [`${root}/root/src/testing/index.d.ts`], '@amxts/core/*': [`${root}/amxts/*`], '@amxts/*': [`${root}/packages/*/index.d.ts`] },
-    }
+    const options: ts.CompilerOptions = { ...examplesOptions(root), strict: true, noEmit: true, types: [] }
     const host: ts.LanguageServiceHost = {
       getScriptFileNames: () => [...files.keys(), `${root}/as-types.d.ts`],
       getScriptVersion: () => '1',

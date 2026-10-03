@@ -42,3 +42,27 @@ export function docsOf(path: string) {
 export function typesFolder(locale: SiteLocale, version: DocsVersion) {
   return `docs-types${version === 'next' ? '-next' : ''}${locale === 'en' ? '' : `-${locale}`}`
 }
+
+/**
+ * The compiler options of the docs' examples, which read the declarations in
+ * `root` (a folder of them, with forward slashes): the site's Twoslash
+ * (nuxt.config.ts) and the check of the examples (scripts/docs-types.ts).
+ */
+export function examplesOptions(root: string) {
+  return {
+    // lib by file name: under TypeScript 6 Twoslash does not find 'esnext'
+    // (the module's default), and without it `number[]` reads as `{}`. No DOM:
+    // the framework declares its own Event and AbortSignal.
+    lib: ['lib.esnext.d.ts'],
+    // a caught error is an `Error` in a plugin, not `unknown`
+    useUnknownInCatchVariables: false,
+    // `~/*` inside the framework, and the packages a project imports
+    paths: {
+      '~/*': [`${root}/amxts/*`],
+      '@amxts/core': [`${root}/amxts/facade.d.ts`],
+      '@amxts/core/test-utils': [`${root}/root/src/testing/index.d.ts`],
+      '@amxts/core/*': [`${root}/amxts/*`],
+      '@amxts/*': [`${root}/packages/*/index.d.ts`],
+    },
+  }
+}

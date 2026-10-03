@@ -1,6 +1,7 @@
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import pawn from './pawn.tmLanguage'
+import { examplesOptions } from './shared/docs'
 import { siteUrl } from './shared/site'
 
 // The path the site is served under: '/' (the Pages site amxts.github.io);
@@ -34,9 +35,9 @@ const movedPages = {
 }
 const movedRules = Object.fromEntries(['/docs', '/ru/docs'].flatMap(prefix => Object.entries(movedPages)
   .map(([from, page]) => [`${prefix}/${from}`, { redirect: to(`${prefix}/${page}`) }])))
-// a file of the framework's declarations (docs-types/), with forward slashes,
-// the form TypeScript uses for paths
-const declarations = (path: string) => fileURLToPath(new URL(`./docs-types/${path}`, import.meta.url)).replaceAll('\\', '/')
+// the framework's declarations (docs-types/), with forward slashes, the form
+// TypeScript uses for paths
+const declarations = fileURLToPath(new URL('./docs-types', import.meta.url)).replaceAll('\\', '/')
 
 /** https://nuxt.com/docs/api/configuration/nuxt-config */
 export default defineNuxtConfig({
@@ -104,20 +105,7 @@ export default defineNuxtConfig({
     includeNuxtTypes: false,
     throws: false,
     handbookOptions: { noErrors: true },
-    compilerOptions: {
-      // lib by file name: under TypeScript 6 Twoslash does not find 'esnext'
-      // (the module's default), and without it `number[]` reads as `{}`. No DOM:
-      // the framework declares its own Event and AbortSignal.
-      lib: ['lib.esnext.d.ts'],
-      // `~/*` inside the framework, and the packages a project imports
-      paths: {
-        '~/*': [declarations('amxts/*')],
-        '@amxts/core': [declarations('amxts/facade.d.ts')],
-        '@amxts/core/test-utils': [declarations('root/src/testing/index.d.ts')],
-        '@amxts/core/*': [declarations('amxts/*')],
-        '@amxts/*': [declarations('packages/*/index.d.ts')],
-      },
-    },
+    compilerOptions: examplesOptions(declarations),
   },
 
   content: {
