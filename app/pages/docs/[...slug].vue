@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ContentNavigationItem } from '@nuxt/content'
+import type { ContentNavigationItem, TocLink } from '@nuxt/content'
 import { findPageHeadline } from '@nuxt/content/utils'
 import { withoutTrailingSlash } from 'ufo'
 import { collections, docsPrefix } from '#shared/docs'
@@ -52,6 +52,9 @@ useSeoMeta({
   ogDescription: description,
 })
 
+// the contents, a heading's `:since` mark beside its line (modules/amxts-docs)
+const tocLinks = computed(() => page.value?.body?.toc?.links as (TocLink & { since?: string })[] | undefined)
+
 const headline = computed(() => findPageHeadline(navigation?.value, page.value?.path))
 
 defineOgImage('Docs', { title, description, headline: headline.value })
@@ -90,13 +93,19 @@ defineOgImage('Docs', { title, description, headline: headline.value })
     </UPageBody>
 
     <template
-      v-if="page?.body?.toc?.links?.length"
+      v-if="tocLinks?.length"
       #right
     >
       <UContentToc
         :title="t('docs.toc')"
-        :links="page.body?.toc?.links"
-      />
+        :links="tocLinks"
+      >
+        <template #link="{ link }">
+          <span class="truncate">{{ link.text }}</span>
+
+          <Since v-if="link.since" :v="link.since" class="ms-1.5 shrink-0" />
+        </template>
+      </UContentToc>
     </template>
   </UPage>
 </template>

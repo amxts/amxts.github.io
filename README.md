@@ -85,6 +85,13 @@ become package manager tabs, TypeScript examples get types on hover, a
 README's header becomes the page's title and description. After changing that
 code, remove `.data`: the pages parsed before keep their old form.
 
+A page marks a feature with the version it arrived in, `:since{v="0.2"}` at
+the end of its heading or after its name in a sentence or table cell: an MDC
+component (`app/components/content/Since.vue`) that shows a "since v0.2" badge.
+The version is a prop, not text inside the mark, so the heading's anchor stays
+`#fake-clients`; the badge shows in the page's contents too (`since` on a
+line of the contents, `modules/amxts-docs/index.ts`).
+
 The hovers read the framework's declarations, one set per docs version and
 language: `docs-types/` and `docs-types-ru/` for the current version,
 `docs-types-next/` and `docs-types-next-ru/` for the next (a code block's

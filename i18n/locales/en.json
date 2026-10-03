@@ -17,6 +17,10 @@
   },
   "docs": {
     "toc": "On this page",
+    "since": {
+      "label": "since v{version}",
+      "title": "Added in amxts {version}"
+    },
     "notFound": "This page does not exist.",
     "next": {
       "title": "The next version, not released yet",

@@ -29,6 +29,35 @@ function fileOf(id: string) {
   return { locale, version, path: collection === 'module_docs' ? `docs/modules/${locale}/${key}` : `docs/${locale}/${key}` }
 }
 
+/** A node of a parsed page (minimark): text, or `[tag, props, ...children]`. */
+type MarkNode = string | [string, Record<string, unknown>, ...MarkNode[]]
+
+/** A line of a page's contents, with the version its heading's `:since` mark names. */
+interface TocLink { id: string, since?: string, children?: TocLink[] }
+
+/** The version each marked heading names (`## Bots :since{v="0.2"}`), by the heading's id. */
+function sinceMarks(nodes: MarkNode[], marks = new Map<string, string>()) {
+  for (const node of nodes) {
+    if (typeof node === 'string')
+      continue
+    const [tag, props, ...children] = node
+    const mark = /^h[2-6]$/.test(tag) && children.find(child => typeof child !== 'string' && child[0] === 'since')
+    if (mark)
+      marks.set(String(props.id), String((mark as Exclude<MarkNode, string>)[1].v))
+    else
+      sinceMarks(children, marks)
+  }
+  return marks
+}
+
+/** A heading's `:since` mark shows in the page's contents too (its line's `since`). */
+function markContents(links: TocLink[], marks: Map<string, string>) {
+  for (const link of links) {
+    link.since = marks.get(link.id)
+    markContents(link.children ?? [], marks)
+  }
+}
+
 export default defineNuxtModule({
   meta: { name: 'amxts-docs' },
   async setup(_, nuxt) {
@@ -44,6 +73,9 @@ export default defineNuxtModule({
     nuxt.hook('content:file:afterParse', ({ file, content }) => {
       if (fileOf(file.id)?.module)
         content.path = String(content.path).replace(/\/readme(?:\.\w+)?$/, '')
+      const body = content.body as { value?: MarkNode[], toc?: { links: TocLink[] } } | undefined
+      if (body?.value && body.toc)
+        markContents(body.toc.links, sinceMarks(body.value))
     })
   },
 })
