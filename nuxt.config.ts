@@ -169,6 +169,7 @@ export default defineNuxtConfig({
         '/changelog',
         '/ru/changelog',
         '/api/changelog',
+        '/api/next-docs',
         // the next version's docs: no page of the current ones links there
         '/docs/next/getting-started/introduction',
         '/ru/docs/next/getting-started/introduction',
