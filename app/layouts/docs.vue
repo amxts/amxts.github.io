@@ -34,6 +34,8 @@ function place() {
   }
 }
 
+// Until the line is placed - the first paint, before the page runs - the
+// navigation's own highlight marks the page in the same place.
 watch(() => route.path, () => nextTick(place))
 onMounted(() => nextTick(place))
 useResizeObserver(nav, place)
@@ -49,7 +51,7 @@ useResizeObserver(nav, place)
               highlight
               :collapsible="false"
               :navigation="navigation"
-              :ui="{ linkTrailingIcon: 'hidden', link: 'after:hidden' }"
+              :ui="{ linkTrailingIcon: 'hidden', link: indicator ? 'after:hidden' : '' }"
             />
 
             <span
