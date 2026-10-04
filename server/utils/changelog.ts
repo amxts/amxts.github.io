@@ -1,7 +1,7 @@
 import process from 'node:process'
 
 /** The repositories of github.com/amxts whose releases the changelog shows. */
-export const changelogRepos = ['amxts', 'amxts-cli', 'menu-core', 'config-core', 'resemiclip', 'amxts-vscode']
+export const changelogRepos = ['amxts', 'amxts-cli', 'menu-core', 'config-core', 'resemiclip', 'ftp', 'amxts-vscode']
 
 export interface Release {
   /** The repository: `amxts`, `menu-core`... */
@@ -62,3 +62,28 @@ export async function listReleases(): Promise<Release[]> {
   }))
   return lists.flat().sort((a, b) => b.date.localeCompare(a.date))
 }
+
+/**
+ * Whether the framework's next version has docs of its own yet: main's
+ * `docs/` differs from its latest release line's (`0.N.x`). Right after a
+ * release the two are the same, and there is no next version to point at.
+ */
+export const nextDocsDiffer = defineCachedFunction(async (): Promise<boolean> => {
+  const token = process.env.GITHUB_TOKEN
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
+  try {
+    const branches = await $fetch<{ name: string }[]>('https://api.github.com/repos/amxts/amxts/branches', { query: { per_page: 100 }, headers, timeout: 10000 })
+    const [line] = branches
+      .map(branch => branch.name.match(/^(\d+)\.(\d+)\.x$/))
+      .filter(match => match !== null)
+      .sort((a, b) => Number(b[1]) - Number(a[1]) || Number(b[2]) - Number(a[2]))
+    if (!line)
+      return true
+    const compare = await $fetch<{ files?: { filename: string }[] }>(`https://api.github.com/repos/amxts/amxts/compare/${line[0]}...main`, { headers, timeout: 10000 })
+    return (compare.files ?? []).some(file => file.filename.startsWith('docs/'))
+  }
+  catch (error) {
+    console.warn(`GitHub did not say whether the next docs differ: ${(error as Error).message}`)
+    return false
+  }
+}, { name: 'next-docs-differ', maxAge: 60 * 60, swr: true })

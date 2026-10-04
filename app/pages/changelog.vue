@@ -13,6 +13,9 @@ const { data: releases } = await useFetch<Release[]>('/api/changelog', {
   default: () => [],
 })
 
+// The next version's docs are worth pointing at only once they say more than the release's.
+const { data: nextDocs } = await useFetch<boolean>('/api/next-docs', { key: 'next-docs', default: () => false })
+
 /** The repositories that have a release, for the filter. */
 const repos = computed(() => [...new Set(releases.value.map(release => release.repo))].sort())
 
@@ -36,6 +39,7 @@ useSeoMeta({
 
     <UPageBody :ui="{ base: 'mt-8 pb-16' }">
       <UAlert
+        v-if="nextDocs"
         :title="t('changelog.next.title')"
         :description="t('changelog.next.description')"
         icon="i-lucide-flask-conical"
