@@ -66,7 +66,7 @@ export interface DocSource {
     /** The package's folder. */
     root: string;
 }
-/** The core's hand-written API: what `~/facade` and the globals give a plugin. */
+/** The core's hand-written API: what `@amxts/core` and the globals give a plugin. */
 export declare const CORE_API: string[];
 export declare function docsFileOf(root: string, file: string): string;
 /**

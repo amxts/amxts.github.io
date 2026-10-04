@@ -62,11 +62,30 @@ export declare function ret(value: number): void;
  * имя, уникальное в пределах плагина. `fallback` — ответ, если обработчик
  * ничего не вернул: `0` почти везде, `1` там, где натив ждёт обработанное событие.
  *
- * Регистрируйте из события `"cfg"`, а не с верхнего уровня файла: консольная
+ * Регистрируйте из события `"pluginsLoaded"`, а не с верхнего уровня файла: консольная
  * команда, зарегистрированная так рано (`register_concmd`, `register_srvcmd`),
  * роняет сервер, когда её вводят.
  */
 export declare function publicFor(handler: WideHandler, key: string, fallback?: number): string;
+/**
+ * @hidden `publicFor`, the public switched by `hook`: switched off, a call
+ * answers `fallback` in the module, without reaching the plugin.
+ */
+export declare function __switchedPublic(handler: WideHandler, key: string, hook: __Switch | null, fallback?: number): string;
+/**
+ * @hidden A registration with AMX Mod X - a hook, or a public it calls - that
+ * is switched off while what it delivers has no listener and back on for the
+ * next one, so that an event nobody listens to does not reach the plugin.
+ * One switched off before it is made is made switched off.
+ */
+export declare class __Switch {
+    private on;
+    private parts;
+    /** Switches every registration of it on or off. */
+    set(on: bool): void;
+    /** What switches one registration, once it is made; run at once while the switch is off. */
+    add(part: (on: bool) => void): void;
+}
 /**
  * Экспортирует натив, который могут вызывать другие плагины, в том числе на
  * Pawn.
@@ -122,6 +141,11 @@ export declare function __nativeInts(index: i32): f64[];
 export declare function __nativeFloats(index: i32): f64[];
 /** @hidden A `Float:v[3]` argument. */
 export declare function __nativeVector(index: i32): Vector;
+/**
+ * @hidden Writes a `Float:v[3]` argument where it lies: a hookchain's vector,
+ * which reapi copies back into the game's once the listener returns.
+ */
+export declare function __setNativeVector(index: i32, value: Vector): void;
 /**
  * @hidden A forward's array argument, as many numbers as it has: what the
  * emitting plugin sent, or the size the include declares; none when neither
@@ -302,7 +326,7 @@ export declare function argString(pointer: number): string;
  * zero cell or `max` cells. AMX Mod X, the engine and the game keep text as
  * bytes - get_amxstring takes the low byte of each cell - so a letter outside
  * ASCII is two or three cells, and a cell per UTF-16 unit came out as
- * mojibake one way and a truncated byte the other ("раз" arrived as "@0").
+ * mojibake one way and a truncated byte the other (a Cyrillic word arrived as "@0").
  */
 export declare function __cellText(pointer: usize, max: i32): string;
 /**
@@ -313,12 +337,12 @@ export declare function __cellText(pointer: usize, max: i32): string;
 export declare function __writeCellText(text: string, cells: StaticArray<i32>, at?: i32): i32;
 /** @hidden Text as a Pawn string in a buffer of its own size. */
 export declare function __cellsOf(text: string): StaticArray<i32>;
-/** Читает текст, который сырой натив из `~/natives` записал в массив ячеек. Обратно — `stringToCells`. */
+/** Читает текст, который сырой натив из `@amxts/core/natives` записал в массив ячеек. Обратно — `stringToCells`. */
 export declare function cellsToString(cells: StaticArray<i32>): string;
 /** Записывает текст в массив ячеек как строку Pawn — для сырого натива. */
 export declare function stringToCells(text: string, cells: StaticArray<i32>): void;
 /**
- * Передаёт строку сырому нативу из `~/natives` без объявления буфера под неё:
+ * Передаёт строку сырому нативу из `@amxts/core/natives` без объявления буфера под неё:
  *
  *   cfg_set_base_dir(cells("myplugin"));
  *
@@ -389,26 +413,14 @@ export declare function noOrigin(): number[];
 export declare const TEXT_MAX: i32;
 /** Команда Counter-Strike под именем, которое даёт ей игра: одно из `"TERRORIST"`, `"CT"`, `"SPECTATOR"`, `"UNASSIGNED"`. */
 export type Team = "TERRORIST" | "CT" | "SPECTATOR" | "UNASSIGNED";
+/** Способ, которым игра игрока подтверждает, кто он, по словам Reunion, например `"steam"` или `"revEmu"`; `"unknown"` на сервере без Reunion. */
+export type AuthType = "unknown" | "steam" | "steamEmu" | "revEmu" | "revEmu2013" | "oldRevEmu" | "sc2009" | "avsmp" | "sxei" | "sse3" | "dproto" | "hltv";
 /** Оружие, которое может держать игрок, по имени класса, например `"weapon_ak47"` или `"weapon_knife"`. */
 export type WeaponName = "weapon_p228" | "weapon_scout" | "weapon_hegrenade" | "weapon_xm1014" | "weapon_c4" | "weapon_mac10" | "weapon_aug" | "weapon_smokegrenade" | "weapon_elite" | "weapon_fiveseven" | "weapon_ump45" | "weapon_sg550" | "weapon_galil" | "weapon_famas" | "weapon_usp" | "weapon_glock18" | "weapon_awp" | "weapon_mp5navy" | "weapon_m249" | "weapon_m3" | "weapon_m4a1" | "weapon_tmp" | "weapon_g3sg1" | "weapon_flashbang" | "weapon_deagle" | "weapon_sg552" | "weapon_ak47" | "weapon_knife" | "weapon_p90";
 /** Предмет, который выдаёт `player.give`: оружие, броня (`"item_kevlar"`, `"item_assaultsuit"`) или набор сапёра (`"item_thighpack"`). */
 export type ItemName = "weapon_p228" | "weapon_scout" | "weapon_hegrenade" | "weapon_xm1014" | "weapon_c4" | "weapon_mac10" | "weapon_aug" | "weapon_smokegrenade" | "weapon_elite" | "weapon_fiveseven" | "weapon_ump45" | "weapon_sg550" | "weapon_galil" | "weapon_famas" | "weapon_usp" | "weapon_glock18" | "weapon_awp" | "weapon_mp5navy" | "weapon_m249" | "weapon_m3" | "weapon_m4a1" | "weapon_tmp" | "weapon_g3sg1" | "weapon_flashbang" | "weapon_deagle" | "weapon_sg552" | "weapon_ak47" | "weapon_knife" | "weapon_p90" | "item_kevlar" | "item_assaultsuit" | "item_thighpack";
-/**
- * Фильтр `Player.all`; все поля необязательны, например
- * `Player.all({ alive: true, team: "CT" })`.
- */
-export interface PlayerFilter {
-    /** Только живые игроки. */
-    alive?: boolean;
-    /** Только мёртвые игроки. */
-    dead?: boolean;
-    /** Только игроки этой команды, например `"CT"`. */
-    team?: Team;
-    /** Только боты. */
-    bots?: boolean;
-    /** Только люди, без ботов. */
-    humans?: boolean;
-}
+/** @hidden Every weapon's class name: what Ham Sandwich hooks a weapon's event on for "every weapon". */
+export declare function __weaponClassnames(): string[];
 /** Модуль AMX Mod X, наличие которого плагин может проверить, — одно из `"reapi"`, `"cstrike"`, `"fun"`, `"hamsandwich"`, `"engine"`, `"fakemeta"`. */
 export type ModuleName = "reapi" | "cstrike" | "fun" | "hamsandwich" | "engine" | "fakemeta";
 /**
@@ -418,18 +430,45 @@ export type ModuleName = "reapi" | "cstrike" | "fun" | "hamsandwich" | "engine" 
  * Pawn: `LibraryExists`, `module_exists`
  */
 export declare function hasModule(name: ModuleName): boolean;
+/** @hidden Whether the server has reapi: the hood's choice of backend, made once. */
+export declare function __hasReapi(): bool;
+/**
+ * @hidden A line in the console the first time it is said: what this server
+ * cannot do, where a plugin asks for it - not on every call, which a field
+ * read in a frame listener makes every frame.
+ */
+export declare function __sayOnce(text: string): void;
 /** Параметры `player.kill()`. */
 export interface KillOptions {
     /** Фраги игрока не меняются: штрафа за самоубийство нет. */
     keepFrags?: boolean;
 }
+import { Button } from "./flags";
 /**
- * Подключающийся игрок — в `"connect"`, `"authorized"` и `"putinserver"`: имя,
+ * Один шаг бота, `bot.move({ ... })`: скорости — в единицах в секунду, как их
+ * дают клавиши игрока: `250` — бег с ножом, `-250` — назад.
+ */
+export interface MoveOptions {
+    /** Вперёд, или назад, если число отрицательное. */
+    forward?: number;
+    /** Вправо, или влево, если число отрицательное. */
+    side?: number;
+    /** Вверх, или вниз, если число отрицательное: в воде и на лестнице. */
+    up?: number;
+    /** Кнопки, зажатые на время шага: `["jump", "duck"]`. */
+    buttons?: Button[];
+    /** Направление взгляда бота, `[pitch, yaw, roll]` или Vector; если не задано — куда он смотрит сейчас. */
+    angles?: number[];
+    /** Длительность шага в миллисекундах, от `1` до `255`; если не задано — время кадра сервера. */
+    msec?: number;
+}
+/**
+ * Подключающийся игрок — в `"connect"`, `"authorized"` и `"putInServer"`: имя,
  * адрес, SteamID и команда, но ещё без здоровья и оружия. Любой Player — тоже
  * Client.
  *
  * ```ts
- * server.addEventListener("putinserver", (event) => {
+ * server.addEventListener("putInServer", (event) => {
  * 	print(event.player, `Welcome, ${event.player.name}!`);
  * });
  * ```
@@ -441,13 +480,19 @@ export interface Client {
     readonly name: string;
     /** IP-адрес игрока без порта, например `"192.168.0.10"`. */
     readonly ip: string;
-    /** SteamID игрока, например `"STEAM_0:1:12345"`. У бота — `"BOT"`, у HLTV — `"HLTV"`; пока Steam не подтвердил игрока — `"STEAM_ID_PENDING"` (дождитесь события `"authorized"`), на LAN-сервере — `"STEAM_ID_LAN"`. */
-    readonly authid: string;
+    /** SteamID игрока, например `"STEAM_0:1:12345"`. У бота — `"BOT"`, у HLTV — `"HLTV"`; пока Steam не подтвердил игрока — `"STEAM_ID_PENDING"` (дождитесь события `"authorized"`), на LAN-сервере — `"STEAM_ID_LAN"`. С Reunion игра без Steam получает SteamID, сделанный из её ключа (`authKey`): `"STEAM_..."` или `"VALVE_..."`, как скажут настройки Reunion на сервере. */
+    readonly steamId: string;
+    /** Способ, которым игра игрока подтвердила, кто он, по словам Reunion: одно из `"steam"` (игра из Steam), `"steamEmu"`, `"revEmu"`, `"revEmu2013"`, `"oldRevEmu"`, `"sc2009"`, `"avsmp"`, `"sxei"`, `"sse3"` (игра без Steam — по эмулятору, которым она подтвердила себя), `"dproto"`, `"hltv"` или `"unknown"` на сервере без Reunion. */
+    readonly authType: AuthType;
+    /** Сетевой протокол игры игрока: `48` у нынешней игры, `47` у старой, которую пускает Reunion. `0` на сервере без Reunion. */
+    readonly protocol: number;
+    /** Ключ, которым игра игрока подтвердила себя, как его прочитал Reunion: из него сделан SteamID игрока. `""` на сервере без Reunion. */
+    readonly authKey: string;
     /** `true`, если это бот. */
     readonly isBot: boolean;
     /** `true`, пока игрок на сервере. */
     readonly isConnected: boolean;
-    /** Права админа у игрока — по буквам из `users.ini`: `client.access.includes("Cvar")`. */
+    /** Права админа у игрока — по буквам из `users.ini`: `client.access.includes("cvar")`. */
     readonly access: Access[];
     /** Команда игрока, одно из `"TERRORIST"`, `"CT"`, `"SPECTATOR"` или `"UNASSIGNED"` (пока игрок ни в одну не вступил). Запись переводит игрока, как и `player.team`. */
     team: Team;
@@ -463,6 +508,8 @@ export interface Client {
     readonly signal: AbortSignal;
     /** Выполняет команду в консоли игрока, будто он сам её набрал: `client.command("stop")`. */
     command(text: string): void;
+    /** Кикает игрока с сервера с причиной, которую он видит: `client.kick("Спам")`. */
+    kick(reason?: string): void;
     /** Вводит игрока в сторону так, как игра вводит того, кто выбрал её в меню команд: `client.joinTeam("CT")`. `false`, если игра отказала. */
     joinTeam(team: Team): boolean;
     /** Спрашивает у игры игрока один из её кваров: `await client.queryCvar("fps_max")` — значение текстом или `null`, если такого квара в его игре нет. */
@@ -472,21 +519,11 @@ export interface Client {
  * Игрок в игре: всё, что есть у Client, а также здоровье, броня, фраги,
  * оружие и экран.
  *
- * Событие об игроке передаёт его как `event.player`; `Player.all()`
+ * Событие об игроке передаёт его как `event.player`; `server.players`
  * возвращает всех на сервере.
  */
 export declare class Player extends PlayerFields implements Client {
     constructor(id: number);
-    /**
-     * Игроки на сервере: `Player.all({ alive: true })`.
-     *
-     * Каждое поле сужает выборку: `{ bots: true }` — только боты,
-     * `{ humans: true }` — только люди. Без фильтра — все подключённые, кроме
-     * HLTV-прокси.
-     *
-     * Pawn: `get_players`
-     */
-    static all(filter?: PlayerFilter): Player[];
     /**
      * Имя игрока.
      *
@@ -539,7 +576,8 @@ export declare class Player extends PlayerFields implements Client {
      * Вводит игрока в сторону так, как игра вводит того, кто выбрал её в меню
      * команд, а внешность выбирается за него: `player.joinTeam("CT")`. Только
      * что пришедший игрок после этого в игре и может появиться, чего
-     * `player.team = ...` для него не делает. `false`, если игра отказала.
+     * `player.team = ...` для него не делает. Живой игрок, отправленный в
+     * зрители, тихо умирает: без смерти и без фрага. `false`, если игра отказала.
      *
      * Pawn: `rg_join_team`
      */
@@ -551,11 +589,29 @@ export declare class Player extends PlayerFields implements Client {
      */
     get ip(): string;
     /**
-     * SteamID игрока, например `"STEAM_0:1:12345"`. У бота — `"BOT"`, у HLTV — `"HLTV"`; пока Steam не подтвердил игрока — `"STEAM_ID_PENDING"` (дождитесь события `"authorized"`), на LAN-сервере — `"STEAM_ID_LAN"`.
+     * SteamID игрока, например `"STEAM_0:1:12345"`. У бота — `"BOT"`, у HLTV — `"HLTV"`; пока Steam не подтвердил игрока — `"STEAM_ID_PENDING"` (дождитесь события `"authorized"`), на LAN-сервере — `"STEAM_ID_LAN"`. С Reunion игра без Steam получает SteamID, сделанный из её ключа (`authKey`): `"STEAM_..."` или `"VALVE_..."`, как скажут настройки Reunion на сервере.
      *
      * Pawn: `get_user_authid`
      */
-    get authid(): string;
+    get steamId(): string;
+    /**
+     * Способ, которым игра игрока подтвердила, кто он, по словам Reunion: одно из `"steam"` (игра из Steam), `"steamEmu"`, `"revEmu"`, `"revEmu2013"`, `"oldRevEmu"`, `"sc2009"`, `"avsmp"`, `"sxei"`, `"sse3"` (игра без Steam — по эмулятору, которым она подтвердила себя), `"dproto"`, `"hltv"` или `"unknown"` на сервере без Reunion.
+     *
+     * Pawn: `REU_GetAuthtype`
+     */
+    get authType(): AuthType;
+    /**
+     * Сетевой протокол игры игрока: `48` у нынешней игры, `47` у старой, которую пускает Reunion. `0` на сервере без Reunion.
+     *
+     * Pawn: `REU_GetProtocol`
+     */
+    get protocol(): number;
+    /**
+     * Ключ, которым игра игрока подтвердила себя, как его прочитал Reunion: из него сделан SteamID игрока. `""` на сервере без Reunion.
+     *
+     * Pawn: `REU_GetAuthKey`
+     */
+    get authKey(): string;
     /**
      * `true`, пока игрок жив.
      *
@@ -680,7 +736,7 @@ export declare class Player extends PlayerFields implements Client {
     kill(options?: KillOptions): void;
     /**
      * Права админа у игрока — по буквам из `users.ini`:
-     * `player.access.includes("Cvar")`.
+     * `player.access.includes("cvar")`.
      *
      * Pawn: `get_user_flags`
      */
@@ -708,6 +764,22 @@ export declare class Player extends PlayerFields implements Client {
      */
     command(text: string): void;
     /**
+     * Кикает игрока с сервера с причиной, которую он видит:
+     * `player.kick("Спам")`; без неё — собственной причиной игры.
+     *
+     * Pawn: `server_cmd("kick #%d")`
+     */
+    kick(reason?: string): void;
+    /**
+     * Двигает бота, созданного `server.addBot`, как клавиши и мышь игрока за один
+     * кадр: `bot.move({ forward: 250, buttons: ["jump"] })`. Сам бот ничего не
+     * делает, поэтому его двигают каждый кадр — в событии `"frame"`, — иначе он
+     * стоит на месте. Игрока, который не бот, метод отклоняет с ошибкой.
+     *
+     * Pawn: `engfunc(EngFunc_RunPlayerMove, ...)`
+     */
+    move(options?: MoveOptions): void;
+    /**
      * Спрашивает у игры игрока один из её кваров: `await
      * player.queryCvar("fps_max")` — значение текстом, например `"100"`, или
      * `null`, если такого квара в его игре нет или она его не называет. Ответ —
@@ -729,35 +801,89 @@ export declare class Player extends PlayerFields implements Client {
 export declare function readText(fill: (out: number, max: number) => number, max?: number): string;
 /**
  * `id` игроков на сервере в виде массива. `flags`: `"a"` живые, `"b"` мёртвые,
- * `"c"` без ботов, `"h"` без HLTV, `"e"` только `team`. `Player.all` делает то
- * же с понятными полями.
+ * `"c"` без ботов, `"h"` без HLTV, `"e"` только `team`. `server.players` — все,
+ * как игроки, их фильтруют как массив.
  *
  * Pawn: `get_players`
  */
 export declare function playerIds(flags?: string, team?: string): number[];
-/** Обработчик команды: получает игрока, который её набрал, и слова после имени команды. */
-export type CommandHandler = (player: Player, args: string[]) => void;
 /** Параметры команды: кому она доступна и её описание в списке. */
 export interface CommandOptions {
     /** Право админа, которое нужно игроку для команды; если не указано, команда доступна всем. */
     access?: Access;
-    /** Описание команды, которое показывают `amx_help` и подобные. */
+    /** Описание команды, которое показывают `amx_help` и `server.commands`. */
     description?: string;
+}
+/** Команда, которую добавил плагин, как её перечисляет `server.commands`: то, что показывает `/help`. */
+export declare class CommandInfo {
+    /** Использование команды, как её набирают, например `"/kick <target> [reason]"`. */
+    readonly usage: string;
+    /** Описание команды, как его дала настройка `description`; `""`, если описания нет. */
+    readonly description: string;
+    /** Право админа, которое нужно команде; `null`, если пользоваться ей может каждый. */
+    readonly access: Access | null;
+    /** Команда ли это консоли сервера, а не игрока. */
+    readonly server: boolean;
+    constructor(
+    /** The command's usage, as it is typed, e.g. `"/kick <target> [reason]"`. */
+    usage: string, 
+    /** The command's description, as its `description` option gave it; `""` without one. */
+    description: string, 
+    /** The admin right the command needs; `null` when everyone may use it. */
+    access: Access | null, 
+    /** Whether it is a command of the server console rather than a player's. */
+    server: boolean);
+}
+/**
+ * @hidden The words a command was typed with, as the build's code for one
+ * command reads its arguments (scripts/typed-commands.ts): each by its place,
+ * as its type says. A word that is not what the command takes answers the
+ * one who typed it with the usage, and sets `failed`: the handler does not run.
+ */
+export declare class __CommandWords {
+    /** The player who typed it; `null` for the server's console. */
+    readonly player: Player | null;
+    readonly usage: string;
+    readonly words: string[];
+    /** The line from each word on, as typed: what the last text argument takes. */
+    readonly rests: string[];
+    /** Set once a word is wrong: the one who typed it has been told. */
+    failed: bool;
+    constructor(
+    /** The player who typed it; `null` for the server's console. */
+    player: Player | null, usage: string, words: string[], 
+    /** The line from each word on, as typed: what the last text argument takes. */
+    rests: string[]);
+    get count(): i32;
+    /** The word at `at`; `""` when it was not typed. */
+    text(at: i32): string;
+    /** The rest of the line from the word at `at`. */
+    rest(at: i32): string;
+    /** The word at `at` as a number; a word that is not one fails. */
+    number(at: i32): number;
+    /** The word at `at`, one of `names`; another fails. */
+    name(at: i32, names: string[]): string;
+    /** The player the word at `at` names - `#userid`, the whole name or a part of it. None, or several, fails. */
+    target(at: i32): Player | null;
+    /** Whether at least `count` words were typed; fewer fails. */
+    need(count: i32): bool;
+    /** Whether no word is left over after the first `count`; one more fails. */
+    done(count: i32): bool;
+    /** Tells the one who typed it what was wrong, and the usage. */
+    private fail;
 }
 /**
  * Переводит буквы из `users.ini` в права: `accessOf("abc")` —
- * [`"Immunity"`, `"Reservation"`, `"Kick"`]. Неизвестные буквы пропускаются.
+ * [`"immunity"`, `"reservation"`, `"kick"`]. Неизвестные буквы пропускаются.
  *
  * Pawn: `read_flags`
  */
 export declare function accessOf(letters: string): Access[];
-/** Обработчик серверной команды: получает слова после имени команды. */
-export type ServerCommandHandler = (args: string[]) => void;
 /**
  * @hidden The hood of a game event Ham Sandwich delivers (as/hooks.ts):
- * `fn` hooked on the class, a reload taking its slot back.
+ * `fn` hooked on the class, a reload taking its slot back, switched by `hook`.
  */
-export declare function __ham(fn: i32, classname: string, handler: WideHandler, post: bool): void;
+export declare function __ham(fn: i32, classname: string, handler: WideHandler, post: bool, hook?: __Switch | null): void;
 /**
  * Вид HUD-сообщения. У каждого поля есть значение по умолчанию, так что
  * `{ color: [255, 40, 40] }` достаточно.
@@ -843,6 +969,11 @@ export interface ShakeOptions {
     /** Частота тряски — толчков в секунду; по умолчанию `5`. */
     frequency?: number;
 }
+/** Параметры `player.screen.progressBar`. */
+export interface ProgressBarOptions {
+    /** Заполненность полосы в начале, в процентах; по умолчанию `0` — пустая. */
+    startPercent?: number;
+}
 /** Состояние иконки статуса, одно из: `"hide"` — убрана, `"show"` — горит, `"flash"` — мигает. */
 export type StatusIconState = "hide" | "show" | "flash";
 /**
@@ -855,7 +986,8 @@ export type StatusIconState = "hide" | "show" | "flash";
  * player.screen.statusIcon("dmg_cold", "show", [0, 160, 255]);
  * ```
  *
- * Время — в секундах.
+ * Время — в секундах. Обработчик сообщений слышит то, что шлёт экран, как
+ * слышит сообщения игры: `"progressBar"` слышит `progressBar(seconds)`.
  *
  * Pawn: `ScreenFade`, `ScreenShake`, `StatusIcon`, ...
  */
@@ -912,11 +1044,16 @@ export declare class Screen {
     flashlight(on: boolean, battery?: number): void;
     /**
      * Показывает полосу прогресса посреди экрана игрока, которая заполняется за
-     * `seconds` секунд; `0` её убирает.
+     * `seconds` секунд; `0` её убирает. С `startPercent` она начинается уже
+     * частично заполненной и заполняет остаток `seconds`:
      *
-     * Pawn: `BarTime`, `rg_send_bartime`
+     * ```ts
+     * player.screen.progressBar(4, { startPercent: 50 });   // наполовину полна, заполнится за 2 секунды
+     * ```
+     *
+     * Pawn: `BarTime`, `BarTime2`, `rg_send_bartime`, `rg_send_bartime2`
      */
-    progressBar(seconds: number): void;
+    progressBar(seconds: number, options?: ProgressBarOptions): void;
 }
 /**
  * Канал, на котором играет звук, одно из `"auto"` (по умолчанию), `"weapon"`,
@@ -958,12 +1095,24 @@ export declare class Resource {
     get index(): number;
 }
 /**
+ * @hidden A forward the host relays, heard by `fn` (a one-cell handler) only
+ * when its argument `arg` is `value`: the module compares it, so a forward
+ * that comes often crosses into the plugin for that value alone.
+ */
+export declare function __onCell(event: string, fn: i32, arg: i32, value: i32): void;
+/** @hidden Takes the handler `fn` of a forward the host relays off again: once its event has no listener left. */
+export declare function __off(event: string, fn: i32): void;
+/** @hidden Runs `register` from plugin_init on: now, or when it comes. */
+export declare function __whenUp(register: () => void): void;
+/** @hidden Runs `register` from plugin_precache on - or plugin_init, after a reload mid-map. */
+export declare function __whenPrecache(register: () => void): void;
+/**
  * Аргументы сообщения по месту, `0` — первый: число или текст, как их
  * записало сообщение.
  *
  * ```ts
- * server.addEventListener("message:TeamScore", (event) => {
- *   console.log(`${event.args.text(0)} ${event.args.number(1)}`);
+ * server.addMessageListener("botProgress", (event) => {
+ *   console.log(`${event.args.length} ${event.args.number(0)}`);
  * });
  * ```
  *
@@ -988,23 +1137,22 @@ export declare class MessageArgs {
  * HUD, — услышанное по пути, до того как оно ушло:
  *
  * ```ts
- * server.addEventListener("message:TextMsg", (event) => {
+ * server.addMessageListener("text", (event) => {
  *   if (event.text == "#Round_Draw") event.preventDefault();
  * });
  * ```
  *
- * У сообщения, которое знает редактор, есть типизированные поля
- * (`event.text`); аргументы любого — в `event.args`. Запись поля меняет то,
- * что получит клиент.
+ * У сообщения с известной раскладкой на каждый аргумент есть типизированное
+ * поле (`event.text`), и запись в него меняет то, что получит клиент;
+ * сообщение без известной раскладки читается по месту, через `event.args`,
+ * которые есть у любого сообщения.
  *
  * Pawn: `register_message`
  */
 export declare class ClientMessage {
-    /** @hidden What a message's event is told apart by, at compile time. */
-    __message: bool;
     /** @hidden The player it goes to: the message's msg_entity. */
     __receiver: i32;
-    /** Имя сообщения, например `"TextMsg"`. */
+    /** Имя сообщения у игры, например `"TextMsg"` у `text`. */
     name: string;
     /** Игрок, которому идёт сообщение; `null` — сообщение всем. */
     get player(): Player | null;
@@ -1016,7 +1164,9 @@ export declare class ClientMessage {
      * Pawn: `return PLUGIN_HANDLED`
      */
     preventDefault(): void;
-    /** @hidden An argument by its number, 1 for the first, as a number. */
+    /** @hidden Whether the message has the argument. */
+    protected __has(arg: i32): bool;
+    /** @hidden An argument as a number. */
     protected __number(arg: i32): f64;
     /** @hidden */
     protected __setNumber(arg: i32, value: f64): void;
@@ -1024,15 +1174,31 @@ export declare class ClientMessage {
     protected __text(arg: i32): string;
     /** @hidden */
     protected __setText(arg: i32, value: string): void;
+    /** @hidden Every text from the argument on. */
+    protected __texts(arg: i32): string[];
+    /** @hidden Writes the texts from the argument on, as many as the message has. */
+    protected __setTexts(arg: i32, value: string[]): void;
     /** @hidden A player's number argument; `0` or past the players is none. */
     protected __player(arg: i32): Player | null;
+    /** @hidden Three coordinates from the argument on. */
+    protected __vector(arg: i32): Vector;
+    /** @hidden */
+    protected __setVector(arg: i32, value: number[]): void;
+    /** @hidden `count` bytes from the argument on: a colour. */
+    protected __bytes(arg: i32, count: i32): number[];
+    /** @hidden */
+    protected __setBytes(arg: i32, value: number[]): void;
+    /** @hidden Whether the argument has the bit. */
+    protected __bit(arg: i32, bit: i32): bool;
+    /** @hidden Sets or clears one bit of the argument, keeping the others. */
+    protected __setBit(arg: i32, bit: i32, on: bool): void;
 }
 /**
  * У игрока изменилось поле, которое плагины добавили в `Player`, — его
  * записал любой плагин, на TypeScript или Pawn:
  *
  * ```ts
- * server.addEventListener("playerchange", (event) => {
+ * server.addEventListener("playerChange", (event) => {
  *   print(event.player, event.value ? "You are protected" : "Your spawn protection is over");
  * }, { field: "spawnProtected" });
  * ```
@@ -1062,7 +1228,7 @@ export declare class PlayerChangeEvent<F extends string = string> {
 /** Третий аргумент `server.addEventListener`. */
 export interface ServerListenerOptions {
     /**
-     * Для `"playerchange"`: поле, которое слушают, например `"spawnProtected"`,
+     * Для `"playerChange"`: поле, которое слушают, например `"spawnProtected"`,
      * или член поля-объекта, `"glow.enabled"`; имя поля-объекта слышит
      * каждый его член. Без него — любое поле.
      */
@@ -1153,7 +1319,7 @@ export declare class Cvar {
  * AMX Mod X. Используется через `server`:
  *
  * ```ts
- * server.addEventListener("putinserver", (event) => {
+ * server.addEventListener("putInServer", (event) => {
  *   print(event.player, "Welcome!");      // event — это PutinserverEvent
  * });
  * server.map;                             // "de_dust2"
@@ -1167,6 +1333,27 @@ export declare class Cvar {
  */
 export declare class Server {
     /**
+     * Вызывает `listener` каждый раз, когда сервер шлёт клиенту сообщение
+     * `name`, до того как оно ушло: обработчик читает его поля, меняет их или
+     * останавливает его через `preventDefault()`.
+     *
+     * ```ts
+     * server.addMessageListener("death", (event) => {
+     *   if (event.headshot) console.log(`${event.killer?.name} - headshot - ${event.victim?.name}`);
+     * });
+     * ```
+     *
+     * Редактор подсказывает имена, и в описании каждого — собственное имя у игры:
+     * `death` — это `DeathMsg` игры. Одно имя может слышать несколько
+     * сообщений игры, которые означают одно и то же: `progressBar` — это
+     * `BarTime` и `BarTime2`, а `event.name` говорит, какое из них пришло.
+     *
+     * Pawn: `register_message`
+     */
+    addMessageListener<K extends keyof ServerMessageMap>(name: K, listener: (event: ServerMessageMap[K]) => void): void;
+    /** Перестаёт вызывать обработчик, добавленный через `addMessageListener`, — то же имя и ту же функцию. */
+    removeMessageListener<K extends keyof ServerMessageMap>(name: K, listener: (event: ServerMessageMap[K]) => void): void;
+    /**
      * Имя текущей карты, например `"de_dust2"`.
      *
      * Pawn: `get_mapname`
@@ -1178,6 +1365,33 @@ export declare class Server {
      * Pawn: `get_maxplayers`
      */
     get maxPlayers(): number;
+    /**
+     * Игроки на сервере, все подключённые, кроме HLTV-прокси; читается заново
+     * при каждом обращении. Выборку сужает `filter` массива:
+     *
+     * ```ts
+     * const alive = server.players.filter(player => player.isAlive);
+     * const cts = server.players.filter(player => player.team === "CT" && !player.isBot);
+     * ```
+     *
+     * Pawn: `get_players`
+     */
+    get players(): Player[];
+    /**
+     * Добавляет бота с именем `name`: игрока, которого ведёт сервер, — без игры за
+     * ним и без своего разума: он стоит, где появился, пока плагин не двинет его
+     * через `bot.move()`. `null`, если свободного слота нет. `"putInServer"`
+     * срабатывает для него, как для любого, `bot.isBot` равно `true`, а
+     * `bot.kick()` убирает его.
+     *
+     * ```ts
+     * const bot = server.addBot("Dummy");
+     * bot?.joinTeam("CT");
+     * ```
+     *
+     * Pawn: `engfunc(EngFunc_CreateFakeClient)`, `dllfunc(DLLFunc_ClientConnect)`, `dllfunc(DLLFunc_ClientPutInServer)`
+     */
+    addBot(name: string): Player | null;
     /**
      * Папка конфигов AMX Mod X относительно папки игры — в том виде, в каком её
      * принимает `fs`: `addons/amxmodx/configs`, если сервер её не перенёс.
@@ -1203,34 +1417,26 @@ export declare class Server {
      */
     command(text: string): void;
     /**
-     * Добавляет команду, которую набирают игроки, например `"/hp"` в чате или имя без
-     * слеша — в консоли.
+     * Команды, которые добавил этот плагин, игроков и сервера, в порядке
+     * добавления: у каждой `usage`, `description` и `access` — то, что
+     * печатает `/help`.
      *
      * ```ts
-     * server.addCommand("/hp", (player) => print(player, `${player.health} HP`));
-     * server.addCommand("/kick", kick, { access: "Kick", description: "Kick a player" });
+     * server.addCommand("/help", ({ player }) => {
+     *   for (const command of server.commands) {
+     *     if (command.access == null || player.access.includes(command.access)) print(player, command.usage);
+     *   }
+     * });
      * ```
-     *
-     * `args` — слова после команды. Чат-команда не повторяется в чате и не
-     * срабатывает у игрока без права `access`. `"say time"` срабатывает, когда
-     * игрок пишет в чат ровно `"time"`.
-     *
-     * Pawn: `register_clcmd`
      */
-    addCommand(name: string, handler: CommandHandler, options?: CommandOptions): void;
+    get commands(): CommandInfo[];
     /**
-     * Добавляет команду консоли сервера — набранную там, пришедшую по rcon или
-     * вызванную другим плагином. Игроки её не набирают.
-     *
-     * ```ts
-     * server.addServerCommand("myplugin_reset", (args) => reset(args.length > 0 ? args[0] : "all"));
-     * ```
-     *
-     * `args` — слова после команды. Её можно добавлять на верхнем уровне файла.
-     *
-     * Pawn: `register_srvcmd`
+     * @hidden A player's command, its words read by `run` - the parser the
+     * build writes for each `addCommand` call (scripts/typed-commands.ts).
      */
-    addServerCommand(name: string, handler: ServerCommandHandler): void;
+    __addCommand(usage: string, run: (words: __CommandWords) => void, options?: CommandOptions): void;
+    /** @hidden A command of the server console, its words read by `run`, as `__addCommand`'s are. */
+    __addServerCommand(usage: string, run: (words: __CommandWords) => void): void;
     /** Показывает HUD-сообщение всем игрокам, с теми же настройками, что у `player.showHud`. */
     showHud(text: string, options?: HudOptions): void;
     /**
@@ -1256,7 +1462,7 @@ export declare const server: Server;
  *   if (event.player.isBot) event.preventDefault();
  * });
  * game.addEventListener("canPlayerHearPlayer", (event) => event.listener.team == event.sender.team);
- * game.addEventListener("flPlayerFallDamage", (event) => event.result / 2, true);
+ * game.addEventListener("fallDamage", (event) => event.result / 2, true);
  * ```
  *
  * Тип события следует из его имени. То, что возвращает обработчик, — ответ
@@ -1265,7 +1471,7 @@ export declare const server: Server;
  * игре; `event.preventDefault()` блокирует без ответа. Значение не того типа —
  * ошибка и в редакторе, и при сборке.
  *
- * Правила игры — её поля: `game.freezePeriod`, `game.numCtWins`,
+ * Правила игры — её поля: `game.isFreezeTime`, `game.ctWins`,
  * `game.roundWinner`.
  *
  * Pawn: `RegisterHookChain`, `RegisterHam`, `get_member_game`
@@ -1331,7 +1537,7 @@ export interface GameListenerOptions {
  * Pawn: `USE_OFF`, `USE_ON`, `USE_SET`, `USE_TOGGLE`
  */
 export type UseType = "off" | "on" | "set" | "toggle";
-/** Настройки действия сущности, такого как `weapon.deploy()` или `entity.takeHealth(...)`. */
+/** Настройки действия сущности, такого как `weapon.deploy()` или `entity.heal(...)`. */
 export interface ActionOptions {
     /**
      * Вызываются ли и обработчики игры — этого плагина и всех остальных,
@@ -1412,7 +1618,8 @@ export * from "./events";
 import { FlagName, HookName } from "./constants";
 import { Entity, GameFields, PlayerFields } from "./entities";
 export { Entity, Weapon, WeaponKind, weaponKindOf } from "./entities";
-export { RenderMode, RenderFx, MoveType, Solid, TakeDamage, DeadFlag, WaterLevel, Contents, FixAngle, HitGroup, ArmorType, ObserverMode, JoinState, GameMenu, PlayerModel, IgnoredChat, ThrowDirection, BloodColor, MonsterState, MusicState } from "./entities";
+export { RenderMode, RenderFx, MoveType, Solid, TakeDamage, DeadFlag, WaterLevel, Contents, FixAngle, HitGroup, ArmorType, ObserverMode, JoinState, GameMenu, PlayerModel, IgnoredChat, ThrowDirection, BloodColor, MusicState } from "./entities";
+import { ServerMessageMap } from "./events";
 /** Получатель сообщения вместе с местом показа: `{ id: 0, variant: "center" }`. `id` — `id` игрока, `0` — все. */
 export interface Target {
     /** `id` игрока-получателя; `0` — все игроки. */
@@ -1584,7 +1791,7 @@ export declare function clearTimeout(handle: number): void;
 export declare function clearInterval(handle: number): void;
 /**
  * Вызов Pawn-натива с хвостом `...`, собираемый по одному аргументу, —
- * низкоуровневый способ. Натив из `~/natives` — обычная функция, и ему это
+ * низкоуровневый способ. Натив из `@amxts/core/natives` — обычная функция, и ему это
  * не нужно.
  *
  *   new Call(NATIVE_server_print).str("%s").str(text).run();
@@ -1639,9 +1846,50 @@ export declare class Call {
     ref(value: number): Call;
     /** Значение, которое натив оставил в аргументе `ref` на этой позиции, после `run`. */
     out(index: i32): number;
+    /** Число уже добавленных аргументов: позиция, которую займёт следующий. */
+    get count(): i32;
+    /**
+     * Добавляет в хвост `...` место для текста, который пишет натив, с `text`
+     * в начале; его длина идёт следом по адресу, как того ждёт `ret[], len`.
+     * После `run` текст — в `cellsAt` этой позиции.
+     */
+    textInto(text: string, length: i32): Call;
+    /** Ячейки по адресу аргумента на этой позиции, после `run`: вектор или текст, который записал натив. */
+    cellsAt(index: i32): StaticArray<i32>;
     /** Вызывает натив с добавленными аргументами и возвращает его результат. */
     run(): number;
 }
+/**
+ * Значение, которое натив возвращает через свой аргумент там, где Pawn
+ * передаёт переменную, чтобы натив её заполнил: текст в `ret[], len`, число
+ * в `&value`. Передайте его туда, где натив его ждёт; после вызова `value` —
+ * то, что записал натив.
+ *
+ * ```ts
+ * const reason = new Ref("");
+ * if (!dllfunc(DLLFunc_ClientConnect, id, "Bot", "127.0.0.1", reason)) console.log(reason.value);
+ * ```
+ */
+export declare class Ref<T> {
+    /** Значение, которое записал натив; до вызова — то, с которого он начинает. */
+    value: T;
+    constructor(/** The value the native wrote; before the call, the one it starts with. */ value: T);
+    /** @hidden Adds this to a call: text as room to write in with its length, a number or a boolean by address. */
+    __push(call: Call, float: bool): void;
+    /** @hidden Reads what the native wrote at this position of the call. */
+    __back(call: Call, at: i32, float: bool): void;
+}
+/** @hidden What an argument left out of a native's `...` tail stands at: nothing is sent for it. */
+export declare function __noArgument<T>(): T;
+/**
+ * @hidden A native's `...` tail of up to twelve arguments of any kind, onto
+ * `call`, and the call run: what the generated wrappers of @amxts/core/natives call.
+ * `floats` is the native's float table for this call (bit `i`: the tail's
+ * argument `i` is a Float; TAIL_FLOAT_RESULT: so is the result) - a
+ * plugin's number cannot say whether it is one. What the native wrote into
+ * a vector or a Ref is read back into it.
+ */
+export declare function __callTail<A, B, C, D, E, F, G, H, I, J, K, L>(call: Call, floats: i32, a: A, b: B, c: C, d: D, e: E, f: F, g: G, h: H, i: I, j: J, k: K, l: L): number;
 /**
  * @hidden A field of a reapi field native, as T: a whole number or a Float
  * as a number (or a boolean), a vector as a Vector, text as a string. A T the
@@ -1712,6 +1960,38 @@ export interface ModuleOptions {
  * задаёт `amxts.config.ts`. Глобальная; `import { defineModule } from "@amxts/core"` тоже работает.
  */
 export declare function defineModule<T>(definition: AmxtsModule<T>): AmxtsModule<T>;
+/**
+ * Плагин, чей вызов модуль выполняет сейчас, — числом: то, что модуль хранит
+ * для этого плагина, — созданное им меню, переданную им функцию, — помечается
+ * этим числом и убирается, когда `onPluginStop()` даёт то же число. `0`, когда
+ * вызова другого плагина нет: собственный плагин модуля, его нативы для
+ * Pawn-плагинов, его события и таймеры.
+ *
+ * ```ts
+ * export function addRule(test: Rule) {
+ * 	rules.push({ test, from: callingPlugin() });
+ * }
+ * ```
+ */
+export declare function callingPlugin(): number;
+/**
+ * Вызывает `listener`, когда останавливается плагин, вызывавший модуль, —
+ * выгружен, перезагружен или не загрузился, — с числом, которое давал
+ * `callingPlugin()` во время его вызовов. Модуль убирает то, что этот плагин
+ * ему дал: перезагруженный плагин — новый, он даёт всё заново, а функция
+ * остановленного ничего не отвечает.
+ *
+ * ```ts
+ * onPluginStop((plugin) => {
+ * 	rules = rules.filter(rule => rule.from != plugin);
+ * });
+ * ```
+ */
+export declare function onPluginStop(listener: (plugin: number) => void): void;
+/** @hidden as/remote.ts: a call of the run `from` starts; the run whose call ran before it, to give back. */
+export declare function __callFrom(from: i32): i32;
+/** @hidden as/remote.ts: the plugin of the run `run` stopped. */
+export declare function __pluginStopped(run: i32): void;
 /**
  * Правило остановки форварда, одно из: `"never"` — его слышат все плагины, что бы они
  * ни вернули; `"handled"` — его останавливает первый плагин, который сообщил,
@@ -1847,6 +2127,7 @@ export * from "./hooks";
 import { GameAnswerMap, GameEventMap } from "./hooks";
 export * from "./vector";
 export * from "./effects";
+export * from "./fetch";
 export { EntityFilter } from "./entities";
 /**
  * Публичная функция другого плагина — паблик Pawn-плагина или имя
@@ -1965,3 +2246,123 @@ export declare function colorTags(text: string): string;
  * Pawn: `show_menu`, `register_menucmd`
  */
 export declare function showMenu(id: number, keys: number, text: string, title: string): void;
+/** Цвет номеров пунктов меню: цветовой тег меню, `"!y"`, `"!r"`, `"!d"` или `"!w"`. */
+export type MenuColor = "!y" | "!r" | "!d" | "!w";
+/** Настройки `Menu`: его страницы и тексты его собственных пунктов. */
+export interface MenuOptions {
+    /**
+     * Пунктов на странице, не больше `7`: под ними идут «Назад», «Дальше» и «Выход».
+     * `0` ставит все пункты на одну страницу, без «Назад» и «Дальше», — не больше `10`.
+     *
+     * Pawn: `MPROP_PERPAGE`
+     */
+    perPage?: number;
+    /**
+     * Есть ли у меню пункт «Выход»; по умолчанию `true`.
+     *
+     * Pawn: `MPROP_EXIT`
+     */
+    exit?: boolean;
+    /**
+     * Текст пункта «Назад»; по умолчанию `"Back"` AMX Mod X на языке игрока.
+     *
+     * Pawn: `MPROP_BACKNAME`
+     */
+    backText?: string;
+    /**
+     * Текст пункта «Дальше»; по умолчанию `"More"` AMX Mod X.
+     *
+     * Pawn: `MPROP_NEXTNAME`
+     */
+    nextText?: string;
+    /**
+     * Текст пункта «Выход»; по умолчанию `"Exit"` AMX Mod X.
+     *
+     * Pawn: `MPROP_EXITNAME`
+     */
+    exitText?: string;
+    /**
+     * Цвет номеров пунктов; по умолчанию `"!r"`, красный.
+     *
+     * Pawn: `MPROP_NUMBER_COLOR`
+     */
+    numberColor?: MenuColor;
+}
+/** Контекст, который получают функции меню: игрок, которому оно показано, само меню и данные, с которыми его показали. */
+export interface MenuContext<Data extends object = object> {
+    /** Игрок, которому показано меню. */
+    player: Player;
+    /** Само меню: `menu.show(player, data)` оставляет его открытым после выбора. */
+    menu: Menu<Data>;
+    /** Данные, которые получил `show`. */
+    data: Data;
+}
+/** Пункт `Menu`: его заголовок, когда он показан и доступен и что делает его выбор. */
+export interface MenuItemOptions<Data extends object = object> {
+    /** Текст пункта — или функция, которая даёт его для игрока, которому он показан. */
+    title: string | ((context: MenuContext<Data>) => string);
+    /** Может ли игрок его выбрать; недоступный рисуется серым и ничего не делает. По умолчанию `true`. */
+    enabled?: boolean | ((context: MenuContext<Data>) => boolean);
+    /** Показан ли он вообще; скрытый пункт не занимает места. По умолчанию `true`. */
+    visible?: boolean | ((context: MenuContext<Data>) => boolean);
+    /** Действие пункта, которое выполняется, когда игрок его выбирает. Меню закрывается, если эта функция не покажет его снова. */
+    onSelect: (context: MenuContext<Data>) => void;
+}
+/**
+ * Меню самого AMX Mod X: пункты, которые игрок выбирает цифровыми клавишами,
+ * на страницах с «Назад» и «Дальше», и «Выход». `Data` — то, с чем его
+ * показывают; это получают его функции рядом с игроком.
+ *
+ * ```ts
+ * interface ShopData {
+ *   category: string;
+ * }
+ *
+ * const shop = new Menu<ShopData>("!yShop");
+ * shop.addItem({
+ *   title: "Armor - $1000",
+ *   enabled: ({ player }) => player.armor < 100,
+ *   onSelect: ({ player }) => {
+ *     player.armor = 100;
+ *   },
+ * });
+ * shop.show(player, { category: "armor" });
+ * ```
+ *
+ * Заголовок и у каждого пункта заголовок, `visible` и `enabled` вычисляются
+ * при каждом `show`, для этого игрока. Цветовые теги — как в `showMenu`: `!y`
+ * жёлтый, `!r` красный, `!d` серый, `!w` белый, `!R` — к правому краю.
+ *
+ * Pawn: `menu_create`, `menu_setprop`
+ */
+export declare class Menu<Data extends object = object> {
+    private readonly title;
+    private readonly options;
+    private readonly items;
+    constructor(title: string | ((context: MenuContext<Data>) => string), options?: MenuOptions);
+    /**
+     * Добавляет пункт: его заголовок, когда он показан и доступен и что делает
+     * его выбор.
+     *
+     * ```ts
+     * shop.addItem({
+     *   title: ({ player }) => `Heal (${player.health} HP)`,
+     *   visible: ({ player }) => player.isAlive,
+     *   enabled: ({ player }) => player.health < 100,
+     *   onSelect: ({ player }) => {
+     *     player.health = 100;
+     *   },
+     * });
+     * ```
+     *
+     * Pawn: `menu_additem`
+     */
+    addItem(item: MenuItemOptions<Data>): void;
+    /**
+     * Показывает меню игроку, с данными, которые получают его функции; оно
+     * закрывается, когда он выбирает пункт или выходит из меню.
+     *
+     * Pawn: `menu_display`
+     */
+    show(player: Player, data?: Data | null): void;
+}

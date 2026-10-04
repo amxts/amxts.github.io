@@ -53,6 +53,12 @@ export interface ModulePackage {
     /** The module file: the API plugins import. */
     module: string;
     /**
+     * `"library": true`: compiled into each plugin that imports it, like an
+     * npm library - no instance on the server, so no owner, no proxy, no
+     * defineModule, natives, include or test kit.
+     */
+    library: boolean;
+    /**
      * Its Pawn natives: the plugin that owns the module - its one instance on
      * the server. Without one, the build generates an owner that only runs it.
      */
@@ -120,11 +126,21 @@ export declare function optionsOf(project: Project, definition: ModuleDefinition
  */
 export declare const NOT_PLUGINS: Set<string>;
 /**
+ * The core's API a plugin imports, by the package's name, and its file in
+ * the core's as/ - its place in the tree. package.json's "exports" gives
+ * the same files to the editor.
+ */
+export declare const CORE_ENTRIES: Record<string, string>;
+/** How a plugin names the core's file at a place: its entry, or the facade, which exports the rest. */
+export declare function coreEntryOf(place: string): string;
+/**
  * The project's own plugins: the .ts files at the top of its plugins folder.
  * A module's own folder, without a plugins folder, has none - only the core's
  * repository builds the core's as/.
  */
 export declare function projectPlugins(project: Project): string[];
+/** The modules that run on the server - each in its owner plugin: every one but a library. */
+export declare function shared(modules: ModulePackage[]): ModulePackage[];
 /** plugins.ini: the modules' owners in load order, then the project's plugins. */
 export declare function pluginList(project: Project, plugins: string[], modules?: ModulePackage[]): string[];
 /**
@@ -133,7 +149,8 @@ export declare function pluginList(project: Project, plugins: string[], modules?
  * the files they import - with what those modules import and require, and
  * the ones `pawn` keeps for Pawn plugins, whose use no build can see.
  * Without amxts.config.ts every module is in use: a module's own
- * repository, testing itself.
+ * repository, testing itself. A library is never one: it is compiled into
+ * the plugins, and what it imports is reached through them.
  */
 export declare function modulesInUse(sources: Sources, plugins: string[]): ModulePackage[];
 /**
@@ -172,7 +189,7 @@ export declare class Sources {
     place(real: string): string;
     /** An entry for asc: the plugin's place in the tree, relative to it. */
     entry(real: string): string;
-    /** Each file's typed configs, made once a compile (scripts/typed-configs.ts). */
+    /** Each file's typed configs and commands, made once a compile (scripts/typed-configs.ts, scripts/typed-commands.ts). */
     private typed;
     /**
      * The file's text as asc reads it: auto-imports added, imports rewritten,
@@ -182,6 +199,21 @@ export declare class Sources {
     read(path: string): string | null;
     /** The file's text with its auto-imports added, its imports rewritten and a module's definition turned into its setup. */
     private readPlain;
+    /** Each file's plain text, made once a compile: a build reaches the facade from every plugin. */
+    private plain;
+    private plainOf;
+    private problem;
+    /**
+     * Whether a file on disk is the core's as/: the hood, which names its
+     * places by `~/`. On a server the plugins folder holds them, by place.
+     */
+    private isCore;
+    /**
+     * `~/` in a plugin or a module is the project's own files: the core's API
+     * goes by `@amxts/core/<entry>` and a module package by its name. What
+     * to write instead, or null for a file of the project's own.
+     */
+    private notOwn;
     /** A specifier as the tree has it: a package by its place, a relative import inside a package likewise. */
     private specifier;
     rewrite(real: string, text: string): string;

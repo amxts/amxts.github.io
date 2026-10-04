@@ -2,12 +2,9 @@
  * Menu Core's own bookkeeping: registrations, viewers, a menu's items and the
  * menu being drawn. Not part of the API.
  */
-import { Player } from "@amxts/core";
-import { ActionHandler, ActionTest, ConditionFilter, ConditionTest, ListRow, ListSource, MenuText, PlaceholderValue, Requirement, RestrictionTest, RowTest } from "./types";
-/** Whether an item is shown, or can be chosen: `player` looks, `target` is the row's or the menu's. */
-export type ItemTest = (player: Player, target: number) => boolean;
-/** Whether a menu opens for the player. */
-export type OpenTest = (player: Player) => boolean;
+import { ActionHandler, ActionTest, ConditionFilter, ConditionTest, ListRow, ListSource, MenuContext, MenuText, PlaceholderValue, Requirement, RestrictionTest, RowTest } from "./types";
+/** Whether an item is shown, or can be chosen; whether a menu opens. */
+export type ItemTest = (context: MenuContext) => boolean;
 /**
  * One way an item can look, shown when its `when` holds - the first that
  * does. A menu file's `variants`, or "A|B" in menu.ini, where `when` is the
@@ -59,6 +56,8 @@ export interface MenuItem {
     slot: number;
     /** Variants given one by one (a menu file's `variants`); null for the item's own text and action, or "A|B" when `ini`. */
     variants: Variant[] | null;
+    /** The plugin that gave it, as `callingPlugin()` numbers it: it goes when that plugin stops. 0 for the module's own - a menu file's, a Pawn plugin's. */
+    from: number;
 }
 /** An item made in code, or read from a YAML or JSON file: its text and action, in `slot` - -1 for the flow. */
 export declare function blankItem(label: MenuText, action: string, slot: number): MenuItem;
@@ -145,6 +144,8 @@ export interface ListFilter {
     when: string;
     test: RowTest | null;
     message: string;
+    /** The plugin that gave it, as `callingPlugin()` numbers it: it goes when that plugin stops. 0 for the module's own - a menu file's, a Pawn plugin's. */
+    from: number;
 }
 /** What a menu has besides its public fields: its items, filters and its own placeholders. */
 export interface MenuState {
@@ -154,52 +155,70 @@ export interface MenuState {
     filters: ListFilter[];
     placeholders: PlaceholderEntry[];
     /** The menu opens only while it says yes; null for always. */
-    activeWhen: OpenTest | null;
+    activeWhen: ItemTest | null;
+    /** The plugin that made the menu in code, as `callingPlugin()` numbers it: the menu goes when that plugin stops. 0 for the module's own. */
+    from: number;
 }
 /** The state of the menu of that name, made on first use. */
 export declare function stateOf(name: string): MenuState;
+/** Forgets the state of the menu of that name: a menu that went. */
+export declare function forgetState(name: string): void;
 /**
- * The text a MenuText gives the player: a string given for it is already a
- * function returning it, as the compiler holds this type.
+ * The text a MenuText gives for the context: a string given for it is already
+ * a function returning it, as the compiler holds this type.
  */
-export declare function textOf(value: MenuText, player: Player, target: number): any;
+export declare function textOf(value: MenuText, context: MenuContext): any;
 /**
  * An item's `enabled` as the list of requirements it is held as: a function
  * given for it is already a list of one, `[{ when: test }]`.
  */
-export declare function checksOf(enabled: ((player: Player, target: number) => boolean) | Requirement[]): Check[];
+export declare function checksOf(enabled: ((context: MenuContext) => boolean) | Requirement[]): Check[];
 /** A list menu's filter by condition names - menu.ini's FILTER, a Pawn plugin's MP_FILTER. */
 export declare function addNamedFilter(menu: string, condition: string, message: string): void;
 export interface ConditionEntry {
     name: string;
     test: ConditionTest;
+    /** The plugin that gave it, as `callingPlugin()` numbers it: it goes when that plugin stops. 0 for the module's own - a menu file's, a Pawn plugin's. */
+    from: number;
 }
 export interface ActionEntry {
     name: string;
     run: ActionHandler;
+    /** The plugin that gave it, as `callingPlugin()` numbers it: it goes when that plugin stops. 0 for the module's own - a menu file's, a Pawn plugin's. */
+    from: number;
 }
 export interface PlaceholderEntry {
     name: string;
     value: PlaceholderValue;
+    /** The plugin that gave it, as `callingPlugin()` numbers it: it goes when that plugin stops. 0 for the module's own - a menu file's, a Pawn plugin's. */
+    from: number;
 }
 export interface RestrictionEntry {
     name: string;
     test: RestrictionTest;
     message: string;
+    /** The plugin that gave it, as `callingPlugin()` numbers it: it goes when that plugin stops. 0 for the module's own - a menu file's, a Pawn plugin's. */
+    from: number;
 }
 export interface ActionCheck {
     menu: string;
     action: string;
     test: ActionTest;
+    /** The plugin that gave it, as `callingPlugin()` numbers it: it goes when that plugin stops. 0 for the module's own - a menu file's, a Pawn plugin's. */
+    from: number;
 }
 export interface FilterEntry {
     name: string;
     filter: ConditionFilter;
+    /** The plugin that gave it, as `callingPlugin()` numbers it: it goes when that plugin stops. 0 for the module's own - a menu file's, a Pawn plugin's. */
+    from: number;
 }
 export interface SourceEntry {
     /** The menu's name upper-cased: any case names the same menu's source. */
     menu: string;
     rows: ListSource;
+    /** The plugin that gave it, as `callingPlugin()` numbers it: it goes when that plugin stops. 0 for the module's own - a menu file's, a Pawn plugin's. */
+    from: number;
 }
 /** What a shown slot does when its key is pressed. */
 export interface ShownSlot {

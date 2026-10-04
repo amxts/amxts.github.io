@@ -86,8 +86,29 @@ export interface ModuleAnalysis {
     fns: Wire[];
     hash: number;
 }
-/** The module's exports, as the compiler sees them; remembered while the file is unchanged. */
+/** What a plugin's compile needs of a module: the proxy, the owner's dispatcher, and whether functions cross. */
+export interface ModuleSurface {
+    proxy: string;
+    serve: string;
+    callbacks: boolean;
+}
+export declare function surfaceOf(analysis: ModuleAnalysis): ModuleSurface;
+/** The current project's surfaces on disk. */
+export declare function keptSurfaces(): import("./compile-cache").DiskCache;
+/**
+ * The module's surface: the one its package came with, else one kept on
+ * disk, else made from its analysis. Remembered while the files it reaches -
+ * the module and everything it imports: a field added to a facade class
+ * changes what crosses - are unchanged.
+ */
+export declare function moduleSurface(root: string, name: string): Promise<ModuleSurface>;
+/** The module's exports, as the compiler sees them. */
 export declare function analyzeModule(root: string, name: string): Promise<ModuleAnalysis>;
+/**
+ * Compiles `~/modules/<name>` on its own, its exported functions as exports:
+ * the compiler's program, or an error with what asc said.
+ */
+export declare function compileAlone(root: string, name: string): Promise<any>;
 /** The module as a plugin that does not own it reads it. */
 export declare function proxySource(analysis: ModuleAnalysis): string;
 /** The owner's side: the dispatcher that runs each call on the real module. */

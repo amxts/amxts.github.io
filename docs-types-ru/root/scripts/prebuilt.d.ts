@@ -1,5 +1,6 @@
 import type { NativesBeside, PluginNative } from './plugin-natives';
 import type { ModulePackage, Options, Sources } from './project';
+import type { ModuleSurface } from './shared-modules';
 import type { System } from './system';
 /** Where a module package keeps its compiled owner: prebuilt/<system>/<name>.aot, and the manifest. */
 export declare const PREBUILT_DIR = "prebuilt";
@@ -29,6 +30,8 @@ export interface PrebuiltManifest {
         size: number;
         sha256: string;
     }>>;
+    /** What a plugin that uses the module compiles against (scripts/shared-modules.ts); missing in a manifest made without it. */
+    surface?: ModuleSurface;
 }
 /** What a build does with a module's prebuilt .aot: takes it, or compiles the module and says why. */
 export type PrebuiltUse = {
@@ -42,9 +45,17 @@ export type PrebuiltUse = {
 export declare function fromRegistry(dir: string): boolean;
 /**
  * The prebuilt .aot of a module from npm for `system`, when it is what the
- * project would compile; else why not. Null for a module that has none - a
- * folder on this machine, or a package without prebuilt/ - which is compiled
- * as any plugin is.
+ * project would compile; else why not. Null for a module that has none.
  */
 export declare function prebuiltOf(pkg: ModulePackage, system: System, sources: Sources): PrebuiltUse | null;
+/**
+ * The surface a module from npm came with (scripts/shared-modules.ts), when
+ * it is what the project would make; else why not. Null for a module that
+ * has none.
+ */
+export declare function prebuiltSurface(pkg: ModulePackage, sources: Sources): {
+    surface: ModuleSurface;
+} | {
+    why: string;
+} | null;
 export {};

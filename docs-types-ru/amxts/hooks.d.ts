@@ -1,11 +1,23 @@
 /// <reference path="../as-types.d.ts" />
 import { Player, RoundWinner, Team, TouchEvent, UseType, Vector } from "./facade";
-import { Entity, Weapon, WeaponKind } from "./entities";
+import { Entity, HitGroup, Weapon, WeaponKind } from "./entities";
 import { Damage } from "./flags";
 /** What every game event can do. */
 export declare class HookEvent {
     /** @hidden Ham Sandwich delivered the event rather than reapi: the arguments and the answer go back its way. */
     __ham: bool;
+    /**
+     * @hidden A stock hook's backend made the event, on a server without reapi
+     * (as/hlds.ts): a field is what the backend gave, 0 or empty where it gave
+     * nothing, and what a listener asks of the game - blocking it, answering,
+     * a field written - waits for the backend, which gives the game what it can.
+     */
+    __hlds: bool;
+    /** @hidden What the listeners asked of the game, on a stock hook's event. */
+    __prevented: bool;
+    __answered: bool;
+    __answerCell: i32;
+    __changed: bool;
     private written;
     private writtenText;
     private writtenVector;
@@ -13,6 +25,12 @@ export declare class HookEvent {
     protected __cell(index: i32): i32;
     protected __text(index: i32): string;
     protected __vector(index: i32): Vector;
+    /** @hidden A field's value from a stock hook's backend, by the argument's place; -1 is the game's answer. */
+    __give(index: i32, cell: i32): void;
+    /** @hidden */
+    __giveText(index: i32, value: string): void;
+    /** @hidden */
+    __giveVector(index: i32, value: Vector): void;
     /** Writes a number argument back: `atype` says how it is read, a float as its bits. */
     protected __set(index: i32, atype: i32, cell: i32): void;
     protected __setText(index: i32, value: string): void;
@@ -77,6 +95,12 @@ export type ResourceType = "sound" | "skin" | "model" | "decal" | "generic" | "e
  */
 export type TeamChoice = "TERRORIST" | "CT" | "VIP" | "auto" | "SPECTATOR" | "unknown";
 /**
+ * An item a player can have: a weapon by its kind, or equipment such as "kevlar", "defusekit", "nvg".
+ *
+ * Pawn: `ItemID`
+ */
+export type ItemKind = "none" | "shieldgun" | "p228" | "glock" | "scout" | "hegrenade" | "xm1014" | "c4" | "mac10" | "aug" | "smokegrenade" | "elite" | "fiveseven" | "ump45" | "sg550" | "galil" | "famas" | "usp" | "glock18" | "awp" | "mp5n" | "m249" | "m3" | "m4a1" | "tmp" | "g3sg1" | "flashbang" | "deagle" | "sg552" | "ak47" | "knife" | "p90" | "nvg" | "defusekit" | "kevlar" | "assault" | "longjump" | "sodacan" | "healthkit" | "antidote" | "battery";
+/**
  * The way a player would get the item a restriction is asked about: buying, touching, equipping. "unknown" - a number the include does not name.
  *
  * Pawn: `ItemRestType`
@@ -99,13 +123,19 @@ export type RoundEndReason = "none" | "targetBomb" | "vipEscaped" | "vipAssassin
  *
  * Pawn: `DeathMessageFlags`
  */
-export type DeathMessageFlag = "Position" | "Assistant" | "KillRarity";
+export type DeathMessageFlag = "position" | "assistant" | "killRarity";
 /**
  * The things that made a kill rare: a headshot, through smoke, in the air, ...
  *
  * Pawn: `KillRarity`
  */
-export type KillRarity = "Headshot" | "KillerBlind" | "NoScope" | "Penetrated" | "ThruSmoke" | "AssistedFlash" | "DominationBegan" | "Domination" | "Revenge" | "InAir";
+export type KillRarity = "headshot" | "killerBlind" | "noScope" | "penetrated" | "throughSmoke" | "assistedFlash" | "dominationBegan" | "domination" | "revenge" | "inAir";
+/**
+ * An animation the game plays on a player's model: walking, jumping, attacking, reloading, ... "unknown" - a number the include does not name.
+ *
+ * Pawn: `PLAYER_ANIM`
+ */
+export type PlayerAnimation = "idle" | "walk" | "jump" | "superJump" | "die" | "attack1" | "attack2" | "flinch" | "largeFlinch" | "reload" | "holdBomb" | "unknown";
 /**
  * A VGUI menu of the game: the team menu, the class menu, the buy menu, ... "unknown" - a number the include does not name.
  *
@@ -128,6 +158,8 @@ export declare class ActivateEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RH_SV_ActivateServer` (const runPhysics)
  */
 export declare class ActivateServerEvent extends HookEvent {
@@ -141,11 +173,69 @@ export declare class ActivateServerEvent extends HookEvent {
     set runPhysics(value: number);
 }
 /**
- * У игрока меняются деньги. Присвойте `event.amount`, чтобы изменить сумму.
+ * Pawn: `RG_CBasePlayer_AddPoints` (const this, score, bAllowNegativeScore), `Ham_AddPoints`
+ */
+export declare class AddFragsEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `score`
+     */
+    get score(): number;
+    set score(value: number);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `bAllowNegativeScore`
+     */
+    get allowNegativeScore(): number;
+    set allowNegativeScore(value: number);
+}
+/**
+ * Pawn: `RG_CBasePlayer_AddPlayerItem` (const this, const pItem), `Ham_AddPlayerItem`
+ */
+export declare class AddItemEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2, только чтение.
+     *
+     * Pawn: `pItem`
+     */
+    get item(): Weapon;
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (BOOL)
+     */
+    get result(): number;
+    /**
+     * Блокирует функцию игры; она отвечает 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * У игрока меняются деньги. Присвойте `event.amount`, чтобы изменить сумму. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `amount` — на сколько сдвинулись его деньги с тех пор, как игра в последний раз их ему прислала, а `reason` читается как `"none"`.
  *
  * Pawn: `RG_CBasePlayer_AddAccount` (const this, amount, RewardType:type, bool:bTrackChange)
  */
-export declare class AddAccountEvent extends HookEvent {
+export declare class AddMoneyEvent extends HookEvent {
     private readonly kind;
     /**
      * Игрок, о котором событие.
@@ -176,41 +266,7 @@ export declare class AddAccountEvent extends HookEvent {
     set trackChange(value: boolean);
 }
 /**
- * Unsure.
- *
- * Pawn: `Ham_Item_AddDuplicate`
- */
-export declare class AddDuplicateEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get weapon(): Weapon;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `original`
-     */
-    get original(): Weapon;
-    set original(value: Weapon);
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (Integer)
-     */
-    get result(): boolean;
-    /**
-     * Блокирует функцию игры; она отвечает false.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Called inside TraceAttack to store entity damage to multidamage data
+ * Called inside TraceAttack to store entity damage to multidamage data. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_AddMultiDamage` (const pevInflictor, const pEntity, Float:flDamage, bitsDamageType)
  */
@@ -244,92 +300,7 @@ export declare class AddMultiDamageEvent extends HookEvent {
     set damageType(values: Damage[]);
 }
 /**
- * Pawn: `RG_CBasePlayer_AddPlayerItem` (const this, const pItem), `Ham_AddPlayerItem`
- */
-export declare class AddPlayerItemEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2, только чтение.
-     *
-     * Pawn: `pItem`
-     */
-    get item(): Weapon;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (BOOL)
-     */
-    get result(): number;
-    /**
-     * Блокирует функцию игры; она отвечает 0.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Pawn: `RG_CBasePlayer_AddPoints` (const this, score, bAllowNegativeScore), `Ham_AddPoints`
- */
-export declare class AddPointsEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `score`
-     */
-    get score(): number;
-    set score(value: number);
-    /**
-     * Аргумент 3.
-     *
-     * Pawn: `bAllowNegativeScore`
-     */
-    get allowNegativeScore(): number;
-    set allowNegativeScore(value: number);
-}
-/**
- * Pawn: `RG_CBasePlayer_AddPointsToTeam` (const this, score, bAllowNegativeScore), `Ham_AddPointsToTeam`
- */
-export declare class AddPointsToTeamEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `score`
-     */
-    get score(): number;
-    set score(value: number);
-    /**
-     * Аргумент 3.
-     *
-     * Pawn: `bAllowNegativeScore`
-     */
-    get allowNegativeScore(): number;
-    set allowNegativeScore(value: number);
-}
-/**
- * Файл добавляется в то, что скачивают клиенты.
+ * Файл добавляется в то, что скачивают клиенты. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RH_SV_AddResource` (ResourceType_t:type, const filename[], size, flags, index)
  */
@@ -347,8 +318,8 @@ export declare class AddResourceEvent extends HookEvent {
      *
      * Pawn: `filename[]`
      */
-    get filename(): string;
-    set filename(value: string);
+    get file(): string;
+    set file(value: string);
     /**
      * Аргумент 3.
      *
@@ -370,6 +341,33 @@ export declare class AddResourceEvent extends HookEvent {
      */
     get resourceIndex(): number;
     set resourceIndex(value: number);
+}
+/**
+ * Pawn: `RG_CBasePlayer_AddPointsToTeam` (const this, score, bAllowNegativeScore), `Ham_AddPointsToTeam`
+ */
+export declare class AddTeamScoreEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `score`
+     */
+    get score(): number;
+    set score(value: number);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `bAllowNegativeScore`
+     */
+    get allowNegativeScore(): number;
+    set allowNegativeScore(value: number);
 }
 /**
  * Оружие одного класса достаётся игроку — подобрано или выдано. Верните `false`, чтобы не отдать его.
@@ -433,32 +431,33 @@ export declare class AddWeaponEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called whenever player is on air (not touching floor)
+ * Called whenever player is on air (not touching floor). Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_AirAccelerate` (Float:wishdir[3], Float:wishspeed, Float:accel, const playerIndex)
  */
 export declare class AirAccelerateEvent extends HookEvent {
     private readonly kind;
     /**
-     * Аргумент 1, только чтение.
+     * Аргумент 1.
      *
      * Pawn: `Float:wishdir[3]`
      */
-    get wishdir(): Vector;
+    get direction(): Vector;
+    set direction(value: Vector);
     /**
      * Аргумент 2.
      *
      * Pawn: `Float:wishspeed`
      */
-    get wishspeed(): number;
-    set wishspeed(value: number);
+    get speed(): number;
+    set speed(value: number);
     /**
      * Аргумент 3.
      *
      * Pawn: `Float:accel`
      */
-    get accel(): number;
-    set accel(value: number);
+    get acceleration(): number;
+    set acceleration(value: number);
     /**
      * Аргумент 4, только чтение.
      *
@@ -467,6 +466,8 @@ export declare class AirAccelerateEvent extends HookEvent {
     get player(): Player;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_PM_AirMove` (const playerIndex)
  */
 export declare class AirMoveEvent extends HookEvent {
@@ -479,60 +480,7 @@ export declare class AirMoveEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Called when an entity is created.
- *
- * Pawn: `RH_ED_Alloc` ()
- */
-export declare class AllocEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (Edict * (Entity index))
-     */
-    get result(): Entity;
-    /**
-     * Блокирует функцию игры; она отвечает 0.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Called before adding an entity to the physents of a player.
- *
- * Pawn: `RH_SV_AllowPhysent` (const entity, const client)
- */
-export declare class AllowPhysentEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `entity`
-     */
-    get entity(): Entity;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `client`
-     */
-    get client(): number;
-    set client(value: number);
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (bool)
-     */
-    get result(): boolean;
-    /**
-     * Блокирует функцию игры; она отвечает false.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Called after game finished a bullet tracing for applying damage cached on multidamage data
+ * Called after game finished a bullet tracing for applying damage cached on multidamage data. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_ApplyMultiDamage` (const pevInflictor, const pevAttacker)
  */
@@ -602,10 +550,38 @@ export declare class AutoaimVectorEvent extends HookEvent {
     get result(): Vector;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CSGameRules_BalanceTeams` ()
  */
 export declare class BalanceTeamsEvent extends HookEvent {
     private readonly kind;
+}
+/**
+ * Makes a random player the bomber. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
+ *
+ * Pawn: `RG_CBasePlayer_MakeBomber` (const this)
+ */
+export declare class BecomeBomberEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (bool)
+     */
+    get result(): boolean;
+    /**
+     * Блокирует функцию игры; она отвечает false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
  * Called when monster dies and prepares its entity to become a corpse.
@@ -648,6 +624,20 @@ export declare class BecomeProneEvent extends HookEvent {
      * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
     preventDefault(): void;
+}
+/**
+ * Makes a random player the VIP. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ *
+ * Pawn: `RG_CBasePlayer_MakeVIP` (const this)
+ */
+export declare class BecomeVipEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
 }
 /**
  * This functions searches the link list whose head is the caller's m_pLink field.
@@ -813,11 +803,11 @@ export declare class BounceGibTouchEvent extends HookEvent {
     get other(): Entity;
 }
 /**
- * The player buys ammo.
+ * The player buys ammo. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `weapon` читается как мир, `blinkMoney` — как `true`; ответ ничего не делает.
  *
  * Pawn: `RG_BuyGunAmmo` (const index, const weapon_entity, const bool:blinkMoney)
  */
-export declare class BuyGunAmmoEvent extends HookEvent {
+export declare class BuyAmmoEvent extends HookEvent {
     private readonly kind;
     /**
      * Аргумент 1, только чтение.
@@ -826,12 +816,11 @@ export declare class BuyGunAmmoEvent extends HookEvent {
      */
     get player(): Player;
     /**
-     * Аргумент 2.
+     * Аргумент 2, только чтение.
      *
      * Pawn: `weapon_entity`
      */
-    get weapon_entity(): number;
-    set weapon_entity(value: number);
+    get weapon(): Weapon;
     /**
      * Аргумент 3.
      *
@@ -853,7 +842,7 @@ export declare class BuyGunAmmoEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when player buys an item from buy menu (Nightvision, Kevlar, etc.)
+ * Called when player buys an item from buy menu (Nightvision, Kevlar, etc.). Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; слышно для предметов меню снаряжения; ответ ничего не делает.
  *
  * Pawn: `RG_BuyItem` (const pPlayer, iSlot)
  */
@@ -874,11 +863,11 @@ export declare class BuyItemEvent extends HookEvent {
     set slot(value: number);
 }
 /**
- * Игрок покупает оружие. В post-обработчике `event.result` — само оружие.
+ * Игрок покупает оружие. В post-обработчике `event.result` — само оружие. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `event.result` читается как `null`; ответ ничего не делает.
  *
  * Pawn: `RG_BuyWeaponByWeaponID` (const index, const WeaponIdType:weaponID)
  */
-export declare class BuyWeaponByWeaponIdEvent extends HookEvent {
+export declare class BuyWeaponEvent extends HookEvent {
     private readonly kind;
     /**
      * Игрок, о котором событие.
@@ -959,11 +948,11 @@ export declare class CanDropEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * The player is touching a CBasePlayerItem, do I give it to him?
+ * The player is touching a CBasePlayerItem, do I give it to him? Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_CanHavePlayerItem` (const index, const item)
  */
-export declare class CanHavePlayerItemEvent extends HookEvent {
+export declare class CanHaveItemEvent extends HookEvent {
     private readonly kind;
     /**
      * Аргумент 1, только чтение.
@@ -1018,7 +1007,7 @@ export declare class CanHolsterEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра спрашивает, слышит ли один игрок другого в голосовом чате. Верните `true` или `false`, чтобы решить.
+ * Игра спрашивает, слышит ли один игрок другого в голосовом чате. Верните `true` или `false`, чтобы решить. Без ReAPI (чистый HLDS): спрашивается, когда игра сообщает движку, кто кого слышит, — и при включённом `sv_alltalk`, и для игрока, заглушившего другого: ответ перекрывает и то и другое.
  *
  * Pawn: `RG_CSGameRules_CanPlayerHearPlayer` (const listener, const sender)
  */
@@ -1050,7 +1039,119 @@ export declare class CanPlayerHearPlayerEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра спрашивает, можно ли игроку перейти в команду. Верните `true` или `false`, чтобы решить.
+ * Is this player allowed to respawn now? Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CSGameRules_FPlayerCanRespawn` (const index)
+ */
+export declare class CanRespawnEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `index`
+     */
+    get player(): Player;
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (BOOL)
+     */
+    get result(): number;
+    /**
+     * Блокирует функцию игры; она отвечает 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Called when a player hit to entity. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_IsPenetrableEntity` (Float:vecSrc[3], Float:vecEnd[3], index, entity)
+ */
+export declare class CanShootThroughEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1.
+     *
+     * Pawn: `Float:vecSrc[3]`
+     */
+    get start(): Vector;
+    set start(value: Vector);
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `Float:vecEnd[3]`
+     */
+    get end(): Vector;
+    set end(value: Vector);
+    /**
+     * Аргумент 3, только чтение.
+     *
+     * Pawn: `index`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 4, только чтение.
+     *
+     * Pawn: `entity`
+     */
+    get entity(): Entity;
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (bool)
+     */
+    get result(): boolean;
+    /**
+     * Блокирует функцию игры; она отвечает false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CBasePlayer_Observer_IsValidTarget` (const this, iPlayerIndex, bool:bSameTeam)
+ */
+export declare class CanSpectateEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `iPlayerIndex`
+     */
+    get playerIndex(): number;
+    set playerIndex(value: number);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `bool:bSameTeam`
+     */
+    get sameTeam(): boolean;
+    set sameTeam(value: boolean);
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (CBasePlayer *)
+     */
+    get result(): Player;
+    /**
+     * Блокирует функцию игры; она отвечает 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Игра спрашивает, можно ли игроку перейти в команду. Верните `true` или `false`, чтобы решить. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_CanSwitchTeam` (const this, TeamName:teamToSwap)
  */
@@ -1083,6 +1184,38 @@ export declare class CanSwitchTeamEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
+ * Can this player take damage from this attacker? Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage` (const index, const attacker)
+ */
+export declare class CanTakeDamageEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `index`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2, только чтение.
+     *
+     * Pawn: `attacker`
+     */
+    get attacker(): Player;
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (BOOL)
+     */
+    get result(): number;
+    /**
+     * Блокирует функцию игры; она отвечает 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
  * Returns the center of the entity.
  *
  * Pawn: `Ham_Center`
@@ -1104,10 +1237,80 @@ export declare class CenterEvent extends HookEvent {
     get result(): Vector;
 }
 /**
+ * Без ReAPI (чистый HLDS): `preventDefault()` ничего не делает.
+ *
  * Pawn: `RG_CSGameRules_ChangeLevel` ()
  */
 export declare class ChangeLevelEvent extends HookEvent {
     private readonly kind;
+}
+/**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CBasePlayer_SetClientUserInfoModel` (const this, infobuffer[], szNewModel[])
+ */
+export declare class ChangeModelEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `infobuffer[]`
+     */
+    get info(): string;
+    set info(value: string);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `szNewModel[]`
+     */
+    get newModel(): string;
+    set newModel(value: string);
+}
+/**
+ * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`; ответ ничего не делает.
+ *
+ * Pawn: `RG_CBasePlayer_SetClientUserInfoName` (const this, infobuffer[], szNewName[])
+ */
+export declare class ChangeNameEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `infobuffer[]`
+     */
+    get info(): string;
+    set info(value: string);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `szNewName[]`
+     */
+    get newName(): string;
+    set newName(value: string);
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (bool)
+     */
+    get result(): boolean;
+    /**
+     * Блокирует функцию игры; она отвечает false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
 }
 /**
  * Turns a monster towards its ideal_yaw.
@@ -1144,13 +1347,85 @@ export declare class ChangeYawEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
+ * Сообщение игрока в чат уходит игрокам и в консоль сервера. Чтобы изменить, что они прочтут, присвойте `event.text`; чтобы его не получил никто, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_SendSayMessage` (const pPlayer, const szCmd[], bool:teamonly, const szText[], const pszFormat[], const pszConsoleFormat[], bool:bSenderDead, const placeName[], bool:consoleUsesPlaceName)
+ */
+export declare class ChatMessageEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Игрок, который написал сообщение.
+     *
+     * Pawn: `pPlayer`
+     */
+    get player(): Player;
+    /**
+     * Команда, с которой пришло сообщение, `"say"` или `"say_team"`.
+     *
+     * Pawn: `szCmd[]`
+     */
+    get command(): string;
+    set command(value: string);
+    /**
+     * `true`, когда сообщение получает только команда игрока.
+     *
+     * Pawn: `bool:teamonly`
+     */
+    get teamOnly(): boolean;
+    set teamOnly(value: boolean);
+    /**
+     * Сообщение, как его написал игрок. Присвойте, чтобы изменить.
+     *
+     * Pawn: `szText[]`
+     */
+    get text(): string;
+    set text(value: string);
+    /**
+     * Формат чата, который собирает имя, место и сообщение, например `"#Cstrike_Chat_All"`.
+     *
+     * Pawn: `pszFormat[]`
+     */
+    get format(): string;
+    set format(value: string);
+    /**
+     * Формат строки, которую консоль сервера печатает для сообщения.
+     *
+     * Pawn: `pszConsoleFormat[]`
+     */
+    get consoleFormat(): string;
+    set consoleFormat(value: string);
+    /**
+     * `true`, когда игрок, написавший сообщение, мёртв.
+     *
+     * Pawn: `bool:bSenderDead`
+     */
+    get senderDead(): boolean;
+    set senderDead(value: boolean);
+    /**
+     * Название места на карте, где находится игрок, например `"BombsiteA"`.
+     *
+     * Pawn: `placeName[]`
+     */
+    get placeName(): string;
+    set placeName(value: string);
+    /**
+     * `true`, когда строка в консоли тоже содержит название места.
+     *
+     * Pawn: `bool:consoleUsesPlaceName`
+     */
+    get consoleUsesPlaceName(): boolean;
+    set consoleUsesPlaceName(value: boolean);
+}
+/**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CSGameRules_CheckMapConditions` ()
  */
 export declare class CheckMapConditionsEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Called every client frame to check time based damage
+ * Called every client frame to check time based damage. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_CheckTimeBasedDamage` (const this)
  */
@@ -1164,7 +1439,7 @@ export declare class CheckTimeBasedDamageEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Called when a player's userinfo is being checked.
+ * Called when a player's userinfo is being checked. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RH_SV_CheckUserInfo` (adr, buffer, bool:reconnect, reconnectSlot, name[])
  */
@@ -1175,8 +1450,8 @@ export declare class CheckUserInfoEvent extends HookEvent {
      *
      * Pawn: `adr`
      */
-    get adr(): number;
-    set adr(value: number);
+    get address(): number;
+    set address(value: number);
     /**
      * Аргумент 2.
      *
@@ -1219,7 +1494,7 @@ export declare class CheckUserInfoEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player jumps on water for the first time
+ * Called when a player jumps on water for the first time. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_CheckWaterJump` (const playerIndex)
  */
@@ -1233,7 +1508,7 @@ export declare class CheckWaterJumpEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Игра проверяет, не победила ли какая-то сторона. `preventDefault()` не даст ей закончить раунд.
+ * Игра проверяет, не победила ли какая-то сторона. `preventDefault()` не даст ей закончить раунд. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_CheckWinConditions` ()
  */
@@ -1263,6 +1538,8 @@ export declare class ChildDeathNoticeEvent extends HookEvent {
     set child(value: Entity);
 }
 /**
+ * Без ReAPI (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; модель, которую игра выбирает сама, не слышна.
+ *
  * Pawn: `RG_HandleMenu_ChooseAppearance` (const index, const slot)
  */
 export declare class ChooseAppearanceEvent extends HookEvent {
@@ -1282,7 +1559,7 @@ export declare class ChooseAppearanceEvent extends HookEvent {
     set slot(value: number);
 }
 /**
- * Игрок выбрал пункт в меню команд. `preventDefault()` — и выбор не засчитается.
+ * Игрок выбрал пункт в меню команд. `preventDefault()` — и выбор не засчитается. Без ReAPI (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; ответ ничего не делает, а команда, которую игра выбирает сама, не слышна.
  *
  * Pawn: `RG_HandleMenu_ChooseTeam` (const index, const MenuChooseTeam:slot)
  */
@@ -1342,15 +1619,7 @@ export declare class ClassifyEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Recreate all the map entities from the map data (preserving their indices),
- *
- * Pawn: `RG_CSGameRules_CleanUpMap` ()
- */
-export declare class CleanUpMapEvent extends HookEvent {
-    private readonly kind;
-}
-/**
- * Called when game clears multidamage data (before TraceAttack)
+ * Called when game clears multidamage data (before TraceAttack). Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_ClearMultiDamage` ()
  */
@@ -1358,7 +1627,7 @@ export declare class ClearMultiDamageEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Called after processing a client connection request.
+ * Called after processing a client connection request. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RH_ClientConnected` (const client)
  */
@@ -1373,43 +1642,7 @@ export declare class ClientConnectedEvent extends HookEvent {
     set client(value: number);
 }
 /**
- * Called when message is being printed to client console.
- *
- * Pawn: `RH_SV_ClientPrintf` (const string[])
- */
-export declare class ClientPrintfEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1.
-     *
-     * Pawn: `string[]`
-     */
-    get string(): string;
-    set string(value: string);
-}
-/**
- * The player has changed userinfo; can change it now.
- *
- * Pawn: `RG_CSGameRules_ClientUserInfoChanged` (const index, infobuffer[])
- */
-export declare class ClientUserInfoChangedEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `index`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `infobuffer[]`
-     */
-    get infobuffer(): string;
-    set infobuffer(value: string);
-}
-/**
- * Called when processing a 'connect' client connectionless packet.
+ * Called when processing a 'connect' client connectionless packet. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда игрока уже пустили.
  *
  * Pawn: `RH_SV_ConnectClient` ()
  */
@@ -1417,19 +1650,33 @@ export declare class ConnectClientEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Called when a player drops a weapon (usually manual drop or death)
+ * Called when message is being printed to client console. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RH_SV_ClientPrintf` (const string[])
+ */
+export declare class ConsoleMessageEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1.
+     *
+     * Pawn: `string[]`
+     */
+    get text(): string;
+    set text(value: string);
+}
+/**
+ * Called when a player drops a weapon (usually manual drop or death). Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CreateWeaponBox` (const weaponent, const owner, modelName[], Float:origin[3], Float:angles[3], Float:velocity[3], Float:lifeTime, bool:packAmmo)
  */
 export declare class CreateWeaponBoxEvent extends HookEvent {
     private readonly kind;
     /**
-     * Аргумент 1.
+     * Аргумент 1, только чтение.
      *
      * Pawn: `weaponent`
      */
-    get weaponent(): number;
-    set weaponent(value: number);
+    get weapon(): Weapon;
     /**
      * Аргумент 2, только чтение.
      *
@@ -1444,23 +1691,26 @@ export declare class CreateWeaponBoxEvent extends HookEvent {
     get modelName(): string;
     set modelName(value: string);
     /**
-     * Аргумент 4, только чтение.
+     * Аргумент 4.
      *
      * Pawn: `Float:origin[3]`
      */
     get origin(): Vector;
+    set origin(value: Vector);
     /**
-     * Аргумент 5, только чтение.
+     * Аргумент 5.
      *
      * Pawn: `Float:angles[3]`
      */
     get angles(): Vector;
+    set angles(value: Vector);
     /**
-     * Аргумент 6, только чтение.
+     * Аргумент 6.
      *
      * Pawn: `Float:velocity[3]`
      */
     get velocity(): Vector;
+    set velocity(value: Vector);
     /**
      * Аргумент 7.
      *
@@ -1523,32 +1773,6 @@ export declare class DamageDecalEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * What do I do with player's weapons when he's killed?
- *
- * Pawn: `RG_CSGameRules_DeadPlayerWeapons` (const index)
- */
-export declare class DeadPlayerWeaponsEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `index`
-     */
-    get player(): Player;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (int)
-     */
-    get result(): number;
-    /**
-     * Блокирует функцию игры; она отвечает 0.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
  * Determines the best type of death animation to play.
  *
  * Pawn: `Ham_GetDeathActivity`
@@ -1576,7 +1800,7 @@ export declare class DeathActivityEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Call this from within a GameRules class to report an obituary.
+ * Call this from within a GameRules class to report an obituary. Без ReAPI (чистый HLDS): слышно, когда уходит сообщение о смерти: `preventDefault()` ничего не делает, а `inflictor` читается как мир.
  *
  * Pawn: `RG_CSGameRules_DeathNotice` (const victim, const killer, const inflictor)
  */
@@ -1616,7 +1840,7 @@ export declare class DeathSoundEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Оружие достают. Присвойте `event.viewModel` / `weaponModel`, чтобы поменять модель.
+ * Оружие достают. Присвойте `event.viewModel` / `weaponModel`, чтобы поменять модель. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayerWeapon_DefaultDeploy` (const this, szViewModel[], szWeaponModel[], iAnim, szAnimExt[], skiplocal)
  */
@@ -1647,22 +1871,22 @@ export declare class DefaultDeployEvent extends HookEvent {
      *
      * Pawn: `iAnim`
      */
-    get anim(): number;
-    set anim(value: number);
+    get animation(): number;
+    set animation(value: number);
     /**
      * Аргумент 5.
      *
      * Pawn: `szAnimExt[]`
      */
-    get animExt(): string;
-    set animExt(value: string);
+    get animationExtension(): string;
+    set animationExtension(value: string);
     /**
      * Аргумент 6.
      *
      * Pawn: `skiplocal`
      */
-    get skiplocal(): number;
-    set skiplocal(value: number);
+    get skipLocal(): number;
+    set skipLocal(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -1677,6 +1901,8 @@ export declare class DefaultDeployEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CBasePlayerWeapon_DefaultReload` (const this, iClipSize, iAnim, Float:fDelay)
  */
 export declare class DefaultReloadEvent extends HookEvent {
@@ -1699,8 +1925,8 @@ export declare class DefaultReloadEvent extends HookEvent {
      *
      * Pawn: `iAnim`
      */
-    get anim(): number;
-    set anim(value: number);
+    get animation(): number;
+    set animation(value: number);
     /**
      * Аргумент 4.
      *
@@ -1722,6 +1948,8 @@ export declare class DefaultReloadEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CBasePlayerWeapon_DefaultShotgunReload` (const this, iAnim, iStartAnim, Float:fDelay, Float:fStartDelay, const pszReloadSound1[], const pszReloadSound2[])
  */
 export declare class DefaultShotgunReloadEvent extends HookEvent {
@@ -1737,15 +1965,15 @@ export declare class DefaultShotgunReloadEvent extends HookEvent {
      *
      * Pawn: `iAnim`
      */
-    get anim(): number;
-    set anim(value: number);
+    get animation(): number;
+    set animation(value: number);
     /**
      * Аргумент 3.
      *
      * Pawn: `iStartAnim`
      */
-    get startAnim(): number;
-    set startAnim(value: number);
+    get startAnimation(): number;
+    set startAnimation(value: number);
     /**
      * Аргумент 4.
      *
@@ -1788,7 +2016,7 @@ export declare class DefaultShotgunReloadEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player has ended to defuses the bomb or when the previous defuser has taken off or been killed.
+ * Called when a player has ended to defuses the bomb or when the previous defuser has taken off or been killed. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, только когда бомба обезврежена, а не когда разминирование прервано.
  *
  * Pawn: `RG_CGrenade_DefuseBombEnd` (const this, const player, bool:bDefused)
  */
@@ -1815,7 +2043,7 @@ export declare class DefuseBombEndEvent extends HookEvent {
     set defused(value: boolean);
 }
 /**
- * Called when a player goes to start defuse the bomb.
+ * Called when a player goes to start defuse the bomb. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CGrenade_DefuseBombStart` (const this, const player)
  */
@@ -1889,27 +2117,7 @@ export declare class DeployEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Pawn: `RH_Cvar_DirectSet` (pcvar, const value[])
- */
-export declare class DirectSetEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1.
-     *
-     * Pawn: `pcvar`
-     */
-    get pcvar(): number;
-    set pcvar(value: number);
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `value[]`
-     */
-    get value(): string;
-    set value(value: string);
-}
-/**
- * VIP player got to the point of rescue.
+ * VIP player got to the point of rescue. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_Disappear` (const this)
  */
@@ -1923,24 +2131,11 @@ export declare class DisappearEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Оружие одного класса выбрасывают.
+ * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `crash` читается как `false`, а `reason` — причина, которую узнал AMX Mod X.
  *
- * Pawn: `Ham_Item_Drop`
- */
-export declare class DropEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Оружие, о котором событие, — одного класса, названного в `classname`.
-     *
-     * Pawn: `this`
-     */
-    get weapon(): Weapon;
-}
-/**
  * Pawn: `RH_SV_DropClient` (const client, bool:crash, const fmt[])
  */
-export declare class DropClientEvent extends HookEvent {
+export declare class DisconnectClientEvent extends HookEvent {
     private readonly kind;
     /**
      * Аргумент 1.
@@ -1961,11 +2156,26 @@ export declare class DropClientEvent extends HookEvent {
      *
      * Pawn: `fmt[]`
      */
-    get fmt(): string;
-    set fmt(value: string);
+    get reason(): string;
+    set reason(value: string);
 }
 /**
- * Called when a idle player is removed from server.
+ * Оружие одного класса выбрасывают.
+ *
+ * Pawn: `Ham_Item_Drop`
+ */
+export declare class DropEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Оружие, о котором событие, — одного класса, названного в `classname`.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+}
+/**
+ * Called when a idle player is removed from server. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_DropIdlePlayer` (const this, const reason[])
  */
@@ -1986,7 +2196,7 @@ export declare class DropIdlePlayerEvent extends HookEvent {
     set reason(value: string);
 }
 /**
- * Игрок выбрасывает оружие. В post-обработчике `event.result` — коробка с оружием на земле.
+ * Игрок выбрасывает оружие. В post-обработчике `event.result` — коробка с оружием на земле. Без ReAPI (чистый HLDS): слышно по команде игрока `drop`: `preventDefault()` её отменяет; `event.result` читается как `null`, а выброс, который игра делает сама, не слышен.
  *
  * Pawn: `RG_CBasePlayer_DropPlayerItem` (const this, const pszItemName[])
  */
@@ -2019,7 +2229,7 @@ export declare class DropPlayerItemEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player throws the shield on the ground.
+ * Called when a player throws the shield on the ground. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_DropShield` (const this, bool:deploy)
  */
@@ -2052,6 +2262,32 @@ export declare class DropShieldEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
+ * What do I do with player's weapons when he's killed? Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CSGameRules_DeadPlayerWeapons` (const index)
+ */
+export declare class DropWeaponsOnDeathEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `index`
+     */
+    get player(): Player;
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (int)
+     */
+    get result(): number;
+    /**
+     * Блокирует функцию игры; она отвечает 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
  * Игрок приседает.
  *
  * Pawn: `RG_CBasePlayer_Duck` (const this), `Ham_Player_Duck`
@@ -2063,6 +2299,20 @@ export declare class DuckEvent extends HookEvent {
      * Игрок, о котором событие.
      *
      * Pawn: `this`
+     */
+    get player(): Player;
+}
+/**
+ * Called on every frame to check player ducking. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_PM_Duck` (const playerIndex)
+ */
+export declare class DuckMovementEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `playerIndex`
      */
     get player(): Player;
 }
@@ -2088,76 +2338,7 @@ export declare class EarPositionEvent extends HookEvent {
     get result(): Vector;
 }
 /**
- * Called when client it's in the scoreboard
- *
- * Pawn: `RH_SV_EmitPings` (const client)
- */
-export declare class EmitPingsEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1.
-     *
-     * Pawn: `client`
-     */
-    get client(): number;
-    set client(value: number);
-}
-/**
- * Called when game selects a spawn point (info_player_start/deathmatch) to position the player
- *
- * Pawn: `RG_CBasePlayer_EntSelectSpawnPoint` (const this)
- */
-export declare class EntSelectSpawnPointEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (edict_t * (Entity index of selected spawn point))
-     */
-    get result(): Entity;
-    /**
-     * Блокирует функцию игры; она отвечает 0.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Called when a command is being sent to server.
- *
- * Pawn: `RH_ExecuteServerStringCmd` (const cmd[], source, id)
- */
-export declare class ExecuteServerStringCmdEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1.
-     *
-     * Pawn: `cmd[]`
-     */
-    get cmd(): string;
-    set cmd(value: string);
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `source`
-     */
-    get source(): number;
-    set source(value: number);
-    /**
-     * Аргумент 3, только чтение.
-     *
-     * Pawn: `id`
-     */
-    get id(): Entity;
-}
-/**
- * Called when a C4 goes to explodes.
+ * Called when a C4 goes to explodes. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `trace` и `damageType` читаются как 0.
  *
  * Pawn: `RG_CGrenade_ExplodeBomb` (const this, tracehandle, const bitsDamageType)
  */
@@ -2174,8 +2355,8 @@ export declare class ExplodeBombEvent extends HookEvent {
      *
      * Pawn: `tracehandle`
      */
-    get tracehandle(): number;
-    set tracehandle(value: number);
+    get trace(): number;
+    set trace(value: number);
     /**
      * Аргумент 3.
      *
@@ -2185,7 +2366,7 @@ export declare class ExplodeBombEvent extends HookEvent {
     set damageType(values: Damage[]);
 }
 /**
- * Called when a flashbang detonates.
+ * Called when a flashbang detonates. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CGrenade_ExplodeFlashbang` (const this, tracehandle, const bitsDamageType)
  */
@@ -2202,8 +2383,8 @@ export declare class ExplodeFlashbangEvent extends HookEvent {
      *
      * Pawn: `tracehandle`
      */
-    get tracehandle(): number;
-    set tracehandle(value: number);
+    get trace(): number;
+    set trace(value: number);
     /**
      * Аргумент 3.
      *
@@ -2213,7 +2394,7 @@ export declare class ExplodeFlashbangEvent extends HookEvent {
     set damageType(values: Damage[]);
 }
 /**
- * Called when a hegrenade detonates.
+ * Called when a hegrenade detonates. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CGrenade_ExplodeHeGrenade` (const this, tracehandle, const bitsDamageType)
  */
@@ -2230,8 +2411,8 @@ export declare class ExplodeHeGrenadeEvent extends HookEvent {
      *
      * Pawn: `tracehandle`
      */
-    get tracehandle(): number;
-    set tracehandle(value: number);
+    get trace(): number;
+    set trace(value: number);
     /**
      * Аргумент 3.
      *
@@ -2241,7 +2422,7 @@ export declare class ExplodeHeGrenadeEvent extends HookEvent {
     set damageType(values: Damage[]);
 }
 /**
- * Дымовая граната взрывается.
+ * Дымовая граната взрывается. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CGrenade_ExplodeSmokeGrenade` (const this)
  */
@@ -2359,232 +2540,11 @@ export declare class FadeMonsterEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Pawn: `RG_CBaseEntity_FireBuckshots` (pEntity, cShots, Float:vecSrc[3], Float:vecDirShooting[3], Float:vecSpread[3], Float:flDistance, iTracerFreq, iDamage, pevAttacker)
- */
-export declare class FireBuckshotsEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `pEntity`
-     */
-    get entity(): Entity;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `cShots`
-     */
-    get shots(): number;
-    set shots(value: number);
-    /**
-     * Аргумент 3, только чтение.
-     *
-     * Pawn: `Float:vecSrc[3]`
-     */
-    get src(): Vector;
-    /**
-     * Аргумент 4, только чтение.
-     *
-     * Pawn: `Float:vecDirShooting[3]`
-     */
-    get dirShooting(): Vector;
-    /**
-     * Аргумент 5, только чтение.
-     *
-     * Pawn: `Float:vecSpread[3]`
-     */
-    get spread(): Vector;
-    /**
-     * Аргумент 6.
-     *
-     * Pawn: `Float:flDistance`
-     */
-    get distance(): number;
-    set distance(value: number);
-    /**
-     * Аргумент 7.
-     *
-     * Pawn: `iTracerFreq`
-     */
-    get tracerFreq(): number;
-    set tracerFreq(value: number);
-    /**
-     * Аргумент 8.
-     *
-     * Pawn: `iDamage`
-     */
-    get damage(): number;
-    set damage(value: number);
-    /**
-     * Аргумент 9, только чтение.
-     *
-     * Pawn: `pevAttacker`
-     */
-    get attacker(): Player;
-}
-/**
- * Pawn: `RG_CBaseEntity_FireBullets` (pEntity, cShots, Float:vecSrc[3], Float:vecDirShooting[3], Float:vecSpread[3], Float:flDistance, iBulletType, iTracerFreq, iDamage, pevAttacker)
- */
-export declare class FireBulletsEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `pEntity`
-     */
-    get entity(): Entity;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `cShots`
-     */
-    get shots(): number;
-    set shots(value: number);
-    /**
-     * Аргумент 3, только чтение.
-     *
-     * Pawn: `Float:vecSrc[3]`
-     */
-    get src(): Vector;
-    /**
-     * Аргумент 4, только чтение.
-     *
-     * Pawn: `Float:vecDirShooting[3]`
-     */
-    get dirShooting(): Vector;
-    /**
-     * Аргумент 5, только чтение.
-     *
-     * Pawn: `Float:vecSpread[3]`
-     */
-    get spread(): Vector;
-    /**
-     * Аргумент 6.
-     *
-     * Pawn: `Float:flDistance`
-     */
-    get distance(): number;
-    set distance(value: number);
-    /**
-     * Аргумент 7.
-     *
-     * Pawn: `iBulletType`
-     */
-    get bulletType(): number;
-    set bulletType(value: number);
-    /**
-     * Аргумент 8.
-     *
-     * Pawn: `iTracerFreq`
-     */
-    get tracerFreq(): number;
-    set tracerFreq(value: number);
-    /**
-     * Аргумент 9.
-     *
-     * Pawn: `iDamage`
-     */
-    get damage(): number;
-    set damage(value: number);
-    /**
-     * Аргумент 10, только чтение.
-     *
-     * Pawn: `pevAttacker`
-     */
-    get attacker(): Player;
-}
-/**
- * Pawn: `RG_CBaseEntity_FireBullets3` (pEntity, Float:vecSrc[3], Float:vecDirShooting[3], Float:vecSpread, Float:flDistance, iPenetration, iBulletType, iDamage, Float:flRangeModifier, pevAttacker, bool:bPistol, shared_rand)
- */
-export declare class FireBullets3Event extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `pEntity`
-     */
-    get entity(): Entity;
-    /**
-     * Аргумент 2, только чтение.
-     *
-     * Pawn: `Float:vecSrc[3]`
-     */
-    get src(): Vector;
-    /**
-     * Аргумент 3, только чтение.
-     *
-     * Pawn: `Float:vecDirShooting[3]`
-     */
-    get dirShooting(): Vector;
-    /**
-     * Аргумент 4.
-     *
-     * Pawn: `Float:vecSpread`
-     */
-    get spread(): number;
-    set spread(value: number);
-    /**
-     * Аргумент 5.
-     *
-     * Pawn: `Float:flDistance`
-     */
-    get distance(): number;
-    set distance(value: number);
-    /**
-     * Аргумент 6.
-     *
-     * Pawn: `iPenetration`
-     */
-    get penetration(): number;
-    set penetration(value: number);
-    /**
-     * Аргумент 7.
-     *
-     * Pawn: `iBulletType`
-     */
-    get bulletType(): number;
-    set bulletType(value: number);
-    /**
-     * Аргумент 8.
-     *
-     * Pawn: `iDamage`
-     */
-    get damage(): number;
-    set damage(value: number);
-    /**
-     * Аргумент 9.
-     *
-     * Pawn: `Float:flRangeModifier`
-     */
-    get rangeModifier(): number;
-    set rangeModifier(value: number);
-    /**
-     * Аргумент 10, только чтение.
-     *
-     * Pawn: `pevAttacker`
-     */
-    get attacker(): Player;
-    /**
-     * Аргумент 11.
-     *
-     * Pawn: `bool:bPistol`
-     */
-    get pistol(): boolean;
-    set pistol(value: boolean);
-    /**
-     * Аргумент 12.
-     *
-     * Pawn: `shared_rand`
-     */
-    get shared_rand(): number;
-    set shared_rand(value: number);
-}
-/**
- * Игра считает урон от падения. В post-обработчике `event.result` — это число; верните своё, чтобы заменить его.
+ * Игра считает урон от падения. В post-обработчике `event.result` — это число; верните своё, чтобы заменить его. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_FlPlayerFallDamage` (const index)
  */
-export declare class FlPlayerFallDamageEvent extends HookEvent {
+export declare class FallDamageEvent extends HookEvent {
     private readonly kind;
     /**
      * Игрок, который упал.
@@ -2606,111 +2566,110 @@ export declare class FlPlayerFallDamageEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Is this player allowed to respawn now?
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
  *
- * Pawn: `RG_CSGameRules_FPlayerCanRespawn` (const index)
+ * Pawn: `RG_CBaseEntity_FireBullets` (pEntity, cShots, Float:vecSrc[3], Float:vecDirShooting[3], Float:vecSpread[3], Float:flDistance, iBulletType, iTracerFreq, iDamage, pevAttacker)
  */
-export declare class FPlayerCanRespawnEvent extends HookEvent {
+export declare class FireBulletsEvent extends HookEvent {
     private readonly kind;
     /**
      * Аргумент 1, только чтение.
      *
-     * Pawn: `index`
-     */
-    get player(): Player;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (BOOL)
-     */
-    get result(): number;
-    /**
-     * Блокирует функцию игры; она отвечает 0.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Can this player take damage from this attacker?
- *
- * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage` (const index, const attacker)
- */
-export declare class FPlayerCanTakeDamageEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `index`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2, только чтение.
-     *
-     * Pawn: `attacker`
-     */
-    get attacker(): Player;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (BOOL)
-     */
-    get result(): number;
-    /**
-     * Блокирует функцию игры; она отвечает 0.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Called when an entity is removed (freed from server).
- *
- * Pawn: `RH_ED_Free` (const entity)
- */
-export declare class FreeEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `entity`
+     * Pawn: `pEntity`
      */
     get entity(): Entity;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `cShots`
+     */
+    get shots(): number;
+    set shots(value: number);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `Float:vecSrc[3]`
+     */
+    get start(): Vector;
+    set start(value: Vector);
+    /**
+     * Аргумент 4.
+     *
+     * Pawn: `Float:vecDirShooting[3]`
+     */
+    get direction(): Vector;
+    set direction(value: Vector);
+    /**
+     * Аргумент 5.
+     *
+     * Pawn: `Float:vecSpread[3]`
+     */
+    get spread(): Vector;
+    set spread(value: Vector);
+    /**
+     * Аргумент 6.
+     *
+     * Pawn: `Float:flDistance`
+     */
+    get distance(): number;
+    set distance(value: number);
+    /**
+     * Аргумент 7.
+     *
+     * Pawn: `iBulletType`
+     */
+    get bulletType(): number;
+    set bulletType(value: number);
+    /**
+     * Аргумент 8.
+     *
+     * Pawn: `iTracerFreq`
+     */
+    get tracerFreq(): number;
+    set tracerFreq(value: number);
+    /**
+     * Аргумент 9.
+     *
+     * Pawn: `iDamage`
+     */
+    get damage(): number;
+    set damage(value: number);
+    /**
+     * Аргумент 10, только чтение.
+     *
+     * Pawn: `pevAttacker`
+     */
+    get attacker(): Player;
 }
 /**
- * Should the player switch to this weapon?
+ * Игра сообщает ботам, что что-то произошло. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
- * Pawn: `RG_CSGameRules_FShouldSwitchWeapon` (const index, const weapon)
+ * Pawn: `RG_CBotManager_OnEvent` (GameEventType:event, const pEntity, const pOther)
  */
-export declare class FShouldSwitchWeaponEvent extends HookEvent {
+export declare class GameEventEvent extends HookEvent {
     private readonly kind;
     /**
-     * Аргумент 1, только чтение.
+     * Событие для ботов, например `"weaponFired"`, `"playerDied"`, `"bombPlanted"`, `"roundStart"`.
      *
-     * Pawn: `index`
+     * Pawn: `GameEventType:event`
      */
-    get player(): Player;
+    get gameEvent(): BotEvent;
+    set gameEvent(value: BotEvent);
     /**
      * Аргумент 2, только чтение.
      *
-     * Pawn: `weapon`
+     * Pawn: `pEntity`
      */
-    get weapon(): Weapon;
+    get entity(): Entity;
     /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     * Аргумент 3, только чтение.
      *
-     * Pawn: `GetHookChainReturn` (BOOL)
+     * Pawn: `pOther`
      */
-    get result(): number;
-    /**
-     * Блокирует функцию игры; она отвечает 0.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
+    get other(): Entity;
 }
 /**
- * «Мысль» правил игры: каждый кадр — часы раунда и проверка условий победы.
+ * «Мысль» правил игры: каждый кадр — часы раунда и проверка условий победы. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CSGameRules_Think` ()
  */
@@ -2718,19 +2677,8 @@ export declare class GameThinkEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Pawn: `RH_GetEntityInit` (const classname[])
- */
-export declare class GetEntityInitEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1.
-     *
-     * Pawn: `classname[]`
-     */
-    get classname(): string;
-    set classname(value: string);
-}
-/**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_GetForceCamera` (const pObserver)
  */
 export declare class GetForceCameraEvent extends HookEvent {
@@ -2755,7 +2703,7 @@ export declare class GetForceCameraEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player enters the game.
+ * Called when a player enters the game. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_GetIntoGame` (const this)
  */
@@ -2781,7 +2729,7 @@ export declare class GetIntoGameEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * I can't use this weapon anymore, get me the next best one.
+ * I can't use this weapon anymore, get me the next best one. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_GetNextBestWeapon` (const index, const currentWeapon)
  */
@@ -2814,32 +2762,6 @@ export declare class GetNextBestWeaponEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Place this player on his spawnspot and face him in the proper direction.
- *
- * Pawn: `RG_CSGameRules_GetPlayerSpawnSpot` (const index)
- */
-export declare class GetPlayerSpawnSpotEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `index`
-     */
-    get player(): Player;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (edict_t * (Entity index of spawnspot))
-     */
-    get result(): Entity;
-    /**
-     * Блокирует функцию игры; она отвечает 0.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
  * Create some gore and get rid of a monster's model.
  *
  * Pawn: `Ham_GibMonster`
@@ -2855,6 +2777,8 @@ export declare class GibMonsterEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
+ * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ *
  * Pawn: `RG_CGib_Spawn` (const this, const szGibModel[])
  */
 export declare class GibSpawnEvent extends HookEvent {
@@ -2920,9 +2844,11 @@ export declare class GiveAmmoEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
+ * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
+ *
  * Pawn: `RG_CSGameRules_GiveC4` ()
  */
-export declare class GiveC4Event extends HookEvent {
+export declare class GiveBombEvent extends HookEvent {
     private readonly kind;
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
@@ -2938,7 +2864,7 @@ export declare class GiveC4Event extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра выдаёт появившемуся игроку стандартное оружие. `preventDefault()` — и не выдаст ничего.
+ * Игра выдаёт появившемуся игроку стандартное оружие. `preventDefault()` — и не выдаст ничего. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_GiveDefaultItems` (const this)
  */
@@ -2952,9 +2878,11 @@ export declare class GiveDefaultItemsEvent extends HookEvent {
     get player(): Player;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CBasePlayer_GiveNamedItem` (const this, const pszName[])
  */
-export declare class GiveNamedItemEvent extends HookEvent {
+export declare class GiveItemEvent extends HookEvent {
     private readonly kind;
     /**
      * Аргумент 1, только чтение.
@@ -2983,6 +2911,8 @@ export declare class GiveNamedItemEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CBasePlayer_GiveShield` (const this, bool:bDeploy)
  */
 export declare class GiveShieldEvent extends HookEvent {
@@ -3000,12 +2930,6 @@ export declare class GiveShieldEvent extends HookEvent {
      */
     get deploy(): boolean;
     set deploy(value: boolean);
-}
-/**
- * Pawn: `RG_CSGameRules_GoToIntermission` ()
- */
-export declare class GoToIntermissionEvent extends HookEvent {
-    private readonly kind;
 }
 /**
  * Returns a vector that tells the gun position.
@@ -3083,45 +3007,6 @@ export declare class HasHumanGibsEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра спрашивает, запрещён ли игроку предмет. Верните `true`, чтобы запретить.
- *
- * Pawn: `RG_CBasePlayer_HasRestrictItem` (const this, ItemID:item, ItemRestType:type)
- */
-export declare class HasRestrictItemEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Игрок, о котором событие.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2, только чтение.
-     *
-     * Pawn: `ItemID:item`
-     */
-    get item(): Weapon;
-    /**
-     * Способ, которым игрок получит предмет, — одно из `"buying"` (покупка), `"touched"` (подобрал) или `"equipped"` (выдан при спавне).
-     *
-     * Pawn: `ItemRestType:type`
-     */
-    get restriction(): ItemRestriction;
-    set restriction(value: ItemRestriction);
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (bool)
-     */
-    get result(): boolean;
-    /**
-     * Блокирует функцию игры; она отвечает false.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
  * Whether or not the target is the same as the one passed.
  *
  * Pawn: `Ham_HasTarget`
@@ -3156,11 +3041,52 @@ export declare class HasTargetEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра показывает игроку подсказку.
+ * Pawn: `RG_CBasePlayer_TakeHealth` (const this, Float:flHealth, bitsDamageType), `Ham_TakeHealth`
+ */
+export declare class HealEvent extends HookEvent {
+    private readonly kind;
+    private static readonly ham;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `Float:flHealth`
+     */
+    get health(): number;
+    set health(value: number);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `bitsDamageType`
+     */
+    get damageType(): Damage[];
+    set damageType(values: Damage[]);
+    /** Сущность, о которой событие, какого бы класса она ни была, — та, что названа в `classname`; для игрока — `event.player`. */
+    get entity(): Entity;
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (BOOL)
+     */
+    get result(): number;
+    /**
+     * Блокирует функцию игры; она отвечает 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Игра показывает игроку подсказку. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_HintMessageEx` (const this, const message[], Float:duration, bool:bDisplayIfPlayerDead, bool:bOverride)
  */
-export declare class HintMessageExEvent extends HookEvent {
+export declare class HintMessageEvent extends HookEvent {
     private readonly kind;
     /**
      * Игрок, о котором событие.
@@ -3256,7 +3182,7 @@ export declare class IlluminationEvent extends HookEvent {
  *
  * Pawn: `RG_CBasePlayer_ImpulseCommands` (const this), `Ham_Player_ImpulseCommands`
  */
-export declare class ImpulseCommandsEvent extends HookEvent {
+export declare class ImpulseEvent extends HookEvent {
     private readonly kind;
     private static readonly ham;
     /**
@@ -3265,6 +3191,14 @@ export declare class ImpulseCommandsEvent extends HookEvent {
      * Pawn: `this`
      */
     get player(): Player;
+}
+/**
+ * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ *
+ * Pawn: `RG_CSGameRules_GoToIntermission` ()
+ */
+export declare class IntermissionEvent extends HookEvent {
+    private readonly kind;
 }
 /**
  * Returns true if the passed ent is in the caller's forward view cone.
@@ -3463,50 +3397,6 @@ export declare class IsNetClientEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player hit to entity.
- *
- * Pawn: `RG_IsPenetrableEntity` (Float:vecSrc[3], Float:vecEnd[3], index, entity)
- */
-export declare class IsPenetrableEntityEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `Float:vecSrc[3]`
-     */
-    get src(): Vector;
-    /**
-     * Аргумент 2, только чтение.
-     *
-     * Pawn: `Float:vecEnd[3]`
-     */
-    get end(): Vector;
-    /**
-     * Аргумент 3, только чтение.
-     *
-     * Pawn: `index`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 4, только чтение.
-     *
-     * Pawn: `entity`
-     */
-    get entity(): Entity;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (bool)
-     */
-    get result(): boolean;
-    /**
-     * Блокирует функцию игры; она отвечает false.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
  * Whether or not the entity is a player.
  *
  * Pawn: `Ham_IsPlayer`
@@ -3679,6 +3569,46 @@ export declare class ItemPreFrameEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
+ * Игра спрашивает, запрещён ли игроку предмет. Верните `true`, чтобы запретить. Без ReAPI (чистый HLDS): спрашивается только про `"buying"`, через `CS_OnBuyAttempt` модуля cstrike: ответ `true` запрещает покупку, `false` оставляет решение игре.
+ *
+ * Pawn: `RG_CBasePlayer_HasRestrictItem` (const this, ItemID:item, ItemRestType:type)
+ */
+export declare class ItemRestrictedEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Игрок, о котором событие.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Предмет, о котором спрашивают, по его виду, например `"awp"`, `"hegrenade"`, `"kevlar"`, `"defusekit"`.
+     *
+     * Pawn: `ItemID:item`
+     */
+    get item(): ItemKind;
+    set item(value: ItemKind);
+    /**
+     * Способ, которым игрок получит предмет, — одно из `"buying"` (покупка), `"touched"` (подобрал) или `"equipped"` (выдан при спавне).
+     *
+     * Pawn: `ItemRestType:type`
+     */
+    get restriction(): ItemRestriction;
+    set restriction(value: ItemRestriction);
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (bool)
+     */
+    get result(): boolean;
+    /**
+     * Блокирует функцию игры; она отвечает false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
  * Returns the item slot for the item.
  *
  * Pawn: `Ham_Item_ItemSlot`
@@ -3740,7 +3670,7 @@ export declare class ItemUpdateClientDataEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a client "thinks for the join status".
+ * Called when a client "thinks for the join status". Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_JoiningThink` (const this)
  */
@@ -3769,67 +3699,18 @@ export declare class JumpEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Called whenever player fires a weapon and shakes player screen (punchangles altering)
+ * Called on every frame while player presses jump button. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
- * Pawn: `RG_CBasePlayerWeapon_KickBack` (const this, Float:up_base, Float:lateral_base, Float:up_modifier, Float:lateral_modifier, Float:p_max, Float:lateral_max, direction_change)
+ * Pawn: `RG_PM_Jump` (const playerIndex)
  */
-export declare class KickBackEvent extends HookEvent {
+export declare class JumpMovementEvent extends HookEvent {
     private readonly kind;
     /**
      * Аргумент 1, только чтение.
      *
-     * Pawn: `this`
+     * Pawn: `playerIndex`
      */
-    get weapon(): Weapon;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `Float:up_base`
-     */
-    get up_base(): number;
-    set up_base(value: number);
-    /**
-     * Аргумент 3.
-     *
-     * Pawn: `Float:lateral_base`
-     */
-    get lateral_base(): number;
-    set lateral_base(value: number);
-    /**
-     * Аргумент 4.
-     *
-     * Pawn: `Float:up_modifier`
-     */
-    get up_modifier(): number;
-    set up_modifier(value: number);
-    /**
-     * Аргумент 5.
-     *
-     * Pawn: `Float:lateral_modifier`
-     */
-    get lateral_modifier(): number;
-    set lateral_modifier(value: number);
-    /**
-     * Аргумент 6.
-     *
-     * Pawn: `Float:p_max`
-     */
-    get p_max(): number;
-    set p_max(value: number);
-    /**
-     * Аргумент 7.
-     *
-     * Pawn: `Float:lateral_max`
-     */
-    get lateral_max(): number;
-    set lateral_max(value: number);
-    /**
-     * Аргумент 8.
-     *
-     * Pawn: `direction_change`
-     */
-    get direction_change(): number;
-    set direction_change(value: number);
+    get player(): Player;
 }
 /**
  * Normally called when an item gets deleted.
@@ -3877,7 +3758,7 @@ export declare class KilledEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called when a player is on a ladder.
+ * Called when a player is on a ladder. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_LadderMove` (const pLadder, const playerIndex)
  */
@@ -3919,44 +3800,12 @@ export declare class LookEvent extends HookEvent {
     set distance(value: number);
 }
 /**
- * Makes a random player the bomber.
+ * Recreate all the map entities from the map data (preserving their indices),. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
- * Pawn: `RG_CBasePlayer_MakeBomber` (const this)
+ * Pawn: `RG_CSGameRules_CleanUpMap` ()
  */
-export declare class MakeBomberEvent extends HookEvent {
+export declare class MapResetEvent extends HookEvent {
     private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (bool)
-     */
-    get result(): boolean;
-    /**
-     * Блокирует функцию игры; она отвечает false.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Makes a random player the VIP.
- *
- * Pawn: `RG_CBasePlayer_MakeVIP` (const this)
- */
-export declare class MakeVipEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
 }
 /**
  * Gets the maximum speed for whenever a player has the item deployed.
@@ -4001,6 +3850,8 @@ export declare class MonsterInitDeadEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_PM_Move` (const playerIndex)
  */
 export declare class MoveEvent extends HookEvent {
@@ -4011,6 +3862,14 @@ export declare class MoveEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+}
+/**
+ * Начинается новый раунд. Без ReAPI (чистый HLDS): слышно при перезапуске раунда — обработчики «до» игры, когда она объявляет раунд, обработчики «после» — когда её игроки возродились, — но `preventDefault()` ничего не делает.
+ *
+ * Pawn: `RG_CSGameRules_RestartRound` ()
+ */
+export declare class NewRoundEvent extends HookEvent {
+    private readonly kind;
 }
 /**
  * Returns the next target of this.
@@ -4040,100 +3899,7 @@ export declare class NextTargetEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Pawn: `RG_CBasePlayer_ObjectCaps` (const this), `Ham_ObjectCaps`
- */
-export declare class ObjectCapsEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /** Сущность, о которой событие, какого бы класса она ни была, — та, что названа в `classname`; для игрока — `event.player`. */
-    get entity(): Entity;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (int)
-     */
-    get result(): number;
-    /**
-     * Блокирует функцию игры; она отвечает 0.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Called when a client attempt to find the next observer.
- *
- * Pawn: `RG_CBasePlayer_Observer_FindNextPlayer` (const this, bool bReverse, name[])
- */
-export declare class ObserverFindNextPlayerEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `bool bReverse`
-     */
-    get arg2(): number;
-    set arg2(value: number);
-    /**
-     * Аргумент 3.
-     *
-     * Pawn: `name[]`
-     */
-    get name(): string;
-    set name(value: string);
-}
-/**
- * Pawn: `RG_CBasePlayer_Observer_IsValidTarget` (const this, iPlayerIndex, bool:bSameTeam)
- */
-export declare class ObserverIsValidTargetEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `iPlayerIndex`
-     */
-    get playerIndex(): number;
-    set playerIndex(value: number);
-    /**
-     * Аргумент 3.
-     *
-     * Pawn: `bool:bSameTeam`
-     */
-    get sameTeam(): boolean;
-    set sameTeam(value: boolean);
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (CBasePlayer *)
-     */
-    get result(): Player;
-    /**
-     * Блокирует функцию игры; она отвечает 0.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Called when a client attempt to change the observer mode.
+ * Called when a client attempt to change the observer mode. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_Observer_SetMode` (const this, iMode)
  */
@@ -4154,6 +3920,8 @@ export declare class ObserverSetModeEvent extends HookEvent {
     set mode(value: number);
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CBasePlayer_Observer_Think` (const this)
  */
 export declare class ObserverThinkEvent extends HookEvent {
@@ -4166,139 +3934,27 @@ export declare class ObserverThinkEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Not entirely sure.
- *
- * Pawn: `Ham_OnControls`
- */
-export declare class OnControlsEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get entity(): Entity;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `on`
-     */
-    get on(): Entity;
-    set on(value: Entity);
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (Integer)
-     */
-    get result(): boolean;
-    /**
-     * Блокирует функцию игры; она отвечает false.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Игра сообщает ботам, что что-то произошло.
- *
- * Pawn: `RG_CBotManager_OnEvent` (GameEventType:event, const pEntity, const pOther)
- */
-export declare class OnEventEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Событие для ботов, например `"weaponFired"`, `"playerDied"`, `"bombPlanted"`, `"roundStart"`.
-     *
-     * Pawn: `GameEventType:event`
-     */
-    get gameEvent(): BotEvent;
-    set gameEvent(value: BotEvent);
-    /**
-     * Аргумент 2, только чтение.
-     *
-     * Pawn: `pEntity`
-     */
-    get entity(): Entity;
-    /**
-     * Аргумент 3, только чтение.
-     *
-     * Pawn: `pOther`
-     */
-    get other(): Entity;
-}
-/**
- * Закончилось время заморозки в начале раунда.
- *
- * Pawn: `RG_CSGameRules_OnRoundFreezeEnd` ()
- */
-export declare class OnRoundFreezeEndEvent extends HookEvent {
-    private readonly kind;
-}
-/**
- * Called on spawn, the attempt to equip a player.
- *
- * Pawn: `RG_CBasePlayer_OnSpawnEquip` (const this, bool:addDefault, bool:equipGame)
- */
-export declare class OnSpawnEquipEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `bool:addDefault`
-     */
-    get addDefault(): boolean;
-    set addDefault(value: boolean);
-    /**
-     * Аргумент 3.
-     *
-     * Pawn: `bool:equipGame`
-     */
-    get equipGame(): boolean;
-    set equipGame(value: boolean);
-}
-/**
- * Unsure.
- *
- * Pawn: `Ham_OverrideReset`
- */
-export declare class OverrideResetEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get entity(): Entity;
-}
-/**
- * Called when a client emits a "pain sound" after received damage.
+ * Игрок вскрикивает от боли после попадания.
  *
  * Pawn: `RG_CBasePlayer_Pain` (const this, HitBoxGroup:lastHitGroup, bool:hasArmour)
  */
 export declare class PainEvent extends HookEvent {
     private readonly kind;
     /**
-     * Аргумент 1, только чтение.
+     * Игрок, о котором событие.
      *
      * Pawn: `this`
      */
     get player(): Player;
     /**
-     * Аргумент 2.
+     * Часть тела, куда пришлось попадание, например `"head"`, `"chest"`, `"leftLeg"`.
      *
      * Pawn: `HitBoxGroup:lastHitGroup`
      */
-    get lastHitGroup(): number;
-    set lastHitGroup(value: number);
+    get lastHitGroup(): HitGroup;
+    set lastHitGroup(value: HitGroup);
     /**
-     * Аргумент 3.
+     * `true`, когда на игроке броня: по ней игра выбирает звук.
      *
      * Pawn: `bool:hasArmour`
      */
@@ -4321,7 +3977,7 @@ export declare class PainSoundEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called when a player plant's the bomb on the ground.
+ * Called when a player plant's the bomb on the ground. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда бомба получает модель; ответ ничего не делает.
  *
  * Pawn: `RG_PlantBomb` (const index, Float:vecStart[3], Float:vecVelocity[3])
  */
@@ -4334,17 +3990,19 @@ export declare class PlantBombEvent extends HookEvent {
      */
     get player(): Player;
     /**
-     * Аргумент 2, только чтение.
+     * Аргумент 2.
      *
      * Pawn: `Float:vecStart[3]`
      */
     get start(): Vector;
+    set start(value: Vector);
     /**
-     * Аргумент 3, только чтение.
+     * Аргумент 3.
      *
      * Pawn: `Float:vecVelocity[3]`
      */
     get velocity(): Vector;
+    set velocity(value: Vector);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -4386,7 +4044,7 @@ export declare class PlayEmptySoundEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Флешка ослепляет игрока. `preventDefault()` — и он ничего не заметит.
+ * Флешка ослепляет игрока. `preventDefault()` — и он ничего не заметит. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `inflictor` и `attacker` читаются как мир, `color` — нулевым.
  *
  * Pawn: `RG_PlayerBlind` (const index, const inflictor, const attacker, const Float:fadeTime, const Float:fadeHold, const alpha, Float:color[3])
  */
@@ -4432,13 +4090,16 @@ export declare class PlayerBlindEvent extends HookEvent {
     get alpha(): number;
     set alpha(value: number);
     /**
-     * Цвет вспышки, [r, g, b] как Vector. Только чтение.
+     * Цвет вспышки, [r, g, b] как Vector.
      *
      * Pawn: `Float:color[3]`
      */
     get color(): Vector;
+    set color(value: Vector);
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CBasePlayer_PlayerDeathThink` (const this)
  */
 export declare class PlayerDeathThinkEvent extends HookEvent {
@@ -4451,7 +4112,7 @@ export declare class PlayerDeathThinkEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Called each time player gets a weapon linked to his inventory
+ * Called each time player gets a weapon linked to his inventory. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CSGameRules_PlayerGotWeapon` (const pPlayer, const pWeapon)
  */
@@ -4471,7 +4132,7 @@ export declare class PlayerGotWeaponEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Игрока убили.
+ * Игрока убили. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CSGameRules_PlayerKilled` (const victim, const killer, const inflictor)
  */
@@ -4497,7 +4158,7 @@ export declare class PlayerKilledEvent extends HookEvent {
     get inflictor(): Entity;
 }
 /**
- * Игрок появился на карте (спавн).
+ * Игрок появился на карте (спавн). Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CSGameRules_PlayerSpawn` (const index)
  */
@@ -4511,7 +4172,7 @@ export declare class PlayerSpawnEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Called whenever player emits an step sound
+ * Called whenever player emits an step sound. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_PlayStepSound` (step, Float:fvol, const playerIndex)
  */
@@ -4529,38 +4190,10 @@ export declare class PlayStepSoundEvent extends HookEvent {
      *
      * Pawn: `Float:fvol`
      */
-    get fvol(): number;
-    set fvol(value: number);
+    get volume(): number;
+    set volume(value: number);
     /**
      * Аргумент 3, только чтение.
-     *
-     * Pawn: `playerIndex`
-     */
-    get player(): Player;
-}
-/**
- * Called on every frame to check player ducking
- *
- * Pawn: `RG_PM_Duck` (const playerIndex)
- */
-export declare class PmDuckEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `playerIndex`
-     */
-    get player(): Player;
-}
-/**
- * Called on every frame while player presses jump button
- *
- * Pawn: `RG_PM_Jump` (const playerIndex)
- */
-export declare class PmJumpEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
      *
      * Pawn: `playerIndex`
      */
@@ -4663,19 +4296,19 @@ export declare class PrecacheEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called when a generic resource is being added to generic precache list.
+ * Called when a generic resource is being added to generic precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
  *
  * Pawn: `RH_PF_precache_generic_I` (const string[])
  */
-export declare class PrecacheGenericIEvent extends HookEvent {
+export declare class PrecacheFileEvent extends HookEvent {
     private readonly kind;
     /**
      * Аргумент 1.
      *
      * Pawn: `string[]`
      */
-    get string(): string;
-    set string(value: string);
+    get file(): string;
+    set file(value: string);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -4690,19 +4323,19 @@ export declare class PrecacheGenericIEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a model is being added to model precache list.
+ * Called when a model is being added to model precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
  *
  * Pawn: `RH_PF_precache_model_I` (const string[])
  */
-export declare class PrecacheModelIEvent extends HookEvent {
+export declare class PrecacheModelEvent extends HookEvent {
     private readonly kind;
     /**
      * Аргумент 1.
      *
      * Pawn: `string[]`
      */
-    get string(): string;
-    set string(value: string);
+    get file(): string;
+    set file(value: string);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -4717,19 +4350,19 @@ export declare class PrecacheModelIEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a sound is being added to sound precache list.
+ * Called when a sound is being added to sound precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
  *
  * Pawn: `RH_PF_precache_sound_I` (const string[])
  */
-export declare class PrecacheSoundIEvent extends HookEvent {
+export declare class PrecacheSoundEvent extends HookEvent {
     private readonly kind;
     /**
      * Аргумент 1.
      *
      * Pawn: `string[]`
      */
-    get string(): string;
-    set string(value: string);
+    get file(): string;
+    set file(value: string);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -4801,7 +4434,7 @@ export declare class PrimaryAttackEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Called when a message is being sent to the server's console.
+ * Called when a message is being sent to the server's console. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RH_Con_Printf` (const string[])
  */
@@ -4812,11 +4445,11 @@ export declare class PrintfEvent extends HookEvent {
      *
      * Pawn: `string[]`
      */
-    get string(): string;
-    set string(value: string);
+    get text(): string;
+    set text(value: string);
 }
 /**
- * Отправляется радиосообщение. `preventDefault()` заглушит его.
+ * Отправляется радиосообщение. `preventDefault()` заглушит его. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_Radio` (const this, const msg_id[], const msg_verbose[], pitch, bool:showIcon)
  */
@@ -4833,15 +4466,15 @@ export declare class RadioEvent extends HookEvent {
      *
      * Pawn: `msg_id[]`
      */
-    get msg_id(): string;
-    set msg_id(value: string);
+    get sound(): string;
+    set sound(value: string);
     /**
      * Аргумент 3.
      *
      * Pawn: `msg_verbose[]`
      */
-    get msg_verbose(): string;
-    set msg_verbose(value: string);
+    get text(): string;
+    set text(value: string);
     /**
      * Аргумент 4.
      *
@@ -4856,6 +4489,69 @@ export declare class RadioEvent extends HookEvent {
      */
     get showIcon(): boolean;
     set showIcon(value: boolean);
+}
+/**
+ * Called whenever player fires a weapon and shakes player screen (punchangles altering). Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CBasePlayerWeapon_KickBack` (const this, Float:up_base, Float:lateral_base, Float:up_modifier, Float:lateral_modifier, Float:p_max, Float:lateral_max, direction_change)
+ */
+export declare class RecoilEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get weapon(): Weapon;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `Float:up_base`
+     */
+    get upBase(): number;
+    set upBase(value: number);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `Float:lateral_base`
+     */
+    get lateralBase(): number;
+    set lateralBase(value: number);
+    /**
+     * Аргумент 4.
+     *
+     * Pawn: `Float:up_modifier`
+     */
+    get upModifier(): number;
+    set upModifier(value: number);
+    /**
+     * Аргумент 5.
+     *
+     * Pawn: `Float:lateral_modifier`
+     */
+    get lateralModifier(): number;
+    set lateralModifier(value: number);
+    /**
+     * Аргумент 6.
+     *
+     * Pawn: `Float:p_max`
+     */
+    get upMax(): number;
+    set upMax(value: number);
+    /**
+     * Аргумент 7.
+     *
+     * Pawn: `Float:lateral_max`
+     */
+    get lateralMax(): number;
+    set lateralMax(value: number);
+    /**
+     * Аргумент 8.
+     *
+     * Pawn: `direction_change`
+     */
+    get directionChange(): number;
+    set directionChange(value: number);
 }
 /**
  * Whether or not the entity can reflect gauss shots..
@@ -4934,6 +4630,8 @@ export declare class ReloadEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CBasePlayer_RemoveAllItems` (const this, bool:removeSuit)
  */
 export declare class RemoveAllItemsEvent extends HookEvent {
@@ -4953,6 +4651,8 @@ export declare class RemoveAllItemsEvent extends HookEvent {
     set removeSuit(value: boolean);
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CSGameRules_RemoveGuns` ()
  */
 export declare class RemoveGunsEvent extends HookEvent {
@@ -4961,7 +4661,7 @@ export declare class RemoveGunsEvent extends HookEvent {
 /**
  * Pawn: `RG_CBasePlayer_RemovePlayerItem` (const this, const pItem), `Ham_RemovePlayerItem`
  */
-export declare class RemovePlayerItemEvent extends HookEvent {
+export declare class RemoveItemEvent extends HookEvent {
     private readonly kind;
     private static readonly ham;
     /**
@@ -4990,7 +4690,7 @@ export declare class RemovePlayerItemEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player's remove protection.
+ * Called when a player's remove protection. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_RemoveSpawnProtection` (const this)
  */
@@ -5002,21 +4702,6 @@ export declare class RemoveSpawnProtectionEvent extends HookEvent {
      * Pawn: `this`
      */
     get player(): Player;
-}
-/**
- * Prints debug information about monster to console. (state, activity, and other)
- *
- * Pawn: `Ham_ReportAIState`
- */
-export declare class ReportAiStateEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get entity(): Entity;
 }
 /**
  * Sets the weapon so that it can play empty sound again.
@@ -5049,6 +4734,8 @@ export declare class ResetMaxSpeedEvent extends HookEvent {
     get player(): Player;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CBaseAnimating_ResetSequenceInfo` (const this)
  */
 export declare class ResetSequenceInfoEvent extends HookEvent {
@@ -5103,14 +4790,6 @@ export declare class RestartEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Начинается новый раунд.
- *
- * Pawn: `RG_CSGameRules_RestartRound` ()
- */
-export declare class RestartRoundEvent extends HookEvent {
-    private readonly kind;
-}
-/**
  * There is no more ammo for this gun, so switch to the next best one.
  *
  * Pawn: `Ham_Weapon_RetireWeapon`
@@ -5126,7 +4805,7 @@ export declare class RetireWeaponEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Раунд заканчивается.
+ * Раунд заканчивается. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает; `delay` — 5 секунд оригинальной игры, 3 для `"gameCommence"`, если его не задал `game.endRound`.
  *
  * Pawn: `RG_RoundEnd` (WinStatus:status, ScenarioEventEndRound:event, Float:tmDelay)
  */
@@ -5180,6 +4859,14 @@ export declare class RoundRespawnEvent extends HookEvent {
     get player(): Player;
 }
 /**
+ * Закончилось время заморозки в начале раунда. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ *
+ * Pawn: `RG_CSGameRules_OnRoundFreezeEnd` ()
+ */
+export declare class RoundStartEvent extends HookEvent {
+    private readonly kind;
+}
+/**
  * Returns the secondary ammo index of the item.
  *
  * Pawn: `Ham_Item_SecondaryAmmoIndex`
@@ -5222,7 +4909,33 @@ export declare class SecondaryAttackEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Игра сообщает всем, кто кого убил.
+ * Called when game selects a spawn point (info_player_start/deathmatch) to position the player. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CBasePlayer_EntSelectSpawnPoint` (const this)
+ */
+export declare class SelectSpawnPointEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (edict_t * (Entity index of selected spawn point))
+     */
+    get result(): Entity;
+    /**
+     * Блокирует функцию игры; она отвечает 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Игра сообщает всем, кто кого убил. Без ReAPI (чистый HLDS): `preventDefault()` отменяет сообщение; `assister` и `inflictor` читаются как мир, `flags` пуст, в `rarity` бывает только `"headshot"`; запись поля ничего не делает.
  *
  * Pawn: `RG_CSGameRules_SendDeathMessage` (const pKiller, const pVictim, const pAssister, const pevInflictor, const killerWeaponName[], const DeathMessageFlags:iDeathMessageFlags, const KillRarity:iRarityOfKill)
  */
@@ -5260,7 +4973,7 @@ export declare class SendDeathMessageEvent extends HookEvent {
     get killerWeaponName(): string;
     set killerWeaponName(value: string);
     /**
-     * Дополнения к сообщению о смерти, любые из `"Position"`, `"Assistant"`, `"KillRarity"`.
+     * Дополнения к сообщению о смерти, любые из `"position"`, `"assistant"`, `"killRarity"`.
      *
      * Pawn: `DeathMessageFlags:iDeathMessageFlags`
      */
@@ -5273,91 +4986,6 @@ export declare class SendDeathMessageEvent extends HookEvent {
      */
     get rarity(): KillRarity[];
     set rarity(values: KillRarity[]);
-}
-/**
- * Called when server sends resources list and location.
- *
- * Pawn: `RH_SV_SendResources` (const client)
- */
-export declare class SendResourcesEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1.
-     *
-     * Pawn: `client`
-     */
-    get client(): number;
-    set client(value: number);
-}
-/**
- * Сообщение игрока в чат уходит игрокам и в консоль сервера. Чтобы изменить, что они прочтут, присвойте `event.text`; чтобы его не получил никто, вызовите `preventDefault()`.
- *
- * Pawn: `RG_SendSayMessage` (const pPlayer, const szCmd[], bool:teamonly, const szText[], const pszFormat[], const pszConsoleFormat[], bool:bSenderDead, const placeName[], bool:consoleUsesPlaceName)
- */
-export declare class SendSayMessageEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Игрок, который написал сообщение.
-     *
-     * Pawn: `pPlayer`
-     */
-    get player(): Player;
-    /**
-     * Команда, с которой пришло сообщение, `"say"` или `"say_team"`.
-     *
-     * Pawn: `szCmd[]`
-     */
-    get cmd(): string;
-    set cmd(value: string);
-    /**
-     * `true`, когда сообщение получает только команда игрока.
-     *
-     * Pawn: `bool:teamonly`
-     */
-    get teamonly(): boolean;
-    set teamonly(value: boolean);
-    /**
-     * Сообщение, как его написал игрок. Присвойте, чтобы изменить.
-     *
-     * Pawn: `szText[]`
-     */
-    get text(): string;
-    set text(value: string);
-    /**
-     * Формат чата, который собирает имя, место и сообщение, например `"#Cstrike_Chat_All"`.
-     *
-     * Pawn: `pszFormat[]`
-     */
-    get format(): string;
-    set format(value: string);
-    /**
-     * Формат строки, которую консоль сервера печатает для сообщения.
-     *
-     * Pawn: `pszConsoleFormat[]`
-     */
-    get consoleFormat(): string;
-    set consoleFormat(value: string);
-    /**
-     * `true`, когда игрок, написавший сообщение, мёртв.
-     *
-     * Pawn: `bool:bSenderDead`
-     */
-    get senderDead(): boolean;
-    set senderDead(value: boolean);
-    /**
-     * Название места на карте, где находится игрок, например `"BombsiteA"`.
-     *
-     * Pawn: `placeName[]`
-     */
-    get placeName(): string;
-    set placeName(value: string);
-    /**
-     * `true`, когда строка в консоли тоже содержит название места.
-     *
-     * Pawn: `bool:consoleUsesPlaceName`
-     */
-    get consoleUsesPlaceName(): boolean;
-    set consoleUsesPlaceName(value: boolean);
 }
 /**
  * Called whenever game sends an animation to his current holder (player)
@@ -5378,106 +5006,75 @@ export declare class SendWeaponAnimEvent extends HookEvent {
      *
      * Pawn: `iAnim`
      */
-    get anim(): number;
-    set anim(value: number);
+    get animation(): number;
+    set animation(value: number);
     /**
      * Аргумент 3.
      *
      * Pawn: `skiplocal`
      */
-    get skiplocal(): number;
-    set skiplocal(value: number);
+    get skipLocal(): number;
+    set skipLocal(value: number);
 }
 /**
+ * Called when a command is being sent to server. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RH_ExecuteServerStringCmd` (const cmd[], source, id)
+ */
+export declare class ServerCommandEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1.
+     *
+     * Pawn: `cmd[]`
+     */
+    get command(): string;
+    set command(value: string);
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `source`
+     */
+    get source(): number;
+    set source(value: number);
+    /**
+     * Аргумент 3, только чтение.
+     *
+     * Pawn: `id`
+     */
+    get id(): Entity;
+}
+/**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CSGameRules_ServerDeactivate` ()
  */
 export declare class ServerDeactivateEvent extends HookEvent {
     private readonly kind;
 }
 /**
+ * Игра задаёт анимацию, которую играет модель игрока: ходьба, прыжок, атака, перезарядка. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CBasePlayer_SetAnimation` (const this, PLAYER_ANIM:playerAnim)
  */
 export declare class SetAnimationEvent extends HookEvent {
     private readonly kind;
     /**
-     * Аргумент 1, только чтение.
+     * Игрок, о котором событие.
      *
      * Pawn: `this`
      */
     get player(): Player;
     /**
-     * Аргумент 2, только чтение.
+     * Анимация, например `"jump"`, `"attack1"`, `"reload"`.
      *
      * Pawn: `PLAYER_ANIM:playerAnim`
      */
-    get playerAnim(): Player;
+    get animation(): PlayerAnimation;
+    set animation(value: PlayerAnimation);
 }
 /**
- * Pawn: `RG_CBasePlayer_SetClientUserInfoModel` (const this, infobuffer[], szNewModel[])
- */
-export declare class SetClientUserInfoModelEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `infobuffer[]`
-     */
-    get infobuffer(): string;
-    set infobuffer(value: string);
-    /**
-     * Аргумент 3.
-     *
-     * Pawn: `szNewModel[]`
-     */
-    get newModel(): string;
-    set newModel(value: string);
-}
-/**
- * Pawn: `RG_CBasePlayer_SetClientUserInfoName` (const this, infobuffer[], szNewName[])
- */
-export declare class SetClientUserInfoNameEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `infobuffer[]`
-     */
-    get infobuffer(): string;
-    set infobuffer(value: string);
-    /**
-     * Аргумент 3.
-     *
-     * Pawn: `szNewName[]`
-     */
-    get newName(): string;
-    set newName(value: string);
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (bool)
-     */
-    get result(): boolean;
-    /**
-     * Блокирует функцию игры; она отвечает false.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Called when a player dies to pack up the appropriate weapons and ammo items, and creates a weaponbox that falls to floor with sets specify the model or when a player drop the item.
+ * Called when a player dies to pack up the appropriate weapons and ammo items, and creates a weaponbox that falls to floor with sets specify the model or when a player drop the item. Без ReAPI (чистый HLDS): `preventDefault()` не даёт модели встать; запись `modelName` ничего не делает.
  *
  * Pawn: `RG_CWeaponBox_SetModel` (const this, const szModelName[])
  */
@@ -5513,7 +5110,7 @@ export declare class SetObjectCollisionBoxEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called when a player's set protection.
+ * Called when a player's set protection. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_SetSpawnProtection` (const this, Float:time)
  */
@@ -5556,6 +5153,165 @@ export declare class SetToggleStateEvent extends HookEvent {
     set state(value: number);
 }
 /**
+ * Оружие стреляет: игра ведёт пулю, сквозь стены, насколько позволяет пробивание, и наносит её урон. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CBaseEntity_FireBullets3` (pEntity, Float:vecSrc[3], Float:vecDirShooting[3], Float:vecSpread, Float:flDistance, iPenetration, iBulletType, iDamage, Float:flRangeModifier, pevAttacker, bool:bPistol, shared_rand)
+ */
+export declare class ShootEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `pEntity`
+     */
+    get entity(): Entity;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `Float:vecSrc[3]`
+     */
+    get start(): Vector;
+    set start(value: Vector);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `Float:vecDirShooting[3]`
+     */
+    get direction(): Vector;
+    set direction(value: Vector);
+    /**
+     * Аргумент 4.
+     *
+     * Pawn: `Float:vecSpread`
+     */
+    get spread(): number;
+    set spread(value: number);
+    /**
+     * Аргумент 5.
+     *
+     * Pawn: `Float:flDistance`
+     */
+    get distance(): number;
+    set distance(value: number);
+    /**
+     * Аргумент 6.
+     *
+     * Pawn: `iPenetration`
+     */
+    get penetration(): number;
+    set penetration(value: number);
+    /**
+     * Аргумент 7.
+     *
+     * Pawn: `iBulletType`
+     */
+    get bulletType(): number;
+    set bulletType(value: number);
+    /**
+     * Аргумент 8.
+     *
+     * Pawn: `iDamage`
+     */
+    get damage(): number;
+    set damage(value: number);
+    /**
+     * Аргумент 9.
+     *
+     * Pawn: `Float:flRangeModifier`
+     */
+    get rangeModifier(): number;
+    set rangeModifier(value: number);
+    /**
+     * Аргумент 10, только чтение.
+     *
+     * Pawn: `pevAttacker`
+     */
+    get attacker(): Player;
+    /**
+     * Аргумент 11.
+     *
+     * Pawn: `bool:bPistol`
+     */
+    get pistol(): boolean;
+    set pistol(value: boolean);
+    /**
+     * Аргумент 12.
+     *
+     * Pawn: `shared_rand`
+     */
+    get randomSeed(): number;
+    set randomSeed(value: number);
+}
+/**
+ * Дробовик стреляет: игра ведёт каждую дробину и наносит её урон. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CBaseEntity_FireBuckshots` (pEntity, cShots, Float:vecSrc[3], Float:vecDirShooting[3], Float:vecSpread[3], Float:flDistance, iTracerFreq, iDamage, pevAttacker)
+ */
+export declare class ShootBuckshotEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `pEntity`
+     */
+    get entity(): Entity;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `cShots`
+     */
+    get shots(): number;
+    set shots(value: number);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `Float:vecSrc[3]`
+     */
+    get start(): Vector;
+    set start(value: Vector);
+    /**
+     * Аргумент 4.
+     *
+     * Pawn: `Float:vecDirShooting[3]`
+     */
+    get direction(): Vector;
+    set direction(value: Vector);
+    /**
+     * Аргумент 5.
+     *
+     * Pawn: `Float:vecSpread[3]`
+     */
+    get spread(): Vector;
+    set spread(value: Vector);
+    /**
+     * Аргумент 6.
+     *
+     * Pawn: `Float:flDistance`
+     */
+    get distance(): number;
+    set distance(value: number);
+    /**
+     * Аргумент 7.
+     *
+     * Pawn: `iTracerFreq`
+     */
+    get tracerFreq(): number;
+    set tracerFreq(value: number);
+    /**
+     * Аргумент 8.
+     *
+     * Pawn: `iDamage`
+     */
+    get damage(): number;
+    set damage(value: number);
+    /**
+     * Аргумент 9, только чтение.
+     *
+     * Pawn: `pevAttacker`
+     */
+    get attacker(): Player;
+}
+/**
  * Whether or not the player should fade on death.
  *
  * Pawn: `Ham_Player_ShouldFadeOnDeath`
@@ -5577,6 +5333,38 @@ export declare class ShouldFadeOnDeathEvent extends HookEvent {
     get result(): boolean;
     /**
      * Блокирует функцию игры; она отвечает false.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Should the player switch to this weapon? Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CSGameRules_FShouldSwitchWeapon` (const index, const weapon)
+ */
+export declare class ShouldSwitchWeaponEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `index`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2, только чтение.
+     *
+     * Pawn: `weapon`
+     */
+    get weapon(): Weapon;
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (BOOL)
+     */
+    get result(): number;
+    /**
+     * Блокирует функцию игры; она отвечает 0.
      *
      * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
      */
@@ -5610,7 +5398,7 @@ export declare class ShouldWeaponIdleEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра показывает игроку меню.
+ * Игра показывает игроку меню. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_ShowMenu` (const index, const bitsSlots, const iDisplayTime, const iNeedMore, pszText[])
  */
@@ -5652,7 +5440,7 @@ export declare class ShowMenuEvent extends HookEvent {
     set text(value: string);
 }
 /**
- * Игра показывает игроку VGUI-меню (выбор команды).
+ * Игра показывает игроку VGUI-меню (выбор команды). Без ReAPI (чистый HLDS): слышно, когда меню уходит игроку с включёнными VGUI-меню (не боту): `preventDefault()` его отменяет; `oldMenu` читается как `""`, запись поля ничего не делает.
  *
  * Pawn: `RG_ShowVGUIMenu` (const index, VGUIMenu:menuType, const bitsSlots, szOldMenu[])
  */
@@ -5704,6 +5492,36 @@ export declare class SpawnEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
+ * Called on spawn, the attempt to equip a player. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CBasePlayer_OnSpawnEquip` (const this, bool:addDefault, bool:equipGame)
+ */
+export declare class SpawnEquipEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `bool:addDefault`
+     */
+    get addDefault(): boolean;
+    set addDefault(value: boolean);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `bool:equipGame`
+     */
+    get equipGame(): boolean;
+    set equipGame(value: boolean);
+}
+/**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_SpawnHeadGib` (pevVictim)
  */
 export declare class SpawnHeadGibEvent extends HookEvent {
@@ -5728,6 +5546,8 @@ export declare class SpawnHeadGibEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_SpawnRandomGibs` (pevVictim, cGibs, human)
  */
 export declare class SpawnRandomGibsEvent extends HookEvent {
@@ -5754,7 +5574,61 @@ export declare class SpawnRandomGibsEvent extends HookEvent {
     set human(value: number);
 }
 /**
- * Включается камера погибшего игрока.
+ * Place this player on his spawnspot and face him in the proper direction. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CSGameRules_GetPlayerSpawnSpot` (const index)
+ */
+export declare class SpawnSpotEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `index`
+     */
+    get player(): Player;
+    /**
+     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
+     *
+     * Pawn: `GetHookChainReturn` (edict_t * (Entity index of spawnspot))
+     */
+    get result(): Entity;
+    /**
+     * Блокирует функцию игры; она отвечает 0.
+     *
+     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
+     */
+    preventDefault(): void;
+}
+/**
+ * Called when a client attempt to find the next observer. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CBasePlayer_Observer_FindNextPlayer` (const this, bool bReverse, name[])
+ */
+export declare class SpectateNextEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `bool bReverse`
+     */
+    get reverse(): boolean;
+    set reverse(value: boolean);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `name[]`
+     */
+    get name(): string;
+    set name(value: string);
+}
+/**
+ * Включается камера погибшего игрока. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_StartDeathCam` (const this)
  */
@@ -5766,32 +5640,6 @@ export declare class StartDeathCamEvent extends HookEvent {
      * Pawn: `this`
      */
     get player(): Player;
-}
-/**
- * The player goes into observer mode.
- *
- * Pawn: `RG_CBasePlayer_StartObserver` (const this, Float:vecPosition[3], Float:vecViewAngle[3])
- */
-export declare class StartObserverEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2, только чтение.
-     *
-     * Pawn: `Float:vecPosition[3]`
-     */
-    get position(): Vector;
-    /**
-     * Аргумент 3, только чтение.
-     *
-     * Pawn: `Float:vecViewAngle[3]`
-     */
-    get viewAngle(): Vector;
 }
 /**
  * Not entirely sure what this does.
@@ -5809,7 +5657,7 @@ export declare class StartSneakingEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить.
+ * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить. Без ReAPI (чистый HLDS): слышно для звуков, которые игра проигрывает через `EmitSound` движка: `preventDefault()` его отменяет; `recipients` читается как 0, запись поля ничего не делает.
  *
  * Pawn: `RH_SV_StartSound` (const recipients, const entity, const channel, const sample[], const volume, Float:attenuation, const fFlags, const pitch)
  */
@@ -5840,8 +5688,8 @@ export declare class StartSoundEvent extends HookEvent {
      *
      * Pawn: `sample[]`
      */
-    get sample(): string;
-    set sample(value: string);
+    get sound(): string;
+    set sound(value: string);
     /**
      * Аргумент 5.
      *
@@ -5872,6 +5720,34 @@ export declare class StartSoundEvent extends HookEvent {
     set pitch(value: number);
 }
 /**
+ * The player goes into observer mode. Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
+ * Pawn: `RG_CBasePlayer_StartObserver` (const this, Float:vecPosition[3], Float:vecViewAngle[3])
+ */
+export declare class StartSpectatingEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `this`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `Float:vecPosition[3]`
+     */
+    get position(): Vector;
+    set position(value: Vector);
+    /**
+     * Аргумент 3.
+     *
+     * Pawn: `Float:vecViewAngle[3]`
+     */
+    get viewAngle(): Vector;
+    set viewAngle(value: Vector);
+}
+/**
  * Not entirely sure what this does.
  *
  * Pawn: `Ham_StopSneaking`
@@ -5887,7 +5763,7 @@ export declare class StopSneakingEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called when a player goes switch to opposite team after auto-teambalance or caused by 3rd-party things.
+ * Called when a player goes switch to opposite team after auto-teambalance or caused by 3rd-party things. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_SwitchTeam` (const this)
  */
@@ -5934,7 +5810,7 @@ export declare class TakeDamageEvent extends HookEvent {
     get damage(): number;
     set damage(value: number);
     /**
-     * Виды урона, например `"Fall"`, `"Bullet"`, `"Burn"`.
+     * Виды урона, например `"fall"`, `"bullet"`, `"burn"`.
      *
      * Pawn: `bitsDamageType`
      */
@@ -5956,7 +5832,7 @@ export declare class TakeDamageEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`.
+ * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velocityModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_TakeDamageImpulse` (const this, attacker, Float:flKnockbackForce, Float:flVelModifier)
  */
@@ -5986,52 +5862,11 @@ export declare class TakeDamageImpulseEvent extends HookEvent {
      *
      * Pawn: `Float:flVelModifier`
      */
-    get velModifier(): number;
-    set velModifier(value: number);
+    get velocityModifier(): number;
+    set velocityModifier(value: number);
 }
 /**
- * Pawn: `RG_CBasePlayer_TakeHealth` (const this, Float:flHealth, bitsDamageType), `Ham_TakeHealth`
- */
-export declare class TakeHealthEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get player(): Player;
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `Float:flHealth`
-     */
-    get health(): number;
-    set health(value: number);
-    /**
-     * Аргумент 3.
-     *
-     * Pawn: `bitsDamageType`
-     */
-    get damageType(): Damage[];
-    set damageType(values: Damage[]);
-    /** Сущность, о которой событие, какого бы класса она ни была, — та, что названа в `classname`; для игрока — `event.player`. */
-    get entity(): Entity;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (BOOL)
-     */
-    get result(): number;
-    /**
-     * Блокирует функцию игры; она отвечает 0.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Called each time player tries to join a team to ensure availability
+ * Called each time player tries to join a team to ensure availability. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_TeamFull` (team_id)
  */
@@ -6042,8 +5877,8 @@ export declare class TeamFullEvent extends HookEvent {
      *
      * Pawn: `team_id`
      */
-    get team_id(): number;
-    set team_id(value: number);
+    get team(): number;
+    set team(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -6079,7 +5914,7 @@ export declare class TeamIdEvent extends HookEvent {
     get result(): string;
 }
 /**
- * Called each time player tries to join a team to ensure a fair distribution of players (based on mp_limitteams cvar)
+ * Called each time player tries to join a team to ensure a fair distribution of players (based on mp_limitteams cvar). Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_TeamStacked` (newTeam_id, curTeam_id)
  */
@@ -6090,15 +5925,15 @@ export declare class TeamStackedEvent extends HookEvent {
      *
      * Pawn: `newTeam_id`
      */
-    get newTeam_id(): number;
-    set newTeam_id(value: number);
+    get newTeam(): number;
+    set newTeam(value: number);
     /**
      * Аргумент 2.
      *
      * Pawn: `curTeam_id`
      */
-    get curTeam_id(): number;
-    set curTeam_id(value: number);
+    get currentTeam(): number;
+    set currentTeam(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -6128,7 +5963,7 @@ export declare class ThinkEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Игрок бросил флешку. В post-обработчике `event.result` — сама граната.
+ * Игрок бросил флешку. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель.
  *
  * Pawn: `RG_ThrowFlashbang` (const index, Float:vecStart[3], Float:vecVelocity[3], Float:time)
  */
@@ -6141,17 +5976,19 @@ export declare class ThrowFlashbangEvent extends HookEvent {
      */
     get player(): Player;
     /**
-     * Аргумент 2, только чтение.
+     * Аргумент 2.
      *
      * Pawn: `Float:vecStart[3]`
      */
     get start(): Vector;
+    set start(value: Vector);
     /**
-     * Аргумент 3, только чтение.
+     * Аргумент 3.
      *
      * Pawn: `Float:vecVelocity[3]`
      */
     get velocity(): Vector;
+    set velocity(value: Vector);
     /**
      * Аргумент 4.
      *
@@ -6173,7 +6010,7 @@ export declare class ThrowFlashbangEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игрок бросает гранату.
+ * Игрок бросает гранату. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
  *
  * Pawn: `RG_CBasePlayer_ThrowGrenade` (const this, const grenade, Float:vecSrc[3], Float:vecThrow[3], Float:time, const usEvent)
  */
@@ -6193,17 +6030,19 @@ export declare class ThrowGrenadeEvent extends HookEvent {
     get grenade(): number;
     set grenade(value: number);
     /**
-     * Аргумент 3, только чтение.
+     * Аргумент 3.
      *
      * Pawn: `Float:vecSrc[3]`
      */
-    get src(): Vector;
+    get start(): Vector;
+    set start(value: Vector);
     /**
-     * Скорость гранаты, Vector. Только чтение.
+     * Скорость гранаты, Vector.
      *
      * Pawn: `Float:vecThrow[3]`
      */
     get velocity(): Vector;
+    set velocity(value: Vector);
     /**
      * Аргумент 5.
      *
@@ -6216,8 +6055,8 @@ export declare class ThrowGrenadeEvent extends HookEvent {
      *
      * Pawn: `usEvent`
      */
-    get usEvent(): number;
-    set usEvent(value: number);
+    get eventIndex(): number;
+    set eventIndex(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -6232,7 +6071,7 @@ export declare class ThrowGrenadeEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната.
+ * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
  *
  * Pawn: `RG_ThrowHeGrenade` (const index, Float:vecStart[3], Float:vecVelocity[3], Float:time, const team, const usEvent)
  */
@@ -6245,17 +6084,19 @@ export declare class ThrowHeGrenadeEvent extends HookEvent {
      */
     get player(): Player;
     /**
-     * Точка, откуда летит граната, Vector. Только чтение.
+     * Точка, откуда летит граната, Vector.
      *
      * Pawn: `Float:vecStart[3]`
      */
     get start(): Vector;
+    set start(value: Vector);
     /**
-     * Скорость гранаты, Vector. Только чтение.
+     * Скорость гранаты, Vector.
      *
      * Pawn: `Float:vecVelocity[3]`
      */
     get velocity(): Vector;
+    set velocity(value: Vector);
     /**
      * Аргумент 4.
      *
@@ -6275,8 +6116,8 @@ export declare class ThrowHeGrenadeEvent extends HookEvent {
      *
      * Pawn: `usEvent`
      */
-    get usEvent(): number;
-    set usEvent(value: number);
+    get eventIndex(): number;
+    set eventIndex(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -6291,7 +6132,7 @@ export declare class ThrowHeGrenadeEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната.
+ * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
  *
  * Pawn: `RG_ThrowSmokeGrenade` (const index, Float:vecStart[3], Float:vecVelocity[3], Float:time, const usEvent)
  */
@@ -6304,17 +6145,19 @@ export declare class ThrowSmokeGrenadeEvent extends HookEvent {
      */
     get player(): Player;
     /**
-     * Точка, откуда летит граната, Vector. Только чтение.
+     * Точка, откуда летит граната, Vector.
      *
      * Pawn: `Float:vecStart[3]`
      */
     get start(): Vector;
+    set start(value: Vector);
     /**
-     * Скорость гранаты, Vector. Только чтение.
+     * Скорость гранаты, Vector.
      *
      * Pawn: `Float:vecVelocity[3]`
      */
     get velocity(): Vector;
+    set velocity(value: Vector);
     /**
      * Аргумент 4.
      *
@@ -6327,8 +6170,8 @@ export declare class ThrowSmokeGrenadeEvent extends HookEvent {
      *
      * Pawn: `usEvent`
      */
-    get usEvent(): number;
-    set usEvent(value: number);
+    get eventIndex(): number;
+    set eventIndex(value: number);
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
@@ -6419,18 +6262,19 @@ export declare class TraceAttackEvent extends HookEvent {
     get damage(): number;
     set damage(value: number);
     /**
-     * Направление выстрела, Vector. Только чтение.
+     * Направление выстрела, Vector.
      *
      * Pawn: `Float:vecDir[3]`
      */
-    get dir(): Vector;
+    get direction(): Vector;
+    set direction(value: Vector);
     /**
      * Аргумент 5.
      *
      * Pawn: `tracehandle`
      */
-    get tracehandle(): number;
-    set tracehandle(value: number);
+    get trace(): number;
+    set trace(value: number);
     /**
      * Аргумент 6.
      *
@@ -6485,6 +6329,8 @@ export declare class TraceBleedEvent extends HookEvent {
     set damageType(values: Damage[]);
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_RadiusFlash_TraceLine` (const index, inflictor, attacker, Float:vecSrc[3], Float:vecSpot[3], tracehandle)
  */
 export declare class TraceLineEvent extends HookEvent {
@@ -6508,27 +6354,29 @@ export declare class TraceLineEvent extends HookEvent {
      */
     get attacker(): Player;
     /**
-     * Аргумент 4, только чтение.
+     * Аргумент 4.
      *
      * Pawn: `Float:vecSrc[3]`
      */
-    get src(): Vector;
+    get start(): Vector;
+    set start(value: Vector);
     /**
-     * Аргумент 5, только чтение.
+     * Аргумент 5.
      *
      * Pawn: `Float:vecSpot[3]`
      */
-    get spot(): Vector;
+    get end(): Vector;
+    set end(value: Vector);
     /**
      * Аргумент 6.
      *
      * Pawn: `tracehandle`
      */
-    get tracehandle(): number;
-    set tracehandle(value: number);
+    get trace(): number;
+    set trace(value: number);
 }
 /**
- * Called whenever player tries to unduck
+ * Called whenever player tries to unduck. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_UnDuck` (const playerIndex)
  */
@@ -6570,22 +6418,7 @@ export declare class UpdateItemInfoEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Used in Half-Life to update a monster's owner.
- *
- * Pawn: `Ham_UpdateOwner`
- */
-export declare class UpdateOwnerEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get entity(): Entity;
-}
-/**
- * Игра обновляет строку состояния игрока — имя и здоровье игрока под прицелом внизу экрана. `preventDefault()` оставит её как есть.
+ * Игра обновляет строку состояния игрока — имя и здоровье игрока под прицелом внизу экрана. `preventDefault()` оставит её как есть. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_UpdateStatusBar` (const this)
  */
@@ -6642,34 +6475,7 @@ export declare class UseEvent extends HookEvent {
     set value(value: number);
 }
 /**
- * Unsure.
- *
- * Pawn: `Ham_Weapon_UseDecrement`
- */
-export declare class UseDecrementEvent extends HookEvent {
-    private readonly kind;
-    private static readonly ham;
-    /**
-     * Аргумент 1, только чтение.
-     *
-     * Pawn: `this`
-     */
-    get weapon(): Weapon;
-    /**
-     * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
-     *
-     * Pawn: `GetHookChainReturn` (Integer)
-     */
-    get result(): boolean;
-    /**
-     * Блокирует функцию игры; она отвечает false.
-     *
-     * Pawn: `HC_SUPERCEDE`, `HAM_SUPERCEDE`
-     */
-    preventDefault(): void;
-}
-/**
- * Called when a player press use and if a suitable candidate is not found.
+ * Called when a player press use and if a suitable candidate is not found. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_UseEmpty` (const this)
  */
@@ -6681,6 +6487,27 @@ export declare class UseEmptyEvent extends HookEvent {
      * Pawn: `this`
      */
     get player(): Player;
+}
+/**
+ * The player has changed userinfo; can change it now. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`.
+ *
+ * Pawn: `RG_CSGameRules_ClientUserInfoChanged` (const index, infobuffer[])
+ */
+export declare class UserInfoChangeEvent extends HookEvent {
+    private readonly kind;
+    /**
+     * Аргумент 1, только чтение.
+     *
+     * Pawn: `index`
+     */
+    get player(): Player;
+    /**
+     * Аргумент 2.
+     *
+     * Pawn: `infobuffer[]`
+     */
+    get info(): string;
+    set info(value: string);
 }
 /**
  * Returns true if a line can be traced from the caller's eyes to the target.
@@ -6717,6 +6544,8 @@ export declare class VisibleEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
+ * Без ReAPI (чистый HLDS) его ничто не слышит.
+ *
  * Pawn: `RG_CGib_WaitTillLand` (const this)
  */
 export declare class WaitTillLandEvent extends HookEvent {
@@ -6729,7 +6558,7 @@ export declare class WaitTillLandEvent extends HookEvent {
     get gib(): Entity;
 }
 /**
- * Called on every frame after a player jumps on water for a short period of time
+ * Called on every frame after a player jumps on water for a short period of time. Без ReAPI (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_WaterJump` (const playerIndex)
  */
@@ -6758,34 +6587,6 @@ export declare class WeaponIdleEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Receiver is player index or 0 when update will be sended to all.
- *
- * Pawn: `RH_SV_WriteFullClientUpdate` (const client, buffer, const receiver)
- */
-export declare class WriteFullClientUpdateEvent extends HookEvent {
-    private readonly kind;
-    /**
-     * Аргумент 1.
-     *
-     * Pawn: `client`
-     */
-    get client(): number;
-    set client(value: number);
-    /**
-     * Аргумент 2.
-     *
-     * Pawn: `buffer`
-     */
-    get buffer(): number;
-    set buffer(value: number);
-    /**
-     * Аргумент 3, только чтение.
-     *
-     * Pawn: `receiver`
-     */
-    get receiver(): Player;
-}
-/**
  * Every game event, by the name game.addEventListener takes - the event
  * it hands the listener. What an editor completes; the compiler reads it
  * through the same patch as ServerEventMap (runtime/patches).
@@ -6797,38 +6598,36 @@ export interface GameEventMap {
      * Pawn: `Ham_Activate`
      */
     activate: ActivateEvent;
-    /** Pawn: `RH_SV_ActivateServer` */
-    activateServer: ActivateServerEvent;
     /**
-     * У игрока меняются деньги. Присвойте `event.amount`, чтобы изменить сумму.
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RH_SV_ActivateServer`
+     */
+    activateServer: ActivateServerEvent;
+    /** Pawn: `RG_CBasePlayer_AddPoints`, `Ham_AddPoints` */
+    addFrags: AddFragsEvent;
+    /** Pawn: `RG_CBasePlayer_AddPlayerItem`, `Ham_AddPlayerItem` */
+    addItem: AddItemEvent;
+    /**
+     * У игрока меняются деньги. Присвойте `event.amount`, чтобы изменить сумму. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `amount` — на сколько сдвинулись его деньги с тех пор, как игра в последний раз их ему прислала, а `reason` читается как `"none"`.
      *
      * Pawn: `RG_CBasePlayer_AddAccount`
      */
-    addAccount: AddAccountEvent;
+    addMoney: AddMoneyEvent;
     /**
-     * Unsure.
-     *
-     * Pawn: `Ham_Item_AddDuplicate`
-     */
-    addDuplicate: AddDuplicateEvent;
-    /**
-     * Called inside TraceAttack to store entity damage to multidamage data
+     * Called inside TraceAttack to store entity damage to multidamage data. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_AddMultiDamage`
      */
     addMultiDamage: AddMultiDamageEvent;
-    /** Pawn: `RG_CBasePlayer_AddPlayerItem`, `Ham_AddPlayerItem` */
-    addPlayerItem: AddPlayerItemEvent;
-    /** Pawn: `RG_CBasePlayer_AddPoints`, `Ham_AddPoints` */
-    addPoints: AddPointsEvent;
-    /** Pawn: `RG_CBasePlayer_AddPointsToTeam`, `Ham_AddPointsToTeam` */
-    addPointsToTeam: AddPointsToTeamEvent;
     /**
-     * Файл добавляется в то, что скачивают клиенты.
+     * Файл добавляется в то, что скачивают клиенты. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RH_SV_AddResource`
      */
     addResource: AddResourceEvent;
+    /** Pawn: `RG_CBasePlayer_AddPointsToTeam`, `Ham_AddPointsToTeam` */
+    addTeamScore: AddTeamScoreEvent;
     /**
      * Оружие одного класса достаётся игроку — подобрано или выдано. Верните `false`, чтобы не отдать его.
      *
@@ -6842,27 +6641,19 @@ export interface GameEventMap {
      */
     addWeapon: AddWeaponEvent;
     /**
-     * Called whenever player is on air (not touching floor)
+     * Called whenever player is on air (not touching floor). Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_AirAccelerate`
      */
     airAccelerate: AirAccelerateEvent;
-    /** Pawn: `RG_PM_AirMove` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_PM_AirMove`
+     */
     airMove: AirMoveEvent;
     /**
-     * Called when an entity is created.
-     *
-     * Pawn: `RH_ED_Alloc`
-     */
-    alloc: AllocEvent;
-    /**
-     * Called before adding an entity to the physents of a player.
-     *
-     * Pawn: `RH_SV_AllowPhysent`
-     */
-    allowPhysent: AllowPhysentEvent;
-    /**
-     * Called after game finished a bullet tracing for applying damage cached on multidamage data
+     * Called after game finished a bullet tracing for applying damage cached on multidamage data. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_ApplyMultiDamage`
      */
@@ -6879,8 +6670,18 @@ export interface GameEventMap {
      * Pawn: `Ham_CS_Player_GetAutoaimVector`
      */
     autoaimVector: AutoaimVectorEvent;
-    /** Pawn: `RG_CSGameRules_BalanceTeams` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CSGameRules_BalanceTeams`
+     */
     balanceTeams: BalanceTeamsEvent;
+    /**
+     * Makes a random player the bomber. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
+     *
+     * Pawn: `RG_CBasePlayer_MakeBomber`
+     */
+    becomeBomber: BecomeBomberEvent;
     /**
      * Called when monster dies and prepares its entity to become a corpse.
      *
@@ -6893,6 +6694,12 @@ export interface GameEventMap {
      * Pawn: `Ham_FBecomeProne`
      */
     becomeProne: BecomeProneEvent;
+    /**
+     * Makes a random player the VIP. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     *
+     * Pawn: `RG_CBasePlayer_MakeVIP`
+     */
+    becomeVip: BecomeVipEvent;
     /**
      * This functions searches the link list whose head is the caller's m_pLink field.
      *
@@ -6922,23 +6729,23 @@ export interface GameEventMap {
     /** Pawn: `RG_CGib_BounceGibTouch` */
     bounceGibTouch: BounceGibTouchEvent;
     /**
-     * The player buys ammo.
+     * The player buys ammo. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `weapon` читается как мир, `blinkMoney` — как `true`; ответ ничего не делает.
      *
      * Pawn: `RG_BuyGunAmmo`
      */
-    buyGunAmmo: BuyGunAmmoEvent;
+    buyAmmo: BuyAmmoEvent;
     /**
-     * Called when player buys an item from buy menu (Nightvision, Kevlar, etc.)
+     * Called when player buys an item from buy menu (Nightvision, Kevlar, etc.). Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; слышно для предметов меню снаряжения; ответ ничего не делает.
      *
      * Pawn: `RG_BuyItem`
      */
     buyItem: BuyItemEvent;
     /**
-     * Игрок покупает оружие. В post-обработчике `event.result` — само оружие.
+     * Игрок покупает оружие. В post-обработчике `event.result` — само оружие. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `event.result` читается как `null`; ответ ничего не делает.
      *
      * Pawn: `RG_BuyWeaponByWeaponID`
      */
-    buyWeaponByWeaponId: BuyWeaponByWeaponIdEvent;
+    buyWeapon: BuyWeaponEvent;
     /** Pawn: `RG_CBasePlayerWeapon_CanDeploy`, `Ham_Item_CanDeploy` */
     canDeploy: CanDeployEvent;
     /**
@@ -6948,11 +6755,11 @@ export interface GameEventMap {
      */
     canDrop: CanDropEvent;
     /**
-     * The player is touching a CBasePlayerItem, do I give it to him?
+     * The player is touching a CBasePlayerItem, do I give it to him? Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_CanHavePlayerItem`
      */
-    canHavePlayerItem: CanHavePlayerItemEvent;
+    canHaveItem: CanHaveItemEvent;
     /**
      * Whether or not the entity can be holstered.
      *
@@ -6960,53 +6767,103 @@ export interface GameEventMap {
      */
     canHolster: CanHolsterEvent;
     /**
-     * Игра спрашивает, слышит ли один игрок другого в голосовом чате. Верните `true` или `false`, чтобы решить.
+     * Игра спрашивает, слышит ли один игрок другого в голосовом чате. Верните `true` или `false`, чтобы решить. Без ReAPI (чистый HLDS): спрашивается, когда игра сообщает движку, кто кого слышит, — и при включённом `sv_alltalk`, и для игрока, заглушившего другого: ответ перекрывает и то и другое.
      *
      * Pawn: `RG_CSGameRules_CanPlayerHearPlayer`
      */
     canPlayerHearPlayer: CanPlayerHearPlayerEvent;
     /**
-     * Игра спрашивает, можно ли игроку перейти в команду. Верните `true` или `false`, чтобы решить.
+     * Is this player allowed to respawn now? Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CSGameRules_FPlayerCanRespawn`
+     */
+    canRespawn: CanRespawnEvent;
+    /**
+     * Called when a player hit to entity. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_IsPenetrableEntity`
+     */
+    canShootThrough: CanShootThroughEvent;
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_Observer_IsValidTarget`
+     */
+    canSpectate: CanSpectateEvent;
+    /**
+     * Игра спрашивает, можно ли игроку перейти в команду. Верните `true` или `false`, чтобы решить. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_CanSwitchTeam`
      */
     canSwitchTeam: CanSwitchTeamEvent;
+    /**
+     * Can this player take damage from this attacker? Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage`
+     */
+    canTakeDamage: CanTakeDamageEvent;
     /**
      * Returns the center of the entity.
      *
      * Pawn: `Ham_Center`
      */
     center: CenterEvent;
-    /** Pawn: `RG_CSGameRules_ChangeLevel` */
+    /**
+     * Без ReAPI (чистый HLDS): `preventDefault()` ничего не делает.
+     *
+     * Pawn: `RG_CSGameRules_ChangeLevel`
+     */
     changeLevel: ChangeLevelEvent;
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_SetClientUserInfoModel`
+     */
+    changeModel: ChangeModelEvent;
+    /**
+     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`; ответ ничего не делает.
+     *
+     * Pawn: `RG_CBasePlayer_SetClientUserInfoName`
+     */
+    changeName: ChangeNameEvent;
     /**
      * Turns a monster towards its ideal_yaw.
      *
      * Pawn: `Ham_ChangeYaw`
      */
     changeYaw: ChangeYawEvent;
-    /** Pawn: `RG_CSGameRules_CheckMapConditions` */
+    /**
+     * Сообщение игрока в чат уходит игрокам и в консоль сервера. Чтобы изменить, что они прочтут, присвойте `event.text`; чтобы его не получил никто, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_SendSayMessage`
+     */
+    chatMessage: ChatMessageEvent;
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CSGameRules_CheckMapConditions`
+     */
     checkMapConditions: CheckMapConditionsEvent;
     /**
-     * Called every client frame to check time based damage
+     * Called every client frame to check time based damage. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_CheckTimeBasedDamage`
      */
     checkTimeBasedDamage: CheckTimeBasedDamageEvent;
     /**
-     * Called when a player's userinfo is being checked.
+     * Called when a player's userinfo is being checked. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RH_SV_CheckUserInfo`
      */
     checkUserInfo: CheckUserInfoEvent;
     /**
-     * Called when a player jumps on water for the first time
+     * Called when a player jumps on water for the first time. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_CheckWaterJump`
      */
     checkWaterJump: CheckWaterJumpEvent;
     /**
-     * Игра проверяет, не победила ли какая-то сторона. `preventDefault()` не даст ей закончить раунд.
+     * Игра проверяет, не победила ли какая-то сторона. `preventDefault()` не даст ей закончить раунд. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_CheckWinConditions`
      */
@@ -7017,10 +6874,14 @@ export interface GameEventMap {
      * Pawn: `Ham_DeathNotice`
      */
     childDeathNotice: ChildDeathNoticeEvent;
-    /** Pawn: `RG_HandleMenu_ChooseAppearance` */
+    /**
+     * Без ReAPI (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; модель, которую игра выбирает сама, не слышна.
+     *
+     * Pawn: `RG_HandleMenu_ChooseAppearance`
+     */
     chooseAppearance: ChooseAppearanceEvent;
     /**
-     * Игрок выбрал пункт в меню команд. `preventDefault()` — и выбор не засчитается.
+     * Игрок выбрал пункт в меню команд. `preventDefault()` — и выбор не засчитается. Без ReAPI (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; ответ ничего не делает, а команда, которую игра выбирает сама, не слышна.
      *
      * Pawn: `RG_HandleMenu_ChooseTeam`
      */
@@ -7028,43 +6889,31 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_Classify`, `Ham_Classify` */
     classify: ClassifyEvent;
     /**
-     * Recreate all the map entities from the map data (preserving their indices),
-     *
-     * Pawn: `RG_CSGameRules_CleanUpMap`
-     */
-    cleanUpMap: CleanUpMapEvent;
-    /**
-     * Called when game clears multidamage data (before TraceAttack)
+     * Called when game clears multidamage data (before TraceAttack). Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_ClearMultiDamage`
      */
     clearMultiDamage: ClearMultiDamageEvent;
     /**
-     * Called after processing a client connection request.
+     * Called after processing a client connection request. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RH_ClientConnected`
      */
     clientConnected: ClientConnectedEvent;
     /**
-     * Called when message is being printed to client console.
-     *
-     * Pawn: `RH_SV_ClientPrintf`
-     */
-    clientPrintf: ClientPrintfEvent;
-    /**
-     * The player has changed userinfo; can change it now.
-     *
-     * Pawn: `RG_CSGameRules_ClientUserInfoChanged`
-     */
-    clientUserInfoChanged: ClientUserInfoChangedEvent;
-    /**
-     * Called when processing a 'connect' client connectionless packet.
+     * Called when processing a 'connect' client connectionless packet. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда игрока уже пустили.
      *
      * Pawn: `RH_SV_ConnectClient`
      */
     connectClient: ConnectClientEvent;
     /**
-     * Called when a player drops a weapon (usually manual drop or death)
+     * Called when message is being printed to client console. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RH_SV_ClientPrintf`
+     */
+    consoleMessage: ConsoleMessageEvent;
+    /**
+     * Called when a player drops a weapon (usually manual drop or death). Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CreateWeaponBox`
      */
@@ -7076,19 +6925,13 @@ export interface GameEventMap {
      */
     damageDecal: DamageDecalEvent;
     /**
-     * What do I do with player's weapons when he's killed?
-     *
-     * Pawn: `RG_CSGameRules_DeadPlayerWeapons`
-     */
-    deadPlayerWeapons: DeadPlayerWeaponsEvent;
-    /**
      * Determines the best type of death animation to play.
      *
      * Pawn: `Ham_GetDeathActivity`
      */
     deathActivity: DeathActivityEvent;
     /**
-     * Call this from within a GameRules class to report an obituary.
+     * Call this from within a GameRules class to report an obituary. Без ReAPI (чистый HLDS): слышно, когда уходит сообщение о смерти: `preventDefault()` ничего не делает, а `inflictor` читается как мир.
      *
      * Pawn: `RG_CSGameRules_DeathNotice`
      */
@@ -7100,23 +6943,31 @@ export interface GameEventMap {
      */
     deathSound: DeathSoundEvent;
     /**
-     * Оружие достают. Присвойте `event.viewModel` / `weaponModel`, чтобы поменять модель.
+     * Оружие достают. Присвойте `event.viewModel` / `weaponModel`, чтобы поменять модель. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayerWeapon_DefaultDeploy`
      */
     defaultDeploy: DefaultDeployEvent;
-    /** Pawn: `RG_CBasePlayerWeapon_DefaultReload` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayerWeapon_DefaultReload`
+     */
     defaultReload: DefaultReloadEvent;
-    /** Pawn: `RG_CBasePlayerWeapon_DefaultShotgunReload` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayerWeapon_DefaultShotgunReload`
+     */
     defaultShotgunReload: DefaultShotgunReloadEvent;
     /**
-     * Called when a player has ended to defuses the bomb or when the previous defuser has taken off or been killed.
+     * Called when a player has ended to defuses the bomb or when the previous defuser has taken off or been killed. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, только когда бомба обезврежена, а не когда разминирование прервано.
      *
      * Pawn: `RG_CGrenade_DefuseBombEnd`
      */
     defuseBombEnd: DefuseBombEndEvent;
     /**
-     * Called when a player goes to start defuse the bomb.
+     * Called when a player goes to start defuse the bomb. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CGrenade_DefuseBombStart`
      */
@@ -7133,40 +6984,48 @@ export interface GameEventMap {
      * Pawn: `Ham_Item_Deploy`
      */
     deploy: DeployEvent;
-    /** Pawn: `RH_Cvar_DirectSet` */
-    directSet: DirectSetEvent;
     /**
-     * VIP player got to the point of rescue.
+     * VIP player got to the point of rescue. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_Disappear`
      */
     disappear: DisappearEvent;
+    /**
+     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `crash` читается как `false`, а `reason` — причина, которую узнал AMX Mod X.
+     *
+     * Pawn: `RH_SV_DropClient`
+     */
+    disconnectClient: DisconnectClientEvent;
     /**
      * Оружие одного класса выбрасывают.
      *
      * Pawn: `Ham_Item_Drop`
      */
     drop: DropEvent;
-    /** Pawn: `RH_SV_DropClient` */
-    dropClient: DropClientEvent;
     /**
-     * Called when a idle player is removed from server.
+     * Called when a idle player is removed from server. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_DropIdlePlayer`
      */
     dropIdlePlayer: DropIdlePlayerEvent;
     /**
-     * Игрок выбрасывает оружие. В post-обработчике `event.result` — коробка с оружием на земле.
+     * Игрок выбрасывает оружие. В post-обработчике `event.result` — коробка с оружием на земле. Без ReAPI (чистый HLDS): слышно по команде игрока `drop`: `preventDefault()` её отменяет; `event.result` читается как `null`, а выброс, который игра делает сама, не слышен.
      *
      * Pawn: `RG_CBasePlayer_DropPlayerItem`
      */
     dropPlayerItem: DropPlayerItemEvent;
     /**
-     * Called when a player throws the shield on the ground.
+     * Called when a player throws the shield on the ground. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_DropShield`
      */
     dropShield: DropShieldEvent;
+    /**
+     * What do I do with player's weapons when he's killed? Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CSGameRules_DeadPlayerWeapons`
+     */
+    dropWeaponsOnDeath: DropWeaponsOnDeathEvent;
     /**
      * Игрок приседает.
      *
@@ -7174,49 +7033,37 @@ export interface GameEventMap {
      */
     duck: DuckEvent;
     /**
+     * Called on every frame to check player ducking. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_PM_Duck`
+     */
+    duckMovement: DuckMovementEvent;
+    /**
      * Returns the ear position of the entity.
      *
      * Pawn: `Ham_EarPosition`
      */
     earPosition: EarPositionEvent;
     /**
-     * Called when client it's in the scoreboard
-     *
-     * Pawn: `RH_SV_EmitPings`
-     */
-    emitPings: EmitPingsEvent;
-    /**
-     * Called when game selects a spawn point (info_player_start/deathmatch) to position the player
-     *
-     * Pawn: `RG_CBasePlayer_EntSelectSpawnPoint`
-     */
-    entSelectSpawnPoint: EntSelectSpawnPointEvent;
-    /**
-     * Called when a command is being sent to server.
-     *
-     * Pawn: `RH_ExecuteServerStringCmd`
-     */
-    executeServerStringCmd: ExecuteServerStringCmdEvent;
-    /**
-     * Called when a C4 goes to explodes.
+     * Called when a C4 goes to explodes. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `trace` и `damageType` читаются как 0.
      *
      * Pawn: `RG_CGrenade_ExplodeBomb`
      */
     explodeBomb: ExplodeBombEvent;
     /**
-     * Called when a flashbang detonates.
+     * Called when a flashbang detonates. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CGrenade_ExplodeFlashbang`
      */
     explodeFlashbang: ExplodeFlashbangEvent;
     /**
-     * Called when a hegrenade detonates.
+     * Called when a hegrenade detonates. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CGrenade_ExplodeHeGrenade`
      */
     explodeHeGrenade: ExplodeHeGrenadeEvent;
     /**
-     * Дымовая граната взрывается.
+     * Дымовая граната взрывается. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CGrenade_ExplodeSmokeGrenade`
      */
@@ -7245,94 +7092,86 @@ export interface GameEventMap {
      * Pawn: `Ham_FadeMonster`
      */
     fadeMonster: FadeMonsterEvent;
-    /** Pawn: `RG_CBaseEntity_FireBuckshots` */
-    fireBuckshots: FireBuckshotsEvent;
-    /** Pawn: `RG_CBaseEntity_FireBullets` */
-    fireBullets: FireBulletsEvent;
-    /** Pawn: `RG_CBaseEntity_FireBullets3` */
-    fireBullets3: FireBullets3Event;
     /**
-     * Игра считает урон от падения. В post-обработчике `event.result` — это число; верните своё, чтобы заменить его.
+     * Игра считает урон от падения. В post-обработчике `event.result` — это число; верните своё, чтобы заменить его. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_FlPlayerFallDamage`
      */
-    flPlayerFallDamage: FlPlayerFallDamageEvent;
+    fallDamage: FallDamageEvent;
     /**
-     * Is this player allowed to respawn now?
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
      *
-     * Pawn: `RG_CSGameRules_FPlayerCanRespawn`
+     * Pawn: `RG_CBaseEntity_FireBullets`
      */
-    fPlayerCanRespawn: FPlayerCanRespawnEvent;
+    fireBullets: FireBulletsEvent;
     /**
-     * Can this player take damage from this attacker?
+     * Игра сообщает ботам, что что-то произошло. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
-     * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage`
+     * Pawn: `RG_CBotManager_OnEvent`
      */
-    fPlayerCanTakeDamage: FPlayerCanTakeDamageEvent;
+    gameEvent: GameEventEvent;
     /**
-     * Called when an entity is removed (freed from server).
-     *
-     * Pawn: `RH_ED_Free`
-     */
-    free: FreeEvent;
-    /**
-     * Should the player switch to this weapon?
-     *
-     * Pawn: `RG_CSGameRules_FShouldSwitchWeapon`
-     */
-    fShouldSwitchWeapon: FShouldSwitchWeaponEvent;
-    /**
-     * «Мысль» правил игры: каждый кадр — часы раунда и проверка условий победы.
+     * «Мысль» правил игры: каждый кадр — часы раунда и проверка условий победы. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CSGameRules_Think`
      */
     gameThink: GameThinkEvent;
-    /** Pawn: `RH_GetEntityInit` */
-    getEntityInit: GetEntityInitEvent;
-    /** Pawn: `RG_GetForceCamera` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_GetForceCamera`
+     */
     getForceCamera: GetForceCameraEvent;
     /**
-     * Called when a player enters the game.
+     * Called when a player enters the game. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_GetIntoGame`
      */
     getIntoGame: GetIntoGameEvent;
     /**
-     * I can't use this weapon anymore, get me the next best one.
+     * I can't use this weapon anymore, get me the next best one. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_GetNextBestWeapon`
      */
     getNextBestWeapon: GetNextBestWeaponEvent;
-    /**
-     * Place this player on his spawnspot and face him in the proper direction.
-     *
-     * Pawn: `RG_CSGameRules_GetPlayerSpawnSpot`
-     */
-    getPlayerSpawnSpot: GetPlayerSpawnSpotEvent;
     /**
      * Create some gore and get rid of a monster's model.
      *
      * Pawn: `Ham_GibMonster`
      */
     gibMonster: GibMonsterEvent;
-    /** Pawn: `RG_CGib_Spawn` */
+    /**
+     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     *
+     * Pawn: `RG_CGib_Spawn`
+     */
     gibSpawn: GibSpawnEvent;
     /** Pawn: `RG_CBasePlayer_GiveAmmo`, `Ham_GiveAmmo` */
     giveAmmo: GiveAmmoEvent;
-    /** Pawn: `RG_CSGameRules_GiveC4` */
-    giveC4: GiveC4Event;
     /**
-     * Игра выдаёт появившемуся игроку стандартное оружие. `preventDefault()` — и не выдаст ничего.
+     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
+     *
+     * Pawn: `RG_CSGameRules_GiveC4`
+     */
+    giveBomb: GiveBombEvent;
+    /**
+     * Игра выдаёт появившемуся игроку стандартное оружие. `preventDefault()` — и не выдаст ничего. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_GiveDefaultItems`
      */
     giveDefaultItems: GiveDefaultItemsEvent;
-    /** Pawn: `RG_CBasePlayer_GiveNamedItem` */
-    giveNamedItem: GiveNamedItemEvent;
-    /** Pawn: `RG_CBasePlayer_GiveShield` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_GiveNamedItem`
+     */
+    giveItem: GiveItemEvent;
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_GiveShield`
+     */
     giveShield: GiveShieldEvent;
-    /** Pawn: `RG_CSGameRules_GoToIntermission` */
-    goToIntermission: GoToIntermissionEvent;
     /**
      * Returns a vector that tells the gun position.
      *
@@ -7352,23 +7191,19 @@ export interface GameEventMap {
      */
     hasHumanGibs: HasHumanGibsEvent;
     /**
-     * Игра спрашивает, запрещён ли игроку предмет. Верните `true`, чтобы запретить.
-     *
-     * Pawn: `RG_CBasePlayer_HasRestrictItem`
-     */
-    hasRestrictItem: HasRestrictItemEvent;
-    /**
      * Whether or not the target is the same as the one passed.
      *
      * Pawn: `Ham_HasTarget`
      */
     hasTarget: HasTargetEvent;
+    /** Pawn: `RG_CBasePlayer_TakeHealth`, `Ham_TakeHealth` */
+    heal: HealEvent;
     /**
-     * Игра показывает игроку подсказку.
+     * Игра показывает игроку подсказку. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_HintMessageEx`
      */
-    hintMessageEx: HintMessageExEvent;
+    hintMessage: HintMessageEvent;
     /**
      * Оружие одного класса убирают.
      *
@@ -7386,7 +7221,13 @@ export interface GameEventMap {
      *
      * Pawn: `RG_CBasePlayer_ImpulseCommands`, `Ham_Player_ImpulseCommands`
      */
-    impulseCommands: ImpulseCommandsEvent;
+    impulse: ImpulseEvent;
+    /**
+     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     *
+     * Pawn: `RG_CSGameRules_GoToIntermission`
+     */
+    intermission: IntermissionEvent;
     /**
      * Returns true if the passed ent is in the caller's forward view cone.
      *
@@ -7430,12 +7271,6 @@ export interface GameEventMap {
      */
     isNetClient: IsNetClientEvent;
     /**
-     * Called when a player hit to entity.
-     *
-     * Pawn: `RG_IsPenetrableEntity`
-     */
-    isPenetrableEntity: IsPenetrableEntityEvent;
-    /**
      * Whether or not the entity is a player.
      *
      * Pawn: `Ham_IsPlayer`
@@ -7478,6 +7313,12 @@ export interface GameEventMap {
      */
     itemPreFrame: ItemPreFrameEvent;
     /**
+     * Игра спрашивает, запрещён ли игроку предмет. Верните `true`, чтобы запретить. Без ReAPI (чистый HLDS): спрашивается только про `"buying"`, через `CS_OnBuyAttempt` модуля cstrike: ответ `true` запрещает покупку, `false` оставляет решение игре.
+     *
+     * Pawn: `RG_CBasePlayer_HasRestrictItem`
+     */
+    itemRestricted: ItemRestrictedEvent;
+    /**
      * Returns the item slot for the item.
      *
      * Pawn: `Ham_Item_ItemSlot`
@@ -7490,7 +7331,7 @@ export interface GameEventMap {
      */
     itemUpdateClientData: ItemUpdateClientDataEvent;
     /**
-     * Called when a client "thinks for the join status".
+     * Called when a client "thinks for the join status". Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_JoiningThink`
      */
@@ -7502,11 +7343,11 @@ export interface GameEventMap {
      */
     jump: JumpEvent;
     /**
-     * Called whenever player fires a weapon and shakes player screen (punchangles altering)
+     * Called on every frame while player presses jump button. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
-     * Pawn: `RG_CBasePlayerWeapon_KickBack`
+     * Pawn: `RG_PM_Jump`
      */
-    kickBack: KickBackEvent;
+    jumpMovement: JumpMovementEvent;
     /**
      * Normally called when an item gets deleted.
      *
@@ -7520,7 +7361,7 @@ export interface GameEventMap {
      */
     killed: KilledEvent;
     /**
-     * Called when a player is on a ladder.
+     * Called when a player is on a ladder. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_LadderMove`
      */
@@ -7532,17 +7373,11 @@ export interface GameEventMap {
      */
     look: LookEvent;
     /**
-     * Makes a random player the bomber.
+     * Recreate all the map entities from the map data (preserving their indices),. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
-     * Pawn: `RG_CBasePlayer_MakeBomber`
+     * Pawn: `RG_CSGameRules_CleanUpMap`
      */
-    makeBomber: MakeBomberEvent;
-    /**
-     * Makes a random player the VIP.
-     *
-     * Pawn: `RG_CBasePlayer_MakeVIP`
-     */
-    makeVip: MakeVipEvent;
+    mapReset: MapResetEvent;
     /**
      * Gets the maximum speed for whenever a player has the item deployed.
      *
@@ -7555,64 +7390,38 @@ export interface GameEventMap {
      * Pawn: `Ham_MonsterInitDead`
      */
     monsterInitDead: MonsterInitDeadEvent;
-    /** Pawn: `RG_PM_Move` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_PM_Move`
+     */
     move: MoveEvent;
+    /**
+     * Начинается новый раунд. Без ReAPI (чистый HLDS): слышно при перезапуске раунда — обработчики «до» игры, когда она объявляет раунд, обработчики «после» — когда её игроки возродились, — но `preventDefault()` ничего не делает.
+     *
+     * Pawn: `RG_CSGameRules_RestartRound`
+     */
+    newRound: NewRoundEvent;
     /**
      * Returns the next target of this.
      *
      * Pawn: `Ham_GetNextTarget`
      */
     nextTarget: NextTargetEvent;
-    /** Pawn: `RG_CBasePlayer_ObjectCaps`, `Ham_ObjectCaps` */
-    objectCaps: ObjectCapsEvent;
     /**
-     * Called when a client attempt to find the next observer.
-     *
-     * Pawn: `RG_CBasePlayer_Observer_FindNextPlayer`
-     */
-    observerFindNextPlayer: ObserverFindNextPlayerEvent;
-    /** Pawn: `RG_CBasePlayer_Observer_IsValidTarget` */
-    observerIsValidTarget: ObserverIsValidTargetEvent;
-    /**
-     * Called when a client attempt to change the observer mode.
+     * Called when a client attempt to change the observer mode. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_Observer_SetMode`
      */
     observerSetMode: ObserverSetModeEvent;
-    /** Pawn: `RG_CBasePlayer_Observer_Think` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_Observer_Think`
+     */
     observerThink: ObserverThinkEvent;
     /**
-     * Not entirely sure.
-     *
-     * Pawn: `Ham_OnControls`
-     */
-    onControls: OnControlsEvent;
-    /**
-     * Игра сообщает ботам, что что-то произошло.
-     *
-     * Pawn: `RG_CBotManager_OnEvent`
-     */
-    onEvent: OnEventEvent;
-    /**
-     * Закончилось время заморозки в начале раунда.
-     *
-     * Pawn: `RG_CSGameRules_OnRoundFreezeEnd`
-     */
-    onRoundFreezeEnd: OnRoundFreezeEndEvent;
-    /**
-     * Called on spawn, the attempt to equip a player.
-     *
-     * Pawn: `RG_CBasePlayer_OnSpawnEquip`
-     */
-    onSpawnEquip: OnSpawnEquipEvent;
-    /**
-     * Unsure.
-     *
-     * Pawn: `Ham_OverrideReset`
-     */
-    overrideReset: OverrideResetEvent;
-    /**
-     * Called when a client emits a "pain sound" after received damage.
+     * Игрок вскрикивает от боли после попадания.
      *
      * Pawn: `RG_CBasePlayer_Pain`
      */
@@ -7624,7 +7433,7 @@ export interface GameEventMap {
      */
     painSound: PainSoundEvent;
     /**
-     * Called when a player plant's the bomb on the ground.
+     * Called when a player plant's the bomb on the ground. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда бомба получает модель; ответ ничего не делает.
      *
      * Pawn: `RG_PlantBomb`
      */
@@ -7636,49 +7445,41 @@ export interface GameEventMap {
      */
     playEmptySound: PlayEmptySoundEvent;
     /**
-     * Флешка ослепляет игрока. `preventDefault()` — и он ничего не заметит.
+     * Флешка ослепляет игрока. `preventDefault()` — и он ничего не заметит. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `inflictor` и `attacker` читаются как мир, `color` — нулевым.
      *
      * Pawn: `RG_PlayerBlind`
      */
     playerBlind: PlayerBlindEvent;
-    /** Pawn: `RG_CBasePlayer_PlayerDeathThink` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_PlayerDeathThink`
+     */
     playerDeathThink: PlayerDeathThinkEvent;
     /**
-     * Called each time player gets a weapon linked to his inventory
+     * Called each time player gets a weapon linked to his inventory. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CSGameRules_PlayerGotWeapon`
      */
     playerGotWeapon: PlayerGotWeaponEvent;
     /**
-     * Игрока убили.
+     * Игрока убили. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CSGameRules_PlayerKilled`
      */
     playerKilled: PlayerKilledEvent;
     /**
-     * Игрок появился на карте (спавн).
+     * Игрок появился на карте (спавн). Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CSGameRules_PlayerSpawn`
      */
     playerSpawn: PlayerSpawnEvent;
     /**
-     * Called whenever player emits an step sound
+     * Called whenever player emits an step sound. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_PlayStepSound`
      */
     playStepSound: PlayStepSoundEvent;
-    /**
-     * Called on every frame to check player ducking
-     *
-     * Pawn: `RG_PM_Duck`
-     */
-    pmDuck: PmDuckEvent;
-    /**
-     * Called on every frame while player presses jump button
-     *
-     * Pawn: `RG_PM_Jump`
-     */
-    pmJump: PmJumpEvent;
     /**
      * Returns true if the passed ent is in the caller's forward view cone.
      *
@@ -7696,23 +7497,23 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_Precache`, `Ham_Precache` */
     precache: PrecacheEvent;
     /**
-     * Called when a generic resource is being added to generic precache list.
+     * Called when a generic resource is being added to generic precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
      *
      * Pawn: `RH_PF_precache_generic_I`
      */
-    precacheGenericI: PrecacheGenericIEvent;
+    precacheFile: PrecacheFileEvent;
     /**
-     * Called when a model is being added to model precache list.
+     * Called when a model is being added to model precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
      *
      * Pawn: `RH_PF_precache_model_I`
      */
-    precacheModelI: PrecacheModelIEvent;
+    precacheModel: PrecacheModelEvent;
     /**
-     * Called when a sound is being added to sound precache list.
+     * Called when a sound is being added to sound precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
      *
      * Pawn: `RH_PF_precache_sound_I`
      */
-    precacheSoundI: PrecacheSoundIEvent;
+    precacheSound: PrecacheSoundEvent;
     /**
      * Кадр игрока, до его движения: каждый кадр для каждого игрока, сотни раз в секунду. Обработчик должен быть очень лёгким.
      *
@@ -7732,17 +7533,23 @@ export interface GameEventMap {
      */
     primaryAttack: PrimaryAttackEvent;
     /**
-     * Called when a message is being sent to the server's console.
+     * Called when a message is being sent to the server's console. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RH_Con_Printf`
      */
     printf: PrintfEvent;
     /**
-     * Отправляется радиосообщение. `preventDefault()` заглушит его.
+     * Отправляется радиосообщение. `preventDefault()` заглушит его. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_Radio`
      */
     radio: RadioEvent;
+    /**
+     * Called whenever player fires a weapon and shakes player screen (punchangles altering). Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayerWeapon_KickBack`
+     */
+    recoil: RecoilEvent;
     /**
      * Whether or not the entity can reflect gauss shots..
      *
@@ -7761,24 +7568,26 @@ export interface GameEventMap {
      * Pawn: `Ham_Weapon_Reload`
      */
     reload: ReloadEvent;
-    /** Pawn: `RG_CBasePlayer_RemoveAllItems` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_RemoveAllItems`
+     */
     removeAllItems: RemoveAllItemsEvent;
-    /** Pawn: `RG_CSGameRules_RemoveGuns` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CSGameRules_RemoveGuns`
+     */
     removeGuns: RemoveGunsEvent;
     /** Pawn: `RG_CBasePlayer_RemovePlayerItem`, `Ham_RemovePlayerItem` */
-    removePlayerItem: RemovePlayerItemEvent;
+    removeItem: RemoveItemEvent;
     /**
-     * Called when a player's remove protection.
+     * Called when a player's remove protection. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_RemoveSpawnProtection`
      */
     removeSpawnProtection: RemoveSpawnProtectionEvent;
-    /**
-     * Prints debug information about monster to console. (state, activity, and other)
-     *
-     * Pawn: `Ham_ReportAIState`
-     */
-    reportAiState: ReportAiStateEvent;
     /**
      * Sets the weapon so that it can play empty sound again.
      *
@@ -7791,7 +7600,11 @@ export interface GameEventMap {
      * Pawn: `RG_CBasePlayer_ResetMaxSpeed`, `Ham_CS_Player_ResetMaxSpeed`
      */
     resetMaxSpeed: ResetMaxSpeedEvent;
-    /** Pawn: `RG_CBaseAnimating_ResetSequenceInfo` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBaseAnimating_ResetSequenceInfo`
+     */
     resetSequenceInfo: ResetSequenceInfoEvent;
     /**
      * Normally called when a map-based item respawns, such as a health kit or something.
@@ -7806,25 +7619,25 @@ export interface GameEventMap {
      */
     restart: RestartEvent;
     /**
-     * Начинается новый раунд.
-     *
-     * Pawn: `RG_CSGameRules_RestartRound`
-     */
-    restartRound: RestartRoundEvent;
-    /**
      * There is no more ammo for this gun, so switch to the next best one.
      *
      * Pawn: `Ham_Weapon_RetireWeapon`
      */
     retireWeapon: RetireWeaponEvent;
     /**
-     * Раунд заканчивается.
+     * Раунд заканчивается. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает; `delay` — 5 секунд оригинальной игры, 3 для `"gameCommence"`, если его не задал `game.endRound`.
      *
      * Pawn: `RG_RoundEnd`
      */
     roundEnd: RoundEndEvent;
     /** Pawn: `RG_CBasePlayer_RoundRespawn`, `Ham_CS_RoundRespawn` */
     roundRespawn: RoundRespawnEvent;
+    /**
+     * Закончилось время заморозки в начале раунда. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     *
+     * Pawn: `RG_CSGameRules_OnRoundFreezeEnd`
+     */
+    roundStart: RoundStartEvent;
     /**
      * Returns the secondary ammo index of the item.
      *
@@ -7838,39 +7651,43 @@ export interface GameEventMap {
      */
     secondaryAttack: SecondaryAttackEvent;
     /**
-     * Игра сообщает всем, кто кого убил.
+     * Called when game selects a spawn point (info_player_start/deathmatch) to position the player. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_EntSelectSpawnPoint`
+     */
+    selectSpawnPoint: SelectSpawnPointEvent;
+    /**
+     * Игра сообщает всем, кто кого убил. Без ReAPI (чистый HLDS): `preventDefault()` отменяет сообщение; `assister` и `inflictor` читаются как мир, `flags` пуст, в `rarity` бывает только `"headshot"`; запись поля ничего не делает.
      *
      * Pawn: `RG_CSGameRules_SendDeathMessage`
      */
     sendDeathMessage: SendDeathMessageEvent;
-    /**
-     * Called when server sends resources list and location.
-     *
-     * Pawn: `RH_SV_SendResources`
-     */
-    sendResources: SendResourcesEvent;
-    /**
-     * Сообщение игрока в чат уходит игрокам и в консоль сервера. Чтобы изменить, что они прочтут, присвойте `event.text`; чтобы его не получил никто, вызовите `preventDefault()`.
-     *
-     * Pawn: `RG_SendSayMessage`
-     */
-    sendSayMessage: SendSayMessageEvent;
     /**
      * Called whenever game sends an animation to his current holder (player)
      *
      * Pawn: `RG_CBasePlayerWeapon_SendWeaponAnim`, `Ham_CS_Weapon_SendWeaponAnim`
      */
     sendWeaponAnim: SendWeaponAnimEvent;
-    /** Pawn: `RG_CSGameRules_ServerDeactivate` */
-    serverDeactivate: ServerDeactivateEvent;
-    /** Pawn: `RG_CBasePlayer_SetAnimation` */
-    setAnimation: SetAnimationEvent;
-    /** Pawn: `RG_CBasePlayer_SetClientUserInfoModel` */
-    setClientUserInfoModel: SetClientUserInfoModelEvent;
-    /** Pawn: `RG_CBasePlayer_SetClientUserInfoName` */
-    setClientUserInfoName: SetClientUserInfoNameEvent;
     /**
-     * Called when a player dies to pack up the appropriate weapons and ammo items, and creates a weaponbox that falls to floor with sets specify the model or when a player drop the item.
+     * Called when a command is being sent to server. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RH_ExecuteServerStringCmd`
+     */
+    serverCommand: ServerCommandEvent;
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CSGameRules_ServerDeactivate`
+     */
+    serverDeactivate: ServerDeactivateEvent;
+    /**
+     * Игра задаёт анимацию, которую играет модель игрока: ходьба, прыжок, атака, перезарядка. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_SetAnimation`
+     */
+    setAnimation: SetAnimationEvent;
+    /**
+     * Called when a player dies to pack up the appropriate weapons and ammo items, and creates a weaponbox that falls to floor with sets specify the model or when a player drop the item. Без ReAPI (чистый HLDS): `preventDefault()` не даёт модели встать; запись `modelName` ничего не делает.
      *
      * Pawn: `RG_CWeaponBox_SetModel`
      */
@@ -7882,7 +7699,7 @@ export interface GameEventMap {
      */
     setObjectCollisionBox: SetObjectCollisionBoxEvent;
     /**
-     * Called when a player's set protection.
+     * Called when a player's set protection. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_SetSpawnProtection`
      */
@@ -7894,11 +7711,29 @@ export interface GameEventMap {
      */
     setToggleState: SetToggleStateEvent;
     /**
+     * Оружие стреляет: игра ведёт пулю, сквозь стены, насколько позволяет пробивание, и наносит её урон. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBaseEntity_FireBullets3`
+     */
+    shoot: ShootEvent;
+    /**
+     * Дробовик стреляет: игра ведёт каждую дробину и наносит её урон. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBaseEntity_FireBuckshots`
+     */
+    shootBuckshot: ShootBuckshotEvent;
+    /**
      * Whether or not the player should fade on death.
      *
      * Pawn: `Ham_Player_ShouldFadeOnDeath`
      */
     shouldFadeOnDeath: ShouldFadeOnDeathEvent;
+    /**
+     * Should the player switch to this weapon? Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CSGameRules_FShouldSwitchWeapon`
+     */
+    shouldSwitchWeapon: ShouldSwitchWeaponEvent;
     /**
      * Whether or not the weapon should idle.
      *
@@ -7906,13 +7741,13 @@ export interface GameEventMap {
      */
     shouldWeaponIdle: ShouldWeaponIdleEvent;
     /**
-     * Игра показывает игроку меню.
+     * Игра показывает игроку меню. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_ShowMenu`
      */
     showMenu: ShowMenuEvent;
     /**
-     * Игра показывает игроку VGUI-меню (выбор команды).
+     * Игра показывает игроку VGUI-меню (выбор команды). Без ReAPI (чистый HLDS): слышно, когда меню уходит игроку с включёнными VGUI-меню (не боту): `preventDefault()` его отменяет; `oldMenu` читается как `""`, запись поля ничего не делает.
      *
      * Pawn: `RG_ShowVGUIMenu`
      */
@@ -7923,22 +7758,42 @@ export interface GameEventMap {
      * Pawn: `RG_CBasePlayer_Spawn`, `Ham_Spawn`
      */
     spawn: SpawnEvent;
-    /** Pawn: `RG_SpawnHeadGib` */
+    /**
+     * Called on spawn, the attempt to equip a player. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_OnSpawnEquip`
+     */
+    spawnEquip: SpawnEquipEvent;
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_SpawnHeadGib`
+     */
     spawnHeadGib: SpawnHeadGibEvent;
-    /** Pawn: `RG_SpawnRandomGibs` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_SpawnRandomGibs`
+     */
     spawnRandomGibs: SpawnRandomGibsEvent;
     /**
-     * Включается камера погибшего игрока.
+     * Place this player on his spawnspot and face him in the proper direction. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CSGameRules_GetPlayerSpawnSpot`
+     */
+    spawnSpot: SpawnSpotEvent;
+    /**
+     * Called when a client attempt to find the next observer. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_Observer_FindNextPlayer`
+     */
+    spectateNext: SpectateNextEvent;
+    /**
+     * Включается камера погибшего игрока. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_StartDeathCam`
      */
     startDeathCam: StartDeathCamEvent;
-    /**
-     * The player goes into observer mode.
-     *
-     * Pawn: `RG_CBasePlayer_StartObserver`
-     */
-    startObserver: StartObserverEvent;
     /**
      * Not entirely sure what this does.
      *
@@ -7946,11 +7801,17 @@ export interface GameEventMap {
      */
     startSneaking: StartSneakingEvent;
     /**
-     * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить.
+     * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить. Без ReAPI (чистый HLDS): слышно для звуков, которые игра проигрывает через `EmitSound` движка: `preventDefault()` его отменяет; `recipients` читается как 0, запись поля ничего не делает.
      *
      * Pawn: `RH_SV_StartSound`
      */
     startSound: StartSoundEvent;
+    /**
+     * The player goes into observer mode. Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CBasePlayer_StartObserver`
+     */
+    startSpectating: StartSpectatingEvent;
     /**
      * Not entirely sure what this does.
      *
@@ -7958,7 +7819,7 @@ export interface GameEventMap {
      */
     stopSneaking: StopSneakingEvent;
     /**
-     * Called when a player goes switch to opposite team after auto-teambalance or caused by 3rd-party things.
+     * Called when a player goes switch to opposite team after auto-teambalance or caused by 3rd-party things. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_SwitchTeam`
      */
@@ -7970,15 +7831,13 @@ export interface GameEventMap {
      */
     takeDamage: TakeDamageEvent;
     /**
-     * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`.
+     * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velocityModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_TakeDamageImpulse`
      */
     takeDamageImpulse: TakeDamageImpulseEvent;
-    /** Pawn: `RG_CBasePlayer_TakeHealth`, `Ham_TakeHealth` */
-    takeHealth: TakeHealthEvent;
     /**
-     * Called each time player tries to join a team to ensure availability
+     * Called each time player tries to join a team to ensure availability. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_TeamFull`
      */
@@ -7990,7 +7849,7 @@ export interface GameEventMap {
      */
     teamId: TeamIdEvent;
     /**
-     * Called each time player tries to join a team to ensure a fair distribution of players (based on mp_limitteams cvar)
+     * Called each time player tries to join a team to ensure a fair distribution of players (based on mp_limitteams cvar). Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_TeamStacked`
      */
@@ -8002,25 +7861,25 @@ export interface GameEventMap {
      */
     think: ThinkEvent;
     /**
-     * Игрок бросил флешку. В post-обработчике `event.result` — сама граната.
+     * Игрок бросил флешку. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель.
      *
      * Pawn: `RG_ThrowFlashbang`
      */
     throwFlashbang: ThrowFlashbangEvent;
     /**
-     * Игрок бросает гранату.
+     * Игрок бросает гранату. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
      *
      * Pawn: `RG_CBasePlayer_ThrowGrenade`
      */
     throwGrenade: ThrowGrenadeEvent;
     /**
-     * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната.
+     * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
      *
      * Pawn: `RG_ThrowHeGrenade`
      */
     throwHeGrenade: ThrowHeGrenadeEvent;
     /**
-     * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната.
+     * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
      *
      * Pawn: `RG_ThrowSmokeGrenade`
      */
@@ -8049,10 +7908,14 @@ export interface GameEventMap {
      * Pawn: `Ham_TraceBleed`
      */
     traceBleed: TraceBleedEvent;
-    /** Pawn: `RG_RadiusFlash_TraceLine` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_RadiusFlash_TraceLine`
+     */
     traceLine: TraceLineEvent;
     /**
-     * Called whenever player tries to unduck
+     * Called whenever player tries to unduck. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_UnDuck`
      */
@@ -8066,13 +7929,7 @@ export interface GameEventMap {
      */
     updateItemInfo: UpdateItemInfoEvent;
     /**
-     * Used in Half-Life to update a monster's owner.
-     *
-     * Pawn: `Ham_UpdateOwner`
-     */
-    updateOwner: UpdateOwnerEvent;
-    /**
-     * Игра обновляет строку состояния игрока — имя и здоровье игрока под прицелом внизу экрана. `preventDefault()` оставит её как есть.
+     * Игра обновляет строку состояния игрока — имя и здоровье игрока под прицелом внизу экрана. `preventDefault()` оставит её как есть. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_UpdateStatusBar`
      */
@@ -8084,27 +7941,31 @@ export interface GameEventMap {
      */
     use: UseEvent;
     /**
-     * Unsure.
-     *
-     * Pawn: `Ham_Weapon_UseDecrement`
-     */
-    useDecrement: UseDecrementEvent;
-    /**
-     * Called when a player press use and if a suitable candidate is not found.
+     * Called when a player press use and if a suitable candidate is not found. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_UseEmpty`
      */
     useEmpty: UseEmptyEvent;
+    /**
+     * The player has changed userinfo; can change it now. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`.
+     *
+     * Pawn: `RG_CSGameRules_ClientUserInfoChanged`
+     */
+    userInfoChange: UserInfoChangeEvent;
     /**
      * Returns true if a line can be traced from the caller's eyes to the target.
      *
      * Pawn: `Ham_FVisible`
      */
     visible: VisibleEvent;
-    /** Pawn: `RG_CGib_WaitTillLand` */
+    /**
+     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     *
+     * Pawn: `RG_CGib_WaitTillLand`
+     */
     waitTillLand: WaitTillLandEvent;
     /**
-     * Called on every frame after a player jumps on water for a short period of time
+     * Called on every frame after a player jumps on water for a short period of time. Без ReAPI (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_WaterJump`
      */
@@ -8115,12 +7976,6 @@ export interface GameEventMap {
      * Pawn: `Ham_Weapon_WeaponIdle`
      */
     weaponIdle: WeaponIdleEvent;
-    /**
-     * Receiver is player index or 0 when update will be sended to all.
-     *
-     * Pawn: `RH_SV_WriteFullClientUpdate`
-     */
-    writeFullClientUpdate: WriteFullClientUpdateEvent;
     /**
      * Сущность коснулась другой: `event.toucher` вошла в `event.touched`. Передайте классы, о которых речь, третьим аргументом — `{ toucher: "player", touched: "player" }`, — и до плагина дойдут только эти касания; `event.preventDefault()` блокирует касание.
      *
@@ -8136,43 +7991,49 @@ export interface GameEventMap {
 export interface GameAnswerMap {
     activate: void;
     activateServer: void;
-    addAccount: void;
-    addDuplicate: boolean;
+    addFrags: void;
+    addItem: number;
+    addMoney: void;
     addMultiDamage: void;
-    addPlayerItem: number;
-    addPoints: void;
-    addPointsToTeam: void;
     addResource: void;
+    addTeamScore: void;
     addToPlayer: boolean;
     addWeapon: boolean;
     airAccelerate: void;
     airMove: void;
-    alloc: Entity;
-    allowPhysent: boolean;
     applyMultiDamage: void;
     attachToPlayer: void;
     autoaimVector: Vector;
     balanceTeams: void;
+    becomeBomber: boolean;
     becomeDead: void;
     becomeProne: boolean;
+    becomeVip: void;
     bestVisibleEnemy: Entity;
     blind: void;
     blocked: void;
     bloodColor: number;
     bodyTarget: Vector;
     bounceGibTouch: void;
-    buyGunAmmo: boolean;
+    buyAmmo: boolean;
     buyItem: void;
-    buyWeaponByWeaponId: Entity;
+    buyWeapon: Entity;
     canDeploy: number;
     canDrop: boolean;
-    canHavePlayerItem: number;
+    canHaveItem: number;
     canHolster: boolean;
     canPlayerHearPlayer: boolean;
+    canRespawn: number;
+    canShootThrough: boolean;
+    canSpectate: Player;
     canSwitchTeam: boolean;
+    canTakeDamage: number;
     center: Vector;
     changeLevel: void;
+    changeModel: void;
+    changeName: boolean;
     changeYaw: number;
+    chatMessage: void;
     checkMapConditions: void;
     checkTimeBasedDamage: void;
     checkUserInfo: number;
@@ -8182,15 +8043,12 @@ export interface GameAnswerMap {
     chooseAppearance: void;
     chooseTeam: number;
     classify: number;
-    cleanUpMap: void;
     clearMultiDamage: void;
     clientConnected: void;
-    clientPrintf: void;
-    clientUserInfoChanged: void;
     connectClient: void;
+    consoleMessage: void;
     createWeaponBox: Entity;
     damageDecal: number;
-    deadPlayerWeapons: number;
     deathActivity: number;
     deathNotice: void;
     deathSound: void;
@@ -8201,18 +8059,16 @@ export interface GameAnswerMap {
     defuseBombStart: void;
     delay: number;
     deploy: boolean;
-    directSet: void;
     disappear: void;
+    disconnectClient: void;
     drop: void;
-    dropClient: void;
     dropIdlePlayer: void;
     dropPlayerItem: Entity;
     dropShield: Entity;
+    dropWeaponsOnDeath: number;
     duck: void;
+    duckMovement: void;
     earPosition: Vector;
-    emitPings: void;
-    entSelectSpawnPoint: Entity;
-    executeServerStringCmd: void;
     explodeBomb: void;
     explodeFlashbang: void;
     explodeHeGrenade: void;
@@ -8221,37 +8077,30 @@ export interface GameAnswerMap {
     extractClipAmmo: number;
     eyePosition: Vector;
     fadeMonster: void;
-    fireBuckshots: void;
+    fallDamage: number;
     fireBullets: void;
-    fireBullets3: void;
-    flPlayerFallDamage: number;
-    fPlayerCanRespawn: number;
-    fPlayerCanTakeDamage: number;
-    free: void;
-    fShouldSwitchWeapon: number;
+    gameEvent: void;
     gameThink: void;
-    getEntityInit: void;
     getForceCamera: number;
     getIntoGame: boolean;
     getNextBestWeapon: number;
-    getPlayerSpawnSpot: Entity;
     gibMonster: void;
     gibSpawn: void;
     giveAmmo: number;
-    giveC4: Player;
+    giveBomb: Player;
     giveDefaultItems: void;
-    giveNamedItem: Entity;
+    giveItem: Entity;
     giveShield: void;
-    goToIntermission: void;
     gunPosition: Vector;
     hasAlienGibs: boolean;
     hasHumanGibs: boolean;
-    hasRestrictItem: boolean;
     hasTarget: boolean;
-    hintMessageEx: boolean;
+    heal: number;
+    hintMessage: boolean;
     holster: void;
     illumination: number;
-    impulseCommands: void;
+    impulse: void;
+    intermission: void;
     inViewCone: boolean;
     isAlive: boolean;
     isBot: boolean;
@@ -8259,7 +8108,6 @@ export interface GameAnswerMap {
     isInWorld: boolean;
     isMoving: boolean;
     isNetClient: boolean;
-    isPenetrableEntity: boolean;
     isPlayer: boolean;
     isSneaking: boolean;
     isTriggered: boolean;
@@ -8267,31 +8115,24 @@ export interface GameAnswerMap {
     isWeapon: boolean;
     itemPostFrame: void;
     itemPreFrame: void;
+    itemRestricted: boolean;
     itemSlot: number;
     itemUpdateClientData: number;
     joiningThink: void;
     jump: void;
-    kickBack: void;
+    jumpMovement: void;
     kill: void;
     killed: void;
     ladderMove: void;
     look: void;
-    makeBomber: boolean;
-    makeVip: void;
+    mapReset: void;
     maxSpeed: number;
     monsterInitDead: void;
     move: void;
+    newRound: void;
     nextTarget: Entity;
-    objectCaps: number;
-    observerFindNextPlayer: void;
-    observerIsValidTarget: Player;
     observerSetMode: void;
     observerThink: void;
-    onControls: boolean;
-    onEvent: void;
-    onRoundFreezeEnd: void;
-    onSpawnEquip: void;
-    overrideReset: void;
     pain: void;
     painSound: void;
     plantBomb: Entity;
@@ -8302,67 +8143,68 @@ export interface GameAnswerMap {
     playerKilled: void;
     playerSpawn: void;
     playStepSound: void;
-    pmDuck: void;
-    pmJump: void;
     pointInViewCone: boolean;
     pointVisible: boolean;
     postThink: void;
     precache: void;
-    precacheGenericI: number;
-    precacheModelI: number;
-    precacheSoundI: number;
+    precacheFile: number;
+    precacheModel: number;
+    precacheSound: number;
     preThink: void;
     primaryAmmoIndex: number;
     primaryAttack: void;
     printf: void;
     radio: void;
+    recoil: void;
     reflectGauss: boolean;
     relationship: number;
     reload: void;
     removeAllItems: void;
     removeGuns: void;
-    removePlayerItem: number;
+    removeItem: number;
     removeSpawnProtection: void;
-    reportAiState: void;
     resetEmptySound: void;
     resetMaxSpeed: void;
     resetSequenceInfo: void;
     respawn: Entity;
     restart: void;
-    restartRound: void;
     retireWeapon: void;
     roundEnd: boolean;
     roundRespawn: void;
+    roundStart: void;
     secondaryAmmoIndex: number;
     secondaryAttack: void;
+    selectSpawnPoint: Entity;
     sendDeathMessage: void;
-    sendResources: void;
-    sendSayMessage: void;
     sendWeaponAnim: void;
+    serverCommand: void;
     serverDeactivate: void;
     setAnimation: void;
-    setClientUserInfoModel: void;
-    setClientUserInfoName: boolean;
     setModel: void;
     setObjectCollisionBox: void;
     setSpawnProtection: void;
     setToggleState: void;
+    shoot: void;
+    shootBuckshot: void;
     shouldFadeOnDeath: boolean;
+    shouldSwitchWeapon: number;
     shouldWeaponIdle: boolean;
     showMenu: void;
     showVguiMenu: void;
     spawn: void;
+    spawnEquip: void;
     spawnHeadGib: Entity;
     spawnRandomGibs: void;
+    spawnSpot: Entity;
+    spectateNext: void;
     startDeathCam: void;
-    startObserver: void;
     startSneaking: void;
     startSound: void;
+    startSpectating: void;
     stopSneaking: void;
     switchTeam: void;
     takeDamage: number;
     takeDamageImpulse: void;
-    takeHealth: number;
     teamFull: boolean;
     teamId: string;
     teamStacked: boolean;
@@ -8379,16 +8221,14 @@ export interface GameAnswerMap {
     unDuck: void;
     updateClientData: void;
     updateItemInfo: void;
-    updateOwner: void;
     updateStatusBar: void;
     use: void;
-    useDecrement: boolean;
     useEmpty: void;
+    userInfoChange: void;
     visible: boolean;
     waitTillLand: void;
     waterJump: void;
     weaponIdle: void;
-    writeFullClientUpdate: void;
     touch: void;
 }
 /**

@@ -1,9 +1,45 @@
 /**
+ * The files of a system's GitHub Release that a server runs: the name each is
+ * attached under, and where it goes under the game folder (cstrike). A `tool`
+ * is the compiler for `.ts` plugins written on the server, which a server has
+ * only when its kit put it there.
+ * @param {System} system
+ * @returns {{ asset: string, path: string, tool: boolean }[]} the module first, then the tools
+ */
+export function serverFiles(system: System): {
+    asset: string;
+    path: string;
+    tool: boolean;
+}[];
+/** A system's release manifest, attached beside its files: the version, and each file's size and sha256. */
+export function manifestName(system: any): string;
+/** The server image of a version. */
+export function serverImage(version: any): string;
+/**
+ * The amxts release a module file is of, read from the ABI string it
+ * carries - the file is read, not loaded, so a module a running server holds
+ * is read as well. Null when there is no file or no such string.
+ * @param {string} file
+ * @returns {string | null} the version: `0.2.0`
+ */
+export function moduleVersion(file: string): string | null;
+/**
  * `windows`, `win32`, `linux`, any case; null for anything else.
  * @param {string | undefined | null} value
  * @returns {System | null} the system, or null
  */
 export function parseSystem(value: string | undefined | null): System | null;
+/**
+ * The server's addons/amxts folder, from what AMXTS_SERVER holds: that
+ * folder itself, or the hlds folder, cstrike or cstrike/addons above it. A
+ * path that is not there yet is taken as addons/amxts, as it is written -
+ * dev builds, and deploys once it is - and so is a folder named amxts, or
+ * one holding the module's plugins.ini. Throws, naming where it looked, for
+ * a folder that is none of them.
+ * @param {string} path
+ * @returns {string} the folder; '' for ''
+ */
+export function serverFolder(path: string): string;
 /**
  * What a server's files say it runs. `amxtsDir` is AMXTS_SERVER: the server's
  * addons/amxts, so hlds sits three folders up. Null when nothing there says.

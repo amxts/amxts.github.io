@@ -1,8 +1,9 @@
 /// <reference path="../as-types.d.ts" />
-import { Client, ClientMessage, Player, PlayerChangeEvent, StatusIconState, Team, VariantName } from "./facade";
+import { Client, ClientMessage, FadeDirection, Player, PlayerChangeEvent, StatusIconState, Team, VariantName } from "./facade";
 import { Vector } from "./vector";
 import { WeaponKind } from "./entities";
-import { Damage, HideHud } from "./flags";
+import { Damage, HideHud, ScoreStatus } from "./flags";
+import { VguiMenu } from "./hooks";
 /**
  * The plugin has loaded: register commands, events and hooks here.
  *
@@ -94,7 +95,7 @@ export declare class ClientInfochangedEvent {
     constructor(player: Player);
 }
 /**
- * A player started connecting. The player is not in the game yet: show him anything after `"putinserver"`.
+ * A player started connecting. The player is not in the game yet: show him anything after `"putInServer"`.
  *
  * Note: This forward is called too early to do anything that directly affects the client.
  *
@@ -144,7 +145,7 @@ export declare class ClientConnectexEvent {
     constructor(player: Client, name: string, ip: string, reason: string);
 }
 /**
- * A player's SteamID is known. May come before or after `"putinserver"`.
+ * A player's SteamID is known. May come before or after `"putInServer"`.
  *
  * Note: A bot's SteamID is `"BOT"`.
  *
@@ -158,26 +159,12 @@ export declare class ClientAuthorizedEvent {
      */
     player: Client;
     /**
-     * The player's SteamID, e.g. `"STEAM_0:1:12345"`. A bot has `"BOT"`, HLTV has `"HLTV"`; on a LAN server it is `"STEAM_ID_LAN"`.
+     * The player's SteamID, e.g. `"STEAM_0:1:12345"`. A bot has `"BOT"`, HLTV has `"HLTV"`; on a LAN server it is `"STEAM_ID_LAN"`. With Reunion a game without Steam gets one made from its key: `"STEAM_..."` or `"VALVE_..."`, as the server's Reunion settings say.
      *
      * Pawn: `authid[]`
      */
-    authid: string;
-    constructor(player: Client, authid: string);
-}
-/**
- * Old form of `"disconnected"` that misses some cases: use `"disconnected"`.
- *
- * Pawn: `client_disconnect(id)`
- */
-export declare class ClientDisconnectEvent {
-    /**
-     * The player the event is about.
-     *
-     * Pawn: `id`
-     */
-    player: Player;
-    constructor(player: Player);
+    steamId: string;
+    constructor(player: Client, steamId: string);
 }
 /**
  * A player left the server: quit, timed out or was kicked.
@@ -264,7 +251,7 @@ export declare class ClientCommandEvent {
  * Pawn: `client_putinserver(id)`
  *
  * @example
- * server.addEventListener("putinserver", (event) => {
+ * server.addEventListener("putInServer", (event) => {
  * 	print(event.player, "Welcome!");
  * });
  */
@@ -294,14 +281,14 @@ export declare class InconsistentFileEvent {
      *
      * Pawn: `filename[]`
      */
-    filename: string;
+    file: string;
     /**
      * Buffer storing the disconnect reason (can be overwritten)
      *
      * Pawn: `reason[64]`
      */
     reason: string;
-    constructor(player: Player, filename: string, reason: string);
+    constructor(player: Player, file: string, reason: string);
 }
 /**
  * Allows plugins to declare module dependencies using require_module()
@@ -348,8 +335,8 @@ export declare class CS_InternalCommandEvent {
      *
      * Pawn: `cmd[]`
      */
-    cmd: string;
-    constructor(player: Player, cmd: string);
+    command: string;
+    constructor(player: Player, command: string);
 }
 /**
  * Called when a client attempts to purchase an item.
@@ -398,26 +385,6 @@ export declare class CS_OnBuyEvent {
     constructor(player: Player, item: number);
 }
 /**
- * Two entities touched.
- *
- * Pawn: `pfn_touch(ptr, ptd)`
- */
-export declare class PfnTouchEvent {
-    /**
-     * The entity that moved into the other.
-     *
-     * Pawn: `ptr`
-     */
-    toucher: number;
-    /**
-     * The entity that was touched.
-     *
-     * Pawn: `ptd`
-     */
-    touched: number;
-    constructor(toucher: number, touched: number);
-}
-/**
  * A server frame, hundreds of times a second. Keep the listener tiny, or use `setInterval`.
  *
  * Note: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
@@ -432,38 +399,6 @@ export declare class ServerFrameEvent {
  * Pawn: `client_kill(id)`
  */
 export declare class ClientKillEvent {
-    /**
-     * The player the event is about.
-     *
-     * Pawn: `id`
-     */
-    player: Player;
-    constructor(player: Player);
-}
-/**
- * Called at the start of each client think.
- *
- * Note: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
- *
- * Pawn: `client_PreThink(id)`
- */
-export declare class Client_PreThinkEvent {
-    /**
-     * The player the event is about.
-     *
-     * Pawn: `id`
-     */
-    player: Player;
-    constructor(player: Player);
-}
-/**
- * Called after each client think.
- *
- * Note: Using his forward can easily become performance-critical. More specific hooks and forwards should be used whenever possible.
- *
- * Pawn: `client_PostThink(id)`
- */
-export declare class Client_PostThinkEvent {
     /**
      * The player the event is about.
      *
@@ -509,7 +444,7 @@ export declare class ClientCmdStartEvent {
     constructor(player: Player);
 }
 /**
- * An entity thinks: its scheduled update has come.
+ * An entity thinks: its scheduled update has come. Any entity's; one class's is `game.addEventListener("think", listener, { classname })`.
  *
  * Pawn: `pfn_think(entid)`
  */
@@ -545,7 +480,7 @@ export declare class PfnPlaybackeventEvent {
      *
      * Pawn: `eventid`
      */
-    eventid: number;
+    eventIndex: number;
     /**
      * The seconds before the event plays.
      *
@@ -600,7 +535,7 @@ export declare class PfnPlaybackeventEvent {
      * Pawn: `bparam2`
      */
     bparam2: number;
-    constructor(flags: number, entity: number, eventid: number, delay: number, origin: Vector, angles: Vector, fparam1: number, fparam2: number, iparam1: number, iparam2: number, bparam1: number, bparam2: number);
+    constructor(flags: number, entity: number, eventIndex: number, delay: number, origin: Vector, angles: Vector, fparam1: number, fparam2: number, iparam1: number, iparam2: number, bparam1: number, bparam2: number);
 }
 /**
  * Called when a keyvalue pair is sent to an entity.
@@ -619,7 +554,7 @@ export declare class PfnKeyvalueEvent {
     constructor(entity: number);
 }
 /**
- * An entity is being spawned on the map.
+ * An entity is being spawned on the map, the map's own too as it loads. A player's spawn is `game.addEventListener("spawn", listener)`.
  *
  * Pawn: `pfn_spawn(entid)`
  */
@@ -633,7 +568,36 @@ export declare class PfnSpawnEvent {
     constructor(entity: number);
 }
 /**
+ * A player's HUD stops showing the round's advertisement.
+ *
+ * The game's `ADStop` message.
+ *
+ * Pawn: `register_message(get_user_msgid("ADStop"), ...)`
+ */
+export declare class ADStopMessage extends ClientMessage {
+    private readonly kind;
+}
+/**
+ * Whether a player may pick Spectate in the team menu.
+ *
+ * The game's `AllowSpec` message.
+ *
+ * Pawn: `register_message(get_user_msgid("AllowSpec"), ...)`
+ */
+export declare class AllowSpecMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * `true` when the menu offers it.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get allowed(): boolean;
+    set allowed(value: boolean);
+}
+/**
  * A player picks up ammo: the notice at the side of his screen.
+ *
+ * The game's `AmmoPickup` message.
  *
  * Pawn: `register_message(get_user_msgid("AmmoPickup"), ...)`
  */
@@ -655,9 +619,52 @@ export declare class AmmoPickupMessage extends ClientMessage {
     set amount(value: number);
 }
 /**
- * The progress bar in the middle of a player's screen is shown or hidden.
+ * A player's reserve ammo of one kind on his HUD changes.
  *
- * Pawn: `register_message(get_user_msgid("BarTime"), ...)`
+ * The game's `AmmoX` message.
+ *
+ * Pawn: `register_message(get_user_msgid("AmmoX"), ...)`
+ */
+export declare class AmmoXMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The ammo's index in the game's list of kinds.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get ammo(): number;
+    set ammo(value: number);
+    /**
+     * The reserve shown.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get amount(): number;
+    set amount(value: number);
+}
+/**
+ * The armour icon on a player's HUD: a vest, or a vest and a helmet.
+ *
+ * The game's `ArmorType` message.
+ *
+ * Pawn: `register_message(get_user_msgid("ArmorType"), ...)`
+ */
+export declare class ArmorTypeMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * `true` for a vest and a helmet.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get helmet(): boolean;
+    set helmet(value: boolean);
+}
+/**
+ * The progress bar in the middle of a player's screen is shown or hidden, from empty or part of the way full.
+ *
+ * The game's `BarTime` and `BarTime2` messages.
+ *
+ * Pawn: `register_message(get_user_msgid("BarTime"), ...)`, `register_message(get_user_msgid("BarTime2"), ...)`
  */
 export declare class BarTimeMessage extends ClientMessage {
     private readonly kind;
@@ -668,9 +675,18 @@ export declare class BarTimeMessage extends ClientMessage {
      */
     get seconds(): number;
     set seconds(value: number);
+    /**
+     * The bar's fill at the start, in percent. `BarTime` does not carry it: there it reads as `0`, and writing it does nothing.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get startPercent(): number;
+    set startPercent(value: number);
 }
 /**
  * A player's armour on his HUD changes.
+ *
+ * The game's `Battery` message.
  *
  * Pawn: `register_message(get_user_msgid("Battery"), ...)`
  */
@@ -685,7 +701,94 @@ export declare class BatteryMessage extends ClientMessage {
     set armor(value: number);
 }
 /**
+ * A player's money on his HUD blinks: he cannot afford what he tried to buy.
+ *
+ * The game's `BlinkAcct` message.
+ *
+ * Pawn: `register_message(get_user_msgid("BlinkAcct"), ...)`
+ */
+export declare class BlinkAcctMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The number of blinks.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get blinks(): number;
+    set blinks(value: number);
+}
+/**
+ * The bomb on the terrorists' radar: dropped or planted.
+ *
+ * The game's `BombDrop` message.
+ *
+ * Pawn: `register_message(get_user_msgid("BombDrop"), ...)`
+ */
+export declare class BombDropMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The point where the bomb lies.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get origin(): Vector;
+    set origin(value: number[]);
+    /**
+     * `true` for a bomb planted, `false` for one dropped.
+     *
+     * Pawn: `get_msg_arg_*(4)`
+     */
+    get planted(): boolean;
+    set planted(value: boolean);
+}
+/**
+ * The bomb is picked up: it leaves the terrorists' radar.
+ *
+ * The game's `BombPickup` message.
+ *
+ * Pawn: `register_message(get_user_msgid("BombPickup"), ...)`
+ */
+export declare class BombPickupMessage extends ClientMessage {
+    private readonly kind;
+}
+/**
+ * The voice icon over a bot who talks on the radio.
+ *
+ * The game's `BotVoice` message.
+ *
+ * Pawn: `register_message(get_user_msgid("BotVoice"), ...)`
+ */
+export declare class BotVoiceMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * `true` while the bot talks.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get talking(): boolean;
+    set talking(value: boolean);
+    /**
+     * The bot who talks.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get target(): Player | null;
+    set target(value: Player | null);
+}
+/**
+ * A player's buy menu is closed.
+ *
+ * The game's `BuyClose` message.
+ *
+ * Pawn: `register_message(get_user_msgid("BuyClose"), ...)`
+ */
+export declare class BuyCloseMessage extends ClientMessage {
+    private readonly kind;
+}
+/**
  * A dead player's body is left on the ground for the clients to draw.
+ *
+ * The game's `ClCorpse` message.
  *
  * Pawn: `register_message(get_user_msgid("ClCorpse"), ...)`
  */
@@ -699,6 +802,13 @@ export declare class ClCorpseMessage extends ClientMessage {
     get model(): string;
     set model(value: string);
     /**
+     * The team of the player whose body it is.
+     *
+     * Pawn: `get_msg_arg_*(11)`
+     */
+    get team(): Team;
+    set team(value: Team);
+    /**
      * The player whose body it is.
      *
      * Pawn: `get_msg_arg_*(12)`
@@ -707,7 +817,26 @@ export declare class ClCorpseMessage extends ClientMessage {
     set target(value: Player | null);
 }
 /**
+ * Counter-Strike's own crosshair on a player's screen is shown or hidden.
+ *
+ * The game's `Crosshair` message.
+ *
+ * Pawn: `register_message(get_user_msgid("Crosshair"), ...)`
+ */
+export declare class CrosshairMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * `true` to show it.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get shown(): boolean;
+    set shown(value: boolean);
+}
+/**
  * The weapon in a player's hands and its clip on his HUD.
+ *
+ * The game's `CurWeapon` message.
  *
  * Pawn: `register_message(get_user_msgid("CurWeapon"), ...)`
  */
@@ -738,6 +867,8 @@ export declare class CurWeaponMessage extends ClientMessage {
 /**
  * A player is shown the damage he took: the red marks at the side of his screen.
  *
+ * The game's `Damage` message.
+ *
  * Pawn: `register_message(get_user_msgid("Damage"), ...)`
  */
 export declare class DamageMessage extends ClientMessage {
@@ -757,15 +888,24 @@ export declare class DamageMessage extends ClientMessage {
     get damage(): number;
     set damage(value: number);
     /**
-     * The kinds of damage, e.g. `"Fall"`, `"Bullet"`.
+     * The kinds of damage, e.g. `"fall"`, `"bullet"`.
      *
      * Pawn: `get_msg_arg_*(3)`
      */
     get damageType(): Damage[];
     set damageType(value: Damage[]);
+    /**
+     * The point the damage came from: the marks point to it.
+     *
+     * Pawn: `get_msg_arg_*(4)`
+     */
+    get origin(): Vector;
+    set origin(value: number[]);
 }
 /**
  * A kill in the top right corner of every screen.
+ *
+ * The game's `DeathMsg` message.
  *
  * Pawn: `register_message(get_user_msgid("DeathMsg"), ...)`
  */
@@ -801,7 +941,67 @@ export declare class DeathMsgMessage extends ClientMessage {
     set weapon(value: string);
 }
 /**
+ * The flashlight icon on a player's HUD: on or off, and its battery.
+ *
+ * The game's `Flashlight` message.
+ *
+ * Pawn: `register_message(get_user_msgid("Flashlight"), ...)`
+ */
+export declare class FlashlightMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * `true` while the flashlight is on.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get on(): boolean;
+    set on(value: boolean);
+    /**
+     * The flashlight's battery, in percent.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get battery(): number;
+    set battery(value: number);
+}
+/**
+ * The flashlight's battery on a player's HUD changes.
+ *
+ * The game's `FlashBat` message.
+ *
+ * Pawn: `register_message(get_user_msgid("FlashBat"), ...)`
+ */
+export declare class FlashBatMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The flashlight's battery, in percent.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get battery(): number;
+    set battery(value: number);
+}
+/**
+ * The Geiger counter's clicks a player hears near radiation.
+ *
+ * The game's `Geiger` message.
+ *
+ * Pawn: `register_message(get_user_msgid("Geiger"), ...)`
+ */
+export declare class GeigerMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The distance to the radiation: the less, the faster the clicks.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get range(): number;
+    set range(value: number);
+}
+/**
  * A player's health on his HUD changes.
+ *
+ * The game's `Health` message.
  *
  * Pawn: `register_message(get_user_msgid("Health"), ...)`
  */
@@ -818,12 +1018,14 @@ export declare class HealthMessage extends ClientMessage {
 /**
  * The parts of a player's HUD that are hidden change.
  *
+ * The game's `HideWeapon` message.
+ *
  * Pawn: `register_message(get_user_msgid("HideWeapon"), ...)`
  */
 export declare class HideWeaponMessage extends ClientMessage {
     private readonly kind;
     /**
-     * The hidden parts, e.g. `"Money"`, `"Timer"`. Assign to change them.
+     * The hidden parts, e.g. `"money"`, `"timer"`. Assign to change them.
      *
      * Pawn: `get_msg_arg_*(1)`
      */
@@ -831,22 +1033,84 @@ export declare class HideWeaponMessage extends ClientMessage {
     set flags(value: HideHud[]);
 }
 /**
- * A hint in the middle of a player's screen, from the game's own texts.
+ * A hostage is killed: it leaves the counter-terrorists' radar.
  *
- * Pawn: `register_message(get_user_msgid("HudTextArgs"), ...)`
+ * The game's `HostageK` message.
+ *
+ * Pawn: `register_message(get_user_msgid("HostageK"), ...)`
  */
-export declare class HudTextArgsMessage extends ClientMessage {
+export declare class HostageKMessage extends ClientMessage {
     private readonly kind;
     /**
-     * The game's text, e.g. `"#Hint_press_buy_to_purchase"`.
+     * The hostage's number on the map, from `1`.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get hostage(): number;
+    set hostage(value: number);
+}
+/**
+ * A hostage on the counter-terrorists' radar.
+ *
+ * The game's `HostagePos` message.
+ *
+ * Pawn: `register_message(get_user_msgid("HostagePos"), ...)`
+ */
+export declare class HostagePosMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The hostage's number on the map, from `1`.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get hostage(): number;
+    set hostage(value: number);
+    /**
+     * The point where the hostage is.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get origin(): Vector;
+    set origin(value: number[]);
+}
+/**
+ * A hint in the middle of a player's screen.
+ *
+ * The game's `HudText`, `HudTextArgs` and `HudTextPro` messages.
+ *
+ * Pawn: `register_message(get_user_msgid("HudText"), ...)`, `register_message(get_user_msgid("HudTextArgs"), ...)`, `register_message(get_user_msgid("HudTextPro"), ...)`
+ */
+export declare class HudTextMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The text, or the game's own for it, e.g. `"#Hint_press_buy_to_purchase"`.
      *
      * Pawn: `get_msg_arg_*(1)`
      */
     get text(): string;
     set text(value: string);
+    /**
+     * The texts put into the game's text in place of `%s1`, `%s2`, ... - e.g. a player's name. Assign to change them; their number stays. `HudText` or `HudTextPro` does not carry it: there it reads as `[]`, and writing it does nothing.
+     *
+     * Pawn: `get_msg_arg_*(4)`
+     */
+    get params(): string[];
+    set params(value: string[]);
+}
+/**
+ * A player's HUD is set up, when he enters the game.
+ *
+ * The game's `InitHUD` message.
+ *
+ * Pawn: `register_message(get_user_msgid("InitHUD"), ...)`
+ */
+export declare class InitHUDMessage extends ClientMessage {
+    private readonly kind;
 }
 /**
  * A player picks up an item: the notice at the side of his screen.
+ *
+ * The game's `ItemPickup` message.
  *
  * Pawn: `register_message(get_user_msgid("ItemPickup"), ...)`
  */
@@ -861,7 +1125,57 @@ export declare class ItemPickupMessage extends ClientMessage {
     set item(value: string);
 }
 /**
+ * The night vision and the defuse kit a player has, for his HUD.
+ *
+ * The game's `ItemStatus` message.
+ *
+ * Pawn: `register_message(get_user_msgid("ItemStatus"), ...)`
+ */
+export declare class ItemStatusMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * `true` when the player has night vision.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get nightVision(): boolean;
+    set nightVision(value: boolean);
+    /**
+     * `true` when the player has a defuse kit.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get defuseKit(): boolean;
+    set defuseKit(value: boolean);
+}
+/**
+ * The place on the map a player is in, as the radio names it.
+ *
+ * The game's `Location` message.
+ *
+ * Pawn: `register_message(get_user_msgid("Location"), ...)`
+ */
+export declare class LocationMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The player whose place it is.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get target(): Player | null;
+    set target(value: Player | null);
+    /**
+     * The place's name, e.g. `"BombsiteA"`.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get place(): string;
+    set place(value: string);
+}
+/**
  * A player's money on his HUD changes.
+ *
+ * The game's `Money` message.
  *
  * Pawn: `register_message(get_user_msgid("Money"), ...)`
  */
@@ -883,7 +1197,84 @@ export declare class MoneyMessage extends ClientMessage {
     set flash(value: boolean);
 }
 /**
+ * A part of the message of the day, the window a joining player sees.
+ *
+ * The game's `MOTD` message.
+ *
+ * Pawn: `register_message(get_user_msgid("MOTD"), ...)`
+ */
+export declare class MOTDMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * `true` for the last part: the window opens.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get last(): boolean;
+    set last(value: boolean);
+    /**
+     * The part's text.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get text(): string;
+    set text(value: string);
+}
+/**
+ * A player's night vision is turned on or off.
+ *
+ * The game's `NVGToggle` message.
+ *
+ * Pawn: `register_message(get_user_msgid("NVGToggle"), ...)`
+ */
+export declare class NVGToggleMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * `true` while night vision is on.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get on(): boolean;
+    set on(value: boolean);
+}
+/**
+ * A teammate on a player's radar.
+ *
+ * The game's `Radar` message.
+ *
+ * Pawn: `register_message(get_user_msgid("Radar"), ...)`
+ */
+export declare class RadarMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The teammate shown.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get target(): Player | null;
+    set target(value: Player | null);
+    /**
+     * The point where the teammate is.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get origin(): Vector;
+    set origin(value: number[]);
+}
+/**
+ * The game asks a player's client for its state, for the voice.
+ *
+ * The game's `ReqState` message.
+ *
+ * Pawn: `register_message(get_user_msgid("ReqState"), ...)`
+ */
+export declare class ReqStateMessage extends ClientMessage {
+    private readonly kind;
+}
+/**
  * A player's HUD is reset, at his spawn.
+ *
+ * The game's `ResetHUD` message.
  *
  * Pawn: `register_message(get_user_msgid("ResetHUD"), ...)`
  */
@@ -892,6 +1283,8 @@ export declare class ResetHUDMessage extends ClientMessage {
 }
 /**
  * The round clock at the top of a player's HUD is set.
+ *
+ * The game's `RoundTime` message.
  *
  * Pawn: `register_message(get_user_msgid("RoundTime"), ...)`
  */
@@ -907,6 +1300,8 @@ export declare class RoundTimeMessage extends ClientMessage {
 }
 /**
  * A chat line.
+ *
+ * The game's `SayText` message.
  *
  * Pawn: `register_message(get_user_msgid("SayText"), ...)`
  */
@@ -926,9 +1321,73 @@ export declare class SayTextMessage extends ClientMessage {
      */
     get text(): string;
     set text(value: string);
+    /**
+     * The texts put into the game's text in place of `%s1`, `%s2`, ... - e.g. a player's name. Assign to change them; their number stays.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get params(): string[];
+    set params(value: string[]);
+}
+/**
+ * The scenario icon on a player's HUD, such as the bomb's or a hostage's.
+ *
+ * The game's `Scenario` message.
+ *
+ * Pawn: `register_message(get_user_msgid("Scenario"), ...)`
+ */
+export declare class ScenarioMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * `true` while the icon is shown.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get active(): boolean;
+    set active(value: boolean);
+    /**
+     * The icon's sprite name, e.g. `"hostage1"`.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get sprite(): string;
+    set sprite(value: string);
+    /**
+     * The icon's opacity, `0` to `255`.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get alpha(): number;
+    set alpha(value: number);
+}
+/**
+ * The marks the scoreboard shows beside a player: dead, the bomb, the VIP.
+ *
+ * The game's `ScoreAttrib` message.
+ *
+ * Pawn: `register_message(get_user_msgid("ScoreAttrib"), ...)`
+ */
+export declare class ScoreAttribMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The player whose row it is.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get target(): Player | null;
+    set target(value: Player | null);
+    /**
+     * The marks on the row, e.g. `"dead"`, `"bomb"`, `"vip"`.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get flags(): ScoreStatus[];
+    set flags(value: ScoreStatus[]);
 }
 /**
  * A player's row on the scoreboard.
+ *
+ * The game's `ScoreInfo` message.
  *
  * Pawn: `register_message(get_user_msgid("ScoreInfo"), ...)`
  */
@@ -964,7 +1423,92 @@ export declare class ScoreInfoMessage extends ClientMessage {
     set team(value: Team);
 }
 /**
+ * A player's screen is coloured, fading in or out - a flashbang, a fade to black.
+ *
+ * The game's `ScreenFade` message.
+ *
+ * Pawn: `register_message(get_user_msgid("ScreenFade"), ...)`
+ */
+export declare class ScreenFadeMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The fade's duration, in seconds.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get duration(): number;
+    set duration(value: number);
+    /**
+     * The time the full colour holds, in seconds.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get hold(): number;
+    set hold(value: number);
+    /**
+     * One of `"in"`, from the colour to a clear view, or `"out"`, from a clear view to the colour.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get direction(): FadeDirection;
+    set direction(value: FadeDirection);
+    /**
+     * `true` when the colour tints the screen rather than painting over it.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get modulate(): boolean;
+    set modulate(value: boolean);
+    /**
+     * `true` when the colour stays until the next fade.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get stay(): boolean;
+    set stay(value: boolean);
+    /**
+     * The colour: red, green, blue and alpha, `0` to `255` each.
+     *
+     * Pawn: `get_msg_arg_*(4)`
+     */
+    get color(): number[];
+    set color(value: number[]);
+}
+/**
+ * A player's view shakes - an explosion nearby.
+ *
+ * The game's `ScreenShake` message.
+ *
+ * Pawn: `register_message(get_user_msgid("ScreenShake"), ...)`
+ */
+export declare class ScreenShakeMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The shake's strength: how far the view moves, up to 16 units.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get amplitude(): number;
+    set amplitude(value: number);
+    /**
+     * The shake's duration, in seconds.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get duration(): number;
+    set duration(value: number);
+    /**
+     * The shake's frequency, in jolts a second.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get frequency(): number;
+    set frequency(value: number);
+}
+/**
  * A sound played to a player, such as a radio line.
+ *
+ * The game's `SendAudio` message.
  *
  * Pawn: `register_message(get_user_msgid("SendAudio"), ...)`
  */
@@ -993,7 +1537,26 @@ export declare class SendAudioMessage extends ClientMessage {
     set pitch(value: number);
 }
 /**
+ * The server's name a player's client shows.
+ *
+ * The game's `ServerName` message.
+ *
+ * Pawn: `register_message(get_user_msgid("ServerName"), ...)`
+ */
+export declare class ServerNameMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The server's name, as `hostname` sets it.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get serverName(): string;
+    set serverName(value: string);
+}
+/**
  * A player's field of view is set.
+ *
+ * The game's `SetFOV` message.
  *
  * Pawn: `register_message(get_user_msgid("SetFOV"), ...)`
  */
@@ -1008,7 +1571,91 @@ export declare class SetFOVMessage extends ClientMessage {
     set fov(value: number);
 }
 /**
+ * A text menu on a player's screen - the team menu without VGUI, the radio, a plugin's menu.
+ *
+ * The game's `ShowMenu` message.
+ *
+ * Pawn: `register_message(get_user_msgid("ShowMenu"), ...)`
+ */
+export declare class ShowMenuMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * `true` when more of the menu's text follows in the next message.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get more(): boolean;
+    set more(value: boolean);
+    /**
+     * The menu's text, or the game's own for it, e.g. `"#Team_Select"`.
+     *
+     * Pawn: `get_msg_arg_*(4)`
+     */
+    get text(): string;
+    set text(value: string);
+}
+/**
+ * The round clock appears on a player's HUD.
+ *
+ * The game's `ShowTimer` message.
+ *
+ * Pawn: `register_message(get_user_msgid("ShowTimer"), ...)`
+ */
+export declare class ShowTimerMessage extends ClientMessage {
+    private readonly kind;
+}
+/**
+ * The health of the player a spectator watches.
+ *
+ * The game's `SpecHealth` and `SpecHealth2` messages.
+ *
+ * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`, `register_message(get_user_msgid("SpecHealth2"), ...)`
+ */
+export declare class SpecHealthMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The health shown.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get health(): number;
+    set health(value: number);
+    /**
+     * The player watched. `SpecHealth` does not carry it: there it reads as `null`, and writing it does nothing.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get target(): Player | null;
+    set target(value: Player | null);
+}
+/**
+ * A player becomes a spectator, or stops being one, on the scoreboard.
+ *
+ * The game's `Spectator` message.
+ *
+ * Pawn: `register_message(get_user_msgid("Spectator"), ...)`
+ */
+export declare class SpectatorMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The player.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get target(): Player | null;
+    set target(value: Player | null);
+    /**
+     * `true` while the player spectates.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get spectator(): boolean;
+    set spectator(value: boolean);
+}
+/**
  * A status icon on a player's HUD - the buy zone, the bomb - is shown, flashed or hidden.
+ *
+ * The game's `StatusIcon` message.
  *
  * Pawn: `register_message(get_user_msgid("StatusIcon"), ...)`
  */
@@ -1028,9 +1675,97 @@ export declare class StatusIconMessage extends ClientMessage {
      */
     get sprite(): string;
     set sprite(value: string);
+    /**
+     * The icon's colour: red, green and blue, `0` to `255` each; empty when it is hidden.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get color(): number[];
+    set color(value: number[]);
+}
+/**
+ * The status line at the bottom of a player's screen, such as the name of the player he aims at.
+ *
+ * The game's `StatusText` message.
+ *
+ * Pawn: `register_message(get_user_msgid("StatusText"), ...)`
+ */
+export declare class StatusTextMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The status line's number, from `0`.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get line(): number;
+    set line(value: number);
+    /**
+     * The line's text, or its format, e.g. `"1 %c1: %p2"`.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get text(): string;
+    set text(value: string);
+}
+/**
+ * A value the status line shows, such as the player a player aims at.
+ *
+ * The game's `StatusValue` message.
+ *
+ * Pawn: `register_message(get_user_msgid("StatusValue"), ...)`
+ */
+export declare class StatusValueMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The value's number in the line's format: `1` a team, `2` a player, `3` health.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get slot(): number;
+    set slot(value: number);
+    /**
+     * The value.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get value(): number;
+    set value(value: number);
+}
+/**
+ * The countdown of a task on a player's HUD, such as rescuing the hostages in a career.
+ *
+ * The game's `TaskTime` message.
+ *
+ * Pawn: `register_message(get_user_msgid("TaskTime"), ...)`
+ */
+export declare class TaskTimeMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The seconds left.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get seconds(): number;
+    set seconds(value: number);
+    /**
+     * `true` while the clock runs.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get active(): boolean;
+    set active(value: boolean);
+    /**
+     * The seconds the clock takes to fade out.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get fade(): number;
+    set fade(value: number);
 }
 /**
  * A player's team on the scoreboard.
+ *
+ * The game's `TeamInfo` message.
  *
  * Pawn: `register_message(get_user_msgid("TeamInfo"), ...)`
  */
@@ -1044,15 +1779,41 @@ export declare class TeamInfoMessage extends ClientMessage {
     get target(): Player | null;
     set target(value: Player | null);
     /**
-     * The team's name, e.g. `"TERRORIST"`, `"CT"`.
+     * The team, e.g. `"TERRORIST"`, `"CT"`.
      *
      * Pawn: `get_msg_arg_*(2)`
      */
-    get team(): string;
-    set team(value: string);
+    get team(): Team;
+    set team(value: Team);
+}
+/**
+ * A team's score on the scoreboard.
+ *
+ * The game's `TeamScore` message.
+ *
+ * Pawn: `register_message(get_user_msgid("TeamScore"), ...)`
+ */
+export declare class TeamScoreMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The team, `"TERRORIST"` or `"CT"`.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get team(): Team;
+    set team(value: Team);
+    /**
+     * The rounds the team has won.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get score(): number;
+    set score(value: number);
 }
 /**
  * A text from the game - an announcement, a hint - in chat, the console or the middle of the screen.
+ *
+ * The game's `TextMsg` message.
  *
  * Pawn: `register_message(get_user_msgid("TextMsg"), ...)`
  */
@@ -1072,9 +1833,138 @@ export declare class TextMsgMessage extends ClientMessage {
      */
     get text(): string;
     set text(value: string);
+    /**
+     * The texts put into the game's text in place of `%s1`, `%s2`, ... - e.g. a player's name. Assign to change them; their number stays.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get params(): string[];
+    set params(value: string[]);
+}
+/**
+ * The speed of the train a player drives, on his HUD.
+ *
+ * The game's `Train` message.
+ *
+ * Pawn: `register_message(get_user_msgid("Train"), ...)`
+ */
+export declare class TrainMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The speed step, `0` for none.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get speed(): number;
+    set speed(value: number);
+}
+/**
+ * A tutor's message on a player's screen closes.
+ *
+ * The game's `TutorClose` message.
+ *
+ * Pawn: `register_message(get_user_msgid("TutorClose"), ...)`
+ */
+export declare class TutorCloseMessage extends ClientMessage {
+    private readonly kind;
+}
+/**
+ * A VGUI menu of the game opens on a player's screen: the team menu, the class menu, the buy menu.
+ *
+ * The game's `VGUIMenu` message.
+ *
+ * Pawn: `register_message(get_user_msgid("VGUIMenu"), ...)`
+ */
+export declare class VGUIMenuMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The menu, e.g. `"team"`, `"classT"`, `"buy"`.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get menu(): VguiMenu;
+    set menu(value: VguiMenu);
+}
+/**
+ * A player's view goes back to first person.
+ *
+ * The game's `ViewMode` message.
+ *
+ * Pawn: `register_message(get_user_msgid("ViewMode"), ...)`
+ */
+export declare class ViewModeMessage extends ClientMessage {
+    private readonly kind;
+}
+/**
+ * A weapon's description for a player's client: its ammo, its slot, its place in the slot.
+ *
+ * The game's `WeaponList` message.
+ *
+ * Pawn: `register_message(get_user_msgid("WeaponList"), ...)`
+ */
+export declare class WeaponListMessage extends ClientMessage {
+    private readonly kind;
+    /**
+     * The weapon's class name, e.g. `"weapon_ak47"`.
+     *
+     * Pawn: `get_msg_arg_*(1)`
+     */
+    get classname(): string;
+    set classname(value: string);
+    /**
+     * The index of the weapon's ammo in the game's list of kinds.
+     *
+     * Pawn: `get_msg_arg_*(2)`
+     */
+    get ammo(): number;
+    set ammo(value: number);
+    /**
+     * The most of that ammo a player carries.
+     *
+     * Pawn: `get_msg_arg_*(3)`
+     */
+    get maxAmmo(): number;
+    set maxAmmo(value: number);
+    /**
+     * The index of the weapon's second ammo, `-1` for none.
+     *
+     * Pawn: `get_msg_arg_*(4)`
+     */
+    get ammo2(): number;
+    set ammo2(value: number);
+    /**
+     * The most of the second ammo a player carries.
+     *
+     * Pawn: `get_msg_arg_*(5)`
+     */
+    get maxAmmo2(): number;
+    set maxAmmo2(value: number);
+    /**
+     * The slot the weapon is in, from `0`.
+     *
+     * Pawn: `get_msg_arg_*(6)`
+     */
+    get slot(): number;
+    set slot(value: number);
+    /**
+     * The weapon's place in the slot, from `0`.
+     *
+     * Pawn: `get_msg_arg_*(7)`
+     */
+    get position(): number;
+    set position(value: number);
+    /**
+     * The weapon, by its kind, e.g. `"ak47"`.
+     *
+     * Pawn: `get_msg_arg_*(8)`
+     */
+    get weapon(): WeaponKind;
+    set weapon(value: WeaponKind);
 }
 /**
  * A player picks up a weapon: the notice at the side of his screen.
+ *
+ * The game's `WeapPickup` message.
  *
  * Pawn: `register_message(get_user_msgid("WeapPickup"), ...)`
  */
@@ -1088,7 +1978,7 @@ export declare class WeapPickupMessage extends ClientMessage {
     get weapon(): WeaponKind;
     set weapon(value: WeaponKind);
 }
-/** Every event a server raises, by name: the short one and the Pawn one, and every message it sends. */
+/** Every event a server raises, by name. */
 export interface ServerEventMap {
     /**
      * The plugin has loaded: register commands, events and hooks here.
@@ -1097,23 +1987,11 @@ export interface ServerEventMap {
      */
     init: PluginInitEvent;
     /**
-     * The plugin has loaded: register commands, events and hooks here.
-     *
-     * Pawn: `plugin_init`
-     */
-    plugin_init: PluginInitEvent;
-    /**
      * An admin paused this plugin.
      *
      * Pawn: `plugin_pause`
      */
     pause: PluginPauseEvent;
-    /**
-     * An admin paused this plugin.
-     *
-     * Pawn: `plugin_pause`
-     */
-    plugin_pause: PluginPauseEvent;
     /**
      * An admin resumed this plugin.
      *
@@ -1121,35 +1999,17 @@ export interface ServerEventMap {
      */
     unpause: PluginUnpauseEvent;
     /**
-     * An admin resumed this plugin.
-     *
-     * Pawn: `plugin_unpause`
-     */
-    plugin_unpause: PluginUnpauseEvent;
-    /**
      * The server is about to change the map.
      *
      * Pawn: `server_changelevel`
      */
-    changelevel: ServerChangelevelEvent;
-    /**
-     * The server is about to change the map.
-     *
-     * Pawn: `server_changelevel`
-     */
-    server_changelevel: ServerChangelevelEvent;
+    changeLevel: ServerChangelevelEvent;
     /**
      * Every config has been read and every plugin is loaded: the moment to read cvars and to create forwards other plugins listen to.
      *
      * Pawn: `plugin_cfg`
      */
-    cfg: PluginCfgEvent;
-    /**
-     * Every config has been read and every plugin is loaded: the moment to read cvars and to create forwards other plugins listen to.
-     *
-     * Pawn: `plugin_cfg`
-     */
-    plugin_cfg: PluginCfgEvent;
+    pluginsLoaded: PluginCfgEvent;
     /**
      * The map is ending or the server is shutting down: save what has to survive.
      *
@@ -1157,23 +2017,11 @@ export interface ServerEventMap {
      */
     end: PluginEndEvent;
     /**
-     * The map is ending or the server is shutting down: save what has to survive.
-     *
-     * Pawn: `plugin_end`
-     */
-    plugin_end: PluginEndEvent;
-    /**
      * Called when a message is about to be logged.
      *
      * Pawn: `plugin_log`
      */
     log: PluginLogEvent;
-    /**
-     * Called when a message is about to be logged.
-     *
-     * Pawn: `plugin_log`
-     */
-    plugin_log: PluginLogEvent;
     /**
      * The map is loading: the only moment models, sounds and sprites can be precached.
      *
@@ -1181,71 +2029,23 @@ export interface ServerEventMap {
      */
     precache: PluginPrecacheEvent;
     /**
-     * The map is loading: the only moment models, sounds and sprites can be precached.
-     *
-     * Pawn: `plugin_precache`
-     */
-    plugin_precache: PluginPrecacheEvent;
-    /**
-     * A player changed his info, usually the name.
-     *
-     * Pawn: `client_infochanged`
-     */
-    infochanged: ClientInfochangedEvent;
-    /**
-     * A player changed his info, usually the name.
-     *
-     * Pawn: `client_infochanged`
-     */
-    client_infochanged: ClientInfochangedEvent;
-    /**
-     * A player started connecting. The player is not in the game yet: show him anything after `"putinserver"`.
+     * A player started connecting. The player is not in the game yet: show him anything after `"putInServer"`.
      *
      * Pawn: `client_connect`
      */
     connect: ClientConnectEvent;
     /**
-     * A player started connecting. The player is not in the game yet: show him anything after `"putinserver"`.
-     *
-     * Pawn: `client_connect`
-     */
-    client_connect: ClientConnectEvent;
-    /**
      * A player started connecting, with a name and an address: the place to turn him away.
      *
      * Pawn: `client_connectex`
      */
-    connectex: ClientConnectexEvent;
+    connectAttempt: ClientConnectexEvent;
     /**
-     * A player started connecting, with a name and an address: the place to turn him away.
-     *
-     * Pawn: `client_connectex`
-     */
-    client_connectex: ClientConnectexEvent;
-    /**
-     * A player's SteamID is known. May come before or after `"putinserver"`.
+     * A player's SteamID is known. May come before or after `"putInServer"`.
      *
      * Pawn: `client_authorized`
      */
     authorized: ClientAuthorizedEvent;
-    /**
-     * A player's SteamID is known. May come before or after `"putinserver"`.
-     *
-     * Pawn: `client_authorized`
-     */
-    client_authorized: ClientAuthorizedEvent;
-    /**
-     * Old form of `"disconnected"` that misses some cases: use `"disconnected"`.
-     *
-     * Pawn: `client_disconnect`
-     */
-    disconnect: ClientDisconnectEvent;
-    /**
-     * Old form of `"disconnected"` that misses some cases: use `"disconnected"`.
-     *
-     * Pawn: `client_disconnect`
-     */
-    client_disconnect: ClientDisconnectEvent;
     /**
      * A player left the server: quit, timed out or was kicked.
      *
@@ -1253,23 +2053,11 @@ export interface ServerEventMap {
      */
     disconnected: ClientDisconnectedEvent;
     /**
-     * A player left the server: quit, timed out or was kicked.
-     *
-     * Pawn: `client_disconnected`
-     */
-    client_disconnected: ClientDisconnectedEvent;
-    /**
      * A player's slot is being freed, after `"disconnected"`.
      *
      * Pawn: `client_remove`
      */
     remove: ClientRemoveEvent;
-    /**
-     * A player's slot is being freed, after `"disconnected"`.
-     *
-     * Pawn: `client_remove`
-     */
-    client_remove: ClientRemoveEvent;
     /**
      * A player sent a console command. For one command, `server.addCommand("name", handler)` is simpler.
      *
@@ -1277,23 +2065,11 @@ export interface ServerEventMap {
      */
     command: ClientCommandEvent;
     /**
-     * A player sent a console command. For one command, `server.addCommand("name", handler)` is simpler.
-     *
-     * Pawn: `client_command`
-     */
-    client_command: ClientCommandEvent;
-    /**
      * A player has joined and is in the game: the moment to greet him.
      *
      * Pawn: `client_putinserver`
      */
-    putinserver: ClientPutinserverEvent;
-    /**
-     * A player has joined and is in the game: the moment to greet him.
-     *
-     * Pawn: `client_putinserver`
-     */
-    client_putinserver: ClientPutinserverEvent;
+    putInServer: ClientPutinserverEvent;
     /**
      * Called when an inconsistent file is encountered by the engine.
      *
@@ -1301,65 +2077,29 @@ export interface ServerEventMap {
      */
     inconsistentFile: InconsistentFileEvent;
     /**
-     * Called when an inconsistent file is encountered by the engine.
-     *
-     * Pawn: `inconsistent_file`
-     */
-    inconsistent_file: InconsistentFileEvent;
-    /**
      * Allows plugins to declare module dependencies using require_module()
      *
      * Pawn: `plugin_modules`
      */
     modules: PluginModulesEvent;
     /**
-     * Allows plugins to declare module dependencies using require_module()
-     *
-     * Pawn: `plugin_modules`
-     */
-    plugin_modules: PluginModulesEvent;
-    /**
      * Called when the map has loaded, and all configs are done executing. This includes servercfgfile (server.cfg), amxx.cfg, plugin's config, and per-map config.
      *
      * Pawn: `OnConfigsExecuted`
      */
-    OnConfigsExecuted: OnConfigsExecutedEvent;
+    configsExecuted: OnConfigsExecutedEvent;
     /**
      * Called when the map has loaded, right after plugin_cfg() but any time before OnConfigsExecuted. It's called after amxx.cfg and all AutoExecConfig() exec commands have been added to the server command buffer.
      *
      * Pawn: `OnAutoConfigsBuffered`
      */
-    OnAutoConfigsBuffered: OnAutoConfigsBufferedEvent;
+    configsQueued: OnAutoConfigsBufferedEvent;
     /**
      * Called when CS internally fires a command to a player.
      *
      * Pawn: `CS_InternalCommand`
      */
-    CS_InternalCommand: CS_InternalCommandEvent;
-    /**
-     * Called when a client attempts to purchase an item.
-     *
-     * Pawn: `CS_OnBuyAttempt`
-     */
-    CS_OnBuyAttempt: CS_OnBuyAttemptEvent;
-    /**
-     * Called when a client purchases an item.
-     *
-     * Pawn: `CS_OnBuy`
-     */
-    CS_OnBuy: CS_OnBuyEvent;
-    /**
-     * Two entities touched.
-     *
-     * Pawn: `pfn_touch`
-     */
-    pfnTouch: PfnTouchEvent;
-    /**
-     * Two entities touched.
-     *
-     * Pawn: `pfn_touch`
-     */
-    pfn_touch: PfnTouchEvent;
+    internalCommand: CS_InternalCommandEvent;
     /**
      * A server frame, hundreds of times a second. Keep the listener tiny, or use `setInterval`.
      *
@@ -1367,47 +2107,11 @@ export interface ServerEventMap {
      */
     frame: ServerFrameEvent;
     /**
-     * A server frame, hundreds of times a second. Keep the listener tiny, or use `setInterval`.
-     *
-     * Pawn: `server_frame`
-     */
-    server_frame: ServerFrameEvent;
-    /**
      * A player typed `"kill"` in the console to kill himself.
      *
      * Pawn: `client_kill`
      */
-    kill: ClientKillEvent;
-    /**
-     * A player typed `"kill"` in the console to kill himself.
-     *
-     * Pawn: `client_kill`
-     */
-    client_kill: ClientKillEvent;
-    /**
-     * Called at the start of each client think.
-     *
-     * Pawn: `client_PreThink`
-     */
-    PreThink: Client_PreThinkEvent;
-    /**
-     * Called at the start of each client think.
-     *
-     * Pawn: `client_PreThink`
-     */
-    client_PreThink: Client_PreThinkEvent;
-    /**
-     * Called after each client think.
-     *
-     * Pawn: `client_PostThink`
-     */
-    PostThink: Client_PostThinkEvent;
-    /**
-     * Called after each client think.
-     *
-     * Pawn: `client_PostThink`
-     */
-    client_PostThink: Client_PostThinkEvent;
+    suicide: ClientKillEvent;
     /**
      * A player sent an impulse: `100` is the flashlight, `201` the spray.
      *
@@ -1415,566 +2119,667 @@ export interface ServerEventMap {
      */
     impulse: ClientImpulseEvent;
     /**
-     * A player sent an impulse: `100` is the flashlight, `201` the spray.
-     *
-     * Pawn: `client_impulse`
-     */
-    client_impulse: ClientImpulseEvent;
-    /**
      * Called for CmdStart() on a client.
      *
      * Pawn: `client_cmdStart`
      */
     cmdStart: ClientCmdStartEvent;
     /**
-     * Called for CmdStart() on a client.
-     *
-     * Pawn: `client_cmdStart`
-     */
-    client_cmdStart: ClientCmdStartEvent;
-    /**
-     * An entity thinks: its scheduled update has come.
+     * An entity thinks: its scheduled update has come. Any entity's; one class's is `game.addEventListener("think", listener, { classname })`.
      *
      * Pawn: `pfn_think`
      */
-    pfnThink: PfnThinkEvent;
-    /**
-     * An entity thinks: its scheduled update has come.
-     *
-     * Pawn: `pfn_think`
-     */
-    pfn_think: PfnThinkEvent;
+    entityThink: PfnThinkEvent;
     /**
      * The engine plays an event to the clients: a shot, a weapon's sound and effects.
      *
      * Pawn: `pfn_playbackevent`
      */
-    pfnPlaybackevent: PfnPlaybackeventEvent;
-    /**
-     * The engine plays an event to the clients: a shot, a weapon's sound and effects.
-     *
-     * Pawn: `pfn_playbackevent`
-     */
-    pfn_playbackevent: PfnPlaybackeventEvent;
+    playbackEvent: PfnPlaybackeventEvent;
     /**
      * Called when a keyvalue pair is sent to an entity.
      *
      * Pawn: `pfn_keyvalue`
      */
-    pfnKeyvalue: PfnKeyvalueEvent;
+    keyValue: PfnKeyvalueEvent;
     /**
-     * Called when a keyvalue pair is sent to an entity.
-     *
-     * Pawn: `pfn_keyvalue`
-     */
-    pfn_keyvalue: PfnKeyvalueEvent;
-    /**
-     * An entity is being spawned on the map.
+     * An entity is being spawned on the map, the map's own too as it loads. A player's spawn is `game.addEventListener("spawn", listener)`.
      *
      * Pawn: `pfn_spawn`
      */
-    pfnSpawn: PfnSpawnEvent;
-    /**
-     * An entity is being spawned on the map.
-     *
-     * Pawn: `pfn_spawn`
-     */
-    pfn_spawn: PfnSpawnEvent;
+    entitySpawn: PfnSpawnEvent;
     /** A field plugins added to `Player` changed on a player; `{ field: "spawnProtected" }` hears one field. */
-    playerchange: PlayerChangeEvent;
+    playerChange: PlayerChangeEvent;
+}
+/** Every message the server sends its clients, by the name server.addMessageListener takes. */
+export interface ServerMessageMap {
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A player's HUD stops showing the round's advertisement.
+     *
+     * The game's `ADStop` message.
      *
      * Pawn: `register_message(get_user_msgid("ADStop"), ...)`
      */
-    "message:ADStop": ClientMessage;
+    adStop: ADStopMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * Whether a player may pick Spectate in the team menu.
+     *
+     * The game's `AllowSpec` message.
      *
      * Pawn: `register_message(get_user_msgid("AllowSpec"), ...)`
      */
-    "message:AllowSpec": ClientMessage;
+    allowSpectate: AllowSpecMessage;
     /**
      * A player picks up ammo: the notice at the side of his screen.
      *
+     * The game's `AmmoPickup` message.
+     *
      * Pawn: `register_message(get_user_msgid("AmmoPickup"), ...)`
      */
-    "message:AmmoPickup": AmmoPickupMessage;
+    ammoPickup: AmmoPickupMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A player's reserve ammo of one kind on his HUD changes.
+     *
+     * The game's `AmmoX` message.
      *
      * Pawn: `register_message(get_user_msgid("AmmoX"), ...)`
      */
-    "message:AmmoX": ClientMessage;
+    ammo: AmmoXMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The armour icon on a player's HUD: a vest, or a vest and a helmet.
+     *
+     * The game's `ArmorType` message.
      *
      * Pawn: `register_message(get_user_msgid("ArmorType"), ...)`
      */
-    "message:ArmorType": ClientMessage;
+    armorType: ArmorTypeMessage;
     /**
-     * The progress bar in the middle of a player's screen is shown or hidden.
+     * The progress bar in the middle of a player's screen is shown or hidden, from empty or part of the way full.
      *
-     * Pawn: `register_message(get_user_msgid("BarTime"), ...)`
-     */
-    "message:BarTime": BarTimeMessage;
-    /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The game's `BarTime` and `BarTime2` messages.
      *
-     * Pawn: `register_message(get_user_msgid("BarTime2"), ...)`
+     * Pawn: `register_message(get_user_msgid("BarTime"), ...)`, `register_message(get_user_msgid("BarTime2"), ...)`
      */
-    "message:BarTime2": ClientMessage;
+    progressBar: BarTimeMessage;
     /**
      * A player's armour on his HUD changes.
      *
+     * The game's `Battery` message.
+     *
      * Pawn: `register_message(get_user_msgid("Battery"), ...)`
      */
-    "message:Battery": BatteryMessage;
+    armor: BatteryMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A player's money on his HUD blinks: he cannot afford what he tried to buy.
+     *
+     * The game's `BlinkAcct` message.
      *
      * Pawn: `register_message(get_user_msgid("BlinkAcct"), ...)`
      */
-    "message:BlinkAcct": ClientMessage;
+    moneyBlink: BlinkAcctMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The bomb on the terrorists' radar: dropped or planted.
+     *
+     * The game's `BombDrop` message.
      *
      * Pawn: `register_message(get_user_msgid("BombDrop"), ...)`
      */
-    "message:BombDrop": ClientMessage;
+    bombDrop: BombDropMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The bomb is picked up: it leaves the terrorists' radar.
+     *
+     * The game's `BombPickup` message.
      *
      * Pawn: `register_message(get_user_msgid("BombPickup"), ...)`
      */
-    "message:BombPickup": ClientMessage;
+    bombPickup: BombPickupMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The progress bar a player's client shows while the bots learn a new map. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `BotProgress` message.
      *
      * Pawn: `register_message(get_user_msgid("BotProgress"), ...)`
      */
-    "message:BotProgress": ClientMessage;
+    botProgress: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The voice icon over a bot who talks on the radio.
+     *
+     * The game's `BotVoice` message.
      *
      * Pawn: `register_message(get_user_msgid("BotVoice"), ...)`
      */
-    "message:BotVoice": ClientMessage;
+    botVoice: BotVoiceMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A spent shell a weapon throws out, for the clients to draw. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `Brass` message.
      *
      * Pawn: `register_message(get_user_msgid("Brass"), ...)`
      */
-    "message:Brass": ClientMessage;
+    shellCasing: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A player's buy menu is closed.
+     *
+     * The game's `BuyClose` message.
      *
      * Pawn: `register_message(get_user_msgid("BuyClose"), ...)`
      */
-    "message:BuyClose": ClientMessage;
+    closeBuyMenu: BuyCloseMessage;
     /**
      * A dead player's body is left on the ground for the clients to draw.
      *
+     * The game's `ClCorpse` message.
+     *
      * Pawn: `register_message(get_user_msgid("ClCorpse"), ...)`
      */
-    "message:ClCorpse": ClCorpseMessage;
+    corpse: ClCorpseMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * Counter-Strike's own crosshair on a player's screen is shown or hidden.
+     *
+     * The game's `Crosshair` message.
      *
      * Pawn: `register_message(get_user_msgid("Crosshair"), ...)`
      */
-    "message:Crosshair": ClientMessage;
+    crosshair: CrosshairMessage;
     /**
      * The weapon in a player's hands and its clip on his HUD.
      *
+     * The game's `CurWeapon` message.
+     *
      * Pawn: `register_message(get_user_msgid("CurWeapon"), ...)`
      */
-    "message:CurWeapon": CurWeaponMessage;
+    currentWeapon: CurWeaponMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A step of Condition Zero's career, its single-player campaign. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `CZCareer` message.
      *
      * Pawn: `register_message(get_user_msgid("CZCareer"), ...)`
      */
-    "message:CZCareer": ClientMessage;
+    czCareer: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * Condition Zero's career on a player's HUD. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `CZCareerHUD` message.
      *
      * Pawn: `register_message(get_user_msgid("CZCareerHUD"), ...)`
      */
-    "message:CZCareerHUD": ClientMessage;
+    czCareerHud: ClientMessage;
     /**
      * A player is shown the damage he took: the red marks at the side of his screen.
      *
+     * The game's `Damage` message.
+     *
      * Pawn: `register_message(get_user_msgid("Damage"), ...)`
      */
-    "message:Damage": DamageMessage;
+    damage: DamageMessage;
     /**
      * A kill in the top right corner of every screen.
      *
+     * The game's `DeathMsg` message.
+     *
      * Pawn: `register_message(get_user_msgid("DeathMsg"), ...)`
      */
-    "message:DeathMsg": DeathMsgMessage;
+    death: DeathMsgMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The flashlight icon on a player's HUD: on or off, and its battery.
+     *
+     * The game's `Flashlight` message.
      *
      * Pawn: `register_message(get_user_msgid("Flashlight"), ...)`
      */
-    "message:Flashlight": ClientMessage;
+    flashlight: FlashlightMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The flashlight's battery on a player's HUD changes.
+     *
+     * The game's `FlashBat` message.
      *
      * Pawn: `register_message(get_user_msgid("FlashBat"), ...)`
      */
-    "message:FlashBat": ClientMessage;
+    flashlightBattery: FlashBatMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The fog on a player's screen: its colour and density. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `Fog` message.
      *
      * Pawn: `register_message(get_user_msgid("Fog"), ...)`
      */
-    "message:Fog": ClientMessage;
+    fog: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The views a dead player may watch the game in, as `mp_forcecamera` and `mp_forcechasecam` allow. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `ForceCam` message.
      *
      * Pawn: `register_message(get_user_msgid("ForceCam"), ...)`
      */
-    "message:ForceCam": ClientMessage;
+    forceCamera: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * Whether the game is played in teams, for a player's client. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `GameMode` message.
      *
      * Pawn: `register_message(get_user_msgid("GameMode"), ...)`
      */
-    "message:GameMode": ClientMessage;
+    gameMode: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The game's title on a player's screen when he enters the game. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `GameTitle` message.
      *
      * Pawn: `register_message(get_user_msgid("GameTitle"), ...)`
      */
-    "message:GameTitle": ClientMessage;
+    gameTitle: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The Geiger counter's clicks a player hears near radiation.
+     *
+     * The game's `Geiger` message.
      *
      * Pawn: `register_message(get_user_msgid("Geiger"), ...)`
      */
-    "message:Geiger": ClientMessage;
+    geiger: GeigerMessage;
     /**
      * A player's health on his HUD changes.
      *
+     * The game's `Health` message.
+     *
      * Pawn: `register_message(get_user_msgid("Health"), ...)`
      */
-    "message:Health": HealthMessage;
+    health: HealthMessage;
     /**
      * The parts of a player's HUD that are hidden change.
      *
+     * The game's `HideWeapon` message.
+     *
      * Pawn: `register_message(get_user_msgid("HideWeapon"), ...)`
      */
-    "message:HideWeapon": HideWeaponMessage;
+    hideWeapon: HideWeaponMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A note to the HLTV proxies, such as a new round's start. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `HLTV` message.
      *
      * Pawn: `register_message(get_user_msgid("HLTV"), ...)`
      */
-    "message:HLTV": ClientMessage;
+    hltv: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A hostage is killed: it leaves the counter-terrorists' radar.
+     *
+     * The game's `HostageK` message.
      *
      * Pawn: `register_message(get_user_msgid("HostageK"), ...)`
      */
-    "message:HostageK": ClientMessage;
+    hostageKilled: HostageKMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A hostage on the counter-terrorists' radar.
+     *
+     * The game's `HostagePos` message.
      *
      * Pawn: `register_message(get_user_msgid("HostagePos"), ...)`
      */
-    "message:HostagePos": ClientMessage;
+    hostagePosition: HostagePosMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A hint in the middle of a player's screen.
      *
-     * Pawn: `register_message(get_user_msgid("HudText"), ...)`
-     */
-    "message:HudText": ClientMessage;
-    /**
-     * A hint in the middle of a player's screen, from the game's own texts.
+     * The game's `HudText`, `HudTextArgs` and `HudTextPro` messages.
      *
-     * Pawn: `register_message(get_user_msgid("HudTextArgs"), ...)`
+     * Pawn: `register_message(get_user_msgid("HudText"), ...)`, `register_message(get_user_msgid("HudTextArgs"), ...)`, `register_message(get_user_msgid("HudTextPro"), ...)`
      */
-    "message:HudTextArgs": HudTextArgsMessage;
+    hint: HudTextMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A player's HUD is set up, when he enters the game.
      *
-     * Pawn: `register_message(get_user_msgid("HudTextPro"), ...)`
-     */
-    "message:HudTextPro": ClientMessage;
-    /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The game's `InitHUD` message.
      *
      * Pawn: `register_message(get_user_msgid("InitHUD"), ...)`
      */
-    "message:InitHUD": ClientMessage;
+    initHud: InitHUDMessage;
     /**
      * A player picks up an item: the notice at the side of his screen.
      *
+     * The game's `ItemPickup` message.
+     *
      * Pawn: `register_message(get_user_msgid("ItemPickup"), ...)`
      */
-    "message:ItemPickup": ItemPickupMessage;
+    itemPickup: ItemPickupMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The night vision and the defuse kit a player has, for his HUD.
+     *
+     * The game's `ItemStatus` message.
      *
      * Pawn: `register_message(get_user_msgid("ItemStatus"), ...)`
      */
-    "message:ItemStatus": ClientMessage;
+    itemStatus: ItemStatusMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The place on the map a player is in, as the radio names it.
+     *
+     * The game's `Location` message.
      *
      * Pawn: `register_message(get_user_msgid("Location"), ...)`
      */
-    "message:Location": ClientMessage;
+    location: LocationMessage;
     /**
      * A player's money on his HUD changes.
      *
+     * The game's `Money` message.
+     *
      * Pawn: `register_message(get_user_msgid("Money"), ...)`
      */
-    "message:Money": MoneyMessage;
+    money: MoneyMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A part of the message of the day, the window a joining player sees.
+     *
+     * The game's `MOTD` message.
      *
      * Pawn: `register_message(get_user_msgid("MOTD"), ...)`
      */
-    "message:MOTD": ClientMessage;
+    motd: MOTDMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A player's night vision is turned on or off.
+     *
+     * The game's `NVGToggle` message.
      *
      * Pawn: `register_message(get_user_msgid("NVGToggle"), ...)`
      */
-    "message:NVGToggle": ClientMessage;
+    nightVision: NVGToggleMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A teammate on a player's radar.
+     *
+     * The game's `Radar` message.
      *
      * Pawn: `register_message(get_user_msgid("Radar"), ...)`
      */
-    "message:Radar": ClientMessage;
+    radar: RadarMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The weather on the map, rain or snow, for a player's client. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `ReceiveW` message.
      *
      * Pawn: `register_message(get_user_msgid("ReceiveW"), ...)`
      */
-    "message:ReceiveW": ClientMessage;
+    weather: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The sound of a weapon reloaded nearby, for a player's client. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `ReloadSound` message.
      *
      * Pawn: `register_message(get_user_msgid("ReloadSound"), ...)`
      */
-    "message:ReloadSound": ClientMessage;
+    reloadSound: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The game asks a player's client for its state, for the voice.
+     *
+     * The game's `ReqState` message.
      *
      * Pawn: `register_message(get_user_msgid("ReqState"), ...)`
      */
-    "message:ReqState": ClientMessage;
+    requestState: ReqStateMessage;
     /**
      * A player's HUD is reset, at his spawn.
      *
+     * The game's `ResetHUD` message.
+     *
      * Pawn: `register_message(get_user_msgid("ResetHUD"), ...)`
      */
-    "message:ResetHUD": ResetHUDMessage;
+    resetHud: ResetHUDMessage;
     /**
      * The round clock at the top of a player's HUD is set.
      *
+     * The game's `RoundTime` message.
+     *
      * Pawn: `register_message(get_user_msgid("RoundTime"), ...)`
      */
-    "message:RoundTime": RoundTimeMessage;
+    roundTime: RoundTimeMessage;
     /**
      * A chat line.
      *
+     * The game's `SayText` message.
+     *
      * Pawn: `register_message(get_user_msgid("SayText"), ...)`
      */
-    "message:SayText": SayTextMessage;
+    chat: SayTextMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The scenario icon on a player's HUD, such as the bomb's or a hostage's.
+     *
+     * The game's `Scenario` message.
      *
      * Pawn: `register_message(get_user_msgid("Scenario"), ...)`
      */
-    "message:Scenario": ClientMessage;
+    scenarioIcon: ScenarioMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The marks the scoreboard shows beside a player: dead, the bomb, the VIP.
+     *
+     * The game's `ScoreAttrib` message.
      *
      * Pawn: `register_message(get_user_msgid("ScoreAttrib"), ...)`
      */
-    "message:ScoreAttrib": ClientMessage;
+    scoreAttribute: ScoreAttribMessage;
     /**
      * A player's row on the scoreboard.
      *
+     * The game's `ScoreInfo` message.
+     *
      * Pawn: `register_message(get_user_msgid("ScoreInfo"), ...)`
      */
-    "message:ScoreInfo": ScoreInfoMessage;
+    score: ScoreInfoMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A player's screen is coloured, fading in or out - a flashbang, a fade to black.
+     *
+     * The game's `ScreenFade` message.
      *
      * Pawn: `register_message(get_user_msgid("ScreenFade"), ...)`
      */
-    "message:ScreenFade": ClientMessage;
+    screenFade: ScreenFadeMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A player's view shakes - an explosion nearby.
+     *
+     * The game's `ScreenShake` message.
      *
      * Pawn: `register_message(get_user_msgid("ScreenShake"), ...)`
      */
-    "message:ScreenShake": ClientMessage;
+    screenShake: ScreenShakeMessage;
     /**
      * A sound played to a player, such as a radio line.
      *
+     * The game's `SendAudio` message.
+     *
      * Pawn: `register_message(get_user_msgid("SendAudio"), ...)`
      */
-    "message:SendAudio": SendAudioMessage;
+    sound: SendAudioMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The server's name a player's client shows.
+     *
+     * The game's `ServerName` message.
      *
      * Pawn: `register_message(get_user_msgid("ServerName"), ...)`
      */
-    "message:ServerName": ClientMessage;
+    serverName: ServerNameMessage;
     /**
      * A player's field of view is set.
      *
+     * The game's `SetFOV` message.
+     *
      * Pawn: `register_message(get_user_msgid("SetFOV"), ...)`
      */
-    "message:SetFOV": SetFOVMessage;
+    fov: SetFOVMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The sprite a player's client draws the players' shadows with. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `ShadowIdx` message.
      *
      * Pawn: `register_message(get_user_msgid("ShadowIdx"), ...)`
      */
-    "message:ShadowIdx": ClientMessage;
+    shadow: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A text menu on a player's screen - the team menu without VGUI, the radio, a plugin's menu.
+     *
+     * The game's `ShowMenu` message.
      *
      * Pawn: `register_message(get_user_msgid("ShowMenu"), ...)`
      */
-    "message:ShowMenu": ClientMessage;
+    menu: ShowMenuMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The round clock appears on a player's HUD.
+     *
+     * The game's `ShowTimer` message.
      *
      * Pawn: `register_message(get_user_msgid("ShowTimer"), ...)`
      */
-    "message:ShowTimer": ClientMessage;
+    showTimer: ShowTimerMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The health of the player a spectator watches.
      *
-     * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`
-     */
-    "message:SpecHealth": ClientMessage;
-    /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The game's `SpecHealth` and `SpecHealth2` messages.
      *
-     * Pawn: `register_message(get_user_msgid("SpecHealth2"), ...)`
+     * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`, `register_message(get_user_msgid("SpecHealth2"), ...)`
      */
-    "message:SpecHealth2": ClientMessage;
+    spectatedHealth: SpecHealthMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A player becomes a spectator, or stops being one, on the scoreboard.
+     *
+     * The game's `Spectator` message.
      *
      * Pawn: `register_message(get_user_msgid("Spectator"), ...)`
      */
-    "message:Spectator": ClientMessage;
+    spectator: SpectatorMessage;
     /**
      * A status icon on a player's HUD - the buy zone, the bomb - is shown, flashed or hidden.
      *
+     * The game's `StatusIcon` message.
+     *
      * Pawn: `register_message(get_user_msgid("StatusIcon"), ...)`
      */
-    "message:StatusIcon": StatusIconMessage;
+    statusIcon: StatusIconMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The status line at the bottom of a player's screen, such as the name of the player he aims at.
+     *
+     * The game's `StatusText` message.
      *
      * Pawn: `register_message(get_user_msgid("StatusText"), ...)`
      */
-    "message:StatusText": ClientMessage;
+    statusText: StatusTextMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A value the status line shows, such as the player a player aims at.
+     *
+     * The game's `StatusValue` message.
      *
      * Pawn: `register_message(get_user_msgid("StatusValue"), ...)`
      */
-    "message:StatusValue": ClientMessage;
+    statusValue: StatusValueMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The countdown of a task on a player's HUD, such as rescuing the hostages in a career.
+     *
+     * The game's `TaskTime` message.
      *
      * Pawn: `register_message(get_user_msgid("TaskTime"), ...)`
      */
-    "message:TaskTime": ClientMessage;
+    taskTime: TaskTimeMessage;
     /**
      * A player's team on the scoreboard.
      *
+     * The game's `TeamInfo` message.
+     *
      * Pawn: `register_message(get_user_msgid("TeamInfo"), ...)`
      */
-    "message:TeamInfo": TeamInfoMessage;
+    team: TeamInfoMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A team's score on the scoreboard.
+     *
+     * The game's `TeamScore` message.
      *
      * Pawn: `register_message(get_user_msgid("TeamScore"), ...)`
      */
-    "message:TeamScore": ClientMessage;
+    teamScore: TeamScoreMessage;
     /**
      * A text from the game - an announcement, a hint - in chat, the console or the middle of the screen.
      *
+     * The game's `TextMsg` message.
+     *
      * Pawn: `register_message(get_user_msgid("TextMsg"), ...)`
      */
-    "message:TextMsg": TextMsgMessage;
+    text: TextMsgMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The speed of the train a player drives, on his HUD.
+     *
+     * The game's `Train` message.
      *
      * Pawn: `register_message(get_user_msgid("Train"), ...)`
      */
-    "message:Train": ClientMessage;
+    train: TrainMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A tutor's message on a player's screen closes.
+     *
+     * The game's `TutorClose` message.
      *
      * Pawn: `register_message(get_user_msgid("TutorClose"), ...)`
      */
-    "message:TutorClose": ClientMessage;
+    tutorClose: TutorCloseMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A tutor's pointer on a player's screen, at a thing in the world. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `TutorLine` message.
      *
      * Pawn: `register_message(get_user_msgid("TutorLine"), ...)`
      */
-    "message:TutorLine": ClientMessage;
+    tutorLine: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The tutor's state on a player's client. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `TutorState` message.
      *
      * Pawn: `register_message(get_user_msgid("TutorState"), ...)`
      */
-    "message:TutorState": ClientMessage;
+    tutorState: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A tutor's message on a player's screen. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `TutorText` message.
      *
      * Pawn: `register_message(get_user_msgid("TutorText"), ...)`
      */
-    "message:TutorText": ClientMessage;
+    tutorText: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A VGUI menu of the game opens on a player's screen: the team menu, the class menu, the buy menu.
+     *
+     * The game's `VGUIMenu` message.
      *
      * Pawn: `register_message(get_user_msgid("VGUIMenu"), ...)`
      */
-    "message:VGUIMenu": ClientMessage;
+    vguiMenu: VGUIMenuMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A player's view goes back to first person.
+     *
+     * The game's `ViewMode` message.
      *
      * Pawn: `register_message(get_user_msgid("ViewMode"), ...)`
      */
-    "message:ViewMode": ClientMessage;
+    viewMode: ViewModeMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * The players a player hears on the voice chat, and the ones he has muted. Its arguments are read by place, through `event.args`.
+     *
+     * The game's `VoiceMask` message.
      *
      * Pawn: `register_message(get_user_msgid("VoiceMask"), ...)`
      */
-    "message:VoiceMask": ClientMessage;
+    voiceMask: ClientMessage;
     /**
-     * A message the server sends its clients; its arguments are `event.args`.
+     * A weapon's description for a player's client: its ammo, its slot, its place in the slot.
+     *
+     * The game's `WeaponList` message.
      *
      * Pawn: `register_message(get_user_msgid("WeaponList"), ...)`
      */
-    "message:WeaponList": ClientMessage;
+    weaponList: WeaponListMessage;
     /**
      * A player picks up a weapon: the notice at the side of his screen.
      *
+     * The game's `WeapPickup` message.
+     *
      * Pawn: `register_message(get_user_msgid("WeapPickup"), ...)`
      */
-    "message:WeapPickup": WeapPickupMessage;
+    weaponPickup: WeapPickupMessage;
 }
+/** The game's names of the messages a name server.addMessageListener takes hears; a name it does not know as it is. */
+export declare function protocolMessageNames(name: string): string[];
 /** Adds a listener for the event E - server.addEventListener's hood. */
 export declare function addServerListener<E>(listener: (event: E) => void): void;
 /** Takes a listener off again - server.removeEventListener's hood. */

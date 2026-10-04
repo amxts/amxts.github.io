@@ -20,6 +20,8 @@ export declare const log: {
 };
 /** Seconds since `started` (a `performance.now()`), as a report shows them: `3.1s`. */
 export declare function since(started: number): string;
+/** Whether a line is rewritten in place: a terminal, not CI's log. */
+export declare const live: boolean;
 /**
  * A step that takes a while, said as it starts - `◇ compiling hello` - and
  * ended with the line that says it is done, or with none when an error says

@@ -71,23 +71,27 @@ export declare function compileToMachineCode(plugin: Plugin, wasm: string, nativ
 export declare function writeInclude(output: string, natives: PluginNative[]): void;
 /**
  * The first half of compilePlugin: the plugin's .ts to `wasm`, ready for
- * wamrc. Tests run the result as it is; with `names` it keeps its function
- * names, so a test can see what Asyncify instrumented. With `natives`, the
- * plugin's `export function`s become natives, listed there.
+ * wamrc, with its map (scripts/source-map.ts). Tests run the result as it is;
+ * with `names` it keeps its function names, so a test can see what Asyncify
+ * instrumented. With `natives`, the plugin's `export function`s become
+ * natives, listed there.
  */
 export declare function compileToWasm(plugin: Pick<Plugin, 'source' | 'root' | 'quick'>, wasm: string, names?: boolean, natives?: PluginNative[]): Promise<string | null>;
 /**
- * Asyncify, so that a coroutine can park in co_suspend and be rewound later.
+ * The last transform of a compile: Binaryen's work after asc's own, on the
+ * module asc is about to write - a quick build's optimisation at `level`,
+ * and Asyncify for a plugin whose coroutines can park. It runs there rather
+ * than on the written binary so that the source map asc writes beside it is
+ * of the code that runs: Binaryen reads a binary without its map. asc has no
+ * hook after its optimiser, so this wraps the module's emitBinary, which asc
+ * calls once to write the module. `done` gets the functions' names, by wasm
+ * index, as they are written.
  *
- * What to instrument is Binaryen's own call graph from that one import: the
- * async function bodies, __await, and whatever calls them directly. Indirect
- * calls are left out (asyncify-ignore-indirect), and that is exact rather
- * than a guess: an async function is always entered by the host - its
- * prologue asks co_spawn to call it - so no `await` is ever reached through
- * a function table, and a listener that is async returns to its caller at its
- * first `await` like any other call. Nothing can be missing from the list,
- * which is the failure that hangs rather than traps.
+ * A plugin that makes a promise but was compiled without the scheduler's
+ * exports is compiled again (compileToWasm), so nothing is done for it.
  */
-export declare function asyncify(wasm: Uint8Array, names?: boolean, level?: number): Uint8Array;
+export declare function finishing(hoodExports: string, level: number | null, done?: (first: number, names: string[]) => void): {
+    afterCompile(module: any): void;
+};
 /** `module.name` of every function a wasm binary imports. */
 export declare function importsOf(wasm: Uint8Array): Set<string>;

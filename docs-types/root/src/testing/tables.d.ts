@@ -30,6 +30,13 @@ export interface Tables {
     stringFields: Set<number>;
     /** Members read with an element index: m_rgpPlayerItems. */
     arrayFields: Set<number>;
+    /** An entvar by its offset in entvars_t, as the module's ent_get takes it: its constant, and a vector's component. */
+    entvarAt: Map<number, {
+        field: number;
+        component: number;
+    }>;
+    /** A member by its class and name in the gamedata, as member_slot takes it ("CBasePlayer::m_iAccount"): its constant. */
+    memberNamed: Map<string, number>;
 }
 export declare function tables(): Tables;
 /** A constant's value by name, or an error naming it. */

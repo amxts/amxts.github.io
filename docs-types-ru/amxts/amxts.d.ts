@@ -6,7 +6,7 @@
 // Only the editor reads this file. The build reads a module's definition from
 // its source and evaluates amxts.config.ts with a defineConfig of its own
 // (scripts/project.ts); asc never compiles either call.
-import type { ModuleOptions, Player, PlayerChangeEvent } from "./facade";
+import type { CommandOptions, ModuleOptions, Player, PlayerChangeEvent } from "./facade";
 
 declare global {
 	/** Имя модуля и ключ его настроек. */
@@ -130,6 +130,21 @@ type PlayerFieldValue<F extends string> = F extends `${infer O}.${infer M}`
 	? O extends keyof Player ? (M extends keyof Player[O] ? Player[O][M] : never) : never
 	: F extends keyof Player ? Player[F] : never;
 
+// A command's arguments, typed. The build reads the type argument and the
+// usage the same way (scripts/typed-commands.ts); the editor reads them here.
+
+/** The names a usage requires: `<target>` in `"/kick <target> [reason]"`. */
+type RequiredNames<U extends string> = U extends `${string}<${infer N}>${infer R}` ? N | RequiredNames<R> : never;
+
+/** The names a usage may leave out: `[reason]`. */
+type OptionalNames<U extends string> = U extends `${string}[${infer N}]${infer R}` ? N | OptionalNames<R> : never;
+
+/** A usage's arguments, each text; any name for a usage made at run time, which the build reads. */
+type UsageArgs<U extends string> = string extends U ? Record<string, string | undefined> : { [K in RequiredNames<U>]: string } & { [K in OptionalNames<U>]?: string };
+
+/** A command's arguments: the type argument's, or else the usage's, as text. */
+type CommandArgsOf<T, U extends string> = [T] extends [never] ? UsageArgs<U> : T;
+
 declare module "./facade" {
 	interface PlayerChangeEvent<F extends string = string> {
 		/** Значение поля после изменения; с `{ field }` — типа этого поля. */
@@ -146,10 +161,55 @@ declare module "./facade" {
 		 * этого поля.
 		 */
 		// oxlint-disable-next-line typescript/method-signature-style -- an overload, merged into the class's method
-		addEventListener<F extends PlayerFieldName>(type: "playerchange", listener: (event: PlayerChangeEvent<F>) => void, options: { field: F }): void;
+		addEventListener<F extends PlayerFieldName>(type: "playerChange", listener: (event: PlayerChangeEvent<F>) => void, options: { field: F }): void;
 		/** Перестаёт вызывать обработчик, добавленный через `addEventListener`, — ту же функцию с тем же полем. */
 		// oxlint-disable-next-line typescript/method-signature-style -- an overload, merged into the class's method
-		removeEventListener<F extends PlayerFieldName>(type: "playerchange", listener: (event: PlayerChangeEvent<F>) => void, options: { field: F }): void;
+		removeEventListener<F extends PlayerFieldName>(type: "playerChange", listener: (event: PlayerChangeEvent<F>) => void, options: { field: F }): void;
+		/**
+		 * Добавляет команду, которую набирают игроки, по её использованию: имя,
+		 * затем аргументы, `<name>` — обязательный, `[name]` — необязательный.
+		 * Их типы — интерфейс, аргумент типа; без него каждый — текст.
+		 *
+		 * ```ts
+		 * interface KickArgs {
+		 *   target: Player;
+		 *   reason?: string;
+		 * }
+		 *
+		 * server.addCommand<KickArgs>("/kick <target> [reason]", ({ player, target, reason }) => {
+		 *   target.kick(reason ?? `Kicked by ${player.name}`);
+		 * }, { access: "kick" });
+		 * server.addCommand("/hp", ({ player }) => print(player, `${player.health} HP`));
+		 * ```
+		 *
+		 * Имя со `/` — команда чата, без него — команда консоли, а
+		 * `"say <фраза>"` — фраза, написанная в чат. Аргумент `number`
+		 * разбирается как число, `Player` находится по `#userid`, имени целиком
+		 * или его части, `string` берётся как есть — последний забирает остаток
+		 * строки. На слово, которое команда не принимает, игрок получает её
+		 * использование, и обработчик не запускается.
+		 *
+		 * Pawn: `register_clcmd`
+		 */
+		// oxlint-disable-next-line typescript/method-signature-style -- the editor's signature of the class's method, which the build writes per call
+		addCommand<T extends object = never, const U extends string = string>(usage: U, handler: (args: CommandArgsOf<T, U> & { player: Player }) => void, options?: CommandOptions): void;
+		/**
+		 * Добавляет команду консоли сервера — её набирают там, присылают по rcon
+		 * или запускает другой плагин — по её использованию; аргументы читаются
+		 * так же, как у команды игрока. Игрок её не набирает.
+		 *
+		 * ```ts
+		 * interface ResetArgs {
+		 *   what?: "scores" | "all";
+		 * }
+		 *
+		 * server.addServerCommand<ResetArgs>("myplugin_reset [what]", ({ what }) => reset(what ?? "all"));
+		 * ```
+		 *
+		 * Pawn: `register_srvcmd`
+		 */
+		// oxlint-disable-next-line typescript/method-signature-style -- the editor's signature of the class's method, which the build writes per call
+		addServerCommand<T extends object = never, const U extends string = string>(usage: U, handler: (args: CommandArgsOf<T, U>) => void): void;
 	}
 }
 

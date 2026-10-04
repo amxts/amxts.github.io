@@ -111,5 +111,13 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Server.addCommand': {
+        en: string;
+        ru: string;
+    };
+    'Server.addServerCommand': {
+        en: string;
+        ru: string;
+    };
 };
 export default _default;
