@@ -67,6 +67,11 @@ export default defineNuxtConfig({
       script: [
         // a Mac shows ⌘ in keyboard shortcuts from the first paint (.kbd-meta)
         { innerHTML: `/Mac|iPhone|iPad/.test(navigator.userAgent)&&document.documentElement.classList.add('mac')` },
+        // GitHub Pages serves a page from its folder's index.html and sends a
+        // link without the slash to the one with it (/docs/data/http/); the
+        // site's links have none, so the address loses it before Nuxt reads it
+        // and the sidebar marks the page from the first paint.
+        { innerHTML: `var q=location.pathname;q.length>1&&q.endsWith('/')&&history.replaceState(history.state,'',q.replace(/[/]+$/,'')+location.search+location.hash)` },
         ...(baseURL === '/'
           ? [{ innerHTML: `var p=location.pathname;if(p==='/site'||p.startsWith('/site/'))location.replace((p.slice(5)||'/')+location.search+location.hash)` }]
           : []),
