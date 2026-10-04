@@ -34,8 +34,6 @@ function place() {
   }
 }
 
-// Until the line is placed - the first paint, before the page runs - the
-// navigation's own highlight marks the page in the same place.
 watch(() => route.path, () => nextTick(place))
 onMounted(() => nextTick(place))
 useResizeObserver(nav, place)
@@ -46,12 +44,13 @@ useResizeObserver(nav, place)
     <UPage>
       <template #left>
         <UPageAside>
-          <div ref="nav" class="relative">
+          <!-- until the line is measured - the first paint - the page's own link draws it in the same place -->
+          <div ref="nav" class="relative" :data-line-pending="indicator ? undefined : ''">
             <UContentNavigation
               highlight
               :collapsible="false"
               :navigation="navigation"
-              :ui="{ linkTrailingIcon: 'hidden', link: indicator ? 'after:hidden' : '' }"
+              :ui="{ linkTrailingIcon: 'hidden', link: 'after:hidden' }"
             />
 
             <span
@@ -68,3 +67,17 @@ useResizeObserver(nav, place)
     </UPage>
   </UContainer>
 </template>
+
+<style scoped>
+[data-line-pending] :deep(a.text-primary)::after {
+  content: '';
+  display: block;
+  position: absolute;
+  left: -6px;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+  border-radius: 9999px;
+  background: var(--ui-primary);
+}
+</style>
