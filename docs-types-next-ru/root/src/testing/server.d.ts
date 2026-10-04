@@ -46,6 +46,12 @@ interface Slot extends Handler {
     /** What the call answers when the handler says nothing. */
     fallback: number;
     key: string;
+    /**
+     * Switched off while what it delivers has no listener - by the plugin
+     * (slot_on), or a hook by DisableHookChain and DisableHamForward: a call
+     * answers the fallback without reaching the plugin.
+     */
+    off?: boolean;
 }
 interface Task {
     slot: Slot;
@@ -287,7 +293,6 @@ export declare function flagBits(letters: string): number;
  * and a part in brackets each one argument, the text between them another.
  */
 export declare function splitLog(line: string): string[];
-/** A loaded plugin: its instance and its memory. */
 export declare class PluginInstance {
     readonly server: FakeServer;
     readonly source: string;
@@ -303,6 +308,12 @@ export declare class PluginInstance {
     };
     /** Taken off the server (FakeServer.unload): its slots answer nothing until the same file takes them back. */
     unloaded: boolean;
+    /** This run of the plugin, as module.cpp's Plugin.run: what the other side of a shared module's call knows it by. */
+    readonly run: number;
+    /** The shared modules it calls (Plugin.uses): their owners hear when it is unloaded. */
+    readonly uses: string[];
+    /** It called back a function of a plugin unloaded since, and was told so: once. */
+    toldGone: boolean;
     /** The coroutine scheduler, for a plugin that awaits; null for one that does not. */
     readonly coroutines: Coroutines | null;
     constructor(server: FakeServer, source: string, module: any, natives?: PluginNative[], binary?: Uint8Array);
@@ -535,7 +546,8 @@ export declare class FakeServer {
     private outcome;
     private outcomeSaid;
     private taskOrder;
-    private hookHandles;
+    /** The slots of RegisterHookChain's and RegisterHam's handles, which DisableHookChain and the rest take. */
+    private readonly hookSlots;
     private entityIds;
     constructor(options?: ServerOptions);
     /**
@@ -830,6 +842,22 @@ export declare class FakeServer {
         superseded: boolean;
         answer: number | string | null;
     };
+    /** Switches a hook off or on by the handle RegisterHookChain or RegisterHam gave. @internal */
+    switchHook(handle: number, on: boolean): number;
+    /**
+     * Whether a game event's hook calls the plugin - reapi's chain, or Ham
+     * Sandwich's function on a class: false while the plugin has switched it
+     * off, for having no listener; undefined when it was never registered.
+     *
+     * ```ts
+     * server.hooked('resetMaxSpeed');                // the chain, before the game
+     * server.hooked('spawn', { classname: 'player', post: true });
+     * ```
+     */
+    hooked(event: string, options?: {
+        post?: boolean;
+        classname?: string;
+    }): boolean | undefined;
     /** A slot by the public name a native was given: "__amxts_cb3". @internal */
     slotByPublic(name: string): Slot;
     /**
@@ -857,6 +885,8 @@ export declare class FakeServer {
     private rpcRequest;
     private rpcReply;
     private rpcResult;
+    /** Runs a request in `callee`'s __amxts_rpc, from the run `from` (module.cpp's RunRequest): its answer, or null. */
+    private request;
     /**
      * The externals the facade declares, as module.cpp registers
      * them in g_wasmNatives. Each is called with the plugin that called it.
@@ -904,10 +934,12 @@ export declare class FakeServer {
         set_health(this: FakeServer, plugin: PluginInstance, id: number, hp: number): void;
         outcome(this: FakeServer, plugin: PluginInstance, value: number): void;
         on(this: FakeServer, plugin: PluginInstance, name: number, fn: number, shape: number): void;
+        off(this: FakeServer, plugin: PluginInstance, name: number, fn: number): void;
         on_cell(this: FakeServer, plugin: PluginInstance, name: number, fn: number, shape: number, arg: number, value: number): void;
         subscribe(this: FakeServer, plugin: PluginInstance, name: number, fn: number, tag: number): void;
         emit_local(this: FakeServer, plugin: PluginInstance, name: number, mask: number, cells: number, argc: number): void;
         slot(this: FakeServer, plugin: PluginInstance, fn: number, shape: number, key: number, fallback: number): number;
+        slot_on(this: FakeServer, plugin: PluginInstance, index: number, on: number): void;
         clcmd(this: FakeServer, plugin: PluginInstance, pattern: number, fn: number, flags: number, info: number, shape: number): number;
         task(this: FakeServer, plugin: PluginInstance, secondsBits: number, fn: number, id: number, repeat: number): number;
         stop_task(this: FakeServer, plugin: PluginInstance, id: number): number;

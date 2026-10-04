@@ -1219,6 +1219,14 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    callingPlugin: {
+        en: string;
+        ru: string;
+    };
+    onPluginStop: {
+        en: string;
+        ru: string;
+    };
     ForwardStop: {
         en: string;
         ru: string;

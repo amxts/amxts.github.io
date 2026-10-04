@@ -68,6 +68,25 @@ export declare function ret(value: number): void;
  */
 export declare function publicFor(handler: WideHandler, key: string, fallback?: number): string;
 /**
+ * @hidden `publicFor`, the public switched by `hook`: switched off, a call
+ * answers `fallback` in the module, without reaching the plugin.
+ */
+export declare function __switchedPublic(handler: WideHandler, key: string, hook: __Switch | null, fallback?: number): string;
+/**
+ * @hidden A registration with AMX Mod X - a hook, or a public it calls - that
+ * is switched off while what it delivers has no listener and back on for the
+ * next one, so that an event nobody listens to does not reach the plugin.
+ * One switched off before it is made is made switched off.
+ */
+export declare class __Switch {
+    private on;
+    private parts;
+    /** Switches every registration of it on or off. */
+    set(on: bool): void;
+    /** What switches one registration, once it is made; run at once while the switch is off. */
+    add(part: (on: bool) => void): void;
+}
+/**
  * Экспортирует натив, который могут вызывать другие плагины, в том числе на
  * Pawn.
  *
@@ -862,9 +881,9 @@ export declare class __CommandWords {
 export declare function accessOf(letters: string): Access[];
 /**
  * @hidden The hood of a game event Ham Sandwich delivers (as/hooks.ts):
- * `fn` hooked on the class, a reload taking its slot back.
+ * `fn` hooked on the class, a reload taking its slot back, switched by `hook`.
  */
-export declare function __ham(fn: i32, classname: string, handler: WideHandler, post: bool): void;
+export declare function __ham(fn: i32, classname: string, handler: WideHandler, post: bool, hook?: __Switch | null): void;
 /**
  * Вид HUD-сообщения. У каждого поля есть значение по умолчанию, так что
  * `{ color: [255, 40, 40] }` достаточно.
@@ -1081,6 +1100,8 @@ export declare class Resource {
  * that comes often crosses into the plugin for that value alone.
  */
 export declare function __onCell(event: string, fn: i32, arg: i32, value: i32): void;
+/** @hidden Takes the handler `fn` of a forward the host relays off again: once its event has no listener left. */
+export declare function __off(event: string, fn: i32): void;
 /** @hidden Runs `register` from plugin_init on: now, or when it comes. */
 export declare function __whenUp(register: () => void): void;
 /** @hidden Runs `register` from plugin_precache on - or plugin_init, after a reload mid-map. */
@@ -1939,6 +1960,38 @@ export interface ModuleOptions {
  * задаёт `amxts.config.ts`. Глобальная; `import { defineModule } from "@amxts/core"` тоже работает.
  */
 export declare function defineModule<T>(definition: AmxtsModule<T>): AmxtsModule<T>;
+/**
+ * Плагин, чей вызов модуль выполняет сейчас, — числом: то, что модуль хранит
+ * для этого плагина, — созданное им меню, переданную им функцию, — помечается
+ * этим числом и убирается, когда `onPluginStop()` даёт то же число. `0`, когда
+ * вызова другого плагина нет: собственный плагин модуля, его нативы для
+ * Pawn-плагинов, его события и таймеры.
+ *
+ * ```ts
+ * export function addRule(test: Rule) {
+ * 	rules.push({ test, from: callingPlugin() });
+ * }
+ * ```
+ */
+export declare function callingPlugin(): number;
+/**
+ * Вызывает `listener`, когда останавливается плагин, вызывавший модуль, —
+ * выгружен, перезагружен или не загрузился, — с числом, которое давал
+ * `callingPlugin()` во время его вызовов. Модуль убирает то, что этот плагин
+ * ему дал: перезагруженный плагин — новый, он даёт всё заново, а функция
+ * остановленного ничего не отвечает.
+ *
+ * ```ts
+ * onPluginStop((plugin) => {
+ * 	rules = rules.filter(rule => rule.from != plugin);
+ * });
+ * ```
+ */
+export declare function onPluginStop(listener: (plugin: number) => void): void;
+/** @hidden as/remote.ts: a call of the run `from` starts; the run whose call ran before it, to give back. */
+export declare function __callFrom(from: i32): i32;
+/** @hidden as/remote.ts: the plugin of the run `run` stopped. */
+export declare function __pluginStopped(run: i32): void;
 /**
  * Правило остановки форварда, одно из: `"never"` — его слышат все плагины, что бы они
  * ни вернули; `"handled"` — его останавливает первый плагин, который сообщил,

@@ -15,7 +15,7 @@ export declare class Reader {
     data: ArrayBuffer;
     from: i32;
     at: i32;
-    /** `from`: the plugin that wrote it - where a function it carries lives. */
+    /** `from`: the run of the plugin that wrote it - where a function it carries lives. */
     constructor(data: ArrayBuffer, from: i32);
     private take;
     i32(): i32;
@@ -40,7 +40,7 @@ export declare class Service {
 export type Invoke = (fn: usize, sig: i32, r: Reader, w: Writer) => void;
 /** The number another plugin calls `fn` back by; 0 for null. The same function keeps its number. */
 export declare function sendFunction(fn: usize, sig: i32, invoke: Invoke): i32;
-/** Where a stand-in calls: the plugin a function lives in, and its number there. */
+/** Where a stand-in calls: the run of the plugin a function lives in, and its number there. */
 declare class Remote {
     plugin: i32;
     id: i32;
@@ -69,6 +69,6 @@ export declare class Handles {
     id(object: usize): i32;
     at(id: i32): usize;
 }
-/** @hidden What the module calls: a request of `length` bytes from plugin `from`. */
+/** @hidden What the module calls: a request of `length` bytes from the run `from` of a plugin. */
 export declare function __amxts_rpc(length: i32, from: i32): void;
 export {};

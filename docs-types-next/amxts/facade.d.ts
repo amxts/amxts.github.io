@@ -66,6 +66,25 @@ export declare function ret(value: number): void;
  */
 export declare function publicFor(handler: WideHandler, key: string, fallback?: number): string;
 /**
+ * @hidden `publicFor`, the public switched by `hook`: switched off, a call
+ * answers `fallback` in the module, without reaching the plugin.
+ */
+export declare function __switchedPublic(handler: WideHandler, key: string, hook: __Switch | null, fallback?: number): string;
+/**
+ * @hidden A registration with AMX Mod X - a hook, or a public it calls - that
+ * is switched off while what it delivers has no listener and back on for the
+ * next one, so that an event nobody listens to does not reach the plugin.
+ * One switched off before it is made is made switched off.
+ */
+export declare class __Switch {
+    private on;
+    private parts;
+    /** Switches every registration of it on or off. */
+    set(on: bool): void;
+    /** What switches one registration, once it is made; run at once while the switch is off. */
+    add(part: (on: bool) => void): void;
+}
+/**
  * Exports a native for other plugins - Pawn ones included - to call.
  *
  *   nativeFn("myplugin_get_mode", getGameMode)
@@ -860,9 +879,9 @@ export declare class __CommandWords {
 export declare function accessOf(letters: string): Access[];
 /**
  * @hidden The hood of a game event Ham Sandwich delivers (as/hooks.ts):
- * `fn` hooked on the class, a reload taking its slot back.
+ * `fn` hooked on the class, a reload taking its slot back, switched by `hook`.
  */
-export declare function __ham(fn: i32, classname: string, handler: WideHandler, post: bool): void;
+export declare function __ham(fn: i32, classname: string, handler: WideHandler, post: bool, hook?: __Switch | null): void;
 /**
  * The look of a HUD message. Every field has a default, so
  * `{ color: [255, 40, 40] }` is enough.
@@ -1078,6 +1097,8 @@ export declare class Resource {
  * that comes often crosses into the plugin for that value alone.
  */
 export declare function __onCell(event: string, fn: i32, arg: i32, value: i32): void;
+/** @hidden Takes the handler `fn` of a forward the host relays off again: once its event has no listener left. */
+export declare function __off(event: string, fn: i32): void;
 /** @hidden Runs `register` from plugin_init on: now, or when it comes. */
 export declare function __whenUp(register: () => void): void;
 /** @hidden Runs `register` from plugin_precache on - or plugin_init, after a reload mid-map. */
@@ -1935,6 +1956,38 @@ export interface ModuleOptions {
  * sets over them. Global; `import { defineModule } from "@amxts/core"` works too.
  */
 export declare function defineModule<T>(definition: AmxtsModule<T>): AmxtsModule<T>;
+/**
+ * The plugin whose call the module runs now, as a number: what the module
+ * keeps for that plugin - a menu it made, a function it gave - is marked with
+ * it, and dropped when `onPluginStop()` gives the same number. `0` when no
+ * other plugin's call runs: the module's own plugin, its natives for Pawn
+ * plugins, its events and timers.
+ *
+ * ```ts
+ * export function addRule(test: Rule) {
+ * 	rules.push({ test, from: callingPlugin() });
+ * }
+ * ```
+ */
+export declare function callingPlugin(): number;
+/**
+ * Calls `listener` when a plugin that called the module stops - unloaded,
+ * reloaded, or its load failed - with the number `callingPlugin()` gave
+ * during its calls. The module drops what that plugin gave it: a reloaded
+ * plugin is a new one, which gives everything again, and a function of the
+ * one that stopped answers nothing.
+ *
+ * ```ts
+ * onPluginStop((plugin) => {
+ * 	rules = rules.filter(rule => rule.from != plugin);
+ * });
+ * ```
+ */
+export declare function onPluginStop(listener: (plugin: number) => void): void;
+/** @hidden as/remote.ts: a call of the run `from` starts; the run whose call ran before it, to give back. */
+export declare function __callFrom(from: i32): i32;
+/** @hidden as/remote.ts: the plugin of the run `run` stopped. */
+export declare function __pluginStopped(run: i32): void;
 /**
  * The forward's stopping rule, one of: `"never"` - every plugin hears it, whatever it
  * returns; `"handled"` - the first plugin that says it handled the forward

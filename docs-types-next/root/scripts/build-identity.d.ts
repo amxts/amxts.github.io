@@ -1,3 +1,10 @@
+/**
+ * The version the core builds as: its package.json's, or AMXTS_AS_VERSION's.
+ * `bun run publish:local --as 0.2.0` stages the packages as another version
+ * than the checkout's; the modules it compiles for them, and a module built
+ * for a server that runs their plugins, are of that version only with it set.
+ */
+export declare function coreVersion(): string;
 /** This checkout's build: the version, and the commit when git knows it. */
 export declare function buildIdentity(): string;
 /** The build the generated module carries, or null before `bun run generate`. */
