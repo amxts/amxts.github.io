@@ -45,7 +45,7 @@ export declare class ServerChangelevelEvent {
     constructor(map: string);
 }
 /**
- * Все конфиги прочитаны, все плагины загружены: момент читать квары и создавать форварды для других плагинов.
+ * Все плагины запустились: момент создавать форварды для других плагинов. Конфиги выполняются после него: квары читайте в `"configsExecuted"`.
  *
  * Важно: When this forward is called, most plugins should have registered their cvars and commands already.
  *
@@ -2005,7 +2005,7 @@ export interface ServerEventMap {
      */
     changeLevel: ServerChangelevelEvent;
     /**
-     * Все конфиги прочитаны, все плагины загружены: момент читать квары и создавать форварды для других плагинов.
+     * Все плагины запустились: момент создавать форварды для других плагинов. Конфиги выполняются после него: квары читайте в `"configsExecuted"`.
      *
      * Pawn: `plugin_cfg`
      */

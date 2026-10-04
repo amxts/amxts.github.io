@@ -45,7 +45,7 @@ export declare class ServerChangelevelEvent {
     constructor(map: string);
 }
 /**
- * Every config has been read and every plugin is loaded: the moment to read cvars and to create forwards other plugins listen to.
+ * Every plugin has started: the moment to create forwards other plugins listen to. The configs run after it: read cvars in `"configsExecuted"`.
  *
  * Note: When this forward is called, most plugins should have registered their cvars and commands already.
  *
@@ -2005,7 +2005,7 @@ export interface ServerEventMap {
      */
     changeLevel: ServerChangelevelEvent;
     /**
-     * Every config has been read and every plugin is loaded: the moment to read cvars and to create forwards other plugins listen to.
+     * Every plugin has started: the moment to create forwards other plugins listen to. The configs run after it: read cvars in `"configsExecuted"`.
      *
      * Pawn: `plugin_cfg`
      */
