@@ -99,7 +99,10 @@ export function coreSource(source: CollectionSource, version: DocsVersion): Coll
 /** A module's files, `include` relative to its repository's root: its latest release line on GitHub. */
 export function moduleSource(module: RegistryModule, source: CollectionSource): CollectionSource {
   const local = modulesPath && join(modulesPath, module.repo.split('/')[1]!)
+  // The files read are at the checkout's root; Nuxt Content's dev watcher
+  // follows the whole folder minus `exclude`, node_modules included, which
+  // kept dev from starting: its subfolders are left out.
   return local && existsSync(local)
-    ? { ...source, cwd: local }
+    ? { ...source, cwd: local, exclude: [...(source.exclude ?? []), '*/**'] }
     : { ...source, repository: { url: `https://github.com/${module.repo}`, branch: docsBranch(module.repo, 'current') } }
 }
