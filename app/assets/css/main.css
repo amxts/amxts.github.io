@@ -262,7 +262,8 @@ html:root {
 }
 
 /* The popup's scrollbars, visible on the dark background. */
-.twoslash-floating :is(.twoslash-popup-code, .twoslash-popup-code pre, .twoslash-popup-docs) {
+.twoslash-floating
+  :is(.twoslash-popup-container, .twoslash-popup-code, .twoslash-popup-code pre, .twoslash-popup-docs) {
   scrollbar-width: thin;
   scrollbar-color: var(--ui-border-accented) transparent;
 }
@@ -303,12 +304,14 @@ html:root {
 }
 
 /* The natives a function stands for (`Pawn: ...`, made a quote when the hover
-   renders): the last line, under a dashed rule, with Pawn's plug mark. */
+   renders): the last line, under a dashed rule, with Pawn's plug mark under
+   the info mark and the text in the description's column: the mark's centre
+   is 1.425rem in (its left 0.875rem plus half its 1.1rem), the text 2.5rem. */
 .twoslash-floating .twoslash-popup-docs blockquote {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0.625rem 0 0;
+  gap: calc(2.5rem - 1.425rem - 0.4375rem);
+  margin: 0.625rem 0 0 calc(1.425rem - 0.4375rem - 2.5rem);
   padding: 0.5rem 0 0;
   border: 0;
   border-top: 1px dashed var(--ui-border);
