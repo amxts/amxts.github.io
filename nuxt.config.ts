@@ -162,6 +162,12 @@ export default defineNuxtConfig({
   compatibilityDate: '2026-06-30',
 
   nitro: {
+    // Nuxt 4.6.0 on Windows leaves its renderer external, and every page is a
+    // 500 ("Either manifest or precomputed data must be provided",
+    // nuxt/nuxt#36467): inlined until a release with the fix.
+    externals: {
+      inline: [/[\\/]node_modules[\\/]nuxt[\\/]dist[\\/]/],
+    },
     prerender: {
       // /api/modules and /api/changelog as JSON files (each docs page adds its
       // markdown itself)
