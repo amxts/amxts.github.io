@@ -8,7 +8,7 @@ export declare function listIncludes(): string[];
 export declare function includePath(name: string): string;
 export declare function readInclude(name: string): string;
 /**
- * Parses includes/order.txt. A bare name is included and (by the host
+ * Parses includes/order.txt. A bare name is included and (by the image's
  * generator) pulled; a line starting with `-` is a deny marker - the name
  * still has to resolve (an include that #includes it needs it on disk), but
  * it is excluded from whatever build the caller pulls into a native table.

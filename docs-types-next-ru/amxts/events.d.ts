@@ -1,5 +1,5 @@
 /// <reference path="../as-types.d.ts" />
-import { Client, ClientMessage, FadeDirection, Player, PlayerChangeEvent, StatusIconState, Team, VariantName } from "./facade";
+import { Client, ClientMessage, FadeDirection, Player, PlayerChangeEvent, StatusIconState, Team, VariantName, __ServerEvent } from "./facade";
 import { Vector } from "./vector";
 import { WeaponKind } from "./entities";
 import { Damage, HideHud, ScoreStatus } from "./flags";
@@ -14,20 +14,6 @@ import { VguiMenu } from "./hooks";
 export declare class PluginInitEvent {
 }
 /**
- * Админ поставил плагин на паузу.
- *
- * Pawn: `plugin_pause()`
- */
-export declare class PluginPauseEvent {
-}
-/**
- * Админ снял плагин с паузы.
- *
- * Pawn: `plugin_unpause()`
- */
-export declare class PluginUnpauseEvent {
-}
-/**
  * Сервер сейчас сменит карту.
  *
  * Важно: This is *only* called if the mod itself handles the map change. The server command "changelevel", which is used by many plugins, will not trigger this forward. Unfortunately, this means that in practice this forward can be unreliable and will not be called in many situations.
@@ -35,14 +21,17 @@ export declare class PluginUnpauseEvent {
  *
  * Pawn: `server_changelevel(map[])`
  */
-export declare class ServerChangelevelEvent {
+export declare class ServerChangelevelEvent extends __ServerEvent {
+    private __map;
     /**
      * Карта, на которую переходит сервер, например `"de_dust2"`.
      *
      * Pawn: `map[]`
      */
-    map: string;
-    constructor(map: string);
+    get map(): string;
+    set map(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Все плагины запустились: момент создавать форварды для других плагинов. Конфиги выполняются после него: квары читайте в `"configsExecuted"`.
@@ -54,7 +43,7 @@ export declare class ServerChangelevelEvent {
 export declare class PluginCfgEvent {
 }
 /**
- * Карта заканчивается или сервер выключается: сохраните то, что должно пережить смену карты.
+ * Плагин останавливается — карта заканчивается, сервер выключается или его останавливает `amxts_reload`/`amxts_unload`: сохраните то, что должно это пережить.
  *
  * Важно: The plugin is required to manually free Handles it has acquired, such as those from dynamic data structures. Failing to do that will result in the plugin and AMXX leaking memory.
  *
@@ -63,13 +52,36 @@ export declare class PluginCfgEvent {
 export declare class PluginEndEvent {
 }
 /**
- * Called when a message is about to be logged.
+ * Строка, которую игра пишет в свой лог, — конец раунда, убийство, заложенная бомба: `event.text` целиком, `event.args` по частям.
  *
  * Важно: Message data and information can be retrieved using the read_log* set of functions.
  *
- * Pawn: `plugin_log()`
+ * Pawn: `plugin_log(read_logdata, read_logargv)`
+ *
+ * @example
+ * server.addEventListener("log", (event) => {
+ * 	if (event.text.startsWith("World triggered")) console.log(event.args[1]);
+ * });
  */
-export declare class PluginLogEvent {
+export declare class PluginLogEvent extends __ServerEvent {
+    private __text;
+    private __args;
+    /**
+     * Строка так, как её пишет игра, без даты: `World triggered "Round_Start"`.
+     *
+     * Pawn: `read_logdata`
+     */
+    get text(): string;
+    set text(value: string);
+    /**
+     * Строка по частям, как её делит AMX Mod X: текст в кавычках, текст в скобках и слова между ними — каждое отдельной частью; `World triggered "Round_Draw"` — это `["World triggered", "Round_Draw"]`.
+     *
+     * Pawn: `read_logargv`
+     */
+    get args(): string[];
+    set args(value: string[]);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Карта загружается: единственный момент, когда можно подгрузить (precache) модели, звуки и спрайты.
@@ -85,14 +97,17 @@ export declare class PluginPrecacheEvent {
  *
  * Pawn: `client_infochanged(id)`
  */
-export declare class ClientInfochangedEvent {
+export declare class ClientInfochangedEvent extends __ServerEvent {
+    private __player;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Player;
-    constructor(player: Player);
+    get player(): Player;
+    set player(value: Player);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Игрок начал подключаться. В игре его ещё нет: показывать ему что-то можно после `"putInServer"`.
@@ -101,14 +116,17 @@ export declare class ClientInfochangedEvent {
  *
  * Pawn: `client_connect(id)`
  */
-export declare class ClientConnectEvent {
+export declare class ClientConnectEvent extends __ServerEvent {
+    private __player;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Client;
-    constructor(player: Client);
+    get player(): Client;
+    set player(value: Client);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Игрок начал подключаться, уже с именем и адресом: здесь его можно не пустить.
@@ -117,32 +135,41 @@ export declare class ClientConnectEvent {
  *
  * Pawn: `client_connectex(id, name[], ip[], reason[128])`
  */
-export declare class ClientConnectexEvent {
+export declare class ClientConnectexEvent extends __ServerEvent {
+    private __player;
+    private __name;
+    private __ip;
+    private __reason;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Client;
+    get player(): Client;
+    set player(value: Client);
     /**
      * Имя, с которым игрок заходит.
      *
      * Pawn: `name[]`
      */
-    name: string;
+    get name(): string;
+    set name(value: string);
     /**
      * Адрес игрока с портом, например `"192.168.0.5:27005"`.
      *
      * Pawn: `ip[]`
      */
-    ip: string;
+    get ip(): string;
+    set ip(value: string);
     /**
      * Сообщение, которое игрок увидит, если его не пустят.
      *
      * Pawn: `reason[128]`
      */
-    reason: string;
-    constructor(player: Client, name: string, ip: string, reason: string);
+    get reason(): string;
+    set reason(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Стал известен SteamID игрока. Может прийти до или после `"putInServer"`.
@@ -151,20 +178,25 @@ export declare class ClientConnectexEvent {
  *
  * Pawn: `client_authorized(id, authid[])`
  */
-export declare class ClientAuthorizedEvent {
+export declare class ClientAuthorizedEvent extends __ServerEvent {
+    private __player;
+    private __steamId;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Client;
+    get player(): Client;
+    set player(value: Client);
     /**
      * SteamID игрока, например `"STEAM_0:1:12345"`. У бота — `"BOT"`, у HLTV — `"HLTV"`; на LAN-сервере — `"STEAM_ID_LAN"`. С Reunion игра без Steam получает SteamID, сделанный из её ключа: `"STEAM_..."` или `"VALVE_..."`, как скажут настройки Reunion на сервере.
      *
      * Pawn: `authid[]`
      */
-    steamId: string;
-    constructor(player: Client, steamId: string);
+    get steamId(): string;
+    set steamId(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Игрок покинул сервер: вышел сам, отвалился или был кикнут.
@@ -178,26 +210,33 @@ export declare class ClientAuthorizedEvent {
  * 	console.log(`${event.player.name} left: ${event.reason}`);
  * });
  */
-export declare class ClientDisconnectedEvent {
+export declare class ClientDisconnectedEvent extends __ServerEvent {
+    private __player;
+    private __dropped;
+    private __reason;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * `true`, если игрока отключил сервер (кик, таймаут), а не он вышел сам.
      *
      * Pawn: `bool:drop`
      */
-    dropped: boolean;
+    get dropped(): boolean;
+    set dropped(value: boolean);
     /**
      * Причина выхода, как её сообщает сервер; пусто, если игрок просто вышел.
      *
      * Pawn: `message[]`
      */
-    reason: string;
-    constructor(player: Player, dropped: boolean, reason: string);
+    get reason(): string;
+    set reason(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Слот игрока освобождается, после `"disconnected"`.
@@ -206,42 +245,85 @@ export declare class ClientDisconnectedEvent {
  *
  * Pawn: `client_remove(id, bool:drop, message[])`
  */
-export declare class ClientRemoveEvent {
+export declare class ClientRemoveEvent extends __ServerEvent {
+    private __player;
+    private __dropped;
+    private __reason;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * `true`, если игрока отключил сервер.
      *
      * Pawn: `bool:drop`
      */
-    dropped: boolean;
+    get dropped(): boolean;
+    set dropped(value: boolean);
     /**
      * Причина выхода игрока.
      *
      * Pawn: `message[]`
      */
-    reason: string;
-    constructor(player: Player, dropped: boolean, reason: string);
+    get reason(): string;
+    set reason(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
- * Игрок отправил консольную команду. Для одной команды проще `server.addCommand("name", handler)`.
+ * Игрок отправил консольную команду — строка в чат это `say` или `say_team`. Для одной команды проще `server.addCommand("name", handler)`.
  *
- * Важно: The command and its arguments can be read using the read_arg* set of functions.
+ * Pawn: `client_command(id, read_argv(0), read_argv, read_args)`
  *
- * Pawn: `client_command(id)`
+ * @example
+ * server.addEventListener("command", (event) => {
+ * 	if (event.command == "say" && event.args[0] == "/cp") checkpoint(event.player);
+ * });
  */
-export declare class ClientCommandEvent {
+export declare class ClientCommandEvent extends __ServerEvent {
+    private __player;
+    private __command;
+    private __args;
+    private __text;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Player;
-    constructor(player: Player);
+    get player(): Player;
+    set player(value: Player);
+    /**
+     * Имя команды, как её ввели, например `"say"`, `"say_team"`, `"buy"`.
+     *
+     * Pawn: `read_argv(0)`
+     */
+    get command(): string;
+    set command(value: string);
+    /**
+     * Слова команды после имени; у `say` и `say_team` — слова строки чата: `say /cp now` — это `["/cp", "now"]`.
+     *
+     * Pawn: `read_argv`
+     */
+    get args(): string[];
+    set args(value: string[]);
+    /**
+     * Текст команды после имени одной строкой; у `say` и `say_team` — строка чата без кавычек.
+     *
+     * Pawn: `read_args`
+     */
+    get text(): string;
+    set text(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
+    /**
+     * Останавливает команду: игра её не выполняет — строка чата не уходит в чат, — и её не слышит ни один `server.addCommand` плагинов. Остальные слушатели `"command"` её слышат.
+     *
+     * Pawn: `return PLUGIN_HANDLED`
+     */
+    preventDefault(): void;
 }
 /**
  * Игрок зашёл и уже в игре: момент поприветствовать его.
@@ -252,50 +334,53 @@ export declare class ClientCommandEvent {
  *
  * @example
  * server.addEventListener("putInServer", (event) => {
- * 	print(event.player, "Welcome!");
+ * 	event.player.print("Welcome!");
  * });
  */
-export declare class ClientPutinserverEvent {
+export declare class ClientPutinserverEvent extends __ServerEvent {
+    private __player;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Client;
-    constructor(player: Client);
+    get player(): Client;
+    set player(value: Client);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Called when an inconsistent file is encountered by the engine.
  *
  * Pawn: `inconsistent_file(id, filename[], reason[64])`
  */
-export declare class InconsistentFileEvent {
+export declare class InconsistentFileEvent extends __ServerEvent {
+    private __player;
+    private __file;
+    private __reason;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * Detected file
      *
      * Pawn: `filename[]`
      */
-    file: string;
+    get file(): string;
+    set file(value: string);
     /**
      * Buffer storing the disconnect reason (can be overwritten)
      *
      * Pawn: `reason[64]`
      */
-    reason: string;
-    constructor(player: Player, file: string, reason: string);
-}
-/**
- * Allows plugins to declare module dependencies using require_module()
- *
- * Pawn: `plugin_modules()`
- */
-export declare class PluginModulesEvent {
+    get reason(): string;
+    set reason(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Called when the map has loaded, and all configs are done executing. This includes servercfgfile (server.cfg), amxx.cfg, plugin's config, and per-map config.
@@ -323,20 +408,25 @@ export declare class OnAutoConfigsBufferedEvent {
  *
  * Pawn: `CS_InternalCommand(id, cmd[])`
  */
-export declare class CS_InternalCommandEvent {
+export declare class CS_InternalCommandEvent extends __ServerEvent {
+    private __player;
+    private __command;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * Command string
      *
      * Pawn: `cmd[]`
      */
-    command: string;
-    constructor(player: Player, command: string);
+    get command(): string;
+    set command(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Called when a client attempts to purchase an item.
@@ -346,20 +436,25 @@ export declare class CS_InternalCommandEvent {
  *
  * Pawn: `CS_OnBuyAttempt(index, item)`
  */
-export declare class CS_OnBuyAttemptEvent {
+export declare class CS_OnBuyAttemptEvent extends __ServerEvent {
+    private __player;
+    private __item;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `index`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * Item id
      *
      * Pawn: `item`
      */
-    item: number;
-    constructor(player: Player, item: number);
+    get item(): number;
+    set item(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Called when a client purchases an item.
@@ -369,20 +464,25 @@ export declare class CS_OnBuyAttemptEvent {
  *
  * Pawn: `CS_OnBuy(index, item)`
  */
-export declare class CS_OnBuyEvent {
+export declare class CS_OnBuyEvent extends __ServerEvent {
+    private __player;
+    private __item;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `index`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * Item id
      *
      * Pawn: `item`
      */
-    item: number;
-    constructor(player: Player, item: number);
+    get item(): number;
+    set item(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Кадр сервера, сотни раз в секунду. Обработчик должен быть очень лёгким, иначе используйте `setInterval`.
@@ -398,34 +498,42 @@ export declare class ServerFrameEvent {
  *
  * Pawn: `client_kill(id)`
  */
-export declare class ClientKillEvent {
+export declare class ClientKillEvent extends __ServerEvent {
+    private __player;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Player;
-    constructor(player: Player);
+    get player(): Player;
+    set player(value: Player);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Игрок отправил impulse: `100` — фонарик, `201` — спрей.
  *
  * Pawn: `client_impulse(id, impulse)`
  */
-export declare class ClientImpulseEvent {
+export declare class ClientImpulseEvent extends __ServerEvent {
+    private __player;
+    private __impulse;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * Номер impulse: `100`, `201`.
      *
      * Pawn: `impulse`
      */
-    impulse: number;
-    constructor(player: Player, impulse: number);
+    get impulse(): number;
+    set impulse(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Called for CmdStart() on a client.
@@ -434,108 +542,143 @@ export declare class ClientImpulseEvent {
  *
  * Pawn: `client_cmdStart(id)`
  */
-export declare class ClientCmdStartEvent {
+export declare class ClientCmdStartEvent extends __ServerEvent {
+    private __player;
     /**
      * Игрок, о котором событие.
      *
      * Pawn: `id`
      */
-    player: Player;
-    constructor(player: Player);
+    get player(): Player;
+    set player(value: Player);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Сущность «думает»: пришло её запланированное обновление. Любой сущности; одного класса — `game.addEventListener("think", listener, { classname })`.
  *
  * Pawn: `pfn_think(entid)`
  */
-export declare class PfnThinkEvent {
+export declare class PfnThinkEvent extends __ServerEvent {
+    private __entity;
     /**
      * Сущность, которая «думает».
      *
      * Pawn: `entid`
      */
-    entity: number;
-    constructor(entity: number);
+    get entity(): number;
+    set entity(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Движок проигрывает клиентам событие: выстрел, звук и эффекты оружия.
  *
  * Pawn: `pfn_playbackevent(flags, entid, eventid, Float:delay, Float:Origin[3], Float:Angles[3], Float:fparam1, Float:fparam2, iparam1, iparam2, bparam1, bparam2)`
  */
-export declare class PfnPlaybackeventEvent {
+export declare class PfnPlaybackeventEvent extends __ServerEvent {
+    private __flags;
+    private __entity;
+    private __eventIndex;
+    private __delay;
+    private __origin;
+    private __angles;
+    private __fparam1;
+    private __fparam2;
+    private __iparam1;
+    private __iparam2;
+    private __bparam1;
+    private __bparam2;
     /**
      * Флаги события — как движок его отправляет.
      *
      * Pawn: `flags`
      */
-    flags: number;
+    get flags(): number;
+    set flags(value: number);
     /**
      * Сущность, на которой играет событие, — обычно игрок, который выстрелил.
      *
      * Pawn: `entid`
      */
-    entity: number;
+    get entity(): number;
+    set entity(value: number);
     /**
      * Номер события среди загруженных заранее событий.
      *
      * Pawn: `eventid`
      */
-    eventIndex: number;
+    get eventIndex(): number;
+    set eventIndex(value: number);
     /**
      * Секунды до того, как событие проиграется.
      *
      * Pawn: `Float:delay`
      */
-    delay: number;
+    get delay(): number;
+    set delay(value: number);
     /**
      * Точка, откуда проигрывается событие.
      *
      * Pawn: `Float:Origin[3]`
      */
-    origin: Vector;
+    get origin(): Vector;
+    set origin(value: Vector);
     /**
      * Углы, с которыми проигрывается событие.
      *
      * Pawn: `Float:Angles[3]`
      */
-    angles: Vector;
+    get angles(): Vector;
+    set angles(value: Vector);
     /**
      * Первый дробный параметр события.
      *
      * Pawn: `Float:fparam1`
      */
-    fparam1: number;
+    get fparam1(): number;
+    set fparam1(value: number);
     /**
      * Второй дробный параметр события.
      *
      * Pawn: `Float:fparam2`
      */
-    fparam2: number;
+    get fparam2(): number;
+    set fparam2(value: number);
     /**
      * Первый целый параметр события.
      *
      * Pawn: `iparam1`
      */
-    iparam1: number;
+    get iparam1(): number;
+    set iparam1(value: number);
     /**
      * Второй целый параметр события.
      *
      * Pawn: `iparam2`
      */
-    iparam2: number;
+    get iparam2(): number;
+    set iparam2(value: number);
     /**
      * Первый параметр-флаг события, `1` или `0`.
      *
      * Pawn: `bparam1`
      */
-    bparam1: number;
+    get bparam1(): number;
+    set bparam1(value: number);
     /**
      * Второй параметр-флаг события, `1` или `0`.
      *
      * Pawn: `bparam2`
      */
-    bparam2: number;
-    constructor(flags: number, entity: number, eventIndex: number, delay: number, origin: Vector, angles: Vector, fparam1: number, fparam2: number, iparam1: number, iparam2: number, bparam1: number, bparam2: number);
+    get bparam2(): number;
+    set bparam2(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
+    /** Останавливает событие: его не получает ни один игрок — вместе со звуком и вспышкой выстрела. */
+    preventDefault(): void;
+    /** Проигрывает событие только этим из игроков, до которых оно дошло бы, — `event.recipients = players.filter(...)`; остальные не слышат выстрела. Игрока, из-за которого оно случилось, это не исключает. */
+    set recipients(players: Player[]);
 }
 /**
  * Called when a keyvalue pair is sent to an entity.
@@ -544,28 +687,34 @@ export declare class PfnPlaybackeventEvent {
  *
  * Pawn: `pfn_keyvalue(entid)`
  */
-export declare class PfnKeyvalueEvent {
+export declare class PfnKeyvalueEvent extends __ServerEvent {
+    private __entity;
     /**
      * Entity index
      *
      * Pawn: `entid`
      */
-    entity: number;
-    constructor(entity: number);
+    get entity(): number;
+    set entity(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * На карте появляется сущность, в том числе сущности самой карты, пока она загружается. Появление игрока — `game.addEventListener("spawn", listener)`.
  *
  * Pawn: `pfn_spawn(entid)`
  */
-export declare class PfnSpawnEvent {
+export declare class PfnSpawnEvent extends __ServerEvent {
+    private __entity;
     /**
      * Сущность, которая появляется.
      *
      * Pawn: `entid`
      */
-    entity: number;
-    constructor(entity: number);
+    get entity(): number;
+    set entity(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * HUD игрока перестаёт показывать рекламу раунда.
@@ -1960,6 +2109,13 @@ export declare class WeaponListMessage extends ClientMessage {
      */
     get weapon(): WeaponKind;
     set weapon(value: WeaponKind);
+    /**
+     * Биты ITEM_FLAG_* оружия: `8` — выбрасывается, когда пусто, `16` — используется один раз.
+     *
+     * Pawn: `get_msg_arg_*(9)`
+     */
+    get flags(): number;
+    set flags(value: number);
 }
 /**
  * Игрок подбирает оружие: уведомление сбоку экрана.
@@ -1987,18 +2143,6 @@ export interface ServerEventMap {
      */
     init: PluginInitEvent;
     /**
-     * Админ поставил плагин на паузу.
-     *
-     * Pawn: `plugin_pause`
-     */
-    pause: PluginPauseEvent;
-    /**
-     * Админ снял плагин с паузы.
-     *
-     * Pawn: `plugin_unpause`
-     */
-    unpause: PluginUnpauseEvent;
-    /**
      * Сервер сейчас сменит карту.
      *
      * Pawn: `server_changelevel`
@@ -2011,13 +2155,13 @@ export interface ServerEventMap {
      */
     pluginsLoaded: PluginCfgEvent;
     /**
-     * Карта заканчивается или сервер выключается: сохраните то, что должно пережить смену карты.
+     * Плагин останавливается — карта заканчивается, сервер выключается или его останавливает `amxts_reload`/`amxts_unload`: сохраните то, что должно это пережить.
      *
      * Pawn: `plugin_end`
      */
     end: PluginEndEvent;
     /**
-     * Called when a message is about to be logged.
+     * Строка, которую игра пишет в свой лог, — конец раунда, убийство, заложенная бомба: `event.text` целиком, `event.args` по частям.
      *
      * Pawn: `plugin_log`
      */
@@ -2059,7 +2203,7 @@ export interface ServerEventMap {
      */
     remove: ClientRemoveEvent;
     /**
-     * Игрок отправил консольную команду. Для одной команды проще `server.addCommand("name", handler)`.
+     * Игрок отправил консольную команду — строка в чат это `say` или `say_team`. Для одной команды проще `server.addCommand("name", handler)`.
      *
      * Pawn: `client_command`
      */
@@ -2076,12 +2220,6 @@ export interface ServerEventMap {
      * Pawn: `inconsistent_file`
      */
     inconsistentFile: InconsistentFileEvent;
-    /**
-     * Allows plugins to declare module dependencies using require_module()
-     *
-     * Pawn: `plugin_modules`
-     */
-    modules: PluginModulesEvent;
     /**
      * Called when the map has loaded, and all configs are done executing. This includes servercfgfile (server.cfg), amxx.cfg, plugin's config, and per-map config.
      *
@@ -2778,6 +2916,835 @@ export interface ServerMessageMap {
      */
     weaponPickup: WeapPickupMessage;
 }
+/** Что принимают `player.send("adStop", ...)` и `server.send("adStop", ...)`: сообщение игры `ADStop`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ADStop"))`, `write_*`, `message_end` */
+export interface ADStopFields {
+}
+/** Что принимают `player.send("allowSpectate", ...)` и `server.send("allowSpectate", ...)`: сообщение игры `AllowSpec`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("AllowSpec"))`, `write_*`, `message_end` */
+export interface AllowSpecFields {
+    /** `true`, когда меню это предлагает. */
+    allowed?: boolean;
+}
+/** Что принимают `player.send("ammoPickup", ...)` и `server.send("ammoPickup", ...)`: сообщение игры `AmmoPickup`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("AmmoPickup"))`, `write_*`, `message_end` */
+export interface AmmoPickupFields {
+    /** Индекс патронов в списке видов у игры. */
+    ammo?: number;
+    /** Подобранное количество. */
+    amount?: number;
+}
+/** Что принимают `player.send("ammo", ...)` и `server.send("ammo", ...)`: сообщение игры `AmmoX`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("AmmoX"))`, `write_*`, `message_end` */
+export interface AmmoXFields {
+    /** Индекс патронов в списке видов у игры. */
+    ammo?: number;
+    /** Показанный запас. */
+    amount?: number;
+}
+/** Что принимают `player.send("armorType", ...)` и `server.send("armorType", ...)`: сообщение игры `ArmorType`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ArmorType"))`, `write_*`, `message_end` */
+export interface ArmorTypeFields {
+    /** `true` — жилет со шлемом. */
+    helmet?: boolean;
+}
+/** Что принимают `player.send("progressBar", ...)` и `server.send("progressBar", ...)`: сообщение игры `BarTime2`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("BarTime2"))`, `write_*`, `message_end` */
+export interface BarTime2Fields {
+    /** Секунды, которые показывают полоса или часы. Присвойте, чтобы изменить. */
+    seconds?: number;
+    /** Заполненность полосы в начале, в процентах. */
+    startPercent?: number;
+}
+/** Что принимают `player.send("armor", ...)` и `server.send("armor", ...)`: сообщение игры `Battery`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Battery"))`, `write_*`, `message_end` */
+export interface BatteryFields {
+    /** Показанная броня. */
+    armor?: number;
+}
+/** Что принимают `player.send("moneyBlink", ...)` и `server.send("moneyBlink", ...)`: сообщение игры `BlinkAcct`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("BlinkAcct"))`, `write_*`, `message_end` */
+export interface BlinkAcctFields {
+    /** Число миганий. */
+    blinks?: number;
+}
+/** Что принимают `player.send("bombDrop", ...)` и `server.send("bombDrop", ...)`: сообщение игры `BombDrop`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("BombDrop"))`, `write_*`, `message_end` */
+export interface BombDropFields {
+    /** Точка, где лежит бомба. */
+    origin?: number[];
+    /** `true` — бомба заложена, `false` — брошена. */
+    planted?: boolean;
+}
+/** Что принимают `player.send("bombPickup", ...)` и `server.send("bombPickup", ...)`: сообщение игры `BombPickup`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("BombPickup"))`, `write_*`, `message_end` */
+export interface BombPickupFields {
+}
+/** Что принимают `player.send("botVoice", ...)` и `server.send("botVoice", ...)`: сообщение игры `BotVoice`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("BotVoice"))`, `write_*`, `message_end` */
+export interface BotVoiceFields {
+    /** `true`, пока бот говорит. */
+    talking?: boolean;
+    /** Бот, который говорит. */
+    target?: Player | null;
+}
+/** Что принимают `player.send("closeBuyMenu", ...)` и `server.send("closeBuyMenu", ...)`: сообщение игры `BuyClose`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("BuyClose"))`, `write_*`, `message_end` */
+export interface BuyCloseFields {
+}
+/** Что принимают `player.send("crosshair", ...)` и `server.send("crosshair", ...)`: сообщение игры `Crosshair`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Crosshair"))`, `write_*`, `message_end` */
+export interface CrosshairFields {
+    /** `true` — показать. */
+    shown?: boolean;
+}
+/** Что принимают `player.send("currentWeapon", ...)` и `server.send("currentWeapon", ...)`: сообщение игры `CurWeapon`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("CurWeapon"))`, `write_*`, `message_end` */
+export interface CurWeaponFields {
+    /** `true` — для оружия в его руках. */
+    active?: boolean;
+    /** Оружие по его виду, например `"ak47"`. */
+    weapon?: WeaponKind;
+    /** Патроны в обойме. */
+    clip?: number;
+}
+/** Что принимают `player.send("damage", ...)` и `server.send("damage", ...)`: сообщение игры `Damage`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Damage"))`, `write_*`, `message_end` */
+export interface DamageFields {
+    /** Потерянная броня. */
+    armor?: number;
+    /** Потерянное здоровье. */
+    damage?: number;
+    /** Виды урона, например `"fall"`, `"bullet"`. */
+    damageType?: Damage[];
+    /** Точка, откуда пришёл урон: метки указывают на неё. */
+    origin?: number[];
+}
+/** Что принимают `player.send("death", ...)` и `server.send("death", ...)`: сообщение игры `DeathMsg`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("DeathMsg"))`, `write_*`, `message_end` */
+export interface DeathMsgFields {
+    /** Игрок, который убил; `null` — мир. */
+    killer?: Player | null;
+    /** Игрок, который погиб. */
+    victim?: Player | null;
+    /** `true` — выстрел в голову. */
+    headshot?: boolean;
+    /** Имя оружия, как его показывает значок, например `"ak47"`, `"grenade"`. */
+    weapon?: string;
+}
+/** Что принимают `player.send("flashlight", ...)` и `server.send("flashlight", ...)`: сообщение игры `Flashlight`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Flashlight"))`, `write_*`, `message_end` */
+export interface FlashlightFields {
+    /** `true`, пока фонарик включён. */
+    on?: boolean;
+    /** Заряд фонарика, в процентах. */
+    battery?: number;
+}
+/** Что принимают `player.send("flashlightBattery", ...)` и `server.send("flashlightBattery", ...)`: сообщение игры `FlashBat`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("FlashBat"))`, `write_*`, `message_end` */
+export interface FlashBatFields {
+    /** Заряд фонарика, в процентах. */
+    battery?: number;
+}
+/** Что принимают `player.send("geiger", ...)` и `server.send("geiger", ...)`: сообщение игры `Geiger`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Geiger"))`, `write_*`, `message_end` */
+export interface GeigerFields {
+    /** Расстояние до радиации: чем меньше, тем чаще щелчки. */
+    range?: number;
+}
+/** Что принимают `player.send("health", ...)` и `server.send("health", ...)`: сообщение игры `Health`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Health"))`, `write_*`, `message_end` */
+export interface HealthFields {
+    /** Показанное здоровье. */
+    health?: number;
+}
+/** Что принимают `player.send("hideWeapon", ...)` и `server.send("hideWeapon", ...)`: сообщение игры `HideWeapon`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("HideWeapon"))`, `write_*`, `message_end` */
+export interface HideWeaponFields {
+    /** Скрытые части, например `"money"`, `"timer"`. Присвойте, чтобы изменить. */
+    flags?: HideHud[];
+}
+/** Что принимают `player.send("hostageKilled", ...)` и `server.send("hostageKilled", ...)`: сообщение игры `HostageK`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("HostageK"))`, `write_*`, `message_end` */
+export interface HostageKFields {
+    /** Номер заложника на карте, с `1`. */
+    hostage?: number;
+}
+/** Что принимают `player.send("initHud", ...)` и `server.send("initHud", ...)`: сообщение игры `InitHUD`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("InitHUD"))`, `write_*`, `message_end` */
+export interface InitHUDFields {
+}
+/** Что принимают `player.send("itemPickup", ...)` и `server.send("itemPickup", ...)`: сообщение игры `ItemPickup`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ItemPickup"))`, `write_*`, `message_end` */
+export interface ItemPickupFields {
+    /** Имя класса предмета, например `"item_kevlar"`. */
+    item?: string;
+}
+/** Что принимают `player.send("itemStatus", ...)` и `server.send("itemStatus", ...)`: сообщение игры `ItemStatus`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ItemStatus"))`, `write_*`, `message_end` */
+export interface ItemStatusFields {
+    /** `true`, когда у игрока есть ночное видение. */
+    nightVision?: boolean;
+    /** `true`, когда у игрока есть набор сапёра. */
+    defuseKit?: boolean;
+}
+/** Что принимают `player.send("location", ...)` и `server.send("location", ...)`: сообщение игры `Location`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Location"))`, `write_*`, `message_end` */
+export interface LocationFields {
+    /** Игрок, чьё это место. */
+    target?: Player | null;
+    /** Имя места, например `"BombsiteA"`. */
+    place?: string;
+}
+/** Что принимают `player.send("money", ...)` и `server.send("money", ...)`: сообщение игры `Money`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Money"))`, `write_*`, `message_end` */
+export interface MoneyFields {
+    /** Показанные деньги. */
+    amount?: number;
+    /** `true` — мигнуть изменением. */
+    flash?: boolean;
+}
+/** Что принимают `player.send("motd", ...)` и `server.send("motd", ...)`: сообщение игры `MOTD`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("MOTD"))`, `write_*`, `message_end` */
+export interface MOTDFields {
+    /** `true` — последняя часть: окно открывается. */
+    last?: boolean;
+    /** Текст части. */
+    text?: string;
+}
+/** Что принимают `player.send("nightVision", ...)` и `server.send("nightVision", ...)`: сообщение игры `NVGToggle`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("NVGToggle"))`, `write_*`, `message_end` */
+export interface NVGToggleFields {
+    /** `true`, пока ночное видение включено. */
+    on?: boolean;
+}
+/** Что принимают `player.send("radar", ...)` и `server.send("radar", ...)`: сообщение игры `Radar`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Radar"))`, `write_*`, `message_end` */
+export interface RadarFields {
+    /** Показанный союзник. */
+    target?: Player | null;
+    /** Точка, где находится союзник. */
+    origin?: number[];
+}
+/** Что принимают `player.send("resetHud", ...)` и `server.send("resetHud", ...)`: сообщение игры `ResetHUD`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ResetHUD"))`, `write_*`, `message_end` */
+export interface ResetHUDFields {
+}
+/** Что принимают `player.send("roundTime", ...)` и `server.send("roundTime", ...)`: сообщение игры `RoundTime`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("RoundTime"))`, `write_*`, `message_end` */
+export interface RoundTimeFields {
+    /** Секунды, которые показывают полоса или часы. Присвойте, чтобы изменить. */
+    seconds?: number;
+}
+/** Что принимают `player.send("chat", ...)` и `server.send("chat", ...)`: сообщение игры `SayText`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("SayText"))`, `write_*`, `message_end` */
+export interface SayTextFields {
+    /** Игрок, который её написал; `null` — сервер. */
+    sender?: Player | null;
+    /** Строка или формат игры для неё, например `"#Cstrike_Chat_All"`. */
+    text?: string;
+    /** Тексты, которые подставляются в текст игры вместо `%s1`, `%s2`, ... — например, имя игрока. Присвойте, чтобы изменить; их число остаётся. */
+    params?: string[];
+}
+/** Что принимают `player.send("scenarioIcon", ...)` и `server.send("scenarioIcon", ...)`: сообщение игры `Scenario`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Scenario"))`, `write_*`, `message_end` */
+export interface ScenarioFields {
+    /** `true`, пока значок показан. */
+    active?: boolean;
+    /** Имя спрайта значка, например `"hostage1"`. */
+    sprite?: string;
+    /** Непрозрачность значка, от `0` до `255`. */
+    alpha?: number;
+}
+/** Что принимают `player.send("scoreAttribute", ...)` и `server.send("scoreAttribute", ...)`: сообщение игры `ScoreAttrib`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ScoreAttrib"))`, `write_*`, `message_end` */
+export interface ScoreAttribFields {
+    /** Игрок, чья это строка. */
+    target?: Player | null;
+    /** Отметки в строке, например `"dead"`, `"bomb"`, `"vip"`. */
+    flags?: ScoreStatus[];
+}
+/** Что принимают `player.send("score", ...)` и `server.send("score", ...)`: сообщение игры `ScoreInfo`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ScoreInfo"))`, `write_*`, `message_end` */
+export interface ScoreInfoFields {
+    /** Игрок, чья это строка. */
+    target?: Player | null;
+    /** Показанные фраги. */
+    frags?: number;
+    /** Показанные смерти. */
+    deaths?: number;
+    /** Команда, под которой строка. */
+    team?: Team;
+}
+/** Что принимают `player.send("screenFade", ...)` и `server.send("screenFade", ...)`: сообщение игры `ScreenFade`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ScreenFade"))`, `write_*`, `message_end` */
+export interface ScreenFadeFields {
+    /** Длительность затухания, в секундах. */
+    duration?: number;
+    /** Время, которое держится полный цвет, в секундах. */
+    hold?: number;
+    /** Одно из `"in"` — от цвета к чистому экрану, или `"out"` — от чистого экрана к цвету. */
+    direction?: FadeDirection;
+    /** `true`, когда цвет тонирует экран, а не закрашивает его. */
+    modulate?: boolean;
+    /** `true`, когда цвет остаётся до следующего затухания. */
+    stay?: boolean;
+    /** Цвет: красный, зелёный, синий и альфа, от `0` до `255` каждый. */
+    color?: number[];
+}
+/** Что принимают `player.send("screenShake", ...)` и `server.send("screenShake", ...)`: сообщение игры `ScreenShake`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ScreenShake"))`, `write_*`, `message_end` */
+export interface ScreenShakeFields {
+    /** Сила тряски: насколько сдвигается вид, до 16 единиц. */
+    amplitude?: number;
+    /** Длительность тряски, в секундах. */
+    duration?: number;
+    /** Частота тряски, в толчках в секунду. */
+    frequency?: number;
+}
+/** Что принимают `player.send("sound", ...)` и `server.send("sound", ...)`: сообщение игры `SendAudio`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("SendAudio"))`, `write_*`, `message_end` */
+export interface SendAudioFields {
+    /** Игрок, от которого звук; `null` — ни от кого. */
+    sender?: Player | null;
+    /** Звук, например `"%!MRAD_GO"` — фраза рации. */
+    sound?: string;
+    /** Высота в процентах, `100` — как записан. */
+    pitch?: number;
+}
+/** Что принимают `player.send("serverName", ...)` и `server.send("serverName", ...)`: сообщение игры `ServerName`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ServerName"))`, `write_*`, `message_end` */
+export interface ServerNameFields {
+    /** Имя сервера, как его задаёт `hostname`. */
+    serverName?: string;
+}
+/** Что принимают `player.send("fov", ...)` и `server.send("fov", ...)`: сообщение игры `SetFOV`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("SetFOV"))`, `write_*`, `message_end` */
+export interface SetFOVFields {
+    /** Поле зрения, в градусах. */
+    fov?: number;
+}
+/** Что принимают `player.send("showTimer", ...)` и `server.send("showTimer", ...)`: сообщение игры `ShowTimer`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ShowTimer"))`, `write_*`, `message_end` */
+export interface ShowTimerFields {
+}
+/** Что принимают `player.send("spectatedHealth", ...)` и `server.send("spectatedHealth", ...)`: сообщение игры `SpecHealth2`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("SpecHealth2"))`, `write_*`, `message_end` */
+export interface SpecHealth2Fields {
+    /** Показанное здоровье. */
+    health?: number;
+    /** Игрок, за которым следят. */
+    target?: Player | null;
+}
+/** Что принимают `player.send("spectator", ...)` и `server.send("spectator", ...)`: сообщение игры `Spectator`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Spectator"))`, `write_*`, `message_end` */
+export interface SpectatorFields {
+    /** Игрок. */
+    target?: Player | null;
+    /** `true`, пока игрок наблюдает. */
+    spectator?: boolean;
+}
+/** Что принимают `player.send("statusIcon", ...)` и `server.send("statusIcon", ...)`: сообщение игры `StatusIcon`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("StatusIcon"))`, `write_*`, `message_end` */
+export interface StatusIconFields {
+    /** Одно из `"hide"`, `"show"` или `"flash"`. */
+    state?: StatusIconState;
+    /** Имя спрайта значка, например `"buyzone"`. */
+    sprite?: string;
+    /** Цвет значка: красный, зелёный и синий, от `0` до `255` каждый; пусто, когда он скрыт. */
+    color?: number[];
+}
+/** Что принимают `player.send("statusText", ...)` и `server.send("statusText", ...)`: сообщение игры `StatusText`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("StatusText"))`, `write_*`, `message_end` */
+export interface StatusTextFields {
+    /** Номер строки состояния, с `0`. */
+    line?: number;
+    /** Текст строки или её формат, например `"1 %c1: %p2"`. */
+    text?: string;
+}
+/** Что принимают `player.send("statusValue", ...)` и `server.send("statusValue", ...)`: сообщение игры `StatusValue`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("StatusValue"))`, `write_*`, `message_end` */
+export interface StatusValueFields {
+    /** Номер значения в формате строки: `1` — команда, `2` — игрок, `3` — здоровье. */
+    slot?: number;
+    /** Значение. */
+    value?: number;
+}
+/** Что принимают `player.send("taskTime", ...)` и `server.send("taskTime", ...)`: сообщение игры `TaskTime`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("TaskTime"))`, `write_*`, `message_end` */
+export interface TaskTimeFields {
+    /** Оставшиеся секунды. */
+    seconds?: number;
+    /** `true`, пока часы идут. */
+    active?: boolean;
+    /** Секунды, за которые часы гаснут. */
+    fade?: number;
+}
+/** Что принимают `player.send("team", ...)` и `server.send("team", ...)`: сообщение игры `TeamInfo`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("TeamInfo"))`, `write_*`, `message_end` */
+export interface TeamInfoFields {
+    /** Игрок, чья это команда. */
+    target?: Player | null;
+    /** Команда, например `"TERRORIST"`, `"CT"`. */
+    team?: Team;
+}
+/** Что принимают `player.send("teamScore", ...)` и `server.send("teamScore", ...)`: сообщение игры `TeamScore`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("TeamScore"))`, `write_*`, `message_end` */
+export interface TeamScoreFields {
+    /** Команда, `"TERRORIST"` или `"CT"`. */
+    team?: Team;
+    /** Раунды, которые выиграла команда. */
+    score?: number;
+}
+/** Что принимают `player.send("text", ...)` и `server.send("text", ...)`: сообщение игры `TextMsg`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("TextMsg"))`, `write_*`, `message_end` */
+export interface TextMsgFields {
+    /** Место, где он виден, одно из `"chat"`, `"center"`, `"console"` или `"notify"`. */
+    destination?: VariantName;
+    /** Текст или собственный текст игры, например `"#Round_Draw"`. */
+    text?: string;
+    /** Тексты, которые подставляются в текст игры вместо `%s1`, `%s2`, ... — например, имя игрока. Присвойте, чтобы изменить; их число остаётся. */
+    params?: string[];
+}
+/** Что принимают `player.send("train", ...)` и `server.send("train", ...)`: сообщение игры `Train`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("Train"))`, `write_*`, `message_end` */
+export interface TrainFields {
+    /** Ступень скорости, `0` — никакой. */
+    speed?: number;
+}
+/** Что принимают `player.send("tutorClose", ...)` и `server.send("tutorClose", ...)`: сообщение игры `TutorClose`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("TutorClose"))`, `write_*`, `message_end` */
+export interface TutorCloseFields {
+}
+/** Что принимают `player.send("viewMode", ...)` и `server.send("viewMode", ...)`: сообщение игры `ViewMode`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ViewMode"))`, `write_*`, `message_end` */
+export interface ViewModeFields {
+}
+/** Что принимают `player.send("weaponList", ...)` и `server.send("weaponList", ...)`: сообщение игры `WeaponList`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("WeaponList"))`, `write_*`, `message_end` */
+export interface WeaponListFields {
+    /** Имя класса оружия, например `"weapon_ak47"`. */
+    classname?: string;
+    /** Индекс патронов оружия в списке видов у игры. */
+    ammo?: number;
+    /** Наибольший запас этих патронов у игрока. */
+    maxAmmo?: number;
+    /** Индекс вторых патронов оружия, `-1` — нет. */
+    ammo2?: number;
+    /** Наибольший запас вторых патронов у игрока. */
+    maxAmmo2?: number;
+    /** Слот оружия, с `0`. */
+    slot?: number;
+    /** Место оружия в слоте, с `0`. */
+    position?: number;
+    /** Оружие по его виду, например `"ak47"`. */
+    weapon?: WeaponKind;
+    /** Биты ITEM_FLAG_* оружия: `8` — выбрасывается, когда пусто, `16` — используется один раз. */
+    flags?: number;
+}
+/** Что принимают `player.send("weaponPickup", ...)` и `server.send("weaponPickup", ...)`: сообщение игры `WeapPickup`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("WeapPickup"))`, `write_*`, `message_end` */
+export interface WeapPickupFields {
+    /** Оружие по его виду, например `"knife"`. */
+    weapon?: WeaponKind;
+}
+/** Every message a plugin can send, by the name player.send and server.send take. */
+export interface ServerSendMap {
+    /**
+     * HUD игрока перестаёт показывать рекламу раунда.
+     *
+     * Сообщение игры `ADStop`.
+     *
+     * Pawn: `register_message(get_user_msgid("ADStop"), ...)`
+     */
+    adStop: ADStopFields;
+    /**
+     * Можно ли игроку выбрать «Наблюдать» в меню команды.
+     *
+     * Сообщение игры `AllowSpec`.
+     *
+     * Pawn: `register_message(get_user_msgid("AllowSpec"), ...)`
+     */
+    allowSpectate: AllowSpecFields;
+    /**
+     * Игрок подбирает патроны: уведомление сбоку экрана.
+     *
+     * Сообщение игры `AmmoPickup`.
+     *
+     * Pawn: `register_message(get_user_msgid("AmmoPickup"), ...)`
+     */
+    ammoPickup: AmmoPickupFields;
+    /**
+     * Меняется запас патронов одного вида на HUD игрока.
+     *
+     * Сообщение игры `AmmoX`.
+     *
+     * Pawn: `register_message(get_user_msgid("AmmoX"), ...)`
+     */
+    ammo: AmmoXFields;
+    /**
+     * Значок брони на HUD игрока: жилет или жилет со шлемом.
+     *
+     * Сообщение игры `ArmorType`.
+     *
+     * Pawn: `register_message(get_user_msgid("ArmorType"), ...)`
+     */
+    armorType: ArmorTypeFields;
+    /**
+     * Полосу прогресса посреди экрана игрока показывают или прячут — пустой или заполненной не с нуля.
+     *
+     * Сообщения игры `BarTime` и `BarTime2`.
+     *
+     * Pawn: `register_message(get_user_msgid("BarTime"), ...)`, `register_message(get_user_msgid("BarTime2"), ...)`
+     */
+    progressBar: BarTime2Fields;
+    /**
+     * Меняется броня игрока на его HUD.
+     *
+     * Сообщение игры `Battery`.
+     *
+     * Pawn: `register_message(get_user_msgid("Battery"), ...)`
+     */
+    armor: BatteryFields;
+    /**
+     * Деньги на HUD игрока мигают: ему не хватает на покупку.
+     *
+     * Сообщение игры `BlinkAcct`.
+     *
+     * Pawn: `register_message(get_user_msgid("BlinkAcct"), ...)`
+     */
+    moneyBlink: BlinkAcctFields;
+    /**
+     * Бомба на радаре террористов: брошена или заложена.
+     *
+     * Сообщение игры `BombDrop`.
+     *
+     * Pawn: `register_message(get_user_msgid("BombDrop"), ...)`
+     */
+    bombDrop: BombDropFields;
+    /**
+     * Бомбу подобрали: она пропадает с радара террористов.
+     *
+     * Сообщение игры `BombPickup`.
+     *
+     * Pawn: `register_message(get_user_msgid("BombPickup"), ...)`
+     */
+    bombPickup: BombPickupFields;
+    /**
+     * Значок голоса над ботом, который говорит по рации.
+     *
+     * Сообщение игры `BotVoice`.
+     *
+     * Pawn: `register_message(get_user_msgid("BotVoice"), ...)`
+     */
+    botVoice: BotVoiceFields;
+    /**
+     * Меню закупки игрока закрывается.
+     *
+     * Сообщение игры `BuyClose`.
+     *
+     * Pawn: `register_message(get_user_msgid("BuyClose"), ...)`
+     */
+    closeBuyMenu: BuyCloseFields;
+    /**
+     * Собственный прицел Counter-Strike на экране игрока показывают или прячут.
+     *
+     * Сообщение игры `Crosshair`.
+     *
+     * Pawn: `register_message(get_user_msgid("Crosshair"), ...)`
+     */
+    crosshair: CrosshairFields;
+    /**
+     * Оружие в руках игрока и его обойма на HUD.
+     *
+     * Сообщение игры `CurWeapon`.
+     *
+     * Pawn: `register_message(get_user_msgid("CurWeapon"), ...)`
+     */
+    currentWeapon: CurWeaponFields;
+    /**
+     * Игроку показывают полученный урон: красные метки сбоку экрана.
+     *
+     * Сообщение игры `Damage`.
+     *
+     * Pawn: `register_message(get_user_msgid("Damage"), ...)`
+     */
+    damage: DamageFields;
+    /**
+     * Убийство в правом верхнем углу каждого экрана.
+     *
+     * Сообщение игры `DeathMsg`.
+     *
+     * Pawn: `register_message(get_user_msgid("DeathMsg"), ...)`
+     */
+    death: DeathMsgFields;
+    /**
+     * Значок фонарика на HUD игрока: включён ли он, и его заряд.
+     *
+     * Сообщение игры `Flashlight`.
+     *
+     * Pawn: `register_message(get_user_msgid("Flashlight"), ...)`
+     */
+    flashlight: FlashlightFields;
+    /**
+     * Меняется заряд фонарика на HUD игрока.
+     *
+     * Сообщение игры `FlashBat`.
+     *
+     * Pawn: `register_message(get_user_msgid("FlashBat"), ...)`
+     */
+    flashlightBattery: FlashBatFields;
+    /**
+     * Щелчки счётчика Гейгера, которые игрок слышит рядом с радиацией.
+     *
+     * Сообщение игры `Geiger`.
+     *
+     * Pawn: `register_message(get_user_msgid("Geiger"), ...)`
+     */
+    geiger: GeigerFields;
+    /**
+     * Меняется здоровье игрока на его HUD.
+     *
+     * Сообщение игры `Health`.
+     *
+     * Pawn: `register_message(get_user_msgid("Health"), ...)`
+     */
+    health: HealthFields;
+    /**
+     * Меняются скрытые части HUD игрока.
+     *
+     * Сообщение игры `HideWeapon`.
+     *
+     * Pawn: `register_message(get_user_msgid("HideWeapon"), ...)`
+     */
+    hideWeapon: HideWeaponFields;
+    /**
+     * Заложник убит: он пропадает с радара спецназа.
+     *
+     * Сообщение игры `HostageK`.
+     *
+     * Pawn: `register_message(get_user_msgid("HostageK"), ...)`
+     */
+    hostageKilled: HostageKFields;
+    /**
+     * HUD игрока готовится, когда он входит в игру.
+     *
+     * Сообщение игры `InitHUD`.
+     *
+     * Pawn: `register_message(get_user_msgid("InitHUD"), ...)`
+     */
+    initHud: InitHUDFields;
+    /**
+     * Игрок подбирает предмет: уведомление сбоку экрана.
+     *
+     * Сообщение игры `ItemPickup`.
+     *
+     * Pawn: `register_message(get_user_msgid("ItemPickup"), ...)`
+     */
+    itemPickup: ItemPickupFields;
+    /**
+     * Прибор ночного видения и набор сапёра, которые есть у игрока, для его HUD.
+     *
+     * Сообщение игры `ItemStatus`.
+     *
+     * Pawn: `register_message(get_user_msgid("ItemStatus"), ...)`
+     */
+    itemStatus: ItemStatusFields;
+    /**
+     * Место на карте, где находится игрок, как его называет рация.
+     *
+     * Сообщение игры `Location`.
+     *
+     * Pawn: `register_message(get_user_msgid("Location"), ...)`
+     */
+    location: LocationFields;
+    /**
+     * Меняются деньги игрока на его HUD.
+     *
+     * Сообщение игры `Money`.
+     *
+     * Pawn: `register_message(get_user_msgid("Money"), ...)`
+     */
+    money: MoneyFields;
+    /**
+     * Часть сообщения дня — окна, которое видит вошедший игрок.
+     *
+     * Сообщение игры `MOTD`.
+     *
+     * Pawn: `register_message(get_user_msgid("MOTD"), ...)`
+     */
+    motd: MOTDFields;
+    /**
+     * Ночное видение игрока включают или выключают.
+     *
+     * Сообщение игры `NVGToggle`.
+     *
+     * Pawn: `register_message(get_user_msgid("NVGToggle"), ...)`
+     */
+    nightVision: NVGToggleFields;
+    /**
+     * Союзник на радаре игрока.
+     *
+     * Сообщение игры `Radar`.
+     *
+     * Pawn: `register_message(get_user_msgid("Radar"), ...)`
+     */
+    radar: RadarFields;
+    /**
+     * HUD игрока сбрасывается при его появлении.
+     *
+     * Сообщение игры `ResetHUD`.
+     *
+     * Pawn: `register_message(get_user_msgid("ResetHUD"), ...)`
+     */
+    resetHud: ResetHUDFields;
+    /**
+     * Задаются часы раунда вверху HUD игрока.
+     *
+     * Сообщение игры `RoundTime`.
+     *
+     * Pawn: `register_message(get_user_msgid("RoundTime"), ...)`
+     */
+    roundTime: RoundTimeFields;
+    /**
+     * Строка чата.
+     *
+     * Сообщение игры `SayText`.
+     *
+     * Pawn: `register_message(get_user_msgid("SayText"), ...)`
+     */
+    chat: SayTextFields;
+    /**
+     * Значок сценария на HUD игрока, например бомбы или заложника.
+     *
+     * Сообщение игры `Scenario`.
+     *
+     * Pawn: `register_message(get_user_msgid("Scenario"), ...)`
+     */
+    scenarioIcon: ScenarioFields;
+    /**
+     * Отметки, которые таблица счёта показывает рядом с игроком: погиб, бомба, VIP.
+     *
+     * Сообщение игры `ScoreAttrib`.
+     *
+     * Pawn: `register_message(get_user_msgid("ScoreAttrib"), ...)`
+     */
+    scoreAttribute: ScoreAttribFields;
+    /**
+     * Строка игрока в таблице счёта.
+     *
+     * Сообщение игры `ScoreInfo`.
+     *
+     * Pawn: `register_message(get_user_msgid("ScoreInfo"), ...)`
+     */
+    score: ScoreInfoFields;
+    /**
+     * Экран игрока окрашивается с затуханием — флешка, затемнение.
+     *
+     * Сообщение игры `ScreenFade`.
+     *
+     * Pawn: `register_message(get_user_msgid("ScreenFade"), ...)`
+     */
+    screenFade: ScreenFadeFields;
+    /**
+     * Вид игрока трясётся — рядом взрыв.
+     *
+     * Сообщение игры `ScreenShake`.
+     *
+     * Pawn: `register_message(get_user_msgid("ScreenShake"), ...)`
+     */
+    screenShake: ScreenShakeFields;
+    /**
+     * Звук, который играет игроку, например фраза рации.
+     *
+     * Сообщение игры `SendAudio`.
+     *
+     * Pawn: `register_message(get_user_msgid("SendAudio"), ...)`
+     */
+    sound: SendAudioFields;
+    /**
+     * Имя сервера, которое показывает клиент игрока.
+     *
+     * Сообщение игры `ServerName`.
+     *
+     * Pawn: `register_message(get_user_msgid("ServerName"), ...)`
+     */
+    serverName: ServerNameFields;
+    /**
+     * Задаётся поле зрения игрока.
+     *
+     * Сообщение игры `SetFOV`.
+     *
+     * Pawn: `register_message(get_user_msgid("SetFOV"), ...)`
+     */
+    fov: SetFOVFields;
+    /**
+     * На HUD игрока появляются часы раунда.
+     *
+     * Сообщение игры `ShowTimer`.
+     *
+     * Pawn: `register_message(get_user_msgid("ShowTimer"), ...)`
+     */
+    showTimer: ShowTimerFields;
+    /**
+     * Здоровье игрока, за которым следит наблюдатель.
+     *
+     * Сообщения игры `SpecHealth` и `SpecHealth2`.
+     *
+     * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`, `register_message(get_user_msgid("SpecHealth2"), ...)`
+     */
+    spectatedHealth: SpecHealth2Fields;
+    /**
+     * Игрок становится наблюдателем или перестаёт им быть — в таблице счёта.
+     *
+     * Сообщение игры `Spectator`.
+     *
+     * Pawn: `register_message(get_user_msgid("Spectator"), ...)`
+     */
+    spectator: SpectatorFields;
+    /**
+     * Значок состояния на HUD игрока — зона закупки, бомба — показывается, мигает или прячется.
+     *
+     * Сообщение игры `StatusIcon`.
+     *
+     * Pawn: `register_message(get_user_msgid("StatusIcon"), ...)`
+     */
+    statusIcon: StatusIconFields;
+    /**
+     * Строка состояния внизу экрана игрока, например имя игрока, в которого он целится.
+     *
+     * Сообщение игры `StatusText`.
+     *
+     * Pawn: `register_message(get_user_msgid("StatusText"), ...)`
+     */
+    statusText: StatusTextFields;
+    /**
+     * Значение, которое показывает строка состояния, например игрок, в которого целится игрок.
+     *
+     * Сообщение игры `StatusValue`.
+     *
+     * Pawn: `register_message(get_user_msgid("StatusValue"), ...)`
+     */
+    statusValue: StatusValueFields;
+    /**
+     * Отсчёт задания на HUD игрока, например спасения заложников в карьере.
+     *
+     * Сообщение игры `TaskTime`.
+     *
+     * Pawn: `register_message(get_user_msgid("TaskTime"), ...)`
+     */
+    taskTime: TaskTimeFields;
+    /**
+     * Команда игрока в таблице счёта.
+     *
+     * Сообщение игры `TeamInfo`.
+     *
+     * Pawn: `register_message(get_user_msgid("TeamInfo"), ...)`
+     */
+    team: TeamInfoFields;
+    /**
+     * Счёт команды в таблице счёта.
+     *
+     * Сообщение игры `TeamScore`.
+     *
+     * Pawn: `register_message(get_user_msgid("TeamScore"), ...)`
+     */
+    teamScore: TeamScoreFields;
+    /**
+     * Текст игры — объявление, подсказка — в чате, консоли или посреди экрана.
+     *
+     * Сообщение игры `TextMsg`.
+     *
+     * Pawn: `register_message(get_user_msgid("TextMsg"), ...)`
+     */
+    text: TextMsgFields;
+    /**
+     * Скорость поезда, которым управляет игрок, на его HUD.
+     *
+     * Сообщение игры `Train`.
+     *
+     * Pawn: `register_message(get_user_msgid("Train"), ...)`
+     */
+    train: TrainFields;
+    /**
+     * Сообщение подсказчика на экране игрока закрывается.
+     *
+     * Сообщение игры `TutorClose`.
+     *
+     * Pawn: `register_message(get_user_msgid("TutorClose"), ...)`
+     */
+    tutorClose: TutorCloseFields;
+    /**
+     * Вид игрока возвращается к виду от первого лица.
+     *
+     * Сообщение игры `ViewMode`.
+     *
+     * Pawn: `register_message(get_user_msgid("ViewMode"), ...)`
+     */
+    viewMode: ViewModeFields;
+    /**
+     * Описание оружия для клиента игрока: его патроны, слот, место в слоте.
+     *
+     * Сообщение игры `WeaponList`.
+     *
+     * Pawn: `register_message(get_user_msgid("WeaponList"), ...)`
+     */
+    weaponList: WeaponListFields;
+    /**
+     * Игрок подбирает оружие: уведомление сбоку экрана.
+     *
+     * Сообщение игры `WeapPickup`.
+     *
+     * Pawn: `register_message(get_user_msgid("WeapPickup"), ...)`
+     */
+    weaponPickup: WeapPickupFields;
+}
+/** Sends a message of the fields F - player.send's and server.send's hood. */
+export declare function __sendMessage<F>(given: F, dest: i32, player: i32, origin: Vector | null): void;
 /** The game's names of the messages a name server.addMessageListener takes hears; a name it does not know as it is. */
 export declare function protocolMessageNames(name: string): string[];
 /** Adds a listener for the event E - server.addEventListener's hood. */

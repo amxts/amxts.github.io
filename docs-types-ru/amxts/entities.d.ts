@@ -18,6 +18,10 @@ export { entvarCell as __entvarCell, setEntvarCell as __setEntvarCell, memberCel
  * Pawn: `kRender*`
  */
 export type RenderMode = "normal" | "color" | "texture" | "glow" | "alpha" | "additive" | "unknown";
+/** A RenderMode number as its name; one no name stands for reads as "unknown". */
+declare function renderModeName(cell: i32): RenderMode;
+/** A RenderMode name as its number; "unknown" is UNNAMED, and the field keeps what it has. */
+declare function renderModeCell(name: RenderMode): i32;
 /**
  * Эффект отрисовки сущности — `entity.renderFx`.
  *
@@ -26,6 +30,10 @@ export type RenderMode = "normal" | "color" | "texture" | "glow" | "alpha" | "ad
  * Pawn: `kRenderFx*`
  */
 export type RenderFx = "none" | "pulseSlow" | "pulseFast" | "pulseSlowWide" | "pulseFastWide" | "fadeSlow" | "fadeFast" | "solidSlow" | "solidFast" | "strobeSlow" | "strobeFast" | "strobeFaster" | "flickerSlow" | "flickerFast" | "noDissipation" | "distort" | "hologram" | "deadPlayer" | "explode" | "glowShell" | "clampMinScale" | "lightMultiplier" | "unknown";
+/** A RenderFx number as its name; one no name stands for reads as "unknown". */
+declare function renderFxName(cell: i32): RenderFx;
+/** A RenderFx name as its number; "unknown" is UNNAMED, and the field keeps what it has. */
+declare function renderFxCell(name: RenderFx): i32;
 /**
  * Способ движения сущности — `entity.moveType`.
  *
@@ -74,6 +82,8 @@ export type WaterLevel = "none" | "feet" | "waist" | "head" | "unknown";
  * Pawn: `CONTENTS_*`
  */
 export type Contents = "empty" | "solid" | "water" | "slime" | "lava" | "sky" | "origin" | "clip" | "current0" | "current90" | "current180" | "current270" | "currentUp" | "currentDown" | "translucent" | "ladder" | "unknown";
+/** A Contents number as its name; one no name stands for reads as "unknown". */
+declare function contentsName(cell: i32): Contents;
 /**
  * Разворот взгляда игрока — `player.fixAngle`.
  *
@@ -90,6 +100,8 @@ export type FixAngle = "none" | "set" | "addYaw" | "unknown";
  * Pawn: `HITGROUP_*`
  */
 export type HitGroup = "generic" | "head" | "chest" | "stomach" | "leftArm" | "rightArm" | "leftLeg" | "rightLeg" | "shield" | "unknown";
+/** A HitGroup number as its name; one no name stands for reads as "unknown". */
+declare function hitGroupName(cell: i32): HitGroup;
 /**
  * Вид брони игрока — `player.kevlar`.
  *
@@ -170,6 +182,7 @@ export type MusicState = "silent" | "calm" | "intense" | "unknown";
  * Pawn: `MAP_HAVE_VIP_SAFETYZONE_*`
  */
 export type VipSafetyZone = "notChecked" | "yes" | "no" | "unknown";
+export { contentsName, hitGroupName, renderFxCell, renderFxName, renderModeCell, renderModeName };
 /**
  * Which entities `Entity.findAll` returns. Every field is optional, and an
  * entity has to match all that are given:
@@ -205,6 +218,12 @@ export declare class Entity {
      * where nothing is holding them.
      */
     remove(): void;
+    /**
+     * Опускает сущность вертикально вниз на то, что под ней, как игра кладёт предмет на пол при старте карты: `true`, если она опустилась, `false`, если под ней ничего нет в пределах 256 единиц или она во что-то застряла.
+     *
+     * Pawn: `drop_to_floor`, `engfunc(EngFunc_DropToFloor, ...)`
+     */
+    dropToFloor(): boolean;
     /**
      * `true`, пока сущность есть в мире: `false`, когда движок её освободил (`remove()` освобождает её в конце кадра), для ушедшего игрока и для `0` — «нет сущности». Номер из события или хука может указывать на сущность, которой уже нет.
      *
@@ -497,15 +516,15 @@ export declare class Entity {
      *
      * Pawn: `pev->viewmodel`
      */
-    get viewModel(): number;
-    set viewModel(value: number);
+    get viewModel(): string;
+    set viewModel(value: string);
     /**
      * Модель оружия в руках игрока, которую видят другие, например `"models/p_knife.mdl"`.
      *
      * Pawn: `pev->weaponmodel`
      */
-    get weaponModel(): number;
-    set weaponModel(value: number);
+    get weaponModel(): string;
+    set weaponModel(value: string);
     /**
      * Нижний угол габаритов сущности в координатах мира; движок пересчитывает его при перемещении.
      *
@@ -2137,6 +2156,13 @@ export declare class PlayerFields extends Entity {
      */
     get soundRange(): number;
     set soundRange(value: number);
+    /**
+     * Скорость падения игрока, единиц в секунду, вниз положительная: по ней игра считает урон при приземлении. Запись ставит и `fallVelocity` сущности — `player.fallVelocity = 0` приземляет без урона.
+     *
+     * Pawn: `CBasePlayer::m_flFallVelocity`
+     */
+    get fallVelocity(): number;
+    set fallVelocity(value: number);
     /**
      * Флаг игрока «есть новые патроны для отправки» из Half-Life. В CS не используется.
      *

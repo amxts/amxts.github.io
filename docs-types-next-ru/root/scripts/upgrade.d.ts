@@ -135,10 +135,16 @@ export declare function upgradeFlags(file: string, text: string): {
     changes: Change[];
     left: Left[];
 };
-/** Rewrites the project in `dir`: every change, in the order of the files, and what is left to do by hand. `write: false` only lists them. */
+/**
+ * Rewrites the project in `dir`: every change, in the order of the files, and
+ * what is left to do by hand. Then removes the copies of the core's API an
+ * older amxts left in the plugins folder - after the rewrite, so nothing
+ * still imports them by `~/`. `write: false` only lists them.
+ */
 export declare function upgradeProject(dir: string, { write }?: {
     write?: boolean | undefined;
 }): {
     changes: Change[];
     left: Left[];
+    removed: string[];
 };

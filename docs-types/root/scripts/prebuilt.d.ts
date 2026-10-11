@@ -9,6 +9,8 @@ interface Built {
     version: string;
     /** Its content: the code files, TypeScript without comments. */
     hash: string;
+    /** The core's: the ABI the .aot carries. */
+    abi?: string;
 }
 export interface PrebuiltManifest {
     format: number;

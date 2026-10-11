@@ -119,8 +119,12 @@ export declare function find(name: string): Menu | null;
 export declare function indexOf(menu: Menu | null): number;
 /** The menu with that number among all of them - the reverse of `indexOf()`; `null` when there is none. */
 export declare function menuAt(index: number): Menu | null;
-/** The menu of that name in the menu file, read now if it is not yet; `null` when the file has no such menu, or no items in it. */
-export declare function register(name: string): Menu | null;
+/**
+ * The menus of those names in the menu file, read now if they are not yet:
+ * `menus.register("SHOP", "SHOP_GUNS")`. Returns the first one's menu;
+ * `null` when the file has no such menu, or no items in it.
+ */
+export declare function register(...names: string[]): Menu | null;
 /**
  * A menu made in code - or the one of that name already there, as it is. A
  * name starting with `LIST_` makes a list menu.
@@ -130,6 +134,10 @@ export declare function create(name: string, options?: MenuOptions): Menu;
 export declare function addCondition(name: string, test: ConditionTest): number;
 /** Registers an action by name, for menu files and Pawn plugins; `SHOW_<MENU>` and `CLOSE_MENU` are built in. */
 export declare function addAction(name: string, run: ActionHandler): number;
+/** Registers actions by name, for menu files and Pawn plugins: `menus.addActions({ SHOP_HEAL: heal, SHOP_ARMOR: (player) => player.armor = 100 })`. */
+export declare function addActions(actions: Record<string, ActionHandler>): void;
+/** Registers placeholders for menu files and Pawn plugins: `menus.addPlaceholders({ nick: (player) => player.name })`. A name registered twice keeps the first. */
+export declare function addPlaceholders(placeholders: Record<string, PlaceholderValue>): void;
 /** Registers a placeholder for menu files and Pawn plugins: the text `%name%` stands for in titles and items. A name registered twice keeps the first. In code the text is a function instead. */
 export declare function addPlaceholder(name: string, value: PlaceholderValue): number;
 /** Registers a restriction by name, for menu files to name in `enabled` and `when`: `message` is said beside an item it greys out, unless the item or the requirement has its own; `"*"` answers for every name nothing else does. */

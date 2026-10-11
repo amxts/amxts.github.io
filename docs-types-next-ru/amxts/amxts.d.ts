@@ -145,6 +145,13 @@ type UsageArgs<U extends string> = string extends U ? Record<string, string | un
 /** A command's arguments: the type argument's, or else the usage's, as text. */
 type CommandArgsOf<T, U extends string> = [T] extends [never] ? UsageArgs<U> : T;
 
+/**
+ * What a command's handler takes: its arguments and `player` - `({ player,
+ * target }) =>`; for a command without arguments, the player himself too -
+ * `(player) =>`, which the compiler hands `player` (`Context & Player`).
+ */
+type CommandHandlerArgs<T, U extends string> = CommandArgsOf<T, U> & { player: Player } & ([T] extends [never] ? ([RequiredNames<U> | OptionalNames<U>] extends [never] ? Player : unknown) : unknown);
+
 declare module "./facade" {
 	interface PlayerChangeEvent<F extends string = string> {
 		/** Значение поля после изменения; с `{ field }` — типа этого поля. */
@@ -179,11 +186,14 @@ declare module "./facade" {
 		 * server.addCommand<KickArgs>("/kick <target> [reason]", ({ player, target, reason }) => {
 		 *   target.kick(reason ?? `Kicked by ${player.name}`);
 		 * }, { access: "kick" });
-		 * server.addCommand("/hp", ({ player }) => print(player, `${player.health} HP`));
+		 * server.addCommand("/hp", ({ player }) => player.print(`${player.health} HP`));
+		 * server.addCommand(["/cp", "cp"], checkpoint);   // несколько имён; обработчик игрока
 		 * ```
 		 *
 		 * Имя со `/` — команда чата, без него — команда консоли, а
-		 * `"say <фраза>"` — фраза, написанная в чат. Аргумент `number`
+		 * `"say <фраза>"` — фраза, написанная в чат. Несколько имён — сначала
+		 * использование, затем другие имена — одна команда. Команда без
+		 * аргументов принимает обработчик игрока, `(player) => ...`. Аргумент `number`
 		 * разбирается как число, `Player` находится по `#userid`, имени целиком
 		 * или его части, `string` берётся как есть — последний забирает остаток
 		 * строки. На слово, которое команда не принимает, игрок получает её
@@ -192,7 +202,7 @@ declare module "./facade" {
 		 * Pawn: `register_clcmd`
 		 */
 		// oxlint-disable-next-line typescript/method-signature-style -- the editor's signature of the class's method, which the build writes per call
-		addCommand<T extends object = never, const U extends string = string>(usage: U, handler: (args: CommandArgsOf<T, U> & { player: Player }) => void, options?: CommandOptions): void;
+		addCommand<T extends object = never, const U extends string = string>(usage: U | readonly [U, ...string[]], handler: (args: CommandHandlerArgs<T, U>) => void, options?: CommandOptions): void;
 		/**
 		 * Добавляет команду консоли сервера — её набирают там, присылают по rcon
 		 * или запускает другой плагин — по её использованию; аргументы читаются

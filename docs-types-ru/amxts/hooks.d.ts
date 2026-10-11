@@ -1,16 +1,19 @@
 /// <reference path="../as-types.d.ts" />
-import { Player, RoundWinner, Team, TouchEvent, UseType, Vector } from "./facade";
+import { EntityStateEvent, Player, RoundWinner, Team, TouchEvent, UseType, Vector } from "./facade";
 import { Entity, HitGroup, Weapon, WeaponKind } from "./entities";
 import { Damage } from "./flags";
-/** What every game event can do. */
+/**
+ * What every game event can do. Its fields are the module's hook's call of
+ * the game's function (arg, argText): a field written is what the function
+ * goes on with, and -1 is its answer.
+ */
 export declare class HookEvent {
-    /** @hidden Ham Sandwich delivered the event rather than reapi: the arguments and the answer go back its way. */
-    __ham: bool;
     /**
-     * @hidden A stock hook's backend made the event, on a server without reapi
-     * (as/hlds.ts): a field is what the backend gave, 0 or empty where it gave
-     * nothing, and what a listener asks of the game - blocking it, answering,
-     * a field written - waits for the backend, which gives the game what it can.
+     * @hidden A stock hook's backend made the event, on a server without
+     * ReGameDLL (as/hlds.ts): a field is what the backend gave, 0 or empty
+     * where it gave nothing, and what a listener asks of the game - blocking
+     * it, answering, a field written - waits for the backend, which gives the
+     * game what it can.
      */
     __hlds: bool;
     /** @hidden What the listeners asked of the game, on a stock hook's event. */
@@ -21,37 +24,36 @@ export declare class HookEvent {
     private written;
     private writtenText;
     private writtenVector;
-    /** An argument as the handler sees it now: its own write, or what came in. */
+    /** An argument as the handler sees it now. */
     protected __cell(index: i32): i32;
     protected __text(index: i32): string;
     protected __vector(index: i32): Vector;
+    private __write;
+    private __writeText;
+    private __writeVector;
     /** @hidden A field's value from a stock hook's backend, by the argument's place; -1 is the game's answer. */
     __give(index: i32, cell: i32): void;
     /** @hidden */
     __giveText(index: i32, value: string): void;
     /** @hidden */
     __giveVector(index: i32, value: Vector): void;
-    /** Writes a number argument back: `atype` says how it is read, a float as its bits. */
-    protected __set(index: i32, atype: i32, cell: i32): void;
+    /** Writes an argument back, a float as its bits, an entity as its index. */
+    protected __set(index: i32, cell: i32): void;
     protected __setText(index: i32, value: string): void;
     protected __setEntity(index: i32, id: number): void;
     protected __setVector(index: i32, value: Vector): void;
-    /** The game's answer as a cell - ATYPE_EDICT is an entity. */
-    protected __resultCell(atype: i32): i32;
+    /** The game's answer as a cell: a float's bits, an entity's index. */
+    protected __resultCell(): i32;
     protected __resultText(): string;
     protected __resultVector(): Vector;
     /** @hidden A listener's answer: the game's function's result, and in a pre listener the function blocked. */
-    __answer(atype: i32, cell: i32, post: bool): void;
+    __answer(cell: i32, post: bool): void;
     /** @hidden */
     __answerText(value: string, post: bool): void;
     /** @hidden */
     __answerVector(value: Vector, post: bool): void;
-    /**
-     * Blocks a function that answers: reapi wants the answer set first -
-     * "Can't suppress original function call without new return value set" -
-     * so it is the neutral one.
-     */
-    protected __block(atype: i32): void;
+    /** Blocks a function that answers: it answers the neutral value, 0 or false. */
+    protected __block(): void;
     /**
      * Блокирует функцию игры, о которой событие. Если она ждёт ответа, верните его из обработчика; это — блокировка без ответа.
      *
@@ -59,7 +61,7 @@ export declare class HookEvent {
      */
     preventDefault(): void;
     /**
-     * Останавливает событие: функция игры не выполняется, и обработчики других плагинов тоже, где игра умеет их остановить. Нужно редко — обычно подходит preventDefault().
+     * Останавливает событие: функция игры не выполняется, и обработчики после этого тоже. Нужно редко — обычно подходит preventDefault().
      *
      * Pawn: `HC_BREAK`
      */
@@ -158,7 +160,7 @@ export declare class ActivateEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReHLDS (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RH_SV_ActivateServer` (const runPhysics)
  */
@@ -231,7 +233,7 @@ export declare class AddItemEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * У игрока меняются деньги. Присвойте `event.amount`, чтобы изменить сумму. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `amount` — на сколько сдвинулись его деньги с тех пор, как игра в последний раз их ему прислала, а `reason` читается как `"none"`.
+ * У игрока меняются деньги. Присвойте `event.amount`, чтобы изменить сумму. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `amount` — на сколько сдвинулись его деньги с тех пор, как игра в последний раз их ему прислала, а `reason` читается как `"none"`.
  *
  * Pawn: `RG_CBasePlayer_AddAccount` (const this, amount, RewardType:type, bool:bTrackChange)
  */
@@ -266,7 +268,7 @@ export declare class AddMoneyEvent extends HookEvent {
     set trackChange(value: boolean);
 }
 /**
- * Called inside TraceAttack to store entity damage to multidamage data. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called inside TraceAttack to store entity damage to multidamage data. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_AddMultiDamage` (const pevInflictor, const pEntity, Float:flDamage, bitsDamageType)
  */
@@ -300,7 +302,7 @@ export declare class AddMultiDamageEvent extends HookEvent {
     set damageType(values: Damage[]);
 }
 /**
- * Файл добавляется в то, что скачивают клиенты. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Файл добавляется в то, что скачивают клиенты. Без ReHLDS (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RH_SV_AddResource` (ResourceType_t:type, const filename[], size, flags, index)
  */
@@ -431,7 +433,7 @@ export declare class AddWeaponEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called whenever player is on air (not touching floor). Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called whenever player is on air (not touching floor). Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_AirAccelerate` (Float:wishdir[3], Float:wishspeed, Float:accel, const playerIndex)
  */
@@ -464,9 +466,21 @@ export declare class AirAccelerateEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+    /**
+     * Сколько всего игрок задел за это движение: пол, стену, другого игрока.
+     *
+     * Pawn: `get_pmove(pm_numtouch)`
+     */
+    get touchCount(): number;
+    /**
+     * Длина кадра движения в секундах.
+     *
+     * Pawn: `get_pmove(pm_frametime)`
+     */
+    get frameTime(): number;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_AirMove` (const playerIndex)
  */
@@ -478,9 +492,21 @@ export declare class AirMoveEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+    /**
+     * Сколько всего игрок задел за это движение: пол, стену, другого игрока.
+     *
+     * Pawn: `get_pmove(pm_numtouch)`
+     */
+    get touchCount(): number;
+    /**
+     * Длина кадра движения в секундах.
+     *
+     * Pawn: `get_pmove(pm_frametime)`
+     */
+    get frameTime(): number;
 }
 /**
- * Called after game finished a bullet tracing for applying damage cached on multidamage data. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called after game finished a bullet tracing for applying damage cached on multidamage data. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_ApplyMultiDamage` (const pevInflictor, const pevAttacker)
  */
@@ -550,7 +576,7 @@ export declare class AutoaimVectorEvent extends HookEvent {
     get result(): Vector;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_BalanceTeams` ()
  */
@@ -558,7 +584,7 @@ export declare class BalanceTeamsEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Makes a random player the bomber. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
+ * Makes a random player the bomber. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
  *
  * Pawn: `RG_CBasePlayer_MakeBomber` (const this)
  */
@@ -626,7 +652,7 @@ export declare class BecomeProneEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Makes a random player the VIP. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ * Makes a random player the VIP. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CBasePlayer_MakeVIP` (const this)
  */
@@ -803,7 +829,7 @@ export declare class BounceGibTouchEvent extends HookEvent {
     get other(): Entity;
 }
 /**
- * The player buys ammo. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `weapon` читается как мир, `blinkMoney` — как `true`; ответ ничего не делает.
+ * The player buys ammo. Без ReGameDLL (чистый HLDS): слышно, когда игра проверяет покупку, для предмета, который называет команда покупки или меню покупки: `preventDefault()` отменяет её; `weapon` читается как мир, `blinkMoney` — как `true`; ответ ничего не делает.
  *
  * Pawn: `RG_BuyGunAmmo` (const index, const weapon_entity, const bool:blinkMoney)
  */
@@ -842,7 +868,7 @@ export declare class BuyAmmoEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when player buys an item from buy menu (Nightvision, Kevlar, etc.). Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; слышно для предметов меню снаряжения; ответ ничего не делает.
+ * Called when player buys an item from buy menu (Nightvision, Kevlar, etc.). Без ReGameDLL (чистый HLDS): слышно, когда игра проверяет покупку, для предмета, который называет команда покупки или меню покупки: `preventDefault()` отменяет её; слышно для предметов меню снаряжения; ответ ничего не делает.
  *
  * Pawn: `RG_BuyItem` (const pPlayer, iSlot)
  */
@@ -863,7 +889,7 @@ export declare class BuyItemEvent extends HookEvent {
     set slot(value: number);
 }
 /**
- * Игрок покупает оружие. В post-обработчике `event.result` — само оружие. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `event.result` читается как `null`; ответ ничего не делает.
+ * Игрок покупает оружие. В post-обработчике `event.result` — само оружие. Без ReGameDLL (чистый HLDS): слышно, когда игра проверяет покупку, для предмета, который называет команда покупки или меню покупки: `preventDefault()` отменяет её; `event.result` читается как `null`; ответ ничего не делает.
  *
  * Pawn: `RG_BuyWeaponByWeaponID` (const index, const WeaponIdType:weaponID)
  */
@@ -948,7 +974,7 @@ export declare class CanDropEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * The player is touching a CBasePlayerItem, do I give it to him? Без ReAPI (чистый HLDS) его ничто не слышит.
+ * The player is touching a CBasePlayerItem, do I give it to him? Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_CanHavePlayerItem` (const index, const item)
  */
@@ -1007,7 +1033,7 @@ export declare class CanHolsterEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра спрашивает, слышит ли один игрок другого в голосовом чате. Верните `true` или `false`, чтобы решить. Без ReAPI (чистый HLDS): спрашивается, когда игра сообщает движку, кто кого слышит, — и при включённом `sv_alltalk`, и для игрока, заглушившего другого: ответ перекрывает и то и другое.
+ * Игра спрашивает, слышит ли один игрок другого в голосовом чате. Верните `true` или `false`, чтобы решить. Без ReGameDLL (чистый HLDS): спрашивается, когда игра сообщает движку, кто кого слышит, — и при включённом `sv_alltalk`, и для игрока, заглушившего другого: ответ перекрывает и то и другое.
  *
  * Pawn: `RG_CSGameRules_CanPlayerHearPlayer` (const listener, const sender)
  */
@@ -1039,7 +1065,7 @@ export declare class CanPlayerHearPlayerEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Is this player allowed to respawn now? Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Is this player allowed to respawn now? Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_FPlayerCanRespawn` (const index)
  */
@@ -1065,7 +1091,7 @@ export declare class CanRespawnEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player hit to entity. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a player hit to entity. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_IsPenetrableEntity` (Float:vecSrc[3], Float:vecEnd[3], index, entity)
  */
@@ -1111,7 +1137,7 @@ export declare class CanShootThroughEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_Observer_IsValidTarget` (const this, iPlayerIndex, bool:bSameTeam)
  */
@@ -1151,7 +1177,7 @@ export declare class CanSpectateEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра спрашивает, можно ли игроку перейти в команду. Верните `true` или `false`, чтобы решить. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Игра спрашивает, можно ли игроку перейти в команду. Верните `true` или `false`, чтобы решить. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_CanSwitchTeam` (const this, TeamName:teamToSwap)
  */
@@ -1184,7 +1210,7 @@ export declare class CanSwitchTeamEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Can this player take damage from this attacker? Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Can this player take damage from this attacker? Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage` (const index, const attacker)
  */
@@ -1237,7 +1263,7 @@ export declare class CenterEvent extends HookEvent {
     get result(): Vector;
 }
 /**
- * Без ReAPI (чистый HLDS): `preventDefault()` ничего не делает.
+ * Без ReGameDLL (чистый HLDS): `preventDefault()` ничего не делает.
  *
  * Pawn: `RG_CSGameRules_ChangeLevel` ()
  */
@@ -1245,7 +1271,7 @@ export declare class ChangeLevelEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_SetClientUserInfoModel` (const this, infobuffer[], szNewModel[])
  */
@@ -1273,7 +1299,7 @@ export declare class ChangeModelEvent extends HookEvent {
     set newModel(value: string);
 }
 /**
- * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`; ответ ничего не делает.
+ * Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`; ответ ничего не делает.
  *
  * Pawn: `RG_CBasePlayer_SetClientUserInfoName` (const this, infobuffer[], szNewName[])
  */
@@ -1336,7 +1362,7 @@ export declare class ChangeYawEvent extends HookEvent {
     /**
      * Ответ игры, читается в post-хуке. Чтобы ответить самому, верните значение из обработчика.
      *
-     * Pawn: `GetHookChainReturn` (Integer)
+     * Pawn: `GetHookChainReturn` (Float)
      */
     get result(): number;
     /**
@@ -1347,7 +1373,7 @@ export declare class ChangeYawEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Сообщение игрока в чат уходит игрокам и в консоль сервера. Чтобы изменить, что они прочтут, присвойте `event.text`; чтобы его не получил никто, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Сообщение игрока в чат уходит игрокам и в консоль сервера. Чтобы изменить, что они прочтут, присвойте `event.text`; чтобы его не получил никто, вызовите `preventDefault()`. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_SendSayMessage` (const pPlayer, const szCmd[], bool:teamonly, const szText[], const pszFormat[], const pszConsoleFormat[], bool:bSenderDead, const placeName[], bool:consoleUsesPlaceName)
  */
@@ -1417,7 +1443,7 @@ export declare class ChatMessageEvent extends HookEvent {
     set consoleUsesPlaceName(value: boolean);
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_CheckMapConditions` ()
  */
@@ -1425,7 +1451,7 @@ export declare class CheckMapConditionsEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Called every client frame to check time based damage. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called every client frame to check time based damage. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_CheckTimeBasedDamage` (const this)
  */
@@ -1439,7 +1465,7 @@ export declare class CheckTimeBasedDamageEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Called when a player's userinfo is being checked. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a player's userinfo is being checked. Без ReHLDS (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RH_SV_CheckUserInfo` (adr, buffer, bool:reconnect, reconnectSlot, name[])
  */
@@ -1494,7 +1520,7 @@ export declare class CheckUserInfoEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player jumps on water for the first time. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a player jumps on water for the first time. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_CheckWaterJump` (const playerIndex)
  */
@@ -1506,9 +1532,21 @@ export declare class CheckWaterJumpEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+    /**
+     * Сколько всего игрок задел за это движение: пол, стену, другого игрока.
+     *
+     * Pawn: `get_pmove(pm_numtouch)`
+     */
+    get touchCount(): number;
+    /**
+     * Длина кадра движения в секундах.
+     *
+     * Pawn: `get_pmove(pm_frametime)`
+     */
+    get frameTime(): number;
 }
 /**
- * Игра проверяет, не победила ли какая-то сторона. `preventDefault()` не даст ей закончить раунд. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Игра проверяет, не победила ли какая-то сторона. `preventDefault()` не даст ей закончить раунд. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_CheckWinConditions` ()
  */
@@ -1538,7 +1576,7 @@ export declare class ChildDeathNoticeEvent extends HookEvent {
     set child(value: Entity);
 }
 /**
- * Без ReAPI (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; модель, которую игра выбирает сама, не слышна.
+ * Без ReGameDLL (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; модель, которую игра выбирает сама, не слышна.
  *
  * Pawn: `RG_HandleMenu_ChooseAppearance` (const index, const slot)
  */
@@ -1559,7 +1597,7 @@ export declare class ChooseAppearanceEvent extends HookEvent {
     set slot(value: number);
 }
 /**
- * Игрок выбрал пункт в меню команд. `preventDefault()` — и выбор не засчитается. Без ReAPI (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; ответ ничего не делает, а команда, которую игра выбирает сама, не слышна.
+ * Игрок выбрал пункт в меню команд. `preventDefault()` — и выбор не засчитается. Без ReGameDLL (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; ответ ничего не делает, а команда, которую игра выбирает сама, не слышна.
  *
  * Pawn: `RG_HandleMenu_ChooseTeam` (const index, const MenuChooseTeam:slot)
  */
@@ -1619,7 +1657,7 @@ export declare class ClassifyEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when game clears multidamage data (before TraceAttack). Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when game clears multidamage data (before TraceAttack). Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_ClearMultiDamage` ()
  */
@@ -1627,7 +1665,7 @@ export declare class ClearMultiDamageEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Called after processing a client connection request. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ * Called after processing a client connection request. Без ReHLDS (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RH_ClientConnected` (const client)
  */
@@ -1642,7 +1680,7 @@ export declare class ClientConnectedEvent extends HookEvent {
     set client(value: number);
 }
 /**
- * Called when processing a 'connect' client connectionless packet. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда игрока уже пустили.
+ * Called when processing a 'connect' client connectionless packet. Без ReHLDS (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда игрока уже пустили.
  *
  * Pawn: `RH_SV_ConnectClient` ()
  */
@@ -1650,7 +1688,7 @@ export declare class ConnectClientEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Called when message is being printed to client console. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when message is being printed to client console. Без ReHLDS (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RH_SV_ClientPrintf` (const string[])
  */
@@ -1665,7 +1703,7 @@ export declare class ConsoleMessageEvent extends HookEvent {
     set text(value: string);
 }
 /**
- * Called when a player drops a weapon (usually manual drop or death). Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a player drops a weapon (usually manual drop or death). Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CreateWeaponBox` (const weaponent, const owner, modelName[], Float:origin[3], Float:angles[3], Float:velocity[3], Float:lifeTime, bool:packAmmo)
  */
@@ -1800,7 +1838,7 @@ export declare class DeathActivityEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Call this from within a GameRules class to report an obituary. Без ReAPI (чистый HLDS): слышно, когда уходит сообщение о смерти: `preventDefault()` ничего не делает, а `inflictor` читается как мир.
+ * Call this from within a GameRules class to report an obituary. Без ReGameDLL (чистый HLDS): слышно, когда уходит сообщение о смерти: `preventDefault()` ничего не делает, а `inflictor` читается как мир.
  *
  * Pawn: `RG_CSGameRules_DeathNotice` (const victim, const killer, const inflictor)
  */
@@ -1840,7 +1878,7 @@ export declare class DeathSoundEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Оружие достают. Присвойте `event.viewModel` / `weaponModel`, чтобы поменять модель. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Оружие достают. Присвойте `event.viewModel` / `weaponModel`, чтобы поменять модель. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayerWeapon_DefaultDeploy` (const this, szViewModel[], szWeaponModel[], iAnim, szAnimExt[], skiplocal)
  */
@@ -1901,7 +1939,7 @@ export declare class DefaultDeployEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayerWeapon_DefaultReload` (const this, iClipSize, iAnim, Float:fDelay)
  */
@@ -1948,7 +1986,7 @@ export declare class DefaultReloadEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayerWeapon_DefaultShotgunReload` (const this, iAnim, iStartAnim, Float:fDelay, Float:fStartDelay, const pszReloadSound1[], const pszReloadSound2[])
  */
@@ -2016,7 +2054,7 @@ export declare class DefaultShotgunReloadEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player has ended to defuses the bomb or when the previous defuser has taken off or been killed. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, только когда бомба обезврежена, а не когда разминирование прервано.
+ * Called when a player has ended to defuses the bomb or when the previous defuser has taken off or been killed. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, только когда бомба обезврежена, а не когда разминирование прервано.
  *
  * Pawn: `RG_CGrenade_DefuseBombEnd` (const this, const player, bool:bDefused)
  */
@@ -2043,7 +2081,7 @@ export declare class DefuseBombEndEvent extends HookEvent {
     set defused(value: boolean);
 }
 /**
- * Called when a player goes to start defuse the bomb. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ * Called when a player goes to start defuse the bomb. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CGrenade_DefuseBombStart` (const this, const player)
  */
@@ -2117,7 +2155,7 @@ export declare class DeployEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * VIP player got to the point of rescue. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * VIP player got to the point of rescue. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_Disappear` (const this)
  */
@@ -2131,7 +2169,7 @@ export declare class DisappearEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `crash` читается как `false`, а `reason` — причина, которую узнал AMX Mod X.
+ * Без ReHLDS (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `crash` читается как `false`, а `reason` — причина, которую узнал AMX Mod X.
  *
  * Pawn: `RH_SV_DropClient` (const client, bool:crash, const fmt[])
  */
@@ -2175,7 +2213,7 @@ export declare class DropEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Called when a idle player is removed from server. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a idle player is removed from server. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_DropIdlePlayer` (const this, const reason[])
  */
@@ -2196,7 +2234,7 @@ export declare class DropIdlePlayerEvent extends HookEvent {
     set reason(value: string);
 }
 /**
- * Игрок выбрасывает оружие. В post-обработчике `event.result` — коробка с оружием на земле. Без ReAPI (чистый HLDS): слышно по команде игрока `drop`: `preventDefault()` её отменяет; `event.result` читается как `null`, а выброс, который игра делает сама, не слышен.
+ * Игрок выбрасывает оружие. В post-обработчике `event.result` — коробка с оружием на земле. Без ReGameDLL (чистый HLDS): слышно по команде игрока `drop`: `preventDefault()` её отменяет; `event.result` читается как `null`, а выброс, который игра делает сама, не слышен.
  *
  * Pawn: `RG_CBasePlayer_DropPlayerItem` (const this, const pszItemName[])
  */
@@ -2229,7 +2267,7 @@ export declare class DropPlayerItemEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player throws the shield on the ground. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a player throws the shield on the ground. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_DropShield` (const this, bool:deploy)
  */
@@ -2262,7 +2300,7 @@ export declare class DropShieldEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * What do I do with player's weapons when he's killed? Без ReAPI (чистый HLDS) его ничто не слышит.
+ * What do I do with player's weapons when he's killed? Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_DeadPlayerWeapons` (const index)
  */
@@ -2303,7 +2341,7 @@ export declare class DuckEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Called on every frame to check player ducking. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called on every frame to check player ducking. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_Duck` (const playerIndex)
  */
@@ -2315,6 +2353,18 @@ export declare class DuckMovementEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+    /**
+     * Сколько всего игрок задел за это движение: пол, стену, другого игрока.
+     *
+     * Pawn: `get_pmove(pm_numtouch)`
+     */
+    get touchCount(): number;
+    /**
+     * Длина кадра движения в секундах.
+     *
+     * Pawn: `get_pmove(pm_frametime)`
+     */
+    get frameTime(): number;
 }
 /**
  * Returns the ear position of the entity.
@@ -2338,7 +2388,7 @@ export declare class EarPositionEvent extends HookEvent {
     get result(): Vector;
 }
 /**
- * Called when a C4 goes to explodes. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `trace` и `damageType` читаются как 0.
+ * Called when a C4 goes to explodes. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `trace` и `damageType` читаются как 0.
  *
  * Pawn: `RG_CGrenade_ExplodeBomb` (const this, tracehandle, const bitsDamageType)
  */
@@ -2366,7 +2416,7 @@ export declare class ExplodeBombEvent extends HookEvent {
     set damageType(values: Damage[]);
 }
 /**
- * Called when a flashbang detonates. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a flashbang detonates. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CGrenade_ExplodeFlashbang` (const this, tracehandle, const bitsDamageType)
  */
@@ -2394,7 +2444,7 @@ export declare class ExplodeFlashbangEvent extends HookEvent {
     set damageType(values: Damage[]);
 }
 /**
- * Called when a hegrenade detonates. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a hegrenade detonates. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CGrenade_ExplodeHeGrenade` (const this, tracehandle, const bitsDamageType)
  */
@@ -2422,7 +2472,7 @@ export declare class ExplodeHeGrenadeEvent extends HookEvent {
     set damageType(values: Damage[]);
 }
 /**
- * Дымовая граната взрывается. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Дымовая граната взрывается. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CGrenade_ExplodeSmokeGrenade` (const this)
  */
@@ -2540,7 +2590,7 @@ export declare class FadeMonsterEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Игра считает урон от падения. В post-обработчике `event.result` — это число; верните своё, чтобы заменить его. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Игра считает урон от падения. В post-обработчике `event.result` — это число; верните своё, чтобы заменить его. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_FlPlayerFallDamage` (const index)
  */
@@ -2566,7 +2616,7 @@ export declare class FallDamageEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBaseEntity_FireBullets` (pEntity, cShots, Float:vecSrc[3], Float:vecDirShooting[3], Float:vecSpread[3], Float:flDistance, iBulletType, iTracerFreq, iDamage, pevAttacker)
  */
@@ -2642,7 +2692,7 @@ export declare class FireBulletsEvent extends HookEvent {
     get attacker(): Player;
 }
 /**
- * Игра сообщает ботам, что что-то произошло. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Игра сообщает ботам, что что-то произошло. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBotManager_OnEvent` (GameEventType:event, const pEntity, const pOther)
  */
@@ -2669,7 +2719,7 @@ export declare class GameEventEvent extends HookEvent {
     get other(): Entity;
 }
 /**
- * «Мысль» правил игры: каждый кадр — часы раунда и проверка условий победы. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ * «Мысль» правил игры: каждый кадр — часы раунда и проверка условий победы. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CSGameRules_Think` ()
  */
@@ -2677,7 +2727,7 @@ export declare class GameThinkEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_GetForceCamera` (const pObserver)
  */
@@ -2703,7 +2753,7 @@ export declare class GetForceCameraEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player enters the game. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a player enters the game. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_GetIntoGame` (const this)
  */
@@ -2729,7 +2779,7 @@ export declare class GetIntoGameEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * I can't use this weapon anymore, get me the next best one. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * I can't use this weapon anymore, get me the next best one. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_GetNextBestWeapon` (const index, const currentWeapon)
  */
@@ -2777,7 +2827,7 @@ export declare class GibMonsterEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ * Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CGib_Spawn` (const this, const szGibModel[])
  */
@@ -2844,7 +2894,7 @@ export declare class GiveAmmoEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
+ * Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
  *
  * Pawn: `RG_CSGameRules_GiveC4` ()
  */
@@ -2864,7 +2914,7 @@ export declare class GiveBombEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра выдаёт появившемуся игроку стандартное оружие. `preventDefault()` — и не выдаст ничего. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Игра выдаёт появившемуся игроку стандартное оружие. `preventDefault()` — и не выдаст ничего. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_GiveDefaultItems` (const this)
  */
@@ -2878,7 +2928,7 @@ export declare class GiveDefaultItemsEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_GiveNamedItem` (const this, const pszName[])
  */
@@ -2911,7 +2961,7 @@ export declare class GiveItemEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_GiveShield` (const this, bool:bDeploy)
  */
@@ -3082,7 +3132,7 @@ export declare class HealEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра показывает игроку подсказку. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Игра показывает игроку подсказку. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_HintMessageEx` (const this, const message[], Float:duration, bool:bDisplayIfPlayerDead, bool:bOverride)
  */
@@ -3193,7 +3243,7 @@ export declare class ImpulseEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ * Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CSGameRules_GoToIntermission` ()
  */
@@ -3569,7 +3619,7 @@ export declare class ItemPreFrameEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Игра спрашивает, запрещён ли игроку предмет. Верните `true`, чтобы запретить. Без ReAPI (чистый HLDS): спрашивается только про `"buying"`, через `CS_OnBuyAttempt` модуля cstrike: ответ `true` запрещает покупку, `false` оставляет решение игре.
+ * Игра спрашивает, запрещён ли игроку предмет. Верните `true`, чтобы запретить. Без ReGameDLL (чистый HLDS): спрашивается только про `"buying"`, когда игрок просит покупку: ответ `true` запрещает покупку, `false` оставляет решение игре.
  *
  * Pawn: `RG_CBasePlayer_HasRestrictItem` (const this, ItemID:item, ItemRestType:type)
  */
@@ -3670,7 +3720,7 @@ export declare class ItemUpdateClientDataEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a client "thinks for the join status". Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a client "thinks for the join status". Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_JoiningThink` (const this)
  */
@@ -3699,7 +3749,7 @@ export declare class JumpEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Called on every frame while player presses jump button. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called on every frame while player presses jump button. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_Jump` (const playerIndex)
  */
@@ -3711,6 +3761,18 @@ export declare class JumpMovementEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+    /**
+     * Сколько всего игрок задел за это движение: пол, стену, другого игрока.
+     *
+     * Pawn: `get_pmove(pm_numtouch)`
+     */
+    get touchCount(): number;
+    /**
+     * Длина кадра движения в секундах.
+     *
+     * Pawn: `get_pmove(pm_frametime)`
+     */
+    get frameTime(): number;
 }
 /**
  * Normally called when an item gets deleted.
@@ -3758,7 +3820,7 @@ export declare class KilledEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called when a player is on a ladder. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a player is on a ladder. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_LadderMove` (const pLadder, const playerIndex)
  */
@@ -3776,6 +3838,18 @@ export declare class LadderMoveEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+    /**
+     * Сколько всего игрок задел за это движение: пол, стену, другого игрока.
+     *
+     * Pawn: `get_pmove(pm_numtouch)`
+     */
+    get touchCount(): number;
+    /**
+     * Длина кадра движения в секундах.
+     *
+     * Pawn: `get_pmove(pm_frametime)`
+     */
+    get frameTime(): number;
 }
 /**
  * Function to find enemies or food by sight.
@@ -3800,7 +3874,7 @@ export declare class LookEvent extends HookEvent {
     set distance(value: number);
 }
 /**
- * Recreate all the map entities from the map data (preserving their indices),. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ * Recreate all the map entities from the map data (preserving their indices),. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CSGameRules_CleanUpMap` ()
  */
@@ -3850,7 +3924,7 @@ export declare class MonsterInitDeadEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_Move` (const playerIndex)
  */
@@ -3862,9 +3936,21 @@ export declare class MoveEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+    /**
+     * Сколько всего игрок задел за это движение: пол, стену, другого игрока.
+     *
+     * Pawn: `get_pmove(pm_numtouch)`
+     */
+    get touchCount(): number;
+    /**
+     * Длина кадра движения в секундах.
+     *
+     * Pawn: `get_pmove(pm_frametime)`
+     */
+    get frameTime(): number;
 }
 /**
- * Начинается новый раунд. Без ReAPI (чистый HLDS): слышно при перезапуске раунда — обработчики «до» игры, когда она объявляет раунд, обработчики «после» — когда её игроки возродились, — но `preventDefault()` ничего не делает.
+ * Начинается новый раунд. Без ReGameDLL (чистый HLDS): слышно при перезапуске раунда — обработчики «до» игры, когда она объявляет раунд, обработчики «после» — когда её игроки возродились, — но `preventDefault()` ничего не делает.
  *
  * Pawn: `RG_CSGameRules_RestartRound` ()
  */
@@ -3899,7 +3985,7 @@ export declare class NextTargetEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a client attempt to change the observer mode. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a client attempt to change the observer mode. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_Observer_SetMode` (const this, iMode)
  */
@@ -3920,7 +4006,7 @@ export declare class ObserverSetModeEvent extends HookEvent {
     set mode(value: number);
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_Observer_Think` (const this)
  */
@@ -3977,7 +4063,7 @@ export declare class PainSoundEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called when a player plant's the bomb on the ground. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда бомба получает модель; ответ ничего не делает.
+ * Called when a player plant's the bomb on the ground. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда бомба получает модель; ответ ничего не делает.
  *
  * Pawn: `RG_PlantBomb` (const index, Float:vecStart[3], Float:vecVelocity[3])
  */
@@ -4044,7 +4130,7 @@ export declare class PlayEmptySoundEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Флешка ослепляет игрока. `preventDefault()` — и он ничего не заметит. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `inflictor` и `attacker` читаются как мир, `color` — нулевым.
+ * Флешка ослепляет игрока. `preventDefault()` — и он ничего не заметит. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `inflictor` и `attacker` читаются как мир, `color` — нулевым.
  *
  * Pawn: `RG_PlayerBlind` (const index, const inflictor, const attacker, const Float:fadeTime, const Float:fadeHold, const alpha, Float:color[3])
  */
@@ -4098,7 +4184,7 @@ export declare class PlayerBlindEvent extends HookEvent {
     set color(value: Vector);
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_PlayerDeathThink` (const this)
  */
@@ -4112,7 +4198,7 @@ export declare class PlayerDeathThinkEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Called each time player gets a weapon linked to his inventory. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ * Called each time player gets a weapon linked to his inventory. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CSGameRules_PlayerGotWeapon` (const pPlayer, const pWeapon)
  */
@@ -4132,7 +4218,7 @@ export declare class PlayerGotWeaponEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Игрока убили. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ * Игрока убили. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CSGameRules_PlayerKilled` (const victim, const killer, const inflictor)
  */
@@ -4158,7 +4244,7 @@ export declare class PlayerKilledEvent extends HookEvent {
     get inflictor(): Entity;
 }
 /**
- * Игрок появился на карте (спавн). Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ * Игрок появился на карте (спавн). Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CSGameRules_PlayerSpawn` (const index)
  */
@@ -4172,7 +4258,7 @@ export declare class PlayerSpawnEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Called whenever player emits an step sound. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called whenever player emits an step sound. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_PlayStepSound` (step, Float:fvol, const playerIndex)
  */
@@ -4198,6 +4284,18 @@ export declare class PlayStepSoundEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+    /**
+     * Сколько всего игрок задел за это движение: пол, стену, другого игрока.
+     *
+     * Pawn: `get_pmove(pm_numtouch)`
+     */
+    get touchCount(): number;
+    /**
+     * Длина кадра движения в секундах.
+     *
+     * Pawn: `get_pmove(pm_frametime)`
+     */
+    get frameTime(): number;
 }
 /**
  * Returns true if the passed ent is in the caller's forward view cone.
@@ -4296,7 +4394,7 @@ export declare class PrecacheEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called when a generic resource is being added to generic precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
+ * Called when a generic resource is being added to generic precache list. Без ReHLDS (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
  *
  * Pawn: `RH_PF_precache_generic_I` (const string[])
  */
@@ -4323,7 +4421,7 @@ export declare class PrecacheFileEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a model is being added to model precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
+ * Called when a model is being added to model precache list. Без ReHLDS (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
  *
  * Pawn: `RH_PF_precache_model_I` (const string[])
  */
@@ -4350,7 +4448,7 @@ export declare class PrecacheModelEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a sound is being added to sound precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
+ * Called when a sound is being added to sound precache list. Без ReHLDS (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
  *
  * Pawn: `RH_PF_precache_sound_I` (const string[])
  */
@@ -4434,7 +4532,7 @@ export declare class PrimaryAttackEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Called when a message is being sent to the server's console. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a message is being sent to the server's console. Без ReHLDS (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RH_Con_Printf` (const string[])
  */
@@ -4449,7 +4547,7 @@ export declare class PrintfEvent extends HookEvent {
     set text(value: string);
 }
 /**
- * Отправляется радиосообщение. `preventDefault()` заглушит его. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Отправляется радиосообщение. `preventDefault()` заглушит его. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_Radio` (const this, const msg_id[], const msg_verbose[], pitch, bool:showIcon)
  */
@@ -4491,7 +4589,7 @@ export declare class RadioEvent extends HookEvent {
     set showIcon(value: boolean);
 }
 /**
- * Called whenever player fires a weapon and shakes player screen (punchangles altering). Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called whenever player fires a weapon and shakes player screen (punchangles altering). Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayerWeapon_KickBack` (const this, Float:up_base, Float:lateral_base, Float:up_modifier, Float:lateral_modifier, Float:p_max, Float:lateral_max, direction_change)
  */
@@ -4630,7 +4728,7 @@ export declare class ReloadEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_RemoveAllItems` (const this, bool:removeSuit)
  */
@@ -4651,7 +4749,7 @@ export declare class RemoveAllItemsEvent extends HookEvent {
     set removeSuit(value: boolean);
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_RemoveGuns` ()
  */
@@ -4690,7 +4788,7 @@ export declare class RemoveItemEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a player's remove protection. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a player's remove protection. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_RemoveSpawnProtection` (const this)
  */
@@ -4734,7 +4832,7 @@ export declare class ResetMaxSpeedEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBaseAnimating_ResetSequenceInfo` (const this)
  */
@@ -4805,7 +4903,7 @@ export declare class RetireWeaponEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Раунд заканчивается. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает; `delay` — 5 секунд оригинальной игры, 3 для `"gameCommence"`, если его не задал `game.endRound`.
+ * Раунд заканчивается. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает; `delay` — 5 секунд оригинальной игры, 3 для `"gameCommence"`, если его не задал `game.endRound`.
  *
  * Pawn: `RG_RoundEnd` (WinStatus:status, ScenarioEventEndRound:event, Float:tmDelay)
  */
@@ -4859,7 +4957,7 @@ export declare class RoundRespawnEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Закончилось время заморозки в начале раунда. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+ * Закончилось время заморозки в начале раунда. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
  *
  * Pawn: `RG_CSGameRules_OnRoundFreezeEnd` ()
  */
@@ -4909,7 +5007,7 @@ export declare class SecondaryAttackEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Called when game selects a spawn point (info_player_start/deathmatch) to position the player. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when game selects a spawn point (info_player_start/deathmatch) to position the player. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_EntSelectSpawnPoint` (const this)
  */
@@ -4935,7 +5033,7 @@ export declare class SelectSpawnPointEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра сообщает всем, кто кого убил. Без ReAPI (чистый HLDS): `preventDefault()` отменяет сообщение; `assister` и `inflictor` читаются как мир, `flags` пуст, в `rarity` бывает только `"headshot"`; запись поля ничего не делает.
+ * Игра сообщает всем, кто кого убил. Без ReGameDLL (чистый HLDS): `preventDefault()` отменяет сообщение; `assister` и `inflictor` читаются как мир, `flags` пуст, в `rarity` бывает только `"headshot"`; запись поля ничего не делает.
  *
  * Pawn: `RG_CSGameRules_SendDeathMessage` (const pKiller, const pVictim, const pAssister, const pevInflictor, const killerWeaponName[], const DeathMessageFlags:iDeathMessageFlags, const KillRarity:iRarityOfKill)
  */
@@ -5017,7 +5115,7 @@ export declare class SendWeaponAnimEvent extends HookEvent {
     set skipLocal(value: number);
 }
 /**
- * Called when a command is being sent to server. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a command is being sent to server. Без ReHLDS (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RH_ExecuteServerStringCmd` (const cmd[], source, id)
  */
@@ -5045,7 +5143,7 @@ export declare class ServerCommandEvent extends HookEvent {
     get id(): Entity;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_ServerDeactivate` ()
  */
@@ -5053,7 +5151,7 @@ export declare class ServerDeactivateEvent extends HookEvent {
     private readonly kind;
 }
 /**
- * Игра задаёт анимацию, которую играет модель игрока: ходьба, прыжок, атака, перезарядка. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Игра задаёт анимацию, которую играет модель игрока: ходьба, прыжок, атака, перезарядка. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_SetAnimation` (const this, PLAYER_ANIM:playerAnim)
  */
@@ -5074,7 +5172,7 @@ export declare class SetAnimationEvent extends HookEvent {
     set animation(value: PlayerAnimation);
 }
 /**
- * Called when a player dies to pack up the appropriate weapons and ammo items, and creates a weaponbox that falls to floor with sets specify the model or when a player drop the item. Без ReAPI (чистый HLDS): `preventDefault()` не даёт модели встать; запись `modelName` ничего не делает.
+ * Called when a player dies to pack up the appropriate weapons and ammo items, and creates a weaponbox that falls to floor with sets specify the model or when a player drop the item. Без ReGameDLL (чистый HLDS): `preventDefault()` не даёт модели встать; запись `modelName` ничего не делает.
  *
  * Pawn: `RG_CWeaponBox_SetModel` (const this, const szModelName[])
  */
@@ -5110,7 +5208,7 @@ export declare class SetObjectCollisionBoxEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called when a player's set protection. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a player's set protection. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_SetSpawnProtection` (const this, Float:time)
  */
@@ -5153,7 +5251,7 @@ export declare class SetToggleStateEvent extends HookEvent {
     set state(value: number);
 }
 /**
- * Оружие стреляет: игра ведёт пулю, сквозь стены, насколько позволяет пробивание, и наносит её урон. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Оружие стреляет: игра ведёт пулю, сквозь стены, насколько позволяет пробивание, и наносит её урон. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBaseEntity_FireBullets3` (pEntity, Float:vecSrc[3], Float:vecDirShooting[3], Float:vecSpread, Float:flDistance, iPenetration, iBulletType, iDamage, Float:flRangeModifier, pevAttacker, bool:bPistol, shared_rand)
  */
@@ -5243,7 +5341,7 @@ export declare class ShootEvent extends HookEvent {
     set randomSeed(value: number);
 }
 /**
- * Дробовик стреляет: игра ведёт каждую дробину и наносит её урон. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Дробовик стреляет: игра ведёт каждую дробину и наносит её урон. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBaseEntity_FireBuckshots` (pEntity, cShots, Float:vecSrc[3], Float:vecDirShooting[3], Float:vecSpread[3], Float:flDistance, iTracerFreq, iDamage, pevAttacker)
  */
@@ -5339,7 +5437,7 @@ export declare class ShouldFadeOnDeathEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Should the player switch to this weapon? Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Should the player switch to this weapon? Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_FShouldSwitchWeapon` (const index, const weapon)
  */
@@ -5398,7 +5496,7 @@ export declare class ShouldWeaponIdleEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игра показывает игроку меню. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Игра показывает игроку меню. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_ShowMenu` (const index, const bitsSlots, const iDisplayTime, const iNeedMore, pszText[])
  */
@@ -5440,7 +5538,7 @@ export declare class ShowMenuEvent extends HookEvent {
     set text(value: string);
 }
 /**
- * Игра показывает игроку VGUI-меню (выбор команды). Без ReAPI (чистый HLDS): слышно, когда меню уходит игроку с включёнными VGUI-меню (не боту): `preventDefault()` его отменяет; `oldMenu` читается как `""`, запись поля ничего не делает.
+ * Игра показывает игроку VGUI-меню (выбор команды). Без ReGameDLL (чистый HLDS): слышно, когда меню уходит игроку с включёнными VGUI-меню (не боту): `preventDefault()` его отменяет; `oldMenu` читается как `""`, запись поля ничего не делает.
  *
  * Pawn: `RG_ShowVGUIMenu` (const index, VGUIMenu:menuType, const bitsSlots, szOldMenu[])
  */
@@ -5492,7 +5590,7 @@ export declare class SpawnEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called on spawn, the attempt to equip a player. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called on spawn, the attempt to equip a player. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_OnSpawnEquip` (const this, bool:addDefault, bool:equipGame)
  */
@@ -5520,7 +5618,7 @@ export declare class SpawnEquipEvent extends HookEvent {
     set equipGame(value: boolean);
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_SpawnHeadGib` (pevVictim)
  */
@@ -5546,7 +5644,7 @@ export declare class SpawnHeadGibEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_SpawnRandomGibs` (pevVictim, cGibs, human)
  */
@@ -5574,7 +5672,7 @@ export declare class SpawnRandomGibsEvent extends HookEvent {
     set human(value: number);
 }
 /**
- * Place this player on his spawnspot and face him in the proper direction. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Place this player on his spawnspot and face him in the proper direction. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_GetPlayerSpawnSpot` (const index)
  */
@@ -5600,7 +5698,7 @@ export declare class SpawnSpotEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Called when a client attempt to find the next observer. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a client attempt to find the next observer. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_Observer_FindNextPlayer` (const this, bool bReverse, name[])
  */
@@ -5628,7 +5726,7 @@ export declare class SpectateNextEvent extends HookEvent {
     set name(value: string);
 }
 /**
- * Включается камера погибшего игрока. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Включается камера погибшего игрока. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_StartDeathCam` (const this)
  */
@@ -5657,7 +5755,7 @@ export declare class StartSneakingEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить. Без ReAPI (чистый HLDS): слышно для звуков, которые игра проигрывает через `EmitSound` движка: `preventDefault()` его отменяет; `recipients` читается как 0, запись поля ничего не делает.
+ * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить. Без ReHLDS (чистый HLDS): слышно для звуков, которые игра проигрывает через `EmitSound` движка: `preventDefault()` его отменяет; `recipients` читается как 0, запись поля ничего не делает.
  *
  * Pawn: `RH_SV_StartSound` (const recipients, const entity, const channel, const sample[], const volume, Float:attenuation, const fFlags, const pitch)
  */
@@ -5720,7 +5818,7 @@ export declare class StartSoundEvent extends HookEvent {
     set pitch(value: number);
 }
 /**
- * The player goes into observer mode. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * The player goes into observer mode. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_StartObserver` (const this, Float:vecPosition[3], Float:vecViewAngle[3])
  */
@@ -5763,7 +5861,7 @@ export declare class StopSneakingEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Called when a player goes switch to opposite team after auto-teambalance or caused by 3rd-party things. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a player goes switch to opposite team after auto-teambalance or caused by 3rd-party things. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_SwitchTeam` (const this)
  */
@@ -5832,7 +5930,7 @@ export declare class TakeDamageEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velocityModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velocityModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_TakeDamageImpulse` (const this, attacker, Float:flKnockbackForce, Float:flVelModifier)
  */
@@ -5866,7 +5964,7 @@ export declare class TakeDamageImpulseEvent extends HookEvent {
     set velocityModifier(value: number);
 }
 /**
- * Called each time player tries to join a team to ensure availability. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called each time player tries to join a team to ensure availability. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_TeamFull` (team_id)
  */
@@ -5914,7 +6012,7 @@ export declare class TeamIdEvent extends HookEvent {
     get result(): string;
 }
 /**
- * Called each time player tries to join a team to ensure a fair distribution of players (based on mp_limitteams cvar). Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called each time player tries to join a team to ensure a fair distribution of players (based on mp_limitteams cvar). Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CSGameRules_TeamStacked` (newTeam_id, curTeam_id)
  */
@@ -5963,7 +6061,7 @@ export declare class ThinkEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Игрок бросил флешку. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель.
+ * Игрок бросил флешку. В post-обработчике `event.result` — сама граната. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель.
  *
  * Pawn: `RG_ThrowFlashbang` (const index, Float:vecStart[3], Float:vecVelocity[3], Float:time)
  */
@@ -6010,7 +6108,7 @@ export declare class ThrowFlashbangEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игрок бросает гранату. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
+ * Игрок бросает гранату. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
  *
  * Pawn: `RG_CBasePlayer_ThrowGrenade` (const this, const grenade, Float:vecSrc[3], Float:vecThrow[3], Float:time, const usEvent)
  */
@@ -6071,7 +6169,7 @@ export declare class ThrowGrenadeEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
+ * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
  *
  * Pawn: `RG_ThrowHeGrenade` (const index, Float:vecStart[3], Float:vecVelocity[3], Float:time, const team, const usEvent)
  */
@@ -6132,7 +6230,7 @@ export declare class ThrowHeGrenadeEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
+ * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
  *
  * Pawn: `RG_ThrowSmokeGrenade` (const index, Float:vecStart[3], Float:vecVelocity[3], Float:time, const usEvent)
  */
@@ -6329,7 +6427,7 @@ export declare class TraceBleedEvent extends HookEvent {
     set damageType(values: Damage[]);
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_RadiusFlash_TraceLine` (const index, inflictor, attacker, Float:vecSrc[3], Float:vecSpot[3], tracehandle)
  */
@@ -6376,7 +6474,7 @@ export declare class TraceLineEvent extends HookEvent {
     set trace(value: number);
 }
 /**
- * Called whenever player tries to unduck. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called whenever player tries to unduck. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_UnDuck` (const playerIndex)
  */
@@ -6388,6 +6486,18 @@ export declare class UnDuckEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+    /**
+     * Сколько всего игрок задел за это движение: пол, стену, другого игрока.
+     *
+     * Pawn: `get_pmove(pm_numtouch)`
+     */
+    get touchCount(): number;
+    /**
+     * Длина кадра движения в секундах.
+     *
+     * Pawn: `get_pmove(pm_frametime)`
+     */
+    get frameTime(): number;
 }
 /**
  * Pawn: `RG_CBasePlayer_UpdateClientData` (const this), `Ham_Player_UpdateClientData`
@@ -6418,7 +6528,7 @@ export declare class UpdateItemInfoEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * Игра обновляет строку состояния игрока — имя и здоровье игрока под прицелом внизу экрана. `preventDefault()` оставит её как есть. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Игра обновляет строку состояния игрока — имя и здоровье игрока под прицелом внизу экрана. `preventDefault()` оставит её как есть. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_UpdateStatusBar` (const this)
  */
@@ -6475,7 +6585,7 @@ export declare class UseEvent extends HookEvent {
     set value(value: number);
 }
 /**
- * Called when a player press use and if a suitable candidate is not found. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called when a player press use and if a suitable candidate is not found. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CBasePlayer_UseEmpty` (const this)
  */
@@ -6489,7 +6599,7 @@ export declare class UseEmptyEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * The player has changed userinfo; can change it now. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`.
+ * The player has changed userinfo; can change it now. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`.
  *
  * Pawn: `RG_CSGameRules_ClientUserInfoChanged` (const index, infobuffer[])
  */
@@ -6544,7 +6654,7 @@ export declare class VisibleEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_CGib_WaitTillLand` (const this)
  */
@@ -6558,7 +6668,7 @@ export declare class WaitTillLandEvent extends HookEvent {
     get gib(): Entity;
 }
 /**
- * Called on every frame after a player jumps on water for a short period of time. Без ReAPI (чистый HLDS) его ничто не слышит.
+ * Called on every frame after a player jumps on water for a short period of time. Без ReGameDLL (чистый HLDS) его ничто не слышит.
  *
  * Pawn: `RG_PM_WaterJump` (const playerIndex)
  */
@@ -6570,6 +6680,18 @@ export declare class WaterJumpEvent extends HookEvent {
      * Pawn: `playerIndex`
      */
     get player(): Player;
+    /**
+     * Сколько всего игрок задел за это движение: пол, стену, другого игрока.
+     *
+     * Pawn: `get_pmove(pm_numtouch)`
+     */
+    get touchCount(): number;
+    /**
+     * Длина кадра движения в секундах.
+     *
+     * Pawn: `get_pmove(pm_frametime)`
+     */
+    get frameTime(): number;
 }
 /**
  * Оружие одного класса бездействует и проигрывает анимацию ожидания.
@@ -6599,7 +6721,7 @@ export interface GameEventMap {
      */
     activate: ActivateEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReHLDS (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RH_SV_ActivateServer`
      */
@@ -6609,19 +6731,19 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_AddPlayerItem`, `Ham_AddPlayerItem` */
     addItem: AddItemEvent;
     /**
-     * У игрока меняются деньги. Присвойте `event.amount`, чтобы изменить сумму. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `amount` — на сколько сдвинулись его деньги с тех пор, как игра в последний раз их ему прислала, а `reason` читается как `"none"`.
+     * У игрока меняются деньги. Присвойте `event.amount`, чтобы изменить сумму. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `amount` — на сколько сдвинулись его деньги с тех пор, как игра в последний раз их ему прислала, а `reason` читается как `"none"`.
      *
      * Pawn: `RG_CBasePlayer_AddAccount`
      */
     addMoney: AddMoneyEvent;
     /**
-     * Called inside TraceAttack to store entity damage to multidamage data. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called inside TraceAttack to store entity damage to multidamage data. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_AddMultiDamage`
      */
     addMultiDamage: AddMultiDamageEvent;
     /**
-     * Файл добавляется в то, что скачивают клиенты. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Файл добавляется в то, что скачивают клиенты. Без ReHLDS (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RH_SV_AddResource`
      */
@@ -6641,19 +6763,19 @@ export interface GameEventMap {
      */
     addWeapon: AddWeaponEvent;
     /**
-     * Called whenever player is on air (not touching floor). Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called whenever player is on air (not touching floor). Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_AirAccelerate`
      */
     airAccelerate: AirAccelerateEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_AirMove`
      */
     airMove: AirMoveEvent;
     /**
-     * Called after game finished a bullet tracing for applying damage cached on multidamage data. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called after game finished a bullet tracing for applying damage cached on multidamage data. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_ApplyMultiDamage`
      */
@@ -6671,13 +6793,13 @@ export interface GameEventMap {
      */
     autoaimVector: AutoaimVectorEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_BalanceTeams`
      */
     balanceTeams: BalanceTeamsEvent;
     /**
-     * Makes a random player the bomber. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
+     * Makes a random player the bomber. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
      *
      * Pawn: `RG_CBasePlayer_MakeBomber`
      */
@@ -6695,7 +6817,7 @@ export interface GameEventMap {
      */
     becomeProne: BecomeProneEvent;
     /**
-     * Makes a random player the VIP. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     * Makes a random player the VIP. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CBasePlayer_MakeVIP`
      */
@@ -6729,19 +6851,19 @@ export interface GameEventMap {
     /** Pawn: `RG_CGib_BounceGibTouch` */
     bounceGibTouch: BounceGibTouchEvent;
     /**
-     * The player buys ammo. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `weapon` читается как мир, `blinkMoney` — как `true`; ответ ничего не делает.
+     * The player buys ammo. Без ReGameDLL (чистый HLDS): слышно, когда игра проверяет покупку, для предмета, который называет команда покупки или меню покупки: `preventDefault()` отменяет её; `weapon` читается как мир, `blinkMoney` — как `true`; ответ ничего не делает.
      *
      * Pawn: `RG_BuyGunAmmo`
      */
     buyAmmo: BuyAmmoEvent;
     /**
-     * Called when player buys an item from buy menu (Nightvision, Kevlar, etc.). Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; слышно для предметов меню снаряжения; ответ ничего не делает.
+     * Called when player buys an item from buy menu (Nightvision, Kevlar, etc.). Без ReGameDLL (чистый HLDS): слышно, когда игра проверяет покупку, для предмета, который называет команда покупки или меню покупки: `preventDefault()` отменяет её; слышно для предметов меню снаряжения; ответ ничего не делает.
      *
      * Pawn: `RG_BuyItem`
      */
     buyItem: BuyItemEvent;
     /**
-     * Игрок покупает оружие. В post-обработчике `event.result` — само оружие. Без ReAPI (чистый HLDS): слышно через `CS_OnBuy` модуля cstrike: `preventDefault()` отменяет покупку; `event.result` читается как `null`; ответ ничего не делает.
+     * Игрок покупает оружие. В post-обработчике `event.result` — само оружие. Без ReGameDLL (чистый HLDS): слышно, когда игра проверяет покупку, для предмета, который называет команда покупки или меню покупки: `preventDefault()` отменяет её; `event.result` читается как `null`; ответ ничего не делает.
      *
      * Pawn: `RG_BuyWeaponByWeaponID`
      */
@@ -6755,7 +6877,7 @@ export interface GameEventMap {
      */
     canDrop: CanDropEvent;
     /**
-     * The player is touching a CBasePlayerItem, do I give it to him? Без ReAPI (чистый HLDS) его ничто не слышит.
+     * The player is touching a CBasePlayerItem, do I give it to him? Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_CanHavePlayerItem`
      */
@@ -6767,37 +6889,37 @@ export interface GameEventMap {
      */
     canHolster: CanHolsterEvent;
     /**
-     * Игра спрашивает, слышит ли один игрок другого в голосовом чате. Верните `true` или `false`, чтобы решить. Без ReAPI (чистый HLDS): спрашивается, когда игра сообщает движку, кто кого слышит, — и при включённом `sv_alltalk`, и для игрока, заглушившего другого: ответ перекрывает и то и другое.
+     * Игра спрашивает, слышит ли один игрок другого в голосовом чате. Верните `true` или `false`, чтобы решить. Без ReGameDLL (чистый HLDS): спрашивается, когда игра сообщает движку, кто кого слышит, — и при включённом `sv_alltalk`, и для игрока, заглушившего другого: ответ перекрывает и то и другое.
      *
      * Pawn: `RG_CSGameRules_CanPlayerHearPlayer`
      */
     canPlayerHearPlayer: CanPlayerHearPlayerEvent;
     /**
-     * Is this player allowed to respawn now? Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Is this player allowed to respawn now? Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_FPlayerCanRespawn`
      */
     canRespawn: CanRespawnEvent;
     /**
-     * Called when a player hit to entity. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a player hit to entity. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_IsPenetrableEntity`
      */
     canShootThrough: CanShootThroughEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_Observer_IsValidTarget`
      */
     canSpectate: CanSpectateEvent;
     /**
-     * Игра спрашивает, можно ли игроку перейти в команду. Верните `true` или `false`, чтобы решить. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Игра спрашивает, можно ли игроку перейти в команду. Верните `true` или `false`, чтобы решить. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_CanSwitchTeam`
      */
     canSwitchTeam: CanSwitchTeamEvent;
     /**
-     * Can this player take damage from this attacker? Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Can this player take damage from this attacker? Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage`
      */
@@ -6809,19 +6931,19 @@ export interface GameEventMap {
      */
     center: CenterEvent;
     /**
-     * Без ReAPI (чистый HLDS): `preventDefault()` ничего не делает.
+     * Без ReGameDLL (чистый HLDS): `preventDefault()` ничего не делает.
      *
      * Pawn: `RG_CSGameRules_ChangeLevel`
      */
     changeLevel: ChangeLevelEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_SetClientUserInfoModel`
      */
     changeModel: ChangeModelEvent;
     /**
-     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`; ответ ничего не делает.
+     * Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`; ответ ничего не делает.
      *
      * Pawn: `RG_CBasePlayer_SetClientUserInfoName`
      */
@@ -6833,37 +6955,37 @@ export interface GameEventMap {
      */
     changeYaw: ChangeYawEvent;
     /**
-     * Сообщение игрока в чат уходит игрокам и в консоль сервера. Чтобы изменить, что они прочтут, присвойте `event.text`; чтобы его не получил никто, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Сообщение игрока в чат уходит игрокам и в консоль сервера. Чтобы изменить, что они прочтут, присвойте `event.text`; чтобы его не получил никто, вызовите `preventDefault()`. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_SendSayMessage`
      */
     chatMessage: ChatMessageEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_CheckMapConditions`
      */
     checkMapConditions: CheckMapConditionsEvent;
     /**
-     * Called every client frame to check time based damage. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called every client frame to check time based damage. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_CheckTimeBasedDamage`
      */
     checkTimeBasedDamage: CheckTimeBasedDamageEvent;
     /**
-     * Called when a player's userinfo is being checked. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a player's userinfo is being checked. Без ReHLDS (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RH_SV_CheckUserInfo`
      */
     checkUserInfo: CheckUserInfoEvent;
     /**
-     * Called when a player jumps on water for the first time. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a player jumps on water for the first time. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_CheckWaterJump`
      */
     checkWaterJump: CheckWaterJumpEvent;
     /**
-     * Игра проверяет, не победила ли какая-то сторона. `preventDefault()` не даст ей закончить раунд. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Игра проверяет, не победила ли какая-то сторона. `preventDefault()` не даст ей закончить раунд. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_CheckWinConditions`
      */
@@ -6875,13 +6997,13 @@ export interface GameEventMap {
      */
     childDeathNotice: ChildDeathNoticeEvent;
     /**
-     * Без ReAPI (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; модель, которую игра выбирает сама, не слышна.
+     * Без ReGameDLL (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; модель, которую игра выбирает сама, не слышна.
      *
      * Pawn: `RG_HandleMenu_ChooseAppearance`
      */
     chooseAppearance: ChooseAppearanceEvent;
     /**
-     * Игрок выбрал пункт в меню команд. `preventDefault()` — и выбор не засчитается. Без ReAPI (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; ответ ничего не делает, а команда, которую игра выбирает сама, не слышна.
+     * Игрок выбрал пункт в меню команд. `preventDefault()` — и выбор не засчитается. Без ReGameDLL (чистый HLDS): слышно по команде игрока: `preventDefault()` её отменяет; ответ ничего не делает, а команда, которую игра выбирает сама, не слышна.
      *
      * Pawn: `RG_HandleMenu_ChooseTeam`
      */
@@ -6889,31 +7011,31 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_Classify`, `Ham_Classify` */
     classify: ClassifyEvent;
     /**
-     * Called when game clears multidamage data (before TraceAttack). Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when game clears multidamage data (before TraceAttack). Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_ClearMultiDamage`
      */
     clearMultiDamage: ClearMultiDamageEvent;
     /**
-     * Called after processing a client connection request. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     * Called after processing a client connection request. Без ReHLDS (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RH_ClientConnected`
      */
     clientConnected: ClientConnectedEvent;
     /**
-     * Called when processing a 'connect' client connectionless packet. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда игрока уже пустили.
+     * Called when processing a 'connect' client connectionless packet. Без ReHLDS (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда игрока уже пустили.
      *
      * Pawn: `RH_SV_ConnectClient`
      */
     connectClient: ConnectClientEvent;
     /**
-     * Called when message is being printed to client console. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when message is being printed to client console. Без ReHLDS (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RH_SV_ClientPrintf`
      */
     consoleMessage: ConsoleMessageEvent;
     /**
-     * Called when a player drops a weapon (usually manual drop or death). Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a player drops a weapon (usually manual drop or death). Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CreateWeaponBox`
      */
@@ -6931,7 +7053,7 @@ export interface GameEventMap {
      */
     deathActivity: DeathActivityEvent;
     /**
-     * Call this from within a GameRules class to report an obituary. Без ReAPI (чистый HLDS): слышно, когда уходит сообщение о смерти: `preventDefault()` ничего не делает, а `inflictor` читается как мир.
+     * Call this from within a GameRules class to report an obituary. Без ReGameDLL (чистый HLDS): слышно, когда уходит сообщение о смерти: `preventDefault()` ничего не делает, а `inflictor` читается как мир.
      *
      * Pawn: `RG_CSGameRules_DeathNotice`
      */
@@ -6943,31 +7065,31 @@ export interface GameEventMap {
      */
     deathSound: DeathSoundEvent;
     /**
-     * Оружие достают. Присвойте `event.viewModel` / `weaponModel`, чтобы поменять модель. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Оружие достают. Присвойте `event.viewModel` / `weaponModel`, чтобы поменять модель. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayerWeapon_DefaultDeploy`
      */
     defaultDeploy: DefaultDeployEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayerWeapon_DefaultReload`
      */
     defaultReload: DefaultReloadEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayerWeapon_DefaultShotgunReload`
      */
     defaultShotgunReload: DefaultShotgunReloadEvent;
     /**
-     * Called when a player has ended to defuses the bomb or when the previous defuser has taken off or been killed. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, только когда бомба обезврежена, а не когда разминирование прервано.
+     * Called when a player has ended to defuses the bomb or when the previous defuser has taken off or been killed. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, только когда бомба обезврежена, а не когда разминирование прервано.
      *
      * Pawn: `RG_CGrenade_DefuseBombEnd`
      */
     defuseBombEnd: DefuseBombEndEvent;
     /**
-     * Called when a player goes to start defuse the bomb. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     * Called when a player goes to start defuse the bomb. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CGrenade_DefuseBombStart`
      */
@@ -6985,13 +7107,13 @@ export interface GameEventMap {
      */
     deploy: DeployEvent;
     /**
-     * VIP player got to the point of rescue. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * VIP player got to the point of rescue. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_Disappear`
      */
     disappear: DisappearEvent;
     /**
-     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `crash` читается как `false`, а `reason` — причина, которую узнал AMX Mod X.
+     * Без ReHLDS (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `crash` читается как `false`, а `reason` — причина, которую узнал AMX Mod X.
      *
      * Pawn: `RH_SV_DropClient`
      */
@@ -7003,25 +7125,25 @@ export interface GameEventMap {
      */
     drop: DropEvent;
     /**
-     * Called when a idle player is removed from server. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a idle player is removed from server. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_DropIdlePlayer`
      */
     dropIdlePlayer: DropIdlePlayerEvent;
     /**
-     * Игрок выбрасывает оружие. В post-обработчике `event.result` — коробка с оружием на земле. Без ReAPI (чистый HLDS): слышно по команде игрока `drop`: `preventDefault()` её отменяет; `event.result` читается как `null`, а выброс, который игра делает сама, не слышен.
+     * Игрок выбрасывает оружие. В post-обработчике `event.result` — коробка с оружием на земле. Без ReGameDLL (чистый HLDS): слышно по команде игрока `drop`: `preventDefault()` её отменяет; `event.result` читается как `null`, а выброс, который игра делает сама, не слышен.
      *
      * Pawn: `RG_CBasePlayer_DropPlayerItem`
      */
     dropPlayerItem: DropPlayerItemEvent;
     /**
-     * Called when a player throws the shield on the ground. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a player throws the shield on the ground. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_DropShield`
      */
     dropShield: DropShieldEvent;
     /**
-     * What do I do with player's weapons when he's killed? Без ReAPI (чистый HLDS) его ничто не слышит.
+     * What do I do with player's weapons when he's killed? Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_DeadPlayerWeapons`
      */
@@ -7033,7 +7155,7 @@ export interface GameEventMap {
      */
     duck: DuckEvent;
     /**
-     * Called on every frame to check player ducking. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called on every frame to check player ducking. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_Duck`
      */
@@ -7045,25 +7167,25 @@ export interface GameEventMap {
      */
     earPosition: EarPositionEvent;
     /**
-     * Called when a C4 goes to explodes. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `trace` и `damageType` читаются как 0.
+     * Called when a C4 goes to explodes. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `trace` и `damageType` читаются как 0.
      *
      * Pawn: `RG_CGrenade_ExplodeBomb`
      */
     explodeBomb: ExplodeBombEvent;
     /**
-     * Called when a flashbang detonates. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a flashbang detonates. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CGrenade_ExplodeFlashbang`
      */
     explodeFlashbang: ExplodeFlashbangEvent;
     /**
-     * Called when a hegrenade detonates. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a hegrenade detonates. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CGrenade_ExplodeHeGrenade`
      */
     explodeHeGrenade: ExplodeHeGrenadeEvent;
     /**
-     * Дымовая граната взрывается. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Дымовая граната взрывается. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CGrenade_ExplodeSmokeGrenade`
      */
@@ -7093,43 +7215,43 @@ export interface GameEventMap {
      */
     fadeMonster: FadeMonsterEvent;
     /**
-     * Игра считает урон от падения. В post-обработчике `event.result` — это число; верните своё, чтобы заменить его. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Игра считает урон от падения. В post-обработчике `event.result` — это число; верните своё, чтобы заменить его. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_FlPlayerFallDamage`
      */
     fallDamage: FallDamageEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBaseEntity_FireBullets`
      */
     fireBullets: FireBulletsEvent;
     /**
-     * Игра сообщает ботам, что что-то произошло. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Игра сообщает ботам, что что-то произошло. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBotManager_OnEvent`
      */
     gameEvent: GameEventEvent;
     /**
-     * «Мысль» правил игры: каждый кадр — часы раунда и проверка условий победы. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     * «Мысль» правил игры: каждый кадр — часы раунда и проверка условий победы. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CSGameRules_Think`
      */
     gameThink: GameThinkEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_GetForceCamera`
      */
     getForceCamera: GetForceCameraEvent;
     /**
-     * Called when a player enters the game. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a player enters the game. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_GetIntoGame`
      */
     getIntoGame: GetIntoGameEvent;
     /**
-     * I can't use this weapon anymore, get me the next best one. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * I can't use this weapon anymore, get me the next best one. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_GetNextBestWeapon`
      */
@@ -7141,7 +7263,7 @@ export interface GameEventMap {
      */
     gibMonster: GibMonsterEvent;
     /**
-     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     * Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CGib_Spawn`
      */
@@ -7149,25 +7271,25 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_GiveAmmo`, `Ham_GiveAmmo` */
     giveAmmo: GiveAmmoEvent;
     /**
-     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
+     * Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает.
      *
      * Pawn: `RG_CSGameRules_GiveC4`
      */
     giveBomb: GiveBombEvent;
     /**
-     * Игра выдаёт появившемуся игроку стандартное оружие. `preventDefault()` — и не выдаст ничего. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Игра выдаёт появившемуся игроку стандартное оружие. `preventDefault()` — и не выдаст ничего. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_GiveDefaultItems`
      */
     giveDefaultItems: GiveDefaultItemsEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_GiveNamedItem`
      */
     giveItem: GiveItemEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_GiveShield`
      */
@@ -7199,7 +7321,7 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_TakeHealth`, `Ham_TakeHealth` */
     heal: HealEvent;
     /**
-     * Игра показывает игроку подсказку. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Игра показывает игроку подсказку. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_HintMessageEx`
      */
@@ -7223,7 +7345,7 @@ export interface GameEventMap {
      */
     impulse: ImpulseEvent;
     /**
-     * Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     * Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CSGameRules_GoToIntermission`
      */
@@ -7313,7 +7435,7 @@ export interface GameEventMap {
      */
     itemPreFrame: ItemPreFrameEvent;
     /**
-     * Игра спрашивает, запрещён ли игроку предмет. Верните `true`, чтобы запретить. Без ReAPI (чистый HLDS): спрашивается только про `"buying"`, через `CS_OnBuyAttempt` модуля cstrike: ответ `true` запрещает покупку, `false` оставляет решение игре.
+     * Игра спрашивает, запрещён ли игроку предмет. Верните `true`, чтобы запретить. Без ReGameDLL (чистый HLDS): спрашивается только про `"buying"`, когда игрок просит покупку: ответ `true` запрещает покупку, `false` оставляет решение игре.
      *
      * Pawn: `RG_CBasePlayer_HasRestrictItem`
      */
@@ -7331,7 +7453,7 @@ export interface GameEventMap {
      */
     itemUpdateClientData: ItemUpdateClientDataEvent;
     /**
-     * Called when a client "thinks for the join status". Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a client "thinks for the join status". Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_JoiningThink`
      */
@@ -7343,7 +7465,7 @@ export interface GameEventMap {
      */
     jump: JumpEvent;
     /**
-     * Called on every frame while player presses jump button. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called on every frame while player presses jump button. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_Jump`
      */
@@ -7361,7 +7483,7 @@ export interface GameEventMap {
      */
     killed: KilledEvent;
     /**
-     * Called when a player is on a ladder. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a player is on a ladder. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_LadderMove`
      */
@@ -7373,7 +7495,7 @@ export interface GameEventMap {
      */
     look: LookEvent;
     /**
-     * Recreate all the map entities from the map data (preserving their indices),. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     * Recreate all the map entities from the map data (preserving their indices),. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CSGameRules_CleanUpMap`
      */
@@ -7391,13 +7513,13 @@ export interface GameEventMap {
      */
     monsterInitDead: MonsterInitDeadEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_Move`
      */
     move: MoveEvent;
     /**
-     * Начинается новый раунд. Без ReAPI (чистый HLDS): слышно при перезапуске раунда — обработчики «до» игры, когда она объявляет раунд, обработчики «после» — когда её игроки возродились, — но `preventDefault()` ничего не делает.
+     * Начинается новый раунд. Без ReGameDLL (чистый HLDS): слышно при перезапуске раунда — обработчики «до» игры, когда она объявляет раунд, обработчики «после» — когда её игроки возродились, — но `preventDefault()` ничего не делает.
      *
      * Pawn: `RG_CSGameRules_RestartRound`
      */
@@ -7409,13 +7531,13 @@ export interface GameEventMap {
      */
     nextTarget: NextTargetEvent;
     /**
-     * Called when a client attempt to change the observer mode. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a client attempt to change the observer mode. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_Observer_SetMode`
      */
     observerSetMode: ObserverSetModeEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_Observer_Think`
      */
@@ -7433,7 +7555,7 @@ export interface GameEventMap {
      */
     painSound: PainSoundEvent;
     /**
-     * Called when a player plant's the bomb on the ground. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда бомба получает модель; ответ ничего не делает.
+     * Called when a player plant's the bomb on the ground. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда бомба получает модель; ответ ничего не делает.
      *
      * Pawn: `RG_PlantBomb`
      */
@@ -7445,37 +7567,37 @@ export interface GameEventMap {
      */
     playEmptySound: PlayEmptySoundEvent;
     /**
-     * Флешка ослепляет игрока. `preventDefault()` — и он ничего не заметит. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `inflictor` и `attacker` читаются как мир, `color` — нулевым.
+     * Флешка ослепляет игрока. `preventDefault()` — и он ничего не заметит. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `inflictor` и `attacker` читаются как мир, `color` — нулевым.
      *
      * Pawn: `RG_PlayerBlind`
      */
     playerBlind: PlayerBlindEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_PlayerDeathThink`
      */
     playerDeathThink: PlayerDeathThinkEvent;
     /**
-     * Called each time player gets a weapon linked to his inventory. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     * Called each time player gets a weapon linked to his inventory. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CSGameRules_PlayerGotWeapon`
      */
     playerGotWeapon: PlayerGotWeaponEvent;
     /**
-     * Игрока убили. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     * Игрока убили. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CSGameRules_PlayerKilled`
      */
     playerKilled: PlayerKilledEvent;
     /**
-     * Игрок появился на карте (спавн). Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     * Игрок появился на карте (спавн). Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CSGameRules_PlayerSpawn`
      */
     playerSpawn: PlayerSpawnEvent;
     /**
-     * Called whenever player emits an step sound. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called whenever player emits an step sound. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_PlayStepSound`
      */
@@ -7497,19 +7619,19 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_Precache`, `Ham_Precache` */
     precache: PrecacheEvent;
     /**
-     * Called when a generic resource is being added to generic precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
+     * Called when a generic resource is being added to generic precache list. Без ReHLDS (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
      *
      * Pawn: `RH_PF_precache_generic_I`
      */
     precacheFile: PrecacheFileEvent;
     /**
-     * Called when a model is being added to model precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
+     * Called when a model is being added to model precache list. Без ReHLDS (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
      *
      * Pawn: `RH_PF_precache_model_I`
      */
     precacheModel: PrecacheModelEvent;
     /**
-     * Called when a sound is being added to sound precache list. Без ReAPI (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
+     * Called when a sound is being added to sound precache list. Без ReHLDS (чистый HLDS): `preventDefault()` пропускает прекэш, и он отвечает 0; ответ и запись `file` ничего не делают.
      *
      * Pawn: `RH_PF_precache_sound_I`
      */
@@ -7533,19 +7655,19 @@ export interface GameEventMap {
      */
     primaryAttack: PrimaryAttackEvent;
     /**
-     * Called when a message is being sent to the server's console. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a message is being sent to the server's console. Без ReHLDS (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RH_Con_Printf`
      */
     printf: PrintfEvent;
     /**
-     * Отправляется радиосообщение. `preventDefault()` заглушит его. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Отправляется радиосообщение. `preventDefault()` заглушит его. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_Radio`
      */
     radio: RadioEvent;
     /**
-     * Called whenever player fires a weapon and shakes player screen (punchangles altering). Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called whenever player fires a weapon and shakes player screen (punchangles altering). Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayerWeapon_KickBack`
      */
@@ -7569,13 +7691,13 @@ export interface GameEventMap {
      */
     reload: ReloadEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_RemoveAllItems`
      */
     removeAllItems: RemoveAllItemsEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_RemoveGuns`
      */
@@ -7583,7 +7705,7 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_RemovePlayerItem`, `Ham_RemovePlayerItem` */
     removeItem: RemoveItemEvent;
     /**
-     * Called when a player's remove protection. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a player's remove protection. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_RemoveSpawnProtection`
      */
@@ -7601,7 +7723,7 @@ export interface GameEventMap {
      */
     resetMaxSpeed: ResetMaxSpeedEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBaseAnimating_ResetSequenceInfo`
      */
@@ -7625,7 +7747,7 @@ export interface GameEventMap {
      */
     retireWeapon: RetireWeaponEvent;
     /**
-     * Раунд заканчивается. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает; `delay` — 5 секунд оригинальной игры, 3 для `"gameCommence"`, если его не задал `game.endRound`.
+     * Раунд заканчивается. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; ответ ничего не делает; `delay` — 5 секунд оригинальной игры, 3 для `"gameCommence"`, если его не задал `game.endRound`.
      *
      * Pawn: `RG_RoundEnd`
      */
@@ -7633,7 +7755,7 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_RoundRespawn`, `Ham_CS_RoundRespawn` */
     roundRespawn: RoundRespawnEvent;
     /**
-     * Закончилось время заморозки в начале раунда. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
+     * Закончилось время заморозки в начале раунда. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают.
      *
      * Pawn: `RG_CSGameRules_OnRoundFreezeEnd`
      */
@@ -7651,13 +7773,13 @@ export interface GameEventMap {
      */
     secondaryAttack: SecondaryAttackEvent;
     /**
-     * Called when game selects a spawn point (info_player_start/deathmatch) to position the player. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when game selects a spawn point (info_player_start/deathmatch) to position the player. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_EntSelectSpawnPoint`
      */
     selectSpawnPoint: SelectSpawnPointEvent;
     /**
-     * Игра сообщает всем, кто кого убил. Без ReAPI (чистый HLDS): `preventDefault()` отменяет сообщение; `assister` и `inflictor` читаются как мир, `flags` пуст, в `rarity` бывает только `"headshot"`; запись поля ничего не делает.
+     * Игра сообщает всем, кто кого убил. Без ReGameDLL (чистый HLDS): `preventDefault()` отменяет сообщение; `assister` и `inflictor` читаются как мир, `flags` пуст, в `rarity` бывает только `"headshot"`; запись поля ничего не делает.
      *
      * Pawn: `RG_CSGameRules_SendDeathMessage`
      */
@@ -7669,25 +7791,25 @@ export interface GameEventMap {
      */
     sendWeaponAnim: SendWeaponAnimEvent;
     /**
-     * Called when a command is being sent to server. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a command is being sent to server. Без ReHLDS (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RH_ExecuteServerStringCmd`
      */
     serverCommand: ServerCommandEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_ServerDeactivate`
      */
     serverDeactivate: ServerDeactivateEvent;
     /**
-     * Игра задаёт анимацию, которую играет модель игрока: ходьба, прыжок, атака, перезарядка. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Игра задаёт анимацию, которую играет модель игрока: ходьба, прыжок, атака, перезарядка. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_SetAnimation`
      */
     setAnimation: SetAnimationEvent;
     /**
-     * Called when a player dies to pack up the appropriate weapons and ammo items, and creates a weaponbox that falls to floor with sets specify the model or when a player drop the item. Без ReAPI (чистый HLDS): `preventDefault()` не даёт модели встать; запись `modelName` ничего не делает.
+     * Called when a player dies to pack up the appropriate weapons and ammo items, and creates a weaponbox that falls to floor with sets specify the model or when a player drop the item. Без ReGameDLL (чистый HLDS): `preventDefault()` не даёт модели встать; запись `modelName` ничего не делает.
      *
      * Pawn: `RG_CWeaponBox_SetModel`
      */
@@ -7699,7 +7821,7 @@ export interface GameEventMap {
      */
     setObjectCollisionBox: SetObjectCollisionBoxEvent;
     /**
-     * Called when a player's set protection. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a player's set protection. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_SetSpawnProtection`
      */
@@ -7711,13 +7833,13 @@ export interface GameEventMap {
      */
     setToggleState: SetToggleStateEvent;
     /**
-     * Оружие стреляет: игра ведёт пулю, сквозь стены, насколько позволяет пробивание, и наносит её урон. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Оружие стреляет: игра ведёт пулю, сквозь стены, насколько позволяет пробивание, и наносит её урон. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBaseEntity_FireBullets3`
      */
     shoot: ShootEvent;
     /**
-     * Дробовик стреляет: игра ведёт каждую дробину и наносит её урон. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Дробовик стреляет: игра ведёт каждую дробину и наносит её урон. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBaseEntity_FireBuckshots`
      */
@@ -7729,7 +7851,7 @@ export interface GameEventMap {
      */
     shouldFadeOnDeath: ShouldFadeOnDeathEvent;
     /**
-     * Should the player switch to this weapon? Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Should the player switch to this weapon? Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_FShouldSwitchWeapon`
      */
@@ -7741,13 +7863,13 @@ export interface GameEventMap {
      */
     shouldWeaponIdle: ShouldWeaponIdleEvent;
     /**
-     * Игра показывает игроку меню. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Игра показывает игроку меню. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_ShowMenu`
      */
     showMenu: ShowMenuEvent;
     /**
-     * Игра показывает игроку VGUI-меню (выбор команды). Без ReAPI (чистый HLDS): слышно, когда меню уходит игроку с включёнными VGUI-меню (не боту): `preventDefault()` его отменяет; `oldMenu` читается как `""`, запись поля ничего не делает.
+     * Игра показывает игроку VGUI-меню (выбор команды). Без ReGameDLL (чистый HLDS): слышно, когда меню уходит игроку с включёнными VGUI-меню (не боту): `preventDefault()` его отменяет; `oldMenu` читается как `""`, запись поля ничего не делает.
      *
      * Pawn: `RG_ShowVGUIMenu`
      */
@@ -7759,37 +7881,37 @@ export interface GameEventMap {
      */
     spawn: SpawnEvent;
     /**
-     * Called on spawn, the attempt to equip a player. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called on spawn, the attempt to equip a player. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_OnSpawnEquip`
      */
     spawnEquip: SpawnEquipEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_SpawnHeadGib`
      */
     spawnHeadGib: SpawnHeadGibEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_SpawnRandomGibs`
      */
     spawnRandomGibs: SpawnRandomGibsEvent;
     /**
-     * Place this player on his spawnspot and face him in the proper direction. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Place this player on his spawnspot and face him in the proper direction. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_GetPlayerSpawnSpot`
      */
     spawnSpot: SpawnSpotEvent;
     /**
-     * Called when a client attempt to find the next observer. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a client attempt to find the next observer. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_Observer_FindNextPlayer`
      */
     spectateNext: SpectateNextEvent;
     /**
-     * Включается камера погибшего игрока. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Включается камера погибшего игрока. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_StartDeathCam`
      */
@@ -7801,13 +7923,13 @@ export interface GameEventMap {
      */
     startSneaking: StartSneakingEvent;
     /**
-     * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить. Без ReAPI (чистый HLDS): слышно для звуков, которые игра проигрывает через `EmitSound` движка: `preventDefault()` его отменяет; `recipients` читается как 0, запись поля ничего не делает.
+     * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить. Без ReHLDS (чистый HLDS): слышно для звуков, которые игра проигрывает через `EmitSound` движка: `preventDefault()` его отменяет; `recipients` читается как 0, запись поля ничего не делает.
      *
      * Pawn: `RH_SV_StartSound`
      */
     startSound: StartSoundEvent;
     /**
-     * The player goes into observer mode. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * The player goes into observer mode. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_StartObserver`
      */
@@ -7819,7 +7941,7 @@ export interface GameEventMap {
      */
     stopSneaking: StopSneakingEvent;
     /**
-     * Called when a player goes switch to opposite team after auto-teambalance or caused by 3rd-party things. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a player goes switch to opposite team after auto-teambalance or caused by 3rd-party things. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_SwitchTeam`
      */
@@ -7831,13 +7953,13 @@ export interface GameEventMap {
      */
     takeDamage: TakeDamageEvent;
     /**
-     * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velocityModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Раненого игрока отбрасывает и замедляет от удара, уже после урона. Чтобы изменить насколько, присвойте `event.knockbackForce` или `event.velocityModifier`; чтобы не было ни того ни другого, вызовите `preventDefault()`. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_TakeDamageImpulse`
      */
     takeDamageImpulse: TakeDamageImpulseEvent;
     /**
-     * Called each time player tries to join a team to ensure availability. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called each time player tries to join a team to ensure availability. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_TeamFull`
      */
@@ -7849,7 +7971,7 @@ export interface GameEventMap {
      */
     teamId: TeamIdEvent;
     /**
-     * Called each time player tries to join a team to ensure a fair distribution of players (based on mp_limitteams cvar). Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called each time player tries to join a team to ensure a fair distribution of players (based on mp_limitteams cvar). Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CSGameRules_TeamStacked`
      */
@@ -7861,25 +7983,25 @@ export interface GameEventMap {
      */
     think: ThinkEvent;
     /**
-     * Игрок бросил флешку. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель.
+     * Игрок бросил флешку. В post-обработчике `event.result` — сама граната. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель.
      *
      * Pawn: `RG_ThrowFlashbang`
      */
     throwFlashbang: ThrowFlashbangEvent;
     /**
-     * Игрок бросает гранату. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
+     * Игрок бросает гранату. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
      *
      * Pawn: `RG_CBasePlayer_ThrowGrenade`
      */
     throwGrenade: ThrowGrenadeEvent;
     /**
-     * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
+     * Игрок бросил осколочную гранату. В post-обработчике `event.result` — сама граната. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
      *
      * Pawn: `RG_ThrowHeGrenade`
      */
     throwHeGrenade: ThrowHeGrenadeEvent;
     /**
-     * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
+     * Игрок бросил дымовую гранату. В post-обработчике `event.result` — сама граната. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; слышно, когда граната получает модель, а `eventIndex` читается как 0.
      *
      * Pawn: `RG_ThrowSmokeGrenade`
      */
@@ -7909,13 +8031,13 @@ export interface GameEventMap {
      */
     traceBleed: TraceBleedEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_RadiusFlash_TraceLine`
      */
     traceLine: TraceLineEvent;
     /**
-     * Called whenever player tries to unduck. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called whenever player tries to unduck. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_UnDuck`
      */
@@ -7929,7 +8051,7 @@ export interface GameEventMap {
      */
     updateItemInfo: UpdateItemInfoEvent;
     /**
-     * Игра обновляет строку состояния игрока — имя и здоровье игрока под прицелом внизу экрана. `preventDefault()` оставит её как есть. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Игра обновляет строку состояния игрока — имя и здоровье игрока под прицелом внизу экрана. `preventDefault()` оставит её как есть. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_UpdateStatusBar`
      */
@@ -7941,13 +8063,13 @@ export interface GameEventMap {
      */
     use: UseEvent;
     /**
-     * Called when a player press use and if a suitable candidate is not found. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called when a player press use and if a suitable candidate is not found. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CBasePlayer_UseEmpty`
      */
     useEmpty: UseEmptyEvent;
     /**
-     * The player has changed userinfo; can change it now. Без ReAPI (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`.
+     * The player has changed userinfo; can change it now. Без ReGameDLL (чистый HLDS): слышно, когда игра уже сделала своё, поэтому `preventDefault()` и запись поля ничего не делают; `info` читается как `""`.
      *
      * Pawn: `RG_CSGameRules_ClientUserInfoChanged`
      */
@@ -7959,13 +8081,13 @@ export interface GameEventMap {
      */
     visible: VisibleEvent;
     /**
-     * Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_CGib_WaitTillLand`
      */
     waitTillLand: WaitTillLandEvent;
     /**
-     * Called on every frame after a player jumps on water for a short period of time. Без ReAPI (чистый HLDS) его ничто не слышит.
+     * Called on every frame after a player jumps on water for a short period of time. Без ReGameDLL (чистый HLDS) его ничто не слышит.
      *
      * Pawn: `RG_PM_WaterJump`
      */
@@ -7982,6 +8104,12 @@ export interface GameEventMap {
      * Pawn: `register_touch`
      */
     touch: TouchEvent;
+    /**
+     * Состояние сущности, которую видит игрок, как он получает его каждый кадр: её место, углы, вид — изменённые только для него, — или скрытая от него через `event.preventDefault()`. `{ classname }` называет сущности, о которых слушатель; модуль передаёт только их.
+     *
+     * Pawn: `register_forward(FM_AddToFullPack, ..., 1)`, `get_es`, `set_es`
+     */
+    entityState: EntityStateEvent;
 }
 /**
  * What a listener may return for each event: the game's answer type, or
@@ -8230,6 +8358,7 @@ export interface GameAnswerMap {
     waterJump: void;
     weaponIdle: void;
     touch: void;
+    entityState: void;
 }
 /**
  * Adds a listener for the event E - game.addEventListener's hood. `classname`

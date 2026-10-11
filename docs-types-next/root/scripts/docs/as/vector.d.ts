@@ -43,5 +43,33 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Vector.fromAngles': {
+        en: string;
+        ru: string;
+    };
+    'Vector.directions': {
+        en: string;
+        ru: string;
+    };
+    'Vector.toAngles': {
+        en: string;
+        ru: string;
+    };
+    Directions: {
+        en: string;
+        ru: string;
+    };
+    'Directions.forward': {
+        en: string;
+        ru: string;
+    };
+    'Directions.right': {
+        en: string;
+        ru: string;
+    };
+    'Directions.up': {
+        en: string;
+        ru: string;
+    };
 };
 export default _default;

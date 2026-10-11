@@ -18,6 +18,10 @@ export { entvarCell as __entvarCell, setEntvarCell as __setEntvarCell, memberCel
  * Pawn: `kRender*`
  */
 export type RenderMode = "normal" | "color" | "texture" | "glow" | "alpha" | "additive" | "unknown";
+/** A RenderMode number as its name; one no name stands for reads as "unknown". */
+declare function renderModeName(cell: i32): RenderMode;
+/** A RenderMode name as its number; "unknown" is UNNAMED, and the field keeps what it has. */
+declare function renderModeCell(name: RenderMode): i32;
 /**
  * A render effect of an entity - `entity.renderFx`.
  *
@@ -26,6 +30,10 @@ export type RenderMode = "normal" | "color" | "texture" | "glow" | "alpha" | "ad
  * Pawn: `kRenderFx*`
  */
 export type RenderFx = "none" | "pulseSlow" | "pulseFast" | "pulseSlowWide" | "pulseFastWide" | "fadeSlow" | "fadeFast" | "solidSlow" | "solidFast" | "strobeSlow" | "strobeFast" | "strobeFaster" | "flickerSlow" | "flickerFast" | "noDissipation" | "distort" | "hologram" | "deadPlayer" | "explode" | "glowShell" | "clampMinScale" | "lightMultiplier" | "unknown";
+/** A RenderFx number as its name; one no name stands for reads as "unknown". */
+declare function renderFxName(cell: i32): RenderFx;
+/** A RenderFx name as its number; "unknown" is UNNAMED, and the field keeps what it has. */
+declare function renderFxCell(name: RenderFx): i32;
 /**
  * An entity's kind of movement - `entity.moveType`.
  *
@@ -74,6 +82,8 @@ export type WaterLevel = "none" | "feet" | "waist" | "head" | "unknown";
  * Pawn: `CONTENTS_*`
  */
 export type Contents = "empty" | "solid" | "water" | "slime" | "lava" | "sky" | "origin" | "clip" | "current0" | "current90" | "current180" | "current270" | "currentUp" | "currentDown" | "translucent" | "ladder" | "unknown";
+/** A Contents number as its name; one no name stands for reads as "unknown". */
+declare function contentsName(cell: i32): Contents;
 /**
  * A player's view snap - `player.fixAngle`.
  *
@@ -90,6 +100,8 @@ export type FixAngle = "none" | "set" | "addYaw" | "unknown";
  * Pawn: `HITGROUP_*`
  */
 export type HitGroup = "generic" | "head" | "chest" | "stomach" | "leftArm" | "rightArm" | "leftLeg" | "rightLeg" | "shield" | "unknown";
+/** A HitGroup number as its name; one no name stands for reads as "unknown". */
+declare function hitGroupName(cell: i32): HitGroup;
 /**
  * A player's armour kind - `player.kevlar`.
  *
@@ -170,6 +182,7 @@ export type MusicState = "silent" | "calm" | "intense" | "unknown";
  * Pawn: `MAP_HAVE_VIP_SAFETYZONE_*`
  */
 export type VipSafetyZone = "notChecked" | "yes" | "no" | "unknown";
+export { contentsName, hitGroupName, renderFxCell, renderFxName, renderModeCell, renderModeName };
 /**
  * Which entities `Entity.findAll` returns. Every field is optional, and an
  * entity has to match all that are given:
@@ -205,6 +218,12 @@ export declare class Entity {
      * where nothing is holding them.
      */
     remove(): void;
+    /**
+     * Drops the entity straight down onto what is under it, as the game puts an item on the floor when a map starts: `true` when it landed, `false` when there is nothing under it within 256 units or it is stuck in something.
+     *
+     * Pawn: `drop_to_floor`, `engfunc(EngFunc_DropToFloor, ...)`
+     */
+    dropToFloor(): boolean;
     /**
      * `true` while the entity is in the world: `false` once the engine has freed it (`remove()` has it freed at the end of the frame), for a player who has left, and for `0`, no entity. An id that came from an event or a hook may name an entity that is gone.
      *
@@ -497,15 +516,15 @@ export declare class Entity {
      *
      * Pawn: `pev->viewmodel`
      */
-    get viewModel(): number;
-    set viewModel(value: number);
+    get viewModel(): string;
+    set viewModel(value: string);
     /**
      * The weapon model other players see in the player's hands, e.g. `"models/p_knife.mdl"`.
      *
      * Pawn: `pev->weaponmodel`
      */
-    get weaponModel(): number;
-    set weaponModel(value: number);
+    get weaponModel(): string;
+    set weaponModel(value: string);
     /**
      * The low corner of the entity's bounding box in world coordinates; the engine recomputes it when the entity moves.
      *
@@ -2137,6 +2156,13 @@ export declare class PlayerFields extends Entity {
      */
     get soundRange(): number;
     set soundRange(value: number);
+    /**
+     * The player's falling speed, units per second, positive downwards: the one the game works fall damage out from on landing. Setting it sets the entity's `fallVelocity` too - `player.fallVelocity = 0` lands him without damage.
+     *
+     * Pawn: `CBasePlayer::m_flFallVelocity`
+     */
+    get fallVelocity(): number;
+    set fallVelocity(value: number);
     /**
      * The player's “new ammo to send” flag from Half-Life. CS does not use the field.
      *

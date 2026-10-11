@@ -327,6 +327,10 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Client.print': {
+        en: string;
+        ru: string;
+    };
     'Client.command': {
         en: string;
         ru: string;
@@ -467,6 +471,10 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Player.print': {
+        en: string;
+        ru: string;
+    };
     'Player.command': {
         en: string;
         ru: string;
@@ -480,6 +488,10 @@ declare const _default: {
         ru: string;
     };
     CommandOptions: {
+        en: string;
+        ru: string;
+    };
+    'CommandOptions.chat': {
         en: string;
         ru: string;
     };
@@ -739,6 +751,10 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Screen.lightStyle': {
+        en: string;
+        ru: string;
+    };
     PlayerChangeEvent: {
         en: string;
         ru: string;
@@ -823,6 +839,22 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    env: {
+        en: string;
+        ru: string;
+    };
+    'env#2': {
+        en: string;
+        ru: string;
+    };
+    'env#3': {
+        en: string;
+        ru: string;
+    };
+    'env#4': {
+        en: string;
+        ru: string;
+    };
     Server: {
         en: string;
         ru: string;
@@ -863,6 +895,10 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Server.logsDir': {
+        en: string;
+        ru: string;
+    };
     'Server.dataDir': {
         en: string;
         ru: string;
@@ -900,6 +936,434 @@ declare const _default: {
         ru: string;
     };
     'Game.endRound': {
+        en: string;
+        ru: string;
+    };
+    'Game.restartRound': {
+        en: string;
+        ru: string;
+    };
+    'Game.checkWinConditions': {
+        en: string;
+        ru: string;
+    };
+    ItemSlot: {
+        en: string;
+        ru: string;
+    };
+    UserInfo: {
+        en: string;
+        ru: string;
+    };
+    'UserInfo.get': {
+        en: string;
+        ru: string;
+    };
+    'UserInfo.set': {
+        en: string;
+        ru: string;
+    };
+    'Client.isHltv': {
+        en: string;
+        ru: string;
+    };
+    'Player.isHltv': {
+        en: string;
+        ru: string;
+    };
+    'Player.removeItems': {
+        en: string;
+        ru: string;
+    };
+    'Player.dropItem': {
+        en: string;
+        ru: string;
+    };
+    'Player.slap': {
+        en: string;
+        ru: string;
+    };
+    'Player.userId': {
+        en: string;
+        ru: string;
+    };
+    'Player.ping': {
+        en: string;
+        ru: string;
+    };
+    'Player.connectedSeconds': {
+        en: string;
+        ru: string;
+    };
+    'Player.info': {
+        en: string;
+        ru: string;
+    };
+    'Player.silentSteps': {
+        en: string;
+        ru: string;
+    };
+    'Player.country': {
+        en: string;
+        ru: string;
+    };
+    'Player.countryCode': {
+        en: string;
+        ru: string;
+    };
+    'Game.swapTeams': {
+        en: string;
+        ru: string;
+    };
+    'Game.balanceTeams': {
+        en: string;
+        ru: string;
+    };
+    'Game.timeLeft': {
+        en: string;
+        ru: string;
+    };
+    'HudLine.showAll': {
+        en: string;
+        ru: string;
+    };
+    'Screen.hint': {
+        en: string;
+        ru: string;
+    };
+    'Player.showMotd': {
+        en: string;
+        ru: string;
+    };
+    'Server.plugins': {
+        en: string;
+        ru: string;
+    };
+    'Server.loadPlugin': {
+        en: string;
+        ru: string;
+    };
+    PluginLanguage: {
+        en: string;
+        ru: string;
+    };
+    ServerPlugin: {
+        en: string;
+        ru: string;
+    };
+    'ServerPlugin.language': {
+        en: string;
+        ru: string;
+    };
+    'ServerPlugin.file': {
+        en: string;
+        ru: string;
+    };
+    'ServerPlugin.name': {
+        en: string;
+        ru: string;
+    };
+    'ServerPlugin.version': {
+        en: string;
+        ru: string;
+    };
+    'ServerPlugin.author': {
+        en: string;
+        ru: string;
+    };
+    'ServerPlugin.running': {
+        en: string;
+        ru: string;
+    };
+    'ServerPlugin.stop': {
+        en: string;
+        ru: string;
+    };
+    'ServerPlugin.start': {
+        en: string;
+        ru: string;
+    };
+    'ServerPlugin.reload': {
+        en: string;
+        ru: string;
+    };
+    'ServerPlugin.call': {
+        en: string;
+        ru: string;
+    };
+    'Player.send': {
+        en: string;
+        ru: string;
+    };
+    'Server.send': {
+        en: string;
+        ru: string;
+    };
+    SendOptions: {
+        en: string;
+        ru: string;
+    };
+    'SendOptions.near': {
+        en: string;
+        ru: string;
+    };
+    'Player.eyes': {
+        en: string;
+        ru: string;
+    };
+    'Player.aim': {
+        en: string;
+        ru: string;
+    };
+    'Player.canSee': {
+        en: string;
+        ru: string;
+    };
+    'Player.canSeePoint': {
+        en: string;
+        ru: string;
+    };
+    Aim: {
+        en: string;
+        ru: string;
+    };
+    'Aim.point': {
+        en: string;
+        ru: string;
+    };
+    'Aim.entity': {
+        en: string;
+        ru: string;
+    };
+    'Aim.hitGroup': {
+        en: string;
+        ru: string;
+    };
+    TraceOptions: {
+        en: string;
+        ru: string;
+    };
+    'TraceOptions.ignore': {
+        en: string;
+        ru: string;
+    };
+    'TraceOptions.monsters': {
+        en: string;
+        ru: string;
+    };
+    TraceHull: {
+        en: string;
+        ru: string;
+    };
+    TraceResult: {
+        en: string;
+        ru: string;
+    };
+    'TraceResult.fraction': {
+        en: string;
+        ru: string;
+    };
+    'TraceResult.end': {
+        en: string;
+        ru: string;
+    };
+    'TraceResult.normal': {
+        en: string;
+        ru: string;
+    };
+    'TraceResult.entity': {
+        en: string;
+        ru: string;
+    };
+    'TraceResult.startSolid': {
+        en: string;
+        ru: string;
+    };
+    'TraceResult.allSolid': {
+        en: string;
+        ru: string;
+    };
+    'TraceResult.inOpen': {
+        en: string;
+        ru: string;
+    };
+    'TraceResult.inWater': {
+        en: string;
+        ru: string;
+    };
+    'TraceResult.hitGroup': {
+        en: string;
+        ru: string;
+    };
+    'TraceResult.hit': {
+        en: string;
+        ru: string;
+    };
+    trace: {
+        en: string;
+        ru: string;
+    };
+    'trace.line': {
+        en: string;
+        ru: string;
+    };
+    'trace.hull': {
+        en: string;
+        ru: string;
+    };
+    pointContents: {
+        en: string;
+        ru: string;
+    };
+    'Server.game': {
+        en: string;
+        ru: string;
+    };
+    'Server.versions': {
+        en: string;
+        ru: string;
+    };
+    'Server.mapExists': {
+        en: string;
+        ru: string;
+    };
+    'Server.changeLevel': {
+        en: string;
+        ru: string;
+    };
+    'Server.lightStyle': {
+        en: string;
+        ru: string;
+    };
+    'Server.print': {
+        en: string;
+        ru: string;
+    };
+    ServerVersions: {
+        en: string;
+        ru: string;
+    };
+    'ServerVersions.amxts': {
+        en: string;
+        ru: string;
+    };
+    'ServerVersions.amxModX': {
+        en: string;
+        ru: string;
+    };
+    'ServerVersions.metamod': {
+        en: string;
+        ru: string;
+    };
+    'ServerVersions.reHlds': {
+        en: string;
+        ru: string;
+    };
+    'ServerVersions.reGameDll': {
+        en: string;
+        ru: string;
+    };
+    'lang.languages': {
+        en: string;
+        ru: string;
+    };
+    'Menu.addText': {
+        en: string;
+        ru: string;
+    };
+    'Menu.addBlank': {
+        en: string;
+        ru: string;
+    };
+    'Player.view': {
+        en: string;
+        ru: string;
+    };
+    RemoveAllItemsOptions: {
+        en: string;
+        ru: string;
+    };
+    'RemoveAllItemsOptions.suit': {
+        en: string;
+        ru: string;
+    };
+    'Player.loss': {
+        en: string;
+        ru: string;
+    };
+    'Player.model': {
+        en: string;
+        ru: string;
+    };
+    'Player.setModel': {
+        en: string;
+        ru: string;
+    };
+    'Player.resetModel': {
+        en: string;
+        ru: string;
+    };
+    ModelOptions: {
+        en: string;
+        ru: string;
+    };
+    'ModelOptions.hitboxes': {
+        en: string;
+        ru: string;
+    };
+    EntityStateEvent: {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.player': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.entity': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.origin': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.angles': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.renderMode': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.renderAmount': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.renderColor': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.renderFx': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.effects': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.modelIndex': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.body': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.skin': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.preventDefault': {
         en: string;
         ru: string;
     };
@@ -1007,18 +1471,6 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    Target: {
-        en: string;
-        ru: string;
-    };
-    'Target.id': {
-        en: string;
-        ru: string;
-    };
-    'Target.variant': {
-        en: string;
-        ru: string;
-    };
     paint: {
         en: string;
         ru: string;
@@ -1032,10 +1484,6 @@ declare const _default: {
         ru: string;
     };
     swapTeam: {
-        en: string;
-        ru: string;
-    };
-    print: {
         en: string;
         ru: string;
     };
@@ -1183,6 +1631,26 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    unhook: {
+        en: string;
+        ru: string;
+    };
+    __hookOn: {
+        en: string;
+        ru: string;
+    };
+    __chainSet: {
+        en: string;
+        ru: string;
+    };
+    __chainSetText: {
+        en: string;
+        ru: string;
+    };
+    __hasChains: {
+        en: string;
+        ru: string;
+    };
     PluginInfo: {
         en: string;
         ru: string;
@@ -1288,6 +1756,18 @@ declare const _default: {
         ru: string;
     };
     'Storage.delete': {
+        en: string;
+        ru: string;
+    };
+    'Storage.keys': {
+        en: string;
+        ru: string;
+    };
+    'Storage.size': {
+        en: string;
+        ru: string;
+    };
+    'Storage.prune': {
         en: string;
         ru: string;
     };
@@ -1476,6 +1956,10 @@ declare const _default: {
         ru: string;
     };
     'CommandInfo.server': {
+        en: string;
+        ru: string;
+    };
+    'CommandInfo.aliases': {
         en: string;
         ru: string;
     };

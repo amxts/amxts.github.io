@@ -17,7 +17,7 @@ export declare const COMMON: Set<string>;
 /**
  * Server events by their old names - the Pawn forward's and the short one
  * before it - each by the name in the author's words
- * (scripts/generate-host.ts's EVENT_NAMES).
+ * (scripts/generate-image.ts's EVENT_NAMES).
  */
 export declare const SERVER_EVENTS: Record<string, string>;
 /** Server events that are a game event: `game.addEventListener` by this name. */

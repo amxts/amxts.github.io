@@ -145,10 +145,10 @@ export interface Requirement {
 }
 /** Проверка условия, как её регистрирует `addCondition()`. В меню-списке `player` — игрок строки, `viewer` — тот, кто смотрит. */
 export type ConditionTest = (player: Player, viewer: Player, name: string) => boolean;
-/** Действие, как его регистрирует `addAction()`: выполняется с контекстом выбранного пункта и именем действия. */
-export type ActionHandler = (context: NamedContext) => void;
-/** Значение плейсхолдера: текст, которым заменяется `%name%`, по контексту текста, в котором он стоит. */
-export type PlaceholderValue = (context: NamedContext) => string;
+/** Действие, как его регистрирует `addAction()`: выполняется с контекстом выбранного пункта и именем действия — `({ player, menu }) => ...` — или с игроком, который его выбрал, `(player) => ...`. */
+export type ActionHandler = (context: NamedContext & Player) => void;
+/** Значение плейсхолдера: текст, которым заменяется `%name%`, по контексту текста, в котором он стоит, — `({ player, target }) => ...` — или по игроку, который его читает, `(player) => ...`. */
+export type PlaceholderValue = (context: NamedContext & Player) => string;
 /** Проверка ограничения, как её регистрирует `addRestriction()`; `name` — токен целиком, вместе с `"NAME:param"`. */
 export type RestrictionTest = (context: NamedContext) => boolean;
 /** Проверка действия пункта, как её регистрирует `addActionCheck()`: `name` — действие, а `false` гасит пункт. */

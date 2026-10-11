@@ -36,6 +36,8 @@ export interface CompileAll {
     here: (plugin: Plugin, natives: PluginNative[]) => Promise<string | null>;
     started?: (index: number) => void;
     finished?: (index: number, compiled: Compiled) => void;
+    /** The workers below the machine's other work: the test server's build, which no one waits on at the keyboard. */
+    low?: boolean;
 }
 /**
  * The plugins compiled, several at once when there is room - in this process

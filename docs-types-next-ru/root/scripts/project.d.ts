@@ -139,6 +139,19 @@ export declare function coreEntryOf(place: string): string;
  * repository builds the core's as/.
  */
 export declare function projectPlugins(project: Project): string[];
+/** A server's addons/amxts: the module's files, written over on every start. */
+export declare const SERVER_FOLDER: RegExp;
+/** The server's addons/amxts that AMXTS_SERVER names, or '' when it names none. */
+export declare function serverDir(): string;
+/**
+ * Copies of the core's own API at the top of the project's plugins folder,
+ * left there by an older amxts: a file named as one of the core's as/ (or
+ * the editor's imports.d.ts) whose first line is the core's - a generator's
+ * header or that file's own first line. An author's file of the same name
+ * starts otherwise and stays a plugin. A server's addons/amxts/plugins of
+ * an older amxts holds them too: its module wrote them there.
+ */
+export declare function staleCopies(project: Project): string[];
 /** The modules that run on the server - each in its owner plugin: every one but a library. */
 export declare function shared(modules: ModulePackage[]): ModulePackage[];
 /** plugins.ini: the modules' owners in load order, then the project's plugins. */
@@ -163,6 +176,8 @@ export declare class Sources {
     readonly project: Project;
     /** A plugin that imports a module package the config does not list. */
     readonly problems: string[];
+    /** Copies of the core's API an older amxts left in the plugins folder: the core's files are under them. */
+    private readonly stale;
     constructor(root: string, project: Project);
     /**
      * Whether a file is a plugin's code, which auto-imports reach: the
@@ -178,6 +193,8 @@ export declare class Sources {
     private moduleNamed;
     /** The package a file on disk belongs to. */
     packageOf(real: string): ModulePackage | null;
+    /** The project's own file at this place under its plugins folder, or null: an old copy of the core's API is not one. */
+    ownFile(place: string): string | null;
     /** The file on disk at this place in the tree, or null. */
     real(path: string): string | null;
     /** The owner the build writes for a module without natives, at ~/<name>.ts. */

@@ -22,7 +22,8 @@ export function localModules(): Record<string, string>;
  * - `upgrade` rewrites the project's code to this core's API, listing each change;
  *   `--dry-run` writes nothing, `--report <file>` writes `{ changes, left }` there as JSON
  *   and leaves what is left to do by hand to the caller to print;
- * - `typecheck` runs TypeScript over the project, after `prepare`.
+ * - `typecheck` runs TypeScript over the project, after `prepare`, and says
+ *   what TypeScript allows and the build does not (src/typecheck.mjs).
  *
  * A failure is printed by the task itself and ends it with a non-zero code.
  *

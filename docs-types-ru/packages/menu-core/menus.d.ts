@@ -119,8 +119,12 @@ export declare function find(name: string): Menu | null;
 export declare function indexOf(menu: Menu | null): number;
 /** Меню с этим номером среди всех — обратное к `indexOf()`; `null`, если такого нет. */
 export declare function menuAt(index: number): Menu | null;
-/** Меню с этим именем из файла меню, прочитанное сейчас, если ещё не прочитано; `null`, если такого меню в файле нет или в нём нет пунктов. */
-export declare function register(name: string): Menu | null;
+/**
+ * Меню с этими именами из файла меню, прочитанные сейчас, если ещё не
+ * прочитаны: `menus.register("SHOP", "SHOP_GUNS")`. Возвращает меню первого;
+ * `null`, если такого меню в файле нет или в нём нет пунктов.
+ */
+export declare function register(...names: string[]): Menu | null;
 /**
  * Меню из кода — или уже существующее с этим именем, как есть. Имя на `LIST_`
  * даёт меню-список.
@@ -130,6 +134,10 @@ export declare function create(name: string, options?: MenuOptions): Menu;
 export declare function addCondition(name: string, test: ConditionTest): number;
 /** Регистрирует действие по имени — для файлов меню и Pawn-плагинов; `SHOW_<MENU>` и `CLOSE_MENU` встроены. */
 export declare function addAction(name: string, run: ActionHandler): number;
+/** Регистрирует действия по именам — для файлов меню и Pawn-плагинов: `menus.addActions({ SHOP_HEAL: heal, SHOP_ARMOR: (player) => player.armor = 100 })`. */
+export declare function addActions(actions: Record<string, ActionHandler>): void;
+/** Регистрирует плейсхолдеры для файлов меню и Pawn-плагинов: `menus.addPlaceholders({ nick: (player) => player.name })`. Если имя зарегистрировано дважды, остаётся первое. */
+export declare function addPlaceholders(placeholders: Record<string, PlaceholderValue>): void;
 /** Регистрирует плейсхолдер для файлов меню и Pawn-плагинов: текст, которым заменяется `%name%` в заголовках и пунктах. Если имя зарегистрировано дважды, остаётся первое. В коде текст — функция. */
 export declare function addPlaceholder(name: string, value: PlaceholderValue): number;
 /** Регистрирует ограничение по имени, которое файлы меню называют в `enabled` и `when`: `message` пишется рядом с пунктом, который оно гасит, если у пункта или требования нет своего; `"*"` отвечает за все имена, за которые не отвечает никто другой. */

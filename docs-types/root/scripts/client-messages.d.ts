@@ -23,6 +23,16 @@ export interface MessageField {
 }
 /** The messages whose layout is known, each argument a field. */
 export declare const MESSAGE_FIELDS: Record<string, MessageField[]>;
+/** How a message's argument is written: `write_byte`, `write_short` and the rest; `string*` every text from there on. */
+export type MessageWrite = 'byte' | 'char' | 'short' | 'long' | 'coord' | 'angle' | 'string' | 'string*';
+/**
+ * The messages a plugin can send by name (player.send, server.send): each
+ * argument as the game writes it, in order - ReGameDLL's MESSAGE_BEGIN
+ * sites. A message is here only when its fields name every argument, so
+ * what an author gives is the whole message; `=n` is an argument the game
+ * always writes as `n` (ScoreInfo's class).
+ */
+export declare const MESSAGE_WRITES: Record<string, string>;
 /** Every message Counter-Strike 1.6 registers, by the name get_user_msgid takes. */
 export declare const CLIENT_MESSAGES: string[];
 /**

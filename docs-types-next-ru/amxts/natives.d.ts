@@ -1,4 +1,14 @@
 /// <reference path="../as-types.d.ts" />
+/** @hidden Room for a text of up to `max` bytes a native fills, and its head. */
+export declare function __textRoom(max: i32): StaticArray<u8>;
+/** @hidden Where a native writes into `room`, which reads "" until it does. */
+export declare function __textInto(room: StaticArray<u8>): i32;
+/**
+ * @hidden The text a native wrote into `room`: the string made for the
+ * same text before, or a new one. The first is all reads, inlined where it
+ * is asked; the second may allocate, a call of its own.
+ */
+export declare function __textFrom(room: StaticArray<u8>): string;
 /** add(any:dest[], any:len, const any:src[], any:max) */
 export declare function add(src: string, max?: number): string;
 /** AddTranslation(const any:lang[], TransKey:key, const any:phrase[]) */
@@ -523,8 +533,8 @@ export declare function find_ent_in_sphere(start_from_ent: number, origin: numbe
 export declare function find_gamerules_info(class_: string, member: string, type_: number, arraysize: number, unsigned: number): number;
 /** find_plugin_byfile(const any:filename[], any:ignoreCase) */
 export declare function find_plugin_byfile(filename: string, ignoreCase?: number): number;
-/** aroundent, _lookforclassname: pointer, radius, entlist: pointer, maxents, origin: pointer */
-export declare function find_sphere_class(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32, a5: i32): i32;
+/** aroundent, _lookforclassname: string, radius, entlist: pointer, maxents, origin: pointer */
+export declare function find_sphere_class(a0: i32, a1: string, a2: i32, a3: i32, a4: i32, a5: i32): i32;
 /** float(any:value) */
 export declare function float_(value: number): number;
 /** float_to_str(Float:fl, any:string[], any:len) */
@@ -737,8 +747,8 @@ export declare function get_global_vector(variable: number, vector: number[]): n
 export declare function get_grenade_id(id: number, grenadeid?: number): string;
 /** get_info_keybuffer(any:id, any:buffer[], any:length) */
 export declare function get_info_keybuffer(id: number): string;
-/** pbuffer, key: pointer, value: pointer, maxlen */
-export declare function get_key_value(a0: i32, a1: i32, a2: i32, a3: i32): i32;
+/** pbuffer, key: string, value: pointer, maxlen */
+export declare function get_key_value(a0: i32, a1: string, a2: i32, a3: i32): i32;
 /** pbuffer, output: pointer, maxlen */
 export declare function get_key_value_buffer(a0: i32, a1: i32, a2: i32): i32;
 /** get_keyvalue(any:entity, const any:szKey[], any:value[], any:maxLength) */
@@ -813,8 +823,8 @@ export declare function get_pdata_short(_index: number, _offset: number, _linuxd
 export declare function get_pdata_string(entity: number, offset: number, byref: number, linux: number, mac: number): string;
 /** get_pdata_vector(any:_index, any:_offset, Float:_output[], any:_linuxdiff, any:_macdiff) */
 export declare function get_pdata_vector(_index: number, _offset: number, _output: number[], _linuxdiff?: number, _macdiff?: number): number;
-/** players: pointer, num: pointer, flags: pointer, team: pointer */
-export declare function get_players(a0: i32, a1: i32, a2: i32, a3: i32): i32;
+/** players: pointer, num: pointer, flags: string, team: string */
+export declare function get_players(a0: i32, a1: i32, a2: string, a3: string): i32;
 /** get_playersnum(any:flag) */
 export declare function get_playersnum(flag?: number): number;
 /** get_plugin(any:index, any:filename[], any:len1, any:name[], any:len2, any:version[], any:len3, any:author[], any:len4, any:status[], any:len5, any:url[], any:len6, any:desc[], any:len7) */
@@ -1027,8 +1037,8 @@ export declare function is_plugin_loaded(name: string, usefilename?: boolean): n
 export declare function is_regamedll(): boolean;
 /** is_rehlds() */
 export declare function is_rehlds(): boolean;
-/** input: pointer, input_size, flags, output_size: pointer */
-export declare function is_string_category(a0: i32, a1: i32, a2: i32, a3: i32): i32;
+/** input: string, input_size, flags, output_size: pointer */
+export declare function is_string_category(a0: string, a1: i32, a2: i32, a3: i32): i32;
 /** is_user_alive(any:index) */
 export declare function is_user_alive(index: number): number;
 /** is_user_authorized(any:index) */
@@ -1067,8 +1077,8 @@ export declare function IsStackEmpty(handle: number): boolean;
 export declare function lang_exists(name: string): number;
 /** LibraryExists(const any:library[], LibType:type) */
 export declare function LibraryExists(library: string, type_: number): number;
-/** file: pointer, buffer: pointer, maxlength, length: pointer */
-export declare function LoadFileForMe(a0: i32, a1: i32, a2: i32, a3: i32): i32;
+/** file: string, buffer: pointer, maxlength, length: pointer */
+export declare function LoadFileForMe(a0: string, a1: i32, a2: i32, a3: i32): i32;
 /** LoadGameConfigFile(const any:file[]) */
 export declare function LoadGameConfigFile(file: string): number;
 /** lookup_sequence(any:entity, const any:name[], Float:framerate, bool:loops, Float:groundspeed) */
@@ -1289,8 +1299,8 @@ export declare function read_argv_int(id: number): number;
 export declare function read_datanum(): number;
 /** read_datatype() */
 export declare function read_datatype(): number;
-/** dirname: pointer, pos, output: pointer, len, outlen: pointer */
-export declare function read_dir(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32): i32;
+/** dirname: string, pos, output: pointer, len, outlen: pointer */
+export declare function read_dir(a0: string, a1: i32, a2: i32, a3: i32, a4: i32): i32;
 /** read_file(const any:file[], any:line, any:text[], any:len, any:txtlen) */
 export declare function read_file(file: string, line: number, txtlen?: number): string;
 /** read_flags(const any:flags[]) */
@@ -1365,8 +1375,8 @@ export declare function rename_file(oldname: string, newname: string, relative?:
 export declare function replace(what: string, with_: string): string;
 /** replace_string(any:text[], any:maxlength, const any:search[], const any:replace[], bool:caseSensitive) */
 export declare function replace_string(search: string, replace: string, caseSensitive?: boolean): string;
-/** text: pointer, maxlength, search: pointer, replace: pointer, searchLen, replaceLen, caseSensitive */
-export declare function replace_stringex(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32, a5: i32, a6: i32): i32;
+/** text: pointer, maxlength, search: string, replace: pointer, searchLen, replaceLen, caseSensitive */
+export declare function replace_stringex(a0: i32, a1: i32, a2: string, a3: i32, a4: i32, a5: i32, a6: i32): i32;
 /** RequestFrame(const any:callback[], any:data) */
 export declare function RequestFrame(callback: string, data?: number): number;
 /** require_module(const any:module[]) */
@@ -1701,8 +1711,8 @@ export declare function set_rebuy(rebuyhandle: number, member: number, value: nu
 export declare function set_speak(iIndex: number, iSpeakFlags: number): number;
 /** set_string(any:param, any:dest[], any:maxlen) */
 export declare function set_string(param: number): string;
-/** time, function: pointer, id, parameter: pointer, len, flags: pointer, repeat */
-export declare function set_task(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32, a5: i32, a6: i32): i32;
+/** time, function: string, id, parameter: pointer, len, flags: string, repeat */
+export declare function set_task(a0: i32, a1: string, a2: i32, a3: i32, a4: i32, a5: string, a6: i32): i32;
 /** set_user_armor(any:index, any:armor) */
 export declare function set_user_armor(index: number, armor: number): number;
 /** set_user_flags(any:index, any:flags, any:id) */
@@ -1739,8 +1749,8 @@ export declare function set_xvar_float(id: number, value?: number): number;
 export declare function set_xvar_num(id: number, value?: number): number;
 /** setarg(any:arg, any:index, any:value) */
 export declare function setarg(arg: number, index: number, value: number): number;
-/** ent, callback: pointer, params: pointer, len */
-export declare function SetBlocked(a0: i32, a1: i32, a2: i32, a3: i32): i32;
+/** ent, callback: string, params: pointer, len */
+export declare function SetBlocked(a0: i32, a1: string, a2: i32, a3: i32): i32;
 /** SetBodygroup(const any:entity, const any:group, const any:value) */
 export declare function SetBodygroup(entity: number, group: number, value: number): number;
 /** setc(any:src[], any:len, any:ch) */
@@ -1777,16 +1787,16 @@ export declare function SetHamReturnString(value: string): number;
 export declare function SetHamReturnVector(value: number[]): number;
 /** SetMessageBlock(const any:msgid, MsgBlockType:type) */
 export declare function SetMessageBlock(msgid: number, type_: number): boolean;
-/** ent, callback: pointer, params: pointer, len */
-export declare function SetMoveDone(a0: i32, a1: i32, a2: i32, a3: i32): i32;
+/** ent, callback: string, params: pointer, len */
+export declare function SetMoveDone(a0: i32, a1: string, a2: i32, a3: i32): i32;
 /** SetPackPosition(DataPack:pack, DataPackPos:position) */
 export declare function SetPackPosition(pack: number, position: number): number;
-/** ent, callback: pointer, params: pointer, len */
-export declare function SetThink(a0: i32, a1: i32, a2: i32, a3: i32): i32;
-/** ent, callback: pointer, params: pointer, len */
-export declare function SetTouch(a0: i32, a1: i32, a2: i32, a3: i32): i32;
-/** ent, callback: pointer, params: pointer, len */
-export declare function SetUse(a0: i32, a1: i32, a2: i32, a3: i32): i32;
+/** ent, callback: string, params: pointer, len */
+export declare function SetThink(a0: i32, a1: string, a2: i32, a3: i32): i32;
+/** ent, callback: string, params: pointer, len */
+export declare function SetTouch(a0: i32, a1: string, a2: i32, a3: i32): i32;
+/** ent, callback: string, params: pointer, len */
+export declare function SetUse(a0: i32, a1: string, a2: i32, a3: i32): i32;
 /** show_menu(any:index, any:keys, const any:menu[], any:time, const any:title[]) */
 export declare function show_menu(index: number, keys: number, menu: string, time?: number, title?: string): number;
 /** show_motd(any:player, const any:message[], const any:header[]) */
@@ -1809,10 +1819,10 @@ export declare function SMC_SetRawLine(handle: number, func: string): number;
 export declare function SMC_SetReaders(smc: number, kvFunc: string, nsFunc?: string, esFunc?: string): number;
 /** SortADTArray(Array:array, SortMethod:order, SortType:type) */
 export declare function SortADTArray(array: number, order: number, type_: number): number;
-/** array: pointer, array_size, comparefunc: pointer, data: pointer, data_size */
-export declare function SortCustom1D(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32): i32;
-/** array: pointer, array_size, comparefunc: pointer, data: pointer, data_size */
-export declare function SortCustom2D(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32): i32;
+/** array: pointer, array_size, comparefunc: string, data: pointer, data_size */
+export declare function SortCustom1D(a0: i32, a1: i32, a2: string, a3: i32, a4: i32): i32;
+/** array: pointer, array_size, comparefunc: string, data: pointer, data_size */
+export declare function SortCustom2D(a0: i32, a1: i32, a2: string, a3: i32, a4: i32): i32;
 /** SortFloats(Float:array[], any:array_size, SortMethod:order) */
 export declare function SortFloats(array: number[], array_size: number, order?: number): number;
 /** array: pointer, array_size, order */
@@ -1839,14 +1849,14 @@ export declare function strfind(string_: string, sub: string, ignorecase?: boole
 export declare function strip_user_weapons(index: number): number;
 /** strlen(const any:string[]) */
 export declare function strlen(string_: string): number;
-/** string1: pointer, string2: pointer, num, ignorecase */
-export declare function strncmp(a0: i32, a1: i32, a2: i32, a3: i32): i32;
+/** string1: string, string2: pointer, num, ignorecase */
+export declare function strncmp(a0: string, a1: i32, a2: i32, a3: i32): i32;
 /** strtof(const any:string[], any:endPos) */
 export declare function strtof(string_: string, endPos?: number): number;
-/** text: pointer, Left: pointer, leftLen, Right: pointer, rightLen, token, trimSpaces */
-export declare function strtok(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32, a5: i32, a6: i32): i32;
-/** text: pointer, left: pointer, llen, right: pointer, rlen, token, trim */
-export declare function strtok2(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32, a5: i32, a6: i32): i32;
+/** text: string, Left: pointer, leftLen, Right: pointer, rightLen, token, trimSpaces */
+export declare function strtok(a0: string, a1: i32, a2: i32, a3: i32, a4: i32, a5: i32, a6: i32): i32;
+/** text: string, left: pointer, llen, right: pointer, rlen, token, trim */
+export declare function strtok2(a0: string, a1: i32, a2: i32, a3: i32, a4: i32, a5: i32, a6: i32): i32;
 /** strtol(const any:string[], any:endPos, any:base) */
 export declare function strtol(string_: string, endPos?: number, base?: number): number;
 /** string: pointer */
@@ -1881,14 +1891,14 @@ export declare function TrieCreate(): number;
 export declare function TrieDeleteKey(handle: number, key: string): boolean;
 /** TrieDestroy(Trie:handle) */
 export declare function TrieDestroy(handle: number): number;
-/** handle, key: pointer, output: pointer, outputsize, size: pointer */
-export declare function TrieGetArray(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32): i32;
-/** handle, key: pointer, value: pointer */
-export declare function TrieGetCell(a0: i32, a1: i32, a2: i32): i32;
+/** handle, key: string, output: pointer, outputsize, size: pointer */
+export declare function TrieGetArray(a0: i32, a1: string, a2: i32, a3: i32, a4: i32): i32;
+/** handle, key: string, value: pointer */
+export declare function TrieGetCell(a0: i32, a1: string, a2: i32): i32;
 /** TrieGetSize(Trie:handle) */
 export declare function TrieGetSize(handle: number): number;
-/** handle, key: pointer, output: pointer, outputsize, size: pointer */
-export declare function TrieGetString(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32): i32;
+/** handle, key: string, output: pointer, outputsize, size: pointer */
+export declare function TrieGetString(a0: i32, a1: string, a2: i32, a3: i32, a4: i32): i32;
 /** TrieIterCreate(Trie:handle) */
 export declare function TrieIterCreate(handle: number): number;
 /** TrieIterDestroy(TrieIter:handle) */
@@ -1909,8 +1919,8 @@ export declare function TrieIterGetString(a0: i32, a1: i32, a2: i32, a3: i32): i
 export declare function TrieIterNext(handle: number): number;
 /** TrieKeyExists(Trie:handle, const any:key[]) */
 export declare function TrieKeyExists(handle: number, key: string): boolean;
-/** handle, key: pointer, buffer: pointer, size, replace */
-export declare function TrieSetArray(a0: i32, a1: i32, a2: i32, a3: i32, a4: i32): i32;
+/** handle, key: string, buffer: pointer, size, replace */
+export declare function TrieSetArray(a0: i32, a1: string, a2: i32, a3: i32, a4: i32): i32;
 /** TrieSetCell(Trie:handle, const any:key[], any:value, bool:replace) */
 export declare function TrieSetCell(handle: number, key: string, value: number, replace?: boolean): number;
 /** TrieSetString(Trie:handle, const any:key[], const any:value[], bool:replace) */

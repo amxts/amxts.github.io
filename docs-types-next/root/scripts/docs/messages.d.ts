@@ -9,3 +9,5 @@ export declare const ANY_MESSAGE: {
     args: Text;
     player: Text;
 };
+/** The words of a message's fields for sending: what player.send and server.send take for a name. */
+export declare function sendFields(name: string, message: string): Text;

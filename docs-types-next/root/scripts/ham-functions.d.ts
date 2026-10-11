@@ -5,6 +5,12 @@ export type HamAnswer = 'none' | 'int' | 'bool' | 'float' | 'entity' | 'string' 
 export interface HamParam {
     name: string;
     kind: HamKind;
+    /**
+     * How the game's function takes it, where the kind does not say: an
+     * entity as its `entvars_t *` rather than its `CBaseEntity *`, a vector
+     * or a trace by its address. The module's hook is declared with it.
+     */
+    native?: 'entvars' | 'pointer';
 }
 export interface HamFunction {
     /** The Ham_* constant. */

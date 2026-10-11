@@ -82,7 +82,7 @@ export declare function userInfoChangeHlds(fire: Fire<UserInfoChangeEvent>, hook
 export declare function changeNameHlds(fire: Fire<ChangeNameEvent>, hook: __Switch): void;
 /** A player blinded: Ham Sandwich's CS_Player_Blind after the game - (untilTime, holdTime, fadeTime, alpha). */
 export declare function playerBlindHlds(fire: Fire<PlayerBlindEvent>, hook: __Switch): void;
-/** A player got a weapon: Ham Sandwich's AddPlayerItem after the game, when it took the item. */
+/** A player got a weapon: Ham Sandwich's AddPlayerItem after the game, when it took the item - its answer, arg(-1). */
 export declare function playerGotWeaponHlds(fire: Fire<PlayerGotWeaponEvent>, hook: __Switch): void;
 /**
  * Who hears whom: the game tells the engine for each pair of players, and the

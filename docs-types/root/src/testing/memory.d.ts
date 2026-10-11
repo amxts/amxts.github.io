@@ -7,13 +7,33 @@ export declare function utf8Fit(bytes: Uint8Array, max: number): number;
 export declare class Memory {
     private exports;
     private dataView?;
+    private heap;
+    private heapTop;
     constructor(exports: any);
     private get view();
     cell(pointer: number): number;
+    byte(pointer: number): number;
     setCell(pointer: number, value: number): void;
+    /**
+     * A native's call as the module's thunk makes it, by the native's marks in
+     * runtime/natives.txt: an `s` argument is the plugin's string, handed to
+     * the native as a Pawn string on the heap; a `t` one is a buffer the
+     * native fills on the heap, back in the plugin as UTF-8 bytes up to its end.
+     */
+    across(marks: readonly string[], args: number[], call: (cells: number[]) => number): number;
+    /** Frame::backText's head before a text a native filled: its count, the top bit for one not ASCII, and its hash. */
+    private setTextHead;
+    /** `count` empty cells of the heap: their address. */
+    private heapCells;
+    /** Text as a Pawn string on the heap, cut at the longest that crosses, between letters. */
+    private heapText;
     float(pointer: number): number;
     setFloat(pointer: number, value: number): void;
     vector(pointer: number): number[];
+    /** A plugin's number (f64) read from its own memory. */
+    number(pointer: number): number;
+    /** A plugin's number (f64) in its own memory. */
+    setNumber(pointer: number, value: number): void;
     setVector(pointer: number, value: number[]): void;
     /** A Pawn string: a byte of UTF-8 a cell, up to the zero cell - what get_amxstring reads. */
     text(pointer: number, max?: number): string;

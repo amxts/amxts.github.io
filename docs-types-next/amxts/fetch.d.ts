@@ -494,7 +494,7 @@ export declare class FetchError extends Error {
  *
  * const { data, error } = await useFetch<Weather>("https://example.com/weather", { query: { city: "Paris" } });
  * if (error) return console.error(error.message);
- * print(player, `${data!.temperature} °C`);
+ * player.print(`${data!.temperature} °C`);
  * ```
  *
  * A body that is an object goes as JSON: `useFetch<Answer, Report>(url, { method: "POST", body: report })`.

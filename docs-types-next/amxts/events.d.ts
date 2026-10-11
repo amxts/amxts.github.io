@@ -1,5 +1,5 @@
 /// <reference path="../as-types.d.ts" />
-import { Client, ClientMessage, FadeDirection, Player, PlayerChangeEvent, StatusIconState, Team, VariantName } from "./facade";
+import { Client, ClientMessage, FadeDirection, Player, PlayerChangeEvent, StatusIconState, Team, VariantName, __ServerEvent } from "./facade";
 import { Vector } from "./vector";
 import { WeaponKind } from "./entities";
 import { Damage, HideHud, ScoreStatus } from "./flags";
@@ -14,20 +14,6 @@ import { VguiMenu } from "./hooks";
 export declare class PluginInitEvent {
 }
 /**
- * An admin paused this plugin.
- *
- * Pawn: `plugin_pause()`
- */
-export declare class PluginPauseEvent {
-}
-/**
- * An admin resumed this plugin.
- *
- * Pawn: `plugin_unpause()`
- */
-export declare class PluginUnpauseEvent {
-}
-/**
  * The server is about to change the map.
  *
  * Note: This is *only* called if the mod itself handles the map change. The server command "changelevel", which is used by many plugins, will not trigger this forward. Unfortunately, this means that in practice this forward can be unreliable and will not be called in many situations.
@@ -35,14 +21,17 @@ export declare class PluginUnpauseEvent {
  *
  * Pawn: `server_changelevel(map[])`
  */
-export declare class ServerChangelevelEvent {
+export declare class ServerChangelevelEvent extends __ServerEvent {
+    private __map;
     /**
      * The map the server changes to, e.g. `"de_dust2"`.
      *
      * Pawn: `map[]`
      */
-    map: string;
-    constructor(map: string);
+    get map(): string;
+    set map(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Every plugin has started: the moment to create forwards other plugins listen to. The configs run after it: read cvars in `"configsExecuted"`.
@@ -54,7 +43,7 @@ export declare class ServerChangelevelEvent {
 export declare class PluginCfgEvent {
 }
 /**
- * The map is ending or the server is shutting down: save what has to survive.
+ * The plugin stops - the map ends, the server shuts down, or `amxts_reload`/`amxts_unload` stops it: save what has to survive.
  *
  * Note: The plugin is required to manually free Handles it has acquired, such as those from dynamic data structures. Failing to do that will result in the plugin and AMXX leaking memory.
  *
@@ -63,13 +52,36 @@ export declare class PluginCfgEvent {
 export declare class PluginEndEvent {
 }
 /**
- * Called when a message is about to be logged.
+ * A line the game writes to its log - a round's end, a kill, a bomb planted: `event.text` whole, `event.args` its parts.
  *
  * Note: Message data and information can be retrieved using the read_log* set of functions.
  *
- * Pawn: `plugin_log()`
+ * Pawn: `plugin_log(read_logdata, read_logargv)`
+ *
+ * @example
+ * server.addEventListener("log", (event) => {
+ * 	if (event.text.startsWith("World triggered")) console.log(event.args[1]);
+ * });
  */
-export declare class PluginLogEvent {
+export declare class PluginLogEvent extends __ServerEvent {
+    private __text;
+    private __args;
+    /**
+     * The line as the game logs it, without the date: `World triggered "Round_Start"`.
+     *
+     * Pawn: `read_logdata`
+     */
+    get text(): string;
+    set text(value: string);
+    /**
+     * The line in parts, as AMX Mod X splits it: a quoted text, a text in parentheses and the words between, each one part - `World triggered "Round_Draw"` is `["World triggered", "Round_Draw"]`.
+     *
+     * Pawn: `read_logargv`
+     */
+    get args(): string[];
+    set args(value: string[]);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * The map is loading: the only moment models, sounds and sprites can be precached.
@@ -85,14 +97,17 @@ export declare class PluginPrecacheEvent {
  *
  * Pawn: `client_infochanged(id)`
  */
-export declare class ClientInfochangedEvent {
+export declare class ClientInfochangedEvent extends __ServerEvent {
+    private __player;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Player;
-    constructor(player: Player);
+    get player(): Player;
+    set player(value: Player);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * A player started connecting. The player is not in the game yet: show him anything after `"putInServer"`.
@@ -101,14 +116,17 @@ export declare class ClientInfochangedEvent {
  *
  * Pawn: `client_connect(id)`
  */
-export declare class ClientConnectEvent {
+export declare class ClientConnectEvent extends __ServerEvent {
+    private __player;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Client;
-    constructor(player: Client);
+    get player(): Client;
+    set player(value: Client);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * A player started connecting, with a name and an address: the place to turn him away.
@@ -117,32 +135,41 @@ export declare class ClientConnectEvent {
  *
  * Pawn: `client_connectex(id, name[], ip[], reason[128])`
  */
-export declare class ClientConnectexEvent {
+export declare class ClientConnectexEvent extends __ServerEvent {
+    private __player;
+    private __name;
+    private __ip;
+    private __reason;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Client;
+    get player(): Client;
+    set player(value: Client);
     /**
      * The name the player connects with.
      *
      * Pawn: `name[]`
      */
-    name: string;
+    get name(): string;
+    set name(value: string);
     /**
      * The player's address with the port, e.g. `"192.168.0.5:27005"`.
      *
      * Pawn: `ip[]`
      */
-    ip: string;
+    get ip(): string;
+    set ip(value: string);
     /**
      * The message the player sees if he is turned away.
      *
      * Pawn: `reason[128]`
      */
-    reason: string;
-    constructor(player: Client, name: string, ip: string, reason: string);
+    get reason(): string;
+    set reason(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * A player's SteamID is known. May come before or after `"putInServer"`.
@@ -151,20 +178,25 @@ export declare class ClientConnectexEvent {
  *
  * Pawn: `client_authorized(id, authid[])`
  */
-export declare class ClientAuthorizedEvent {
+export declare class ClientAuthorizedEvent extends __ServerEvent {
+    private __player;
+    private __steamId;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Client;
+    get player(): Client;
+    set player(value: Client);
     /**
      * The player's SteamID, e.g. `"STEAM_0:1:12345"`. A bot has `"BOT"`, HLTV has `"HLTV"`; on a LAN server it is `"STEAM_ID_LAN"`. With Reunion a game without Steam gets one made from its key: `"STEAM_..."` or `"VALVE_..."`, as the server's Reunion settings say.
      *
      * Pawn: `authid[]`
      */
-    steamId: string;
-    constructor(player: Client, steamId: string);
+    get steamId(): string;
+    set steamId(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * A player left the server: quit, timed out or was kicked.
@@ -178,26 +210,33 @@ export declare class ClientAuthorizedEvent {
  * 	console.log(`${event.player.name} left: ${event.reason}`);
  * });
  */
-export declare class ClientDisconnectedEvent {
+export declare class ClientDisconnectedEvent extends __ServerEvent {
+    private __player;
+    private __dropped;
+    private __reason;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * `true` when the server dropped the player (kick, timeout) rather than he left.
      *
      * Pawn: `bool:drop`
      */
-    dropped: boolean;
+    get dropped(): boolean;
+    set dropped(value: boolean);
     /**
      * The reason the server gives for the leave; empty when the player just quit.
      *
      * Pawn: `message[]`
      */
-    reason: string;
-    constructor(player: Player, dropped: boolean, reason: string);
+    get reason(): string;
+    set reason(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * A player's slot is being freed, after `"disconnected"`.
@@ -206,42 +245,85 @@ export declare class ClientDisconnectedEvent {
  *
  * Pawn: `client_remove(id, bool:drop, message[])`
  */
-export declare class ClientRemoveEvent {
+export declare class ClientRemoveEvent extends __ServerEvent {
+    private __player;
+    private __dropped;
+    private __reason;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * `true` when the server dropped the player.
      *
      * Pawn: `bool:drop`
      */
-    dropped: boolean;
+    get dropped(): boolean;
+    set dropped(value: boolean);
     /**
      * The reason the player left.
      *
      * Pawn: `message[]`
      */
-    reason: string;
-    constructor(player: Player, dropped: boolean, reason: string);
+    get reason(): string;
+    set reason(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
- * A player sent a console command. For one command, `server.addCommand("name", handler)` is simpler.
+ * A player sent a console command - a chat line is `say` or `say_team`. For one command, `server.addCommand("name", handler)` is simpler.
  *
- * Note: The command and its arguments can be read using the read_arg* set of functions.
+ * Pawn: `client_command(id, read_argv(0), read_argv, read_args)`
  *
- * Pawn: `client_command(id)`
+ * @example
+ * server.addEventListener("command", (event) => {
+ * 	if (event.command == "say" && event.args[0] == "/cp") checkpoint(event.player);
+ * });
  */
-export declare class ClientCommandEvent {
+export declare class ClientCommandEvent extends __ServerEvent {
+    private __player;
+    private __command;
+    private __args;
+    private __text;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Player;
-    constructor(player: Player);
+    get player(): Player;
+    set player(value: Player);
+    /**
+     * The command's name, as typed, e.g. `"say"`, `"say_team"`, `"buy"`.
+     *
+     * Pawn: `read_argv(0)`
+     */
+    get command(): string;
+    set command(value: string);
+    /**
+     * The command's words after its name; for `say` and `say_team`, the words of the chat line - `say /cp now` is `["/cp", "now"]`.
+     *
+     * Pawn: `read_argv`
+     */
+    get args(): string[];
+    set args(value: string[]);
+    /**
+     * The command's text after its name, as one line; for `say` and `say_team`, the chat line without its quotes.
+     *
+     * Pawn: `read_args`
+     */
+    get text(): string;
+    set text(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
+    /**
+     * Stops the command: the game does not run it - a chat line is not said - and no plugin's `server.addCommand` hears it. The other listeners of `"command"` still do.
+     *
+     * Pawn: `return PLUGIN_HANDLED`
+     */
+    preventDefault(): void;
 }
 /**
  * A player has joined and is in the game: the moment to greet him.
@@ -252,50 +334,53 @@ export declare class ClientCommandEvent {
  *
  * @example
  * server.addEventListener("putInServer", (event) => {
- * 	print(event.player, "Welcome!");
+ * 	event.player.print("Welcome!");
  * });
  */
-export declare class ClientPutinserverEvent {
+export declare class ClientPutinserverEvent extends __ServerEvent {
+    private __player;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Client;
-    constructor(player: Client);
+    get player(): Client;
+    set player(value: Client);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Called when an inconsistent file is encountered by the engine.
  *
  * Pawn: `inconsistent_file(id, filename[], reason[64])`
  */
-export declare class InconsistentFileEvent {
+export declare class InconsistentFileEvent extends __ServerEvent {
+    private __player;
+    private __file;
+    private __reason;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * Detected file
      *
      * Pawn: `filename[]`
      */
-    file: string;
+    get file(): string;
+    set file(value: string);
     /**
      * Buffer storing the disconnect reason (can be overwritten)
      *
      * Pawn: `reason[64]`
      */
-    reason: string;
-    constructor(player: Player, file: string, reason: string);
-}
-/**
- * Allows plugins to declare module dependencies using require_module()
- *
- * Pawn: `plugin_modules()`
- */
-export declare class PluginModulesEvent {
+    get reason(): string;
+    set reason(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Called when the map has loaded, and all configs are done executing. This includes servercfgfile (server.cfg), amxx.cfg, plugin's config, and per-map config.
@@ -323,20 +408,25 @@ export declare class OnAutoConfigsBufferedEvent {
  *
  * Pawn: `CS_InternalCommand(id, cmd[])`
  */
-export declare class CS_InternalCommandEvent {
+export declare class CS_InternalCommandEvent extends __ServerEvent {
+    private __player;
+    private __command;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * Command string
      *
      * Pawn: `cmd[]`
      */
-    command: string;
-    constructor(player: Player, command: string);
+    get command(): string;
+    set command(value: string);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Called when a client attempts to purchase an item.
@@ -346,20 +436,25 @@ export declare class CS_InternalCommandEvent {
  *
  * Pawn: `CS_OnBuyAttempt(index, item)`
  */
-export declare class CS_OnBuyAttemptEvent {
+export declare class CS_OnBuyAttemptEvent extends __ServerEvent {
+    private __player;
+    private __item;
     /**
      * The player the event is about.
      *
      * Pawn: `index`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * Item id
      *
      * Pawn: `item`
      */
-    item: number;
-    constructor(player: Player, item: number);
+    get item(): number;
+    set item(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Called when a client purchases an item.
@@ -369,20 +464,25 @@ export declare class CS_OnBuyAttemptEvent {
  *
  * Pawn: `CS_OnBuy(index, item)`
  */
-export declare class CS_OnBuyEvent {
+export declare class CS_OnBuyEvent extends __ServerEvent {
+    private __player;
+    private __item;
     /**
      * The player the event is about.
      *
      * Pawn: `index`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * Item id
      *
      * Pawn: `item`
      */
-    item: number;
-    constructor(player: Player, item: number);
+    get item(): number;
+    set item(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * A server frame, hundreds of times a second. Keep the listener tiny, or use `setInterval`.
@@ -398,34 +498,42 @@ export declare class ServerFrameEvent {
  *
  * Pawn: `client_kill(id)`
  */
-export declare class ClientKillEvent {
+export declare class ClientKillEvent extends __ServerEvent {
+    private __player;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Player;
-    constructor(player: Player);
+    get player(): Player;
+    set player(value: Player);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * A player sent an impulse: `100` is the flashlight, `201` the spray.
  *
  * Pawn: `client_impulse(id, impulse)`
  */
-export declare class ClientImpulseEvent {
+export declare class ClientImpulseEvent extends __ServerEvent {
+    private __player;
+    private __impulse;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Player;
+    get player(): Player;
+    set player(value: Player);
     /**
      * The impulse number: `100`, `201`.
      *
      * Pawn: `impulse`
      */
-    impulse: number;
-    constructor(player: Player, impulse: number);
+    get impulse(): number;
+    set impulse(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * Called for CmdStart() on a client.
@@ -434,108 +542,143 @@ export declare class ClientImpulseEvent {
  *
  * Pawn: `client_cmdStart(id)`
  */
-export declare class ClientCmdStartEvent {
+export declare class ClientCmdStartEvent extends __ServerEvent {
+    private __player;
     /**
      * The player the event is about.
      *
      * Pawn: `id`
      */
-    player: Player;
-    constructor(player: Player);
+    get player(): Player;
+    set player(value: Player);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * An entity thinks: its scheduled update has come. Any entity's; one class's is `game.addEventListener("think", listener, { classname })`.
  *
  * Pawn: `pfn_think(entid)`
  */
-export declare class PfnThinkEvent {
+export declare class PfnThinkEvent extends __ServerEvent {
+    private __entity;
     /**
      * The entity that thinks.
      *
      * Pawn: `entid`
      */
-    entity: number;
-    constructor(entity: number);
+    get entity(): number;
+    set entity(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * The engine plays an event to the clients: a shot, a weapon's sound and effects.
  *
  * Pawn: `pfn_playbackevent(flags, entid, eventid, Float:delay, Float:Origin[3], Float:Angles[3], Float:fparam1, Float:fparam2, iparam1, iparam2, bparam1, bparam2)`
  */
-export declare class PfnPlaybackeventEvent {
+export declare class PfnPlaybackeventEvent extends __ServerEvent {
+    private __flags;
+    private __entity;
+    private __eventIndex;
+    private __delay;
+    private __origin;
+    private __angles;
+    private __fparam1;
+    private __fparam2;
+    private __iparam1;
+    private __iparam2;
+    private __bparam1;
+    private __bparam2;
     /**
      * The event's flags, how the engine sends it.
      *
      * Pawn: `flags`
      */
-    flags: number;
+    get flags(): number;
+    set flags(value: number);
     /**
      * The entity the event plays on, usually the player who fired.
      *
      * Pawn: `entid`
      */
-    entity: number;
+    get entity(): number;
+    set entity(value: number);
     /**
      * The event's index in the precached events.
      *
      * Pawn: `eventid`
      */
-    eventIndex: number;
+    get eventIndex(): number;
+    set eventIndex(value: number);
     /**
      * The seconds before the event plays.
      *
      * Pawn: `Float:delay`
      */
-    delay: number;
+    get delay(): number;
+    set delay(value: number);
     /**
      * The point the event plays from.
      *
      * Pawn: `Float:Origin[3]`
      */
-    origin: Vector;
+    get origin(): Vector;
+    set origin(value: Vector);
     /**
      * The angles the event plays with.
      *
      * Pawn: `Float:Angles[3]`
      */
-    angles: Vector;
+    get angles(): Vector;
+    set angles(value: Vector);
     /**
      * The event's first fractional parameter.
      *
      * Pawn: `Float:fparam1`
      */
-    fparam1: number;
+    get fparam1(): number;
+    set fparam1(value: number);
     /**
      * The event's second fractional parameter.
      *
      * Pawn: `Float:fparam2`
      */
-    fparam2: number;
+    get fparam2(): number;
+    set fparam2(value: number);
     /**
      * The event's first whole-number parameter.
      *
      * Pawn: `iparam1`
      */
-    iparam1: number;
+    get iparam1(): number;
+    set iparam1(value: number);
     /**
      * The event's second whole-number parameter.
      *
      * Pawn: `iparam2`
      */
-    iparam2: number;
+    get iparam2(): number;
+    set iparam2(value: number);
     /**
      * The event's first flag parameter, `1` or `0`.
      *
      * Pawn: `bparam1`
      */
-    bparam1: number;
+    get bparam1(): number;
+    set bparam1(value: number);
     /**
      * The event's second flag parameter, `1` or `0`.
      *
      * Pawn: `bparam2`
      */
-    bparam2: number;
-    constructor(flags: number, entity: number, eventIndex: number, delay: number, origin: Vector, angles: Vector, fparam1: number, fparam2: number, iparam1: number, iparam2: number, bparam1: number, bparam2: number);
+    get bparam2(): number;
+    set bparam2(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
+    /** Stops the event: no player gets it - a shot's sound and flash with it. */
+    preventDefault(): void;
+    /** Plays the event only to these of the players it would reach - `event.recipients = players.filter(...)`; the others do not hear the shot. The player who caused it is not left out by it. */
+    set recipients(players: Player[]);
 }
 /**
  * Called when a keyvalue pair is sent to an entity.
@@ -544,28 +687,34 @@ export declare class PfnPlaybackeventEvent {
  *
  * Pawn: `pfn_keyvalue(entid)`
  */
-export declare class PfnKeyvalueEvent {
+export declare class PfnKeyvalueEvent extends __ServerEvent {
+    private __entity;
     /**
      * Entity index
      *
      * Pawn: `entid`
      */
-    entity: number;
-    constructor(entity: number);
+    get entity(): number;
+    set entity(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * An entity is being spawned on the map, the map's own too as it loads. A player's spawn is `game.addEventListener("spawn", listener)`.
  *
  * Pawn: `pfn_spawn(entid)`
  */
-export declare class PfnSpawnEvent {
+export declare class PfnSpawnEvent extends __ServerEvent {
+    private __entity;
     /**
      * The entity being spawned.
      *
      * Pawn: `entid`
      */
-    entity: number;
-    constructor(entity: number);
+    get entity(): number;
+    set entity(value: number);
+    /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
+    __keep(): void;
 }
 /**
  * A player's HUD stops showing the round's advertisement.
@@ -1960,6 +2109,13 @@ export declare class WeaponListMessage extends ClientMessage {
      */
     get weapon(): WeaponKind;
     set weapon(value: WeaponKind);
+    /**
+     * The weapon's ITEM_FLAG_* bits: `8` for one thrown when it is empty, `16` for one used only once.
+     *
+     * Pawn: `get_msg_arg_*(9)`
+     */
+    get flags(): number;
+    set flags(value: number);
 }
 /**
  * A player picks up a weapon: the notice at the side of his screen.
@@ -1987,18 +2143,6 @@ export interface ServerEventMap {
      */
     init: PluginInitEvent;
     /**
-     * An admin paused this plugin.
-     *
-     * Pawn: `plugin_pause`
-     */
-    pause: PluginPauseEvent;
-    /**
-     * An admin resumed this plugin.
-     *
-     * Pawn: `plugin_unpause`
-     */
-    unpause: PluginUnpauseEvent;
-    /**
      * The server is about to change the map.
      *
      * Pawn: `server_changelevel`
@@ -2011,13 +2155,13 @@ export interface ServerEventMap {
      */
     pluginsLoaded: PluginCfgEvent;
     /**
-     * The map is ending or the server is shutting down: save what has to survive.
+     * The plugin stops - the map ends, the server shuts down, or `amxts_reload`/`amxts_unload` stops it: save what has to survive.
      *
      * Pawn: `plugin_end`
      */
     end: PluginEndEvent;
     /**
-     * Called when a message is about to be logged.
+     * A line the game writes to its log - a round's end, a kill, a bomb planted: `event.text` whole, `event.args` its parts.
      *
      * Pawn: `plugin_log`
      */
@@ -2059,7 +2203,7 @@ export interface ServerEventMap {
      */
     remove: ClientRemoveEvent;
     /**
-     * A player sent a console command. For one command, `server.addCommand("name", handler)` is simpler.
+     * A player sent a console command - a chat line is `say` or `say_team`. For one command, `server.addCommand("name", handler)` is simpler.
      *
      * Pawn: `client_command`
      */
@@ -2076,12 +2220,6 @@ export interface ServerEventMap {
      * Pawn: `inconsistent_file`
      */
     inconsistentFile: InconsistentFileEvent;
-    /**
-     * Allows plugins to declare module dependencies using require_module()
-     *
-     * Pawn: `plugin_modules`
-     */
-    modules: PluginModulesEvent;
     /**
      * Called when the map has loaded, and all configs are done executing. This includes servercfgfile (server.cfg), amxx.cfg, plugin's config, and per-map config.
      *
@@ -2778,6 +2916,835 @@ export interface ServerMessageMap {
      */
     weaponPickup: WeapPickupMessage;
 }
+/** What `player.send("adStop", ...)` and `server.send("adStop", ...)` take: the game's `ADStop` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ADStop"))`, `write_*`, `message_end` */
+export interface ADStopFields {
+}
+/** What `player.send("allowSpectate", ...)` and `server.send("allowSpectate", ...)` take: the game's `AllowSpec` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("AllowSpec"))`, `write_*`, `message_end` */
+export interface AllowSpecFields {
+    /** `true` when the menu offers it. */
+    allowed?: boolean;
+}
+/** What `player.send("ammoPickup", ...)` and `server.send("ammoPickup", ...)` take: the game's `AmmoPickup` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("AmmoPickup"))`, `write_*`, `message_end` */
+export interface AmmoPickupFields {
+    /** The ammo's index in the game's list of kinds. */
+    ammo?: number;
+    /** The amount picked up. */
+    amount?: number;
+}
+/** What `player.send("ammo", ...)` and `server.send("ammo", ...)` take: the game's `AmmoX` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("AmmoX"))`, `write_*`, `message_end` */
+export interface AmmoXFields {
+    /** The ammo's index in the game's list of kinds. */
+    ammo?: number;
+    /** The reserve shown. */
+    amount?: number;
+}
+/** What `player.send("armorType", ...)` and `server.send("armorType", ...)` take: the game's `ArmorType` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ArmorType"))`, `write_*`, `message_end` */
+export interface ArmorTypeFields {
+    /** `true` for a vest and a helmet. */
+    helmet?: boolean;
+}
+/** What `player.send("progressBar", ...)` and `server.send("progressBar", ...)` take: the game's `BarTime2` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("BarTime2"))`, `write_*`, `message_end` */
+export interface BarTime2Fields {
+    /** The seconds the bar or the clock shows. Assign to change them. */
+    seconds?: number;
+    /** The bar's fill at the start, in percent. */
+    startPercent?: number;
+}
+/** What `player.send("armor", ...)` and `server.send("armor", ...)` take: the game's `Battery` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Battery"))`, `write_*`, `message_end` */
+export interface BatteryFields {
+    /** The armour shown. */
+    armor?: number;
+}
+/** What `player.send("moneyBlink", ...)` and `server.send("moneyBlink", ...)` take: the game's `BlinkAcct` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("BlinkAcct"))`, `write_*`, `message_end` */
+export interface BlinkAcctFields {
+    /** The number of blinks. */
+    blinks?: number;
+}
+/** What `player.send("bombDrop", ...)` and `server.send("bombDrop", ...)` take: the game's `BombDrop` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("BombDrop"))`, `write_*`, `message_end` */
+export interface BombDropFields {
+    /** The point where the bomb lies. */
+    origin?: number[];
+    /** `true` for a bomb planted, `false` for one dropped. */
+    planted?: boolean;
+}
+/** What `player.send("bombPickup", ...)` and `server.send("bombPickup", ...)` take: the game's `BombPickup` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("BombPickup"))`, `write_*`, `message_end` */
+export interface BombPickupFields {
+}
+/** What `player.send("botVoice", ...)` and `server.send("botVoice", ...)` take: the game's `BotVoice` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("BotVoice"))`, `write_*`, `message_end` */
+export interface BotVoiceFields {
+    /** `true` while the bot talks. */
+    talking?: boolean;
+    /** The bot who talks. */
+    target?: Player | null;
+}
+/** What `player.send("closeBuyMenu", ...)` and `server.send("closeBuyMenu", ...)` take: the game's `BuyClose` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("BuyClose"))`, `write_*`, `message_end` */
+export interface BuyCloseFields {
+}
+/** What `player.send("crosshair", ...)` and `server.send("crosshair", ...)` take: the game's `Crosshair` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Crosshair"))`, `write_*`, `message_end` */
+export interface CrosshairFields {
+    /** `true` to show it. */
+    shown?: boolean;
+}
+/** What `player.send("currentWeapon", ...)` and `server.send("currentWeapon", ...)` take: the game's `CurWeapon` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("CurWeapon"))`, `write_*`, `message_end` */
+export interface CurWeaponFields {
+    /** `true` for the weapon in his hands. */
+    active?: boolean;
+    /** The weapon, by its kind, e.g. `"ak47"`. */
+    weapon?: WeaponKind;
+    /** The rounds in the clip. */
+    clip?: number;
+}
+/** What `player.send("damage", ...)` and `server.send("damage", ...)` take: the game's `Damage` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Damage"))`, `write_*`, `message_end` */
+export interface DamageFields {
+    /** The armour he lost. */
+    armor?: number;
+    /** The health he lost. */
+    damage?: number;
+    /** The kinds of damage, e.g. `"fall"`, `"bullet"`. */
+    damageType?: Damage[];
+    /** The point the damage came from: the marks point to it. */
+    origin?: number[];
+}
+/** What `player.send("death", ...)` and `server.send("death", ...)` take: the game's `DeathMsg` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("DeathMsg"))`, `write_*`, `message_end` */
+export interface DeathMsgFields {
+    /** The player who killed; `null` for the world. */
+    killer?: Player | null;
+    /** The player who died. */
+    victim?: Player | null;
+    /** `true` for a headshot. */
+    headshot?: boolean;
+    /** The weapon's name as the icon shows it, e.g. `"ak47"`, `"grenade"`. */
+    weapon?: string;
+}
+/** What `player.send("flashlight", ...)` and `server.send("flashlight", ...)` take: the game's `Flashlight` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Flashlight"))`, `write_*`, `message_end` */
+export interface FlashlightFields {
+    /** `true` while the flashlight is on. */
+    on?: boolean;
+    /** The flashlight's battery, in percent. */
+    battery?: number;
+}
+/** What `player.send("flashlightBattery", ...)` and `server.send("flashlightBattery", ...)` take: the game's `FlashBat` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("FlashBat"))`, `write_*`, `message_end` */
+export interface FlashBatFields {
+    /** The flashlight's battery, in percent. */
+    battery?: number;
+}
+/** What `player.send("geiger", ...)` and `server.send("geiger", ...)` take: the game's `Geiger` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Geiger"))`, `write_*`, `message_end` */
+export interface GeigerFields {
+    /** The distance to the radiation: the less, the faster the clicks. */
+    range?: number;
+}
+/** What `player.send("health", ...)` and `server.send("health", ...)` take: the game's `Health` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Health"))`, `write_*`, `message_end` */
+export interface HealthFields {
+    /** The health shown. */
+    health?: number;
+}
+/** What `player.send("hideWeapon", ...)` and `server.send("hideWeapon", ...)` take: the game's `HideWeapon` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("HideWeapon"))`, `write_*`, `message_end` */
+export interface HideWeaponFields {
+    /** The hidden parts, e.g. `"money"`, `"timer"`. Assign to change them. */
+    flags?: HideHud[];
+}
+/** What `player.send("hostageKilled", ...)` and `server.send("hostageKilled", ...)` take: the game's `HostageK` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("HostageK"))`, `write_*`, `message_end` */
+export interface HostageKFields {
+    /** The hostage's number on the map, from `1`. */
+    hostage?: number;
+}
+/** What `player.send("initHud", ...)` and `server.send("initHud", ...)` take: the game's `InitHUD` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("InitHUD"))`, `write_*`, `message_end` */
+export interface InitHUDFields {
+}
+/** What `player.send("itemPickup", ...)` and `server.send("itemPickup", ...)` take: the game's `ItemPickup` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ItemPickup"))`, `write_*`, `message_end` */
+export interface ItemPickupFields {
+    /** The item's class name, e.g. `"item_kevlar"`. */
+    item?: string;
+}
+/** What `player.send("itemStatus", ...)` and `server.send("itemStatus", ...)` take: the game's `ItemStatus` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ItemStatus"))`, `write_*`, `message_end` */
+export interface ItemStatusFields {
+    /** `true` when the player has night vision. */
+    nightVision?: boolean;
+    /** `true` when the player has a defuse kit. */
+    defuseKit?: boolean;
+}
+/** What `player.send("location", ...)` and `server.send("location", ...)` take: the game's `Location` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Location"))`, `write_*`, `message_end` */
+export interface LocationFields {
+    /** The player whose place it is. */
+    target?: Player | null;
+    /** The place's name, e.g. `"BombsiteA"`. */
+    place?: string;
+}
+/** What `player.send("money", ...)` and `server.send("money", ...)` take: the game's `Money` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Money"))`, `write_*`, `message_end` */
+export interface MoneyFields {
+    /** The money shown. */
+    amount?: number;
+    /** `true` to flash the change. */
+    flash?: boolean;
+}
+/** What `player.send("motd", ...)` and `server.send("motd", ...)` take: the game's `MOTD` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("MOTD"))`, `write_*`, `message_end` */
+export interface MOTDFields {
+    /** `true` for the last part: the window opens. */
+    last?: boolean;
+    /** The part's text. */
+    text?: string;
+}
+/** What `player.send("nightVision", ...)` and `server.send("nightVision", ...)` take: the game's `NVGToggle` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("NVGToggle"))`, `write_*`, `message_end` */
+export interface NVGToggleFields {
+    /** `true` while night vision is on. */
+    on?: boolean;
+}
+/** What `player.send("radar", ...)` and `server.send("radar", ...)` take: the game's `Radar` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Radar"))`, `write_*`, `message_end` */
+export interface RadarFields {
+    /** The teammate shown. */
+    target?: Player | null;
+    /** The point where the teammate is. */
+    origin?: number[];
+}
+/** What `player.send("resetHud", ...)` and `server.send("resetHud", ...)` take: the game's `ResetHUD` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ResetHUD"))`, `write_*`, `message_end` */
+export interface ResetHUDFields {
+}
+/** What `player.send("roundTime", ...)` and `server.send("roundTime", ...)` take: the game's `RoundTime` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("RoundTime"))`, `write_*`, `message_end` */
+export interface RoundTimeFields {
+    /** The seconds the bar or the clock shows. Assign to change them. */
+    seconds?: number;
+}
+/** What `player.send("chat", ...)` and `server.send("chat", ...)` take: the game's `SayText` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("SayText"))`, `write_*`, `message_end` */
+export interface SayTextFields {
+    /** The player who wrote it; `null` for the server. */
+    sender?: Player | null;
+    /** The line, or the game's format for it, e.g. `"#Cstrike_Chat_All"`. */
+    text?: string;
+    /** The texts put into the game's text in place of `%s1`, `%s2`, ... - e.g. a player's name. Assign to change them; their number stays. */
+    params?: string[];
+}
+/** What `player.send("scenarioIcon", ...)` and `server.send("scenarioIcon", ...)` take: the game's `Scenario` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Scenario"))`, `write_*`, `message_end` */
+export interface ScenarioFields {
+    /** `true` while the icon is shown. */
+    active?: boolean;
+    /** The icon's sprite name, e.g. `"hostage1"`. */
+    sprite?: string;
+    /** The icon's opacity, `0` to `255`. */
+    alpha?: number;
+}
+/** What `player.send("scoreAttribute", ...)` and `server.send("scoreAttribute", ...)` take: the game's `ScoreAttrib` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ScoreAttrib"))`, `write_*`, `message_end` */
+export interface ScoreAttribFields {
+    /** The player whose row it is. */
+    target?: Player | null;
+    /** The marks on the row, e.g. `"dead"`, `"bomb"`, `"vip"`. */
+    flags?: ScoreStatus[];
+}
+/** What `player.send("score", ...)` and `server.send("score", ...)` take: the game's `ScoreInfo` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ScoreInfo"))`, `write_*`, `message_end` */
+export interface ScoreInfoFields {
+    /** The player whose row it is. */
+    target?: Player | null;
+    /** The frags shown. */
+    frags?: number;
+    /** The deaths shown. */
+    deaths?: number;
+    /** The team the row is under. */
+    team?: Team;
+}
+/** What `player.send("screenFade", ...)` and `server.send("screenFade", ...)` take: the game's `ScreenFade` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ScreenFade"))`, `write_*`, `message_end` */
+export interface ScreenFadeFields {
+    /** The fade's duration, in seconds. */
+    duration?: number;
+    /** The time the full colour holds, in seconds. */
+    hold?: number;
+    /** One of `"in"`, from the colour to a clear view, or `"out"`, from a clear view to the colour. */
+    direction?: FadeDirection;
+    /** `true` when the colour tints the screen rather than painting over it. */
+    modulate?: boolean;
+    /** `true` when the colour stays until the next fade. */
+    stay?: boolean;
+    /** The colour: red, green, blue and alpha, `0` to `255` each. */
+    color?: number[];
+}
+/** What `player.send("screenShake", ...)` and `server.send("screenShake", ...)` take: the game's `ScreenShake` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ScreenShake"))`, `write_*`, `message_end` */
+export interface ScreenShakeFields {
+    /** The shake's strength: how far the view moves, up to 16 units. */
+    amplitude?: number;
+    /** The shake's duration, in seconds. */
+    duration?: number;
+    /** The shake's frequency, in jolts a second. */
+    frequency?: number;
+}
+/** What `player.send("sound", ...)` and `server.send("sound", ...)` take: the game's `SendAudio` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("SendAudio"))`, `write_*`, `message_end` */
+export interface SendAudioFields {
+    /** The player the sound is from; `null` for none. */
+    sender?: Player | null;
+    /** The sound, e.g. `"%!MRAD_GO"` for a radio line. */
+    sound?: string;
+    /** The pitch in percent, `100` as recorded. */
+    pitch?: number;
+}
+/** What `player.send("serverName", ...)` and `server.send("serverName", ...)` take: the game's `ServerName` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ServerName"))`, `write_*`, `message_end` */
+export interface ServerNameFields {
+    /** The server's name, as `hostname` sets it. */
+    serverName?: string;
+}
+/** What `player.send("fov", ...)` and `server.send("fov", ...)` take: the game's `SetFOV` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("SetFOV"))`, `write_*`, `message_end` */
+export interface SetFOVFields {
+    /** The field of view, in degrees. */
+    fov?: number;
+}
+/** What `player.send("showTimer", ...)` and `server.send("showTimer", ...)` take: the game's `ShowTimer` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ShowTimer"))`, `write_*`, `message_end` */
+export interface ShowTimerFields {
+}
+/** What `player.send("spectatedHealth", ...)` and `server.send("spectatedHealth", ...)` take: the game's `SpecHealth2` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("SpecHealth2"))`, `write_*`, `message_end` */
+export interface SpecHealth2Fields {
+    /** The health shown. */
+    health?: number;
+    /** The player watched. */
+    target?: Player | null;
+}
+/** What `player.send("spectator", ...)` and `server.send("spectator", ...)` take: the game's `Spectator` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Spectator"))`, `write_*`, `message_end` */
+export interface SpectatorFields {
+    /** The player. */
+    target?: Player | null;
+    /** `true` while the player spectates. */
+    spectator?: boolean;
+}
+/** What `player.send("statusIcon", ...)` and `server.send("statusIcon", ...)` take: the game's `StatusIcon` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("StatusIcon"))`, `write_*`, `message_end` */
+export interface StatusIconFields {
+    /** One of `"hide"`, `"show"` or `"flash"`. */
+    state?: StatusIconState;
+    /** The icon's sprite name, e.g. `"buyzone"`. */
+    sprite?: string;
+    /** The icon's colour: red, green and blue, `0` to `255` each; empty when it is hidden. */
+    color?: number[];
+}
+/** What `player.send("statusText", ...)` and `server.send("statusText", ...)` take: the game's `StatusText` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("StatusText"))`, `write_*`, `message_end` */
+export interface StatusTextFields {
+    /** The status line's number, from `0`. */
+    line?: number;
+    /** The line's text, or its format, e.g. `"1 %c1: %p2"`. */
+    text?: string;
+}
+/** What `player.send("statusValue", ...)` and `server.send("statusValue", ...)` take: the game's `StatusValue` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("StatusValue"))`, `write_*`, `message_end` */
+export interface StatusValueFields {
+    /** The value's number in the line's format: `1` a team, `2` a player, `3` health. */
+    slot?: number;
+    /** The value. */
+    value?: number;
+}
+/** What `player.send("taskTime", ...)` and `server.send("taskTime", ...)` take: the game's `TaskTime` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("TaskTime"))`, `write_*`, `message_end` */
+export interface TaskTimeFields {
+    /** The seconds left. */
+    seconds?: number;
+    /** `true` while the clock runs. */
+    active?: boolean;
+    /** The seconds the clock takes to fade out. */
+    fade?: number;
+}
+/** What `player.send("team", ...)` and `server.send("team", ...)` take: the game's `TeamInfo` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("TeamInfo"))`, `write_*`, `message_end` */
+export interface TeamInfoFields {
+    /** The player whose team it is. */
+    target?: Player | null;
+    /** The team, e.g. `"TERRORIST"`, `"CT"`. */
+    team?: Team;
+}
+/** What `player.send("teamScore", ...)` and `server.send("teamScore", ...)` take: the game's `TeamScore` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("TeamScore"))`, `write_*`, `message_end` */
+export interface TeamScoreFields {
+    /** The team, `"TERRORIST"` or `"CT"`. */
+    team?: Team;
+    /** The rounds the team has won. */
+    score?: number;
+}
+/** What `player.send("text", ...)` and `server.send("text", ...)` take: the game's `TextMsg` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("TextMsg"))`, `write_*`, `message_end` */
+export interface TextMsgFields {
+    /** The place it shows, one of `"chat"`, `"center"`, `"console"` or `"notify"`. */
+    destination?: VariantName;
+    /** The text, or the game's own for it, e.g. `"#Round_Draw"`. */
+    text?: string;
+    /** The texts put into the game's text in place of `%s1`, `%s2`, ... - e.g. a player's name. Assign to change them; their number stays. */
+    params?: string[];
+}
+/** What `player.send("train", ...)` and `server.send("train", ...)` take: the game's `Train` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("Train"))`, `write_*`, `message_end` */
+export interface TrainFields {
+    /** The speed step, `0` for none. */
+    speed?: number;
+}
+/** What `player.send("tutorClose", ...)` and `server.send("tutorClose", ...)` take: the game's `TutorClose` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("TutorClose"))`, `write_*`, `message_end` */
+export interface TutorCloseFields {
+}
+/** What `player.send("viewMode", ...)` and `server.send("viewMode", ...)` take: the game's `ViewMode` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ViewMode"))`, `write_*`, `message_end` */
+export interface ViewModeFields {
+}
+/** What `player.send("weaponList", ...)` and `server.send("weaponList", ...)` take: the game's `WeaponList` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("WeaponList"))`, `write_*`, `message_end` */
+export interface WeaponListFields {
+    /** The weapon's class name, e.g. `"weapon_ak47"`. */
+    classname?: string;
+    /** The index of the weapon's ammo in the game's list of kinds. */
+    ammo?: number;
+    /** The most of that ammo a player carries. */
+    maxAmmo?: number;
+    /** The index of the weapon's second ammo, `-1` for none. */
+    ammo2?: number;
+    /** The most of the second ammo a player carries. */
+    maxAmmo2?: number;
+    /** The slot the weapon is in, from `0`. */
+    slot?: number;
+    /** The weapon's place in the slot, from `0`. */
+    position?: number;
+    /** The weapon, by its kind, e.g. `"ak47"`. */
+    weapon?: WeaponKind;
+    /** The weapon's ITEM_FLAG_* bits: `8` for one thrown when it is empty, `16` for one used only once. */
+    flags?: number;
+}
+/** What `player.send("weaponPickup", ...)` and `server.send("weaponPickup", ...)` take: the game's `WeapPickup` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("WeapPickup"))`, `write_*`, `message_end` */
+export interface WeapPickupFields {
+    /** The weapon, by its kind, e.g. `"knife"`. */
+    weapon?: WeaponKind;
+}
+/** Every message a plugin can send, by the name player.send and server.send take. */
+export interface ServerSendMap {
+    /**
+     * A player's HUD stops showing the round's advertisement.
+     *
+     * The game's `ADStop` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ADStop"), ...)`
+     */
+    adStop: ADStopFields;
+    /**
+     * Whether a player may pick Spectate in the team menu.
+     *
+     * The game's `AllowSpec` message.
+     *
+     * Pawn: `register_message(get_user_msgid("AllowSpec"), ...)`
+     */
+    allowSpectate: AllowSpecFields;
+    /**
+     * A player picks up ammo: the notice at the side of his screen.
+     *
+     * The game's `AmmoPickup` message.
+     *
+     * Pawn: `register_message(get_user_msgid("AmmoPickup"), ...)`
+     */
+    ammoPickup: AmmoPickupFields;
+    /**
+     * A player's reserve ammo of one kind on his HUD changes.
+     *
+     * The game's `AmmoX` message.
+     *
+     * Pawn: `register_message(get_user_msgid("AmmoX"), ...)`
+     */
+    ammo: AmmoXFields;
+    /**
+     * The armour icon on a player's HUD: a vest, or a vest and a helmet.
+     *
+     * The game's `ArmorType` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ArmorType"), ...)`
+     */
+    armorType: ArmorTypeFields;
+    /**
+     * The progress bar in the middle of a player's screen is shown or hidden, from empty or part of the way full.
+     *
+     * The game's `BarTime` and `BarTime2` messages.
+     *
+     * Pawn: `register_message(get_user_msgid("BarTime"), ...)`, `register_message(get_user_msgid("BarTime2"), ...)`
+     */
+    progressBar: BarTime2Fields;
+    /**
+     * A player's armour on his HUD changes.
+     *
+     * The game's `Battery` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Battery"), ...)`
+     */
+    armor: BatteryFields;
+    /**
+     * A player's money on his HUD blinks: he cannot afford what he tried to buy.
+     *
+     * The game's `BlinkAcct` message.
+     *
+     * Pawn: `register_message(get_user_msgid("BlinkAcct"), ...)`
+     */
+    moneyBlink: BlinkAcctFields;
+    /**
+     * The bomb on the terrorists' radar: dropped or planted.
+     *
+     * The game's `BombDrop` message.
+     *
+     * Pawn: `register_message(get_user_msgid("BombDrop"), ...)`
+     */
+    bombDrop: BombDropFields;
+    /**
+     * The bomb is picked up: it leaves the terrorists' radar.
+     *
+     * The game's `BombPickup` message.
+     *
+     * Pawn: `register_message(get_user_msgid("BombPickup"), ...)`
+     */
+    bombPickup: BombPickupFields;
+    /**
+     * The voice icon over a bot who talks on the radio.
+     *
+     * The game's `BotVoice` message.
+     *
+     * Pawn: `register_message(get_user_msgid("BotVoice"), ...)`
+     */
+    botVoice: BotVoiceFields;
+    /**
+     * A player's buy menu is closed.
+     *
+     * The game's `BuyClose` message.
+     *
+     * Pawn: `register_message(get_user_msgid("BuyClose"), ...)`
+     */
+    closeBuyMenu: BuyCloseFields;
+    /**
+     * Counter-Strike's own crosshair on a player's screen is shown or hidden.
+     *
+     * The game's `Crosshair` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Crosshair"), ...)`
+     */
+    crosshair: CrosshairFields;
+    /**
+     * The weapon in a player's hands and its clip on his HUD.
+     *
+     * The game's `CurWeapon` message.
+     *
+     * Pawn: `register_message(get_user_msgid("CurWeapon"), ...)`
+     */
+    currentWeapon: CurWeaponFields;
+    /**
+     * A player is shown the damage he took: the red marks at the side of his screen.
+     *
+     * The game's `Damage` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Damage"), ...)`
+     */
+    damage: DamageFields;
+    /**
+     * A kill in the top right corner of every screen.
+     *
+     * The game's `DeathMsg` message.
+     *
+     * Pawn: `register_message(get_user_msgid("DeathMsg"), ...)`
+     */
+    death: DeathMsgFields;
+    /**
+     * The flashlight icon on a player's HUD: on or off, and its battery.
+     *
+     * The game's `Flashlight` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Flashlight"), ...)`
+     */
+    flashlight: FlashlightFields;
+    /**
+     * The flashlight's battery on a player's HUD changes.
+     *
+     * The game's `FlashBat` message.
+     *
+     * Pawn: `register_message(get_user_msgid("FlashBat"), ...)`
+     */
+    flashlightBattery: FlashBatFields;
+    /**
+     * The Geiger counter's clicks a player hears near radiation.
+     *
+     * The game's `Geiger` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Geiger"), ...)`
+     */
+    geiger: GeigerFields;
+    /**
+     * A player's health on his HUD changes.
+     *
+     * The game's `Health` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Health"), ...)`
+     */
+    health: HealthFields;
+    /**
+     * The parts of a player's HUD that are hidden change.
+     *
+     * The game's `HideWeapon` message.
+     *
+     * Pawn: `register_message(get_user_msgid("HideWeapon"), ...)`
+     */
+    hideWeapon: HideWeaponFields;
+    /**
+     * A hostage is killed: it leaves the counter-terrorists' radar.
+     *
+     * The game's `HostageK` message.
+     *
+     * Pawn: `register_message(get_user_msgid("HostageK"), ...)`
+     */
+    hostageKilled: HostageKFields;
+    /**
+     * A player's HUD is set up, when he enters the game.
+     *
+     * The game's `InitHUD` message.
+     *
+     * Pawn: `register_message(get_user_msgid("InitHUD"), ...)`
+     */
+    initHud: InitHUDFields;
+    /**
+     * A player picks up an item: the notice at the side of his screen.
+     *
+     * The game's `ItemPickup` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ItemPickup"), ...)`
+     */
+    itemPickup: ItemPickupFields;
+    /**
+     * The night vision and the defuse kit a player has, for his HUD.
+     *
+     * The game's `ItemStatus` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ItemStatus"), ...)`
+     */
+    itemStatus: ItemStatusFields;
+    /**
+     * The place on the map a player is in, as the radio names it.
+     *
+     * The game's `Location` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Location"), ...)`
+     */
+    location: LocationFields;
+    /**
+     * A player's money on his HUD changes.
+     *
+     * The game's `Money` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Money"), ...)`
+     */
+    money: MoneyFields;
+    /**
+     * A part of the message of the day, the window a joining player sees.
+     *
+     * The game's `MOTD` message.
+     *
+     * Pawn: `register_message(get_user_msgid("MOTD"), ...)`
+     */
+    motd: MOTDFields;
+    /**
+     * A player's night vision is turned on or off.
+     *
+     * The game's `NVGToggle` message.
+     *
+     * Pawn: `register_message(get_user_msgid("NVGToggle"), ...)`
+     */
+    nightVision: NVGToggleFields;
+    /**
+     * A teammate on a player's radar.
+     *
+     * The game's `Radar` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Radar"), ...)`
+     */
+    radar: RadarFields;
+    /**
+     * A player's HUD is reset, at his spawn.
+     *
+     * The game's `ResetHUD` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ResetHUD"), ...)`
+     */
+    resetHud: ResetHUDFields;
+    /**
+     * The round clock at the top of a player's HUD is set.
+     *
+     * The game's `RoundTime` message.
+     *
+     * Pawn: `register_message(get_user_msgid("RoundTime"), ...)`
+     */
+    roundTime: RoundTimeFields;
+    /**
+     * A chat line.
+     *
+     * The game's `SayText` message.
+     *
+     * Pawn: `register_message(get_user_msgid("SayText"), ...)`
+     */
+    chat: SayTextFields;
+    /**
+     * The scenario icon on a player's HUD, such as the bomb's or a hostage's.
+     *
+     * The game's `Scenario` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Scenario"), ...)`
+     */
+    scenarioIcon: ScenarioFields;
+    /**
+     * The marks the scoreboard shows beside a player: dead, the bomb, the VIP.
+     *
+     * The game's `ScoreAttrib` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ScoreAttrib"), ...)`
+     */
+    scoreAttribute: ScoreAttribFields;
+    /**
+     * A player's row on the scoreboard.
+     *
+     * The game's `ScoreInfo` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ScoreInfo"), ...)`
+     */
+    score: ScoreInfoFields;
+    /**
+     * A player's screen is coloured, fading in or out - a flashbang, a fade to black.
+     *
+     * The game's `ScreenFade` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ScreenFade"), ...)`
+     */
+    screenFade: ScreenFadeFields;
+    /**
+     * A player's view shakes - an explosion nearby.
+     *
+     * The game's `ScreenShake` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ScreenShake"), ...)`
+     */
+    screenShake: ScreenShakeFields;
+    /**
+     * A sound played to a player, such as a radio line.
+     *
+     * The game's `SendAudio` message.
+     *
+     * Pawn: `register_message(get_user_msgid("SendAudio"), ...)`
+     */
+    sound: SendAudioFields;
+    /**
+     * The server's name a player's client shows.
+     *
+     * The game's `ServerName` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ServerName"), ...)`
+     */
+    serverName: ServerNameFields;
+    /**
+     * A player's field of view is set.
+     *
+     * The game's `SetFOV` message.
+     *
+     * Pawn: `register_message(get_user_msgid("SetFOV"), ...)`
+     */
+    fov: SetFOVFields;
+    /**
+     * The round clock appears on a player's HUD.
+     *
+     * The game's `ShowTimer` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ShowTimer"), ...)`
+     */
+    showTimer: ShowTimerFields;
+    /**
+     * The health of the player a spectator watches.
+     *
+     * The game's `SpecHealth` and `SpecHealth2` messages.
+     *
+     * Pawn: `register_message(get_user_msgid("SpecHealth"), ...)`, `register_message(get_user_msgid("SpecHealth2"), ...)`
+     */
+    spectatedHealth: SpecHealth2Fields;
+    /**
+     * A player becomes a spectator, or stops being one, on the scoreboard.
+     *
+     * The game's `Spectator` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Spectator"), ...)`
+     */
+    spectator: SpectatorFields;
+    /**
+     * A status icon on a player's HUD - the buy zone, the bomb - is shown, flashed or hidden.
+     *
+     * The game's `StatusIcon` message.
+     *
+     * Pawn: `register_message(get_user_msgid("StatusIcon"), ...)`
+     */
+    statusIcon: StatusIconFields;
+    /**
+     * The status line at the bottom of a player's screen, such as the name of the player he aims at.
+     *
+     * The game's `StatusText` message.
+     *
+     * Pawn: `register_message(get_user_msgid("StatusText"), ...)`
+     */
+    statusText: StatusTextFields;
+    /**
+     * A value the status line shows, such as the player a player aims at.
+     *
+     * The game's `StatusValue` message.
+     *
+     * Pawn: `register_message(get_user_msgid("StatusValue"), ...)`
+     */
+    statusValue: StatusValueFields;
+    /**
+     * The countdown of a task on a player's HUD, such as rescuing the hostages in a career.
+     *
+     * The game's `TaskTime` message.
+     *
+     * Pawn: `register_message(get_user_msgid("TaskTime"), ...)`
+     */
+    taskTime: TaskTimeFields;
+    /**
+     * A player's team on the scoreboard.
+     *
+     * The game's `TeamInfo` message.
+     *
+     * Pawn: `register_message(get_user_msgid("TeamInfo"), ...)`
+     */
+    team: TeamInfoFields;
+    /**
+     * A team's score on the scoreboard.
+     *
+     * The game's `TeamScore` message.
+     *
+     * Pawn: `register_message(get_user_msgid("TeamScore"), ...)`
+     */
+    teamScore: TeamScoreFields;
+    /**
+     * A text from the game - an announcement, a hint - in chat, the console or the middle of the screen.
+     *
+     * The game's `TextMsg` message.
+     *
+     * Pawn: `register_message(get_user_msgid("TextMsg"), ...)`
+     */
+    text: TextMsgFields;
+    /**
+     * The speed of the train a player drives, on his HUD.
+     *
+     * The game's `Train` message.
+     *
+     * Pawn: `register_message(get_user_msgid("Train"), ...)`
+     */
+    train: TrainFields;
+    /**
+     * A tutor's message on a player's screen closes.
+     *
+     * The game's `TutorClose` message.
+     *
+     * Pawn: `register_message(get_user_msgid("TutorClose"), ...)`
+     */
+    tutorClose: TutorCloseFields;
+    /**
+     * A player's view goes back to first person.
+     *
+     * The game's `ViewMode` message.
+     *
+     * Pawn: `register_message(get_user_msgid("ViewMode"), ...)`
+     */
+    viewMode: ViewModeFields;
+    /**
+     * A weapon's description for a player's client: its ammo, its slot, its place in the slot.
+     *
+     * The game's `WeaponList` message.
+     *
+     * Pawn: `register_message(get_user_msgid("WeaponList"), ...)`
+     */
+    weaponList: WeaponListFields;
+    /**
+     * A player picks up a weapon: the notice at the side of his screen.
+     *
+     * The game's `WeapPickup` message.
+     *
+     * Pawn: `register_message(get_user_msgid("WeapPickup"), ...)`
+     */
+    weaponPickup: WeapPickupFields;
+}
+/** Sends a message of the fields F - player.send's and server.send's hood. */
+export declare function __sendMessage<F>(given: F, dest: i32, player: i32, origin: Vector | null): void;
 /** The game's names of the messages a name server.addMessageListener takes hears; a name it does not know as it is. */
 export declare function protocolMessageNames(name: string): string[];
 /** Adds a listener for the event E - server.addEventListener's hood. */

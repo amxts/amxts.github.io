@@ -19,6 +19,9 @@ type Wire = {
     kind: 'array';
     of: Wire;
 } | {
+    kind: 'dict';
+    of: Wire;
+} | {
     kind: 'fn';
     params: Wire[];
     result: Wire | null;
@@ -63,6 +66,8 @@ interface ExportedFunction {
     paramNames: string[];
     wires: Wire[];
     result: Wire | null;
+    /** Its last parameter is a rest parameter, `...names: string[]`: the owner spreads the array into it. */
+    rest?: boolean;
 }
 export interface ModuleAnalysis {
     name: string;

@@ -7,6 +7,8 @@ export interface Compiled {
     binary: Uint8Array;
     /** Whether it carries the coroutine scheduler's exports (as/promise.ts). */
     async: boolean;
+    /** Its env() calls as the section amxts.env writes them, a line a name (scripts/server-env.ts). */
+    env: string[];
 }
 /** Forgets what this run compiled, so that the next compile() asks the disk cache again. */
 export declare function forgetCompiled(): void;
@@ -21,6 +23,8 @@ export declare function forgetCompiled(): void;
  * afterwards. The order of everything is the same.
  */
 export declare function compile(source: string): Promise<Compiled>;
+/** `args` with GC_STRESS, unless they ask for it themselves. */
+export declare function stressed(args: string[]): string[];
 /**
  * scripts/compile.ts's compileToWasm - the server build's first half - with
  * the disk cache in front: the problem it reports, or null and `wasm` written.
@@ -39,9 +43,10 @@ export interface SourcesCompiled {
 /**
  * asc - the patched one, as the build runs it - on `sources` alone, a test's
  * snippet of the compiler at work, with the disk cache in front. Nothing is
- * read from disk, so the sources and `args` are the whole key.
+ * read from disk, so the sources and `args` are the whole key. `finished`
+ * adds what a full build does after asc's optimiser (finishing).
  */
-export declare function compileSources(args: string[], sources: Record<string, string>): Promise<SourcesCompiled>;
+export declare function compileSources(args: string[], sources: Record<string, string>, finished?: boolean): Promise<SourcesCompiled>;
 /**
  * wamrc from `wasm` to `aot`, with the disk cache in front - keyed by the
  * binary, wamrc itself and its arguments: its exit status and what it printed.

@@ -1,5 +1,3 @@
-/** The next of those ids. @internal */
-export declare function nextTaskId(): number;
 export declare class Coroutines {
     /** What a trap inside a coroutine said: it drops that one coroutine, as on the server. */
     readonly traps: string[];

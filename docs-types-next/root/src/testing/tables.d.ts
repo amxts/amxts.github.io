@@ -1,5 +1,6 @@
 /** The plugins folder - what `~/` means - and where the generated files live. */
 export declare const PLUGINS_ROOT: string;
+export type HookAnswer = 'int' | 'float' | 'bool' | 'text' | 'vector' | 'none';
 /** A hookchain as the fake fires it: which arguments are floats or text, and what it answers. */
 export interface HookShape {
     /** reapi's short name: "take_damage". */
@@ -8,8 +9,8 @@ export interface HookShape {
     floats: Set<number>;
     /** Zero-based arguments the event reads as text. */
     texts: Set<number>;
-    /** The ATYPE_* the chain answers with, or -1 for a chain that answers nothing. */
-    answer: number;
+    /** What the chain answers with: a number, a float, a boolean, text, a vector, or nothing. */
+    answer: HookAnswer;
     /** The Ham_* function a Ham Sandwich hook of the event is on, when it has one. */
     ham?: number;
 }
@@ -18,6 +19,8 @@ export interface Tables {
     constants: Map<string, number>;
     /** The dispatcher's native ids (`NATIVE_x`) to names. */
     dispatched: Map<number, string>;
+    /** A native's arguments as they cross, by its name: runtime/natives.txt's marks (`s` text in, `t` text back), without the `leaf` after them. */
+    crossings: Map<string, string[]>;
     /** A hookchain's number (hookIdOf) to its short name. */
     hookNames: Map<number, string>;
     /** A hookchain by its short name, or by its event name ("takeDamage"). */

@@ -1,10 +1,10 @@
 /**
  * The files of a system's GitHub Release that a server runs: the name each is
- * attached under, and where it goes under the game folder (cstrike). A `tool`
- * is the compiler for `.ts` plugins written on the server, which a server has
- * only when its kit put it there.
+ * attached under, and where it goes under the game folder (cstrike). A server
+ * runs the module alone - it loads plugins built elsewhere. `tool` is a file
+ * a server has only when its kit put it there; no such file is left.
  * @param {System} system
- * @returns {{ asset: string, path: string, tool: boolean }[]} the module first, then the tools
+ * @returns {{ asset: string, path: string, tool: boolean }[]} the module first
  */
 export function serverFiles(system: System): {
     asset: string;
@@ -23,6 +23,13 @@ export function serverImage(version: any): string;
  * @returns {string | null} the version: `0.2.0`
  */
 export function moduleVersion(file: string): string | null;
+/**
+ * The ABI a module file loads plugins of, read as moduleVersion reads its
+ * release. Null when there is no file or no such string.
+ * @param {string} file
+ * @returns {string | null} the ABI: `0.2.0+abi.1a2b3c4d`
+ */
+export function moduleAbiOf(file: string): string | null;
 /**
  * `windows`, `win32`, `linux`, any case; null for anything else.
  * @param {string | undefined | null} value
