@@ -71,8 +71,9 @@ jobs:
         env:
           MODULES: ${{ steps.version.outputs.modules }}
         run: |
+          # From 0.3 on the framework's setup checks them out itself.
           for module in $MODULES; do
-            git clone -q --depth 1 --branch "${module#*:}" "https://github.com/amxts/${module%%:*}" "amxts-modules/${module%%:*}"
+            [ -d "amxts-modules/${module%%:*}" ] || git clone -q --depth 1 --branch "${module#*:}" "https://github.com/amxts/${module%%:*}" "amxts-modules/${module%%:*}"
           done
 
       - name: The declarations
