@@ -300,10 +300,12 @@ function twoslash(block: string, locale: Locale, version: DocsVersion) {
     if (new RegExp(`\\b${each.name}\\b`).test(code) && !declared.has(each.name) && !block.includes(`from "${each.from}"`))
       hidden.push(each.line)
   }
-  // An example that talks about `player` without declaring it gets one, so
-  // what it reads from the player has its types too.
-  if (/\bplayer\b/.test(code) && !declared.has('player') && !parameters.has('player'))
-    hidden.push('declare const player: import("~/facade").Player;')
+  // An example that talks about `player` or `db` without declaring it gets
+  // one, so what it reads from them has its types too.
+  for (const [name, type] of [['player', 'import("~/facade").Player'], ['db', 'import("~/database").Database']] as const) {
+    if (new RegExp(`\\b${name}\\b`).test(code) && !declared.has(name) && !parameters.has(name))
+      hidden.push(`declare const ${name}: ${type};`)
+  }
   const prelude = hidden.length ? [...hidden, '// ---cut---'] : []
   const folder = typesFolder(locale, version).slice('docs-'.length)
   return [fence!.replace(/^```ts/, folder === 'types' ? '```ts twoslash' : `\`\`\`ts twoslash ${folder}`), ...prelude, ...rest].join('\n')

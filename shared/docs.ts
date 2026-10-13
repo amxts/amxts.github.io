@@ -61,6 +61,8 @@ export function examplesOptions(root: string) {
       '~/*': [`${root}/amxts/*`],
       '@amxts/core': [`${root}/amxts/facade.d.ts`],
       '@amxts/core/test-utils': [`${root}/root/src/testing/index.d.ts`],
+      // the query builder: the package's "./database" is its as/sql.ts
+      '@amxts/core/database': [`${root}/amxts/sql.d.ts`],
       '@amxts/core/*': [`${root}/amxts/*`],
       '@amxts/*': [`${root}/packages/*/index.d.ts`],
     },
