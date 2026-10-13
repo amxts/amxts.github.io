@@ -35,6 +35,18 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    extractSync: {
+        en: string;
+        ru: string;
+    };
+    ExistsOptions: {
+        en: string;
+        ru: string;
+    };
+    'ExistsOptions.game': {
+        en: string;
+        ru: string;
+    };
     existsSync: {
         en: string;
         ru: string;

@@ -38,14 +38,23 @@ export declare function appendFileSync<T extends string | Uint8Array | ArrayBuff
  * ведёт за пределы папки игры.
  */
 export declare function readBytesSync(path: string): Uint8Array | null;
-/** `readBytesSync` в виде промиса; отклоняется, если файл не удалось открыть. */
-export declare function readBytes(path: string): Promise<Uint8Array>;
 /**
- * `true`, если такой файл или папка есть.
+ * `readBytesSync` в виде промиса; отклоняется, если файл не удалось открыть.
+ * Файл читается в рабочем потоке модуля и не задерживает сервер.
+ */
+export declare function readBytes(path: string): Promise<Uint8Array>;
+/** Настройки `existsSync`: `{ game: true }` ищет во всех папках игры. */
+export declare class ExistsOptions {
+    /** `true` — искать во всех папках, из которых игра читает файлы (`valve/`, `cstrike_downloads/`...), а не только в папке игры; по умолчанию `false`. */
+    game: boolean;
+}
+/**
+ * `true`, если такой файл или папка есть: `fs.existsSync("maps/de_dust2.bsp")`.
+ * С `{ game: true }` — в любой папке, из которой игра читает файлы.
  *
  * Pawn: `file_exists`, `dir_exists`
  */
-export declare function existsSync(path: string): boolean;
+export declare function existsSync(path: string, options?: ExistsOptions): boolean;
 /**
  * Возвращает имена в папке, без `.` и `..`; `null`, если такой папки нет.
  *
@@ -86,12 +95,16 @@ export declare function mkdir(path: string, options?: MakeDirectoryOptions): Pro
  * ```
  */
 export declare function readFile(path: string): Promise<string>;
-/** `writeFileSync` в виде промиса; отклоняется, если файл не удалось открыть. */
+/**
+ * `writeFileSync` в виде промиса; отклоняется, если файл не удалось открыть.
+ * Байты пишутся в рабочем потоке модуля и не задерживают сервер — в том
+ * порядке, в каком были вызовы.
+ */
 export declare function writeFile<T extends string | Uint8Array | ArrayBuffer = string>(path: string, data: T): Promise<void>;
-/** `appendFileSync` в виде промиса; отклоняется, если файл не удалось открыть. */
+/** `appendFileSync` в виде промиса; отклоняется, если файл не удалось открыть. Байты пишутся так же, как пишет `writeFile`. */
 export declare function appendFile<T extends string | Uint8Array | ArrayBuffer = string>(path: string, data: T): Promise<void>;
 /** `existsSync` в виде промиса. */
-export declare function exists(path: string): Promise<boolean>;
+export declare function exists(path: string, options?: ExistsOptions): Promise<boolean>;
 /** `readdirSync` в виде промиса; отклоняется, если такой папки нет. */
 export declare function readdir(path: string): Promise<string[]>;
 /**
@@ -161,14 +174,27 @@ export declare class ArchiveEntry {
 /**
  * Файлы архива с их путями внутри него; папки не перечисляются. Вид архива
  * читается по его первым байтам: zip-архив, сохранённый как есть или сжатый
- * deflate. Бросает `Error` для вида, который не читает, — называя те, что
- * читает, — для файла, чьи байты не сходятся, и для пути, который ведёт за
- * пределы папки, куда архив распаковывается.
+ * deflate. Файлы распаковываются в рабочем потоке модуля и не задерживают
+ * сервер, а промис выполняется на одном из следующих кадров. Отклоняется с
+ * `Error` для вида, который не читает, — называя те, что читает, — для
+ * файла, чьи байты не сходятся, и для пути, который ведёт за пределы папки,
+ * куда архив распаковывается.
  *
  * ```ts
- * for (const entry of fs.extract(await response.arrayBuffer())) {
+ * for (const entry of await fs.extract(await response.arrayBuffer())) {
+ * 	await fs.writeFile(entry.path, entry.data);
+ * }
+ * ```
+ */
+export declare function extract<T extends Uint8Array | ArrayBuffer>(archive: T): Promise<ArchiveEntry[]>;
+/**
+ * `extract` сразу, с задержкой сервера на время распаковки: файлы архива
+ * или `Error`, брошенная там, где `extract` отклоняется.
+ *
+ * ```ts
+ * for (const entry of fs.extractSync(bytes)) {
  * 	fs.writeFileSync(entry.path, entry.data);
  * }
  * ```
  */
-export declare function extract<T extends Uint8Array | ArrayBuffer>(archive: T): ArchiveEntry[];
+export declare function extractSync<T extends Uint8Array | ArrayBuffer>(archive: T): ArchiveEntry[];

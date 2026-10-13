@@ -193,8 +193,22 @@ export declare class Sources {
     private moduleNamed;
     /** The package a file on disk belongs to. */
     packageOf(real: string): ModulePackage | null;
-    /** The project's own file at this place under its plugins folder, or null: an old copy of the core's API is not one. */
+    /** Whether the core's as/ has a file at this place. */
+    private coreHas;
+    /**
+     * The project's own file at this place in the tree, or null: an old copy
+     * of the core's API is not one. A place the core has is the core's; the
+     * project's file of that name is at `<name>~.ts` (`place`).
+     */
     ownFile(place: string): string | null;
+    /** Whether a file on disk is the project's own, in its plugins folder over the core's as/. */
+    private isOwn;
+    /**
+     * An own file's import of the project's file at a place the core has -
+     * `./hooks`, `~/hooks` - as that file's place, `~/hooks~`; null for any
+     * other import.
+     */
+    private ownMoved;
     /** The file on disk at this place in the tree, or null. */
     real(path: string): string | null;
     /** The owner the build writes for a module without natives, at ~/<name>.ts. */
@@ -206,7 +220,7 @@ export declare class Sources {
     place(real: string): string;
     /** An entry for asc: the plugin's place in the tree, relative to it. */
     entry(real: string): string;
-    /** Each file's typed configs and commands, made once a compile (scripts/typed-configs.ts, scripts/typed-commands.ts). */
+    /** Each file's typed configs, commands and tables, made once a compile (scripts/typed-configs.ts, scripts/typed-commands.ts, scripts/typed-tables.ts). */
     private typed;
     /**
      * The file's text as asc reads it: auto-imports added, imports rewritten,

@@ -29,6 +29,8 @@ export declare class Menu {
     sharedTimer: boolean;
     /** Seconds on the countdown when the menu opens, e.g. `10`; `0` for none. */
     time: number;
+    /** Text lines a page of a list of text lines alone, e.g. `11`; `0` for as many as numbered rows. The menu's bytes may end a page sooner. */
+    linesPerPage: number;
     /** Action names run when the countdown ends, e.g. `"CLOSE_MENU"`; `""` closes the menu. */
     onTimeout: string;
     /** Condition names the menu opens only under, space-separated, e.g. `"IS_ALIVE !IS_SPECTATOR"`; `""` for always. */

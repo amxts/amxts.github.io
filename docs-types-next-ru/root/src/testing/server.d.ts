@@ -1,7 +1,10 @@
 import type { PluginNative } from '../../scripts/plugin-natives';
+import type { FakeDatabase } from './database';
 import type { Native } from './natives';
 import type { HookShape } from './tables';
 import { Coroutines } from './coroutines';
+import { FakeDatabases } from './database';
+import { FakeJobs } from './jobs';
 import { Memory } from './memory';
 import { FakeNetwork } from './network';
 /** What a test hands the plugin: a cell, a flag, or text. */
@@ -25,6 +28,8 @@ export declare class Pointer {
 export type NativeResult = number | boolean | string | number[] | string[] | null | undefined;
 /** A path as AMX Mod X takes it, relative to the game folder: `a/b/c.txt`. */
 export declare function normalizePath(path: string): string;
+/** A path of the game folder, or null when it would leave it - absolute, a drive, a `..` - as the module's GamePath. */
+export declare function gamePath(path: string): string | null;
 /** A wasm function the server calls back, and how. */
 interface Handler {
     plugin: PluginInstance;
@@ -238,6 +243,9 @@ export declare class FakeWeapon extends FakeEntity {
     readonly kind: string;
     constructor(server: FakeServer, id: number, kind: string, owner: number);
 }
+/** The fields of `player.movement`, in the module's order, with the cvar each is the server's of and its default. */
+declare const MOVEMENT_FIELDS: readonly [readonly ["accelerate", "sv_accelerate", 10], readonly ["airAccelerate", "sv_airaccelerate", 10], readonly ["waterAccelerate", "sv_wateraccelerate", 10], readonly ["friction", "sv_friction", 4], readonly ["edgeFriction", "edgefriction", 2], readonly ["waterFriction", "sv_waterfriction", 1], readonly ["stopSpeed", "sv_stopspeed", 75], readonly ["stepSize", "sv_stepsize", 18]];
+export type MovementField = typeof MOVEMENT_FIELDS[number][0];
 /** A player: what the natives read, and what he was shown. */
 export declare class FakePlayer extends FakeEntity {
     connected: boolean;
@@ -260,6 +268,11 @@ export declare class FakePlayer extends FakeEntity {
     readonly commands: string[];
     /** Whether his steps make no sound (player_silent). */
     silentSteps: boolean;
+    /**
+     * His own movement variables, as `player.movement` set them:
+     * `{ airAccelerate: 100 }`. One he has none of is the server's cvar.
+     */
+    readonly movement: Partial<Record<MovementField, number>>;
     /** When he connected, by the server's clock (`server.time`, milliseconds). */
     readonly connectedAt: number;
     /** His userinfo keys - `lang` says his language. */
@@ -440,6 +453,12 @@ export declare class FakeServer {
      * write. A test fills it before the plugin reads, and reads it after.
      */
     readonly files: Map<string, Uint8Array<ArrayBufferLike>>;
+    /**
+     * The files of the game's other folders (`valve/`, `cstrike_downloads/`), by
+     * the path the game reads them at (`sound/items/gunpickup2.wav`):
+     * `fs.existsSync(path, { game: true })` finds these as well as `files`.
+     */
+    readonly gameFiles: Set<string>;
     /** Folders that are there with nothing in them; a file's folders are there anyway. */
     readonly folders: Set<string>;
     /** What get_localinfo answers: the folders AMX Mod X was told about. */
@@ -497,8 +516,8 @@ export declare class FakeServer {
         line: number;
         large: boolean;
     };
-    /** The HUD lines plugins made. */
-    hudLines: number;
+    /** The HUD lines plugins made: each one's priority, by its id less one. */
+    readonly hudLines: number[];
     /** The game rules' members a plugin set (set_member_game), by member. */
     readonly rules: Map<number, number>;
     /** The members plugins asked member_slot for, by slot: each one's reapi constant. */
@@ -523,11 +542,14 @@ export declare class FakeServer {
         sound: string;
         trigger: boolean;
     }[];
-    /** Sounds played: from an entity (emit_sound, rh_emit_sound2), or to a player alone (SendAudio, rg_send_audio). */
+    /** Sounds played: from an entity (emit_sound, rh_emit_sound2, `to` the one player who hears it), or to a player alone (SendAudio, rg_send_audio). */
     readonly sounds: {
         entity: number;
         sample: string;
+        to?: number;
     }[];
+    /** The players startSound's listeners chose (`recipients`) in the last hook fireHook ran, `null` for all it reaches. */
+    soundTo: number[] | null;
     /**
      * User messages plugins sent, in order: the message's name, the player it
      * went to (0 for everyone), and what was written, write_* by write_*.
@@ -646,6 +668,10 @@ export declare class FakeServer {
     readonly playerData: Map<number, Map<string, string | number>>;
     /** Which of those texts are lists of player ids ("3,5"), by `slot:key`: a player who leaves goes from them. */
     readonly playerLists: Set<string>;
+    /** The fields plugins add to Entity, by the entity or the player they are kept for: a new one at the same id starts over. */
+    private readonly entityData;
+    /** The entity fields' names, by the key the module handed out for each. */
+    readonly entityKeys: string[];
     /**
      * The playerChange listeners, as the module keeps them: per plugin, the
      * fields it hears ("" for every one) and the trampoline that hands a change
@@ -671,6 +697,8 @@ export declare class FakeServer {
     private outcome;
     private outcomeSaid;
     private taskOrder;
+    /** The time advance() is firing timers at, else -1: what they arm waits for a later frame. */
+    private firingAt;
     /** The slots of RegisterHookChain's and RegisterHam's handles, which DisableHookChain and the rest take. */
     private readonly hookSlots;
     private entityIds;
@@ -753,8 +781,8 @@ export declare class FakeServer {
     langKey(key: string): number;
     /** One line, with the escapes AMX Mod X turns into characters as it loads a file. */
     private addLangLine;
-    /** Whether a folder is there: named in `folders`, or holding a file. */
-    folderExists(path: string): boolean;
+    /** Whether a folder is there: named in `folders`, or holding a file; with `game`, a file of `gameFiles` too. */
+    folderExists(path: string, game?: boolean): boolean;
     /** ArrayCreate. @internal */
     createCellArray(cellSize: number): number;
     /** A dynamic array's items as text (ArrayGetString), or null for a handle that is not there - Invalid_Array is 0. */
@@ -771,10 +799,25 @@ export declare class FakeServer {
     join(name: string, options?: JoinOptions): FakePlayer;
     /** The module's network client: the requests plugins sent with fetch. @internal */
     readonly network: FakeNetwork;
+    readonly jobs: FakeJobs;
+    /** The module's database client: the queries plugins sent with Database. @internal */
+    readonly databases: FakeDatabases;
+    /**
+     * The database at `url` - every address when it is left out - that the
+     * plugins' `Database` reaches: what the test answers its queries with,
+     * and what they sent.
+     *
+     * ```ts
+     * server.database("mysql://kz@127.0.0.1/kz").answer("SELECT name FROM records", [{ name: "Alice" }]);
+     * ```
+     */
+    database(url?: string): FakeDatabase;
     /**
      * Waits for the responses to the requests the plugins sent with `fetch`,
-     * and hands each to its plugin as the server's next frame would; a
-     * request sent on the way is waited for too. A timer between two tries
+     * and the work they gave the module's worker thread (`zlib.gzip`,
+     * `fs.extract`, `fs.writeFile` of bytes), and hands each to its plugin as
+     * the server's next frame would; a request sent on the way is waited for
+     * too. A timer between two tries
      * waits for `advance()`.
      *
      * ```ts
@@ -785,7 +828,10 @@ export declare class FakeServer {
     responses(): Promise<void>;
     /**
      * Moves the clock forward and runs every timer that comes due on the way,
-     * in order - a repeating one as many times as it fits.
+     * in order - a repeating one as many times as it fits. As on the server,
+     * a timer armed or repeated while timers fire waits for a later frame, a
+     * millisecond on: `setTimeout(fn, 0)` from a handler never fires in the
+     * same moment.
      */
     advance(ms: number): void;
     /**
@@ -903,6 +949,8 @@ export declare class FakeServer {
     setPlayerData(id: number, key: string, value: number | string, players?: boolean): void;
     /** Every plugin listening for `key` hears it changed on player `id`, once, as the module tells them. */
     private fieldChanged;
+    /** The fields kept for the entity or the player at `id` now; none for nothing there. @internal */
+    entityFields(id: number): Map<number, number | string> | null;
     /** A player left: his fields go, and he goes from everyone's lists of players. Nobody is told. @internal */
     clearPlayerData(id: number): void;
     /**
@@ -1119,6 +1167,18 @@ export declare class FakeServer {
         fs_write(this: FakeServer, plugin: PluginInstance, name: number, data: number, length: number, append: number): 1 | 0;
         zip_inflate(this: FakeServer, plugin: PluginInstance, data: number, length: number, out: number, max: number): number;
         net_reply(this: FakeServer, plugin: PluginInstance, id: number): number;
+        job_start(this: FakeServer, plugin: PluginInstance, op: number, path: number, data: number, length: number, size: number, fn: number): number;
+        job_run(this: FakeServer, plugin: PluginInstance, op: number, path: number, data: number, length: number, size: number): number;
+        job_size(this: FakeServer, plugin: PluginInstance, id: number): number;
+        job_read(this: FakeServer, plugin: PluginInstance, id: number, out: number, max: number): number;
+        job_crc(this: FakeServer, plugin: PluginInstance, id: number): number;
+        job_error(this: FakeServer, plugin: PluginInstance, id: number, out: number, max: number): number;
+        job_close(this: FakeServer, plugin: PluginInstance, id: number): void;
+        db_open(this: FakeServer, plugin: PluginInstance, url: number, length: number): number;
+        db_query(this: FakeServer, plugin: PluginInstance, pool: number, tx: number, kind: number, sql: number, sqlLength: number, params: number, paramsLength: number, fn: number): number;
+        db_status(this: FakeServer, plugin: PluginInstance, id: number): number;
+        db_text(this: FakeServer, plugin: PluginInstance, id: number, what: number, out: number, max: number): number;
+        db_close(this: FakeServer, plugin: PluginInstance, id: number): void;
         abort(this: FakeServer, plugin: PluginInstance, message: number, file: number, line: number, column: number): never;
         stack_frames(): number;
         stack_text(): number;
@@ -1156,6 +1216,10 @@ export declare class FakeServer {
         player_strip(this: FakeServer, plugin: PluginInstance, id: number): void;
         player_respawn(this: FakeServer, plugin: PluginInstance, id: number): void;
         player_speed(): void;
+        player_movement(this: FakeServer, plugin: PluginInstance, id: number, field: number, value: number): void;
+        player_movement_get(this: FakeServer, plugin: PluginInstance, id: number, field: number): number;
+        entity_run(this: FakeServer, plugin: PluginInstance, id: number, fn: number): void;
+        entity_touch(this: FakeServer, plugin: PluginInstance, touched: number, toucher: number): void;
         player_switch(this: FakeServer, plugin: PluginInstance, id: number, name: number): number;
         player_join(this: FakeServer, plugin: PluginInstance, id: number, team: number): number | void;
         player_observe(this: FakeServer, plugin: PluginInstance, id: number, mode: number): number | void;
@@ -1189,9 +1253,13 @@ export declare class FakeServer {
         change_level(this: FakeServer, plugin: PluginInstance, name: number): 1 | 0;
         playback_block(this: FakeServer): void;
         playback_to(this: FakeServer, plugin: PluginInstance, ids: number, count: number): void;
+        sound_to(this: FakeServer, plugin: PluginInstance, ids: number, count: number): void;
+        sound_emit(this: FakeServer, plugin: PluginInstance, entity: number, channel: number, sample: number, volume: number, attenuation: number, pitch: number, to: number): void;
         light_style(this: FakeServer, plugin: PluginInstance, text: number): void;
+        intermission(this: FakeServer): void;
         player_light_style(this: FakeServer, plugin: PluginInstance, id: number, text: number): void;
         hud_line(this: FakeServer): number;
+        hud_line2(this: FakeServer, plugin: PluginInstance, priority: number): number;
         hud_show(this: FakeServer, plugin: PluginInstance, id: number, line: number, params: number, text: number): void;
         hud_clear(this: FakeServer, plugin: PluginInstance, id: number, line: number): void;
         player_model(this: FakeServer, plugin: PluginInstance, id: number, model: number, index: number): void;
@@ -1268,6 +1336,11 @@ export declare class FakeServer {
         player_data_get_text(this: FakeServer, plugin: PluginInstance, id: number, key: number, out: number, max: number): number;
         player_data_set_text(this: FakeServer, plugin: PluginInstance, id: number, key: number, value: number): void;
         player_data_set_players(this: FakeServer, plugin: PluginInstance, id: number, key: number, value: number): void;
+        entity_field_key(this: FakeServer, plugin: PluginInstance, name: number): number;
+        entity_data_get(this: FakeServer, plugin: PluginInstance, id: number, key: number): number;
+        entity_data_set(this: FakeServer, plugin: PluginInstance, id: number, key: number, value: number): void;
+        entity_data_get_text(this: FakeServer, plugin: PluginInstance, id: number, key: number, out: number, max: number): number;
+        entity_data_set_text(this: FakeServer, plugin: PluginInstance, id: number, key: number, value: number): void;
         player_slots(this: FakeServer, plugin: PluginInstance, at: number): void;
         player_names(this: FakeServer, plugin: PluginInstance, at: number): void;
         player_change_listen(this: FakeServer, plugin: PluginInstance, field: number, fn: number): void;

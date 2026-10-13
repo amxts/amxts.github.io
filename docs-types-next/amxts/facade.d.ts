@@ -921,6 +921,24 @@ export declare class Player extends PlayerFields implements Client {
     /** The player's screen effects: `player.screen.fade({ ... })`, `.shake(...)`, `.statusIcon(...)` — see Screen. */
     get screen(): Screen;
     /**
+     * The player's own movement variables - his acceleration and friction:
+     * `player.movement.airAccelerate = 100`. The server moves him by them and
+     * his game predicts his move by them; each is the server's cvar until set,
+     * and again after `player.movement.reset()`. They last until the map
+     * changes or the player leaves.
+     */
+    get movement(): Movement;
+    /**
+     * The player's slowdown after a jump, in milliseconds left: the game sets
+     * it as he jumps, and a jump while it lasts is slower. `0` for none:
+     * `player.jumpSlowdown = 0` with `player.slowdown = 1` gives him full
+     * speed at once.
+     *
+     * Pawn: `pev->fuser2`
+     */
+    get jumpSlowdown(): number;
+    set jumpSlowdown(value: number);
+    /**
      * Gives the player a weapon or an item: `player.give("weapon_flashbang")`.
      * `false` if the game did not give it. A name read from a config goes
      * as it is; one the game has no item of is said once in the console.
@@ -1366,6 +1384,16 @@ export interface HudOptions {
 }
 /** A HUD message's appearance effect, one of: `"fade"` in and out, `"flicker"`, or `"typewriter"` — letter by letter. */
 export type HudEffect = "fade" | "flicker" | "typewriter";
+/** The options of `new HudLine`. */
+export interface HudLineOptions {
+    /**
+     * The line's priority beside the other lines: `0` by default, a higher
+     * number keeps its channel. A player has four; when every one is taken, a
+     * message takes the channel of a line of a lower or the same priority, and
+     * one that finds all four held by more important lines is not shown.
+     */
+    priority?: number;
+}
 /**
  * A HUD line for one message: showing a new one replaces the old instead of
  * taking another channel — for a countdown redrawn every second, a warning
@@ -1376,12 +1404,15 @@ export type HudEffect = "fade" | "flicker" | "typewriter";
  * countdown.show(player, `${left}`, { color: [255, 50, 50], hold: 1.1 });
  * countdown.clear(player);
  * countdown.clearAll();
+ * const speed = new HudLine({ priority: 1 }); // keeps its channel when the screen is full
  * ```
  *
  * Pawn: `CreateHudSyncObj`, `ShowSyncHudMsg`
  */
 export declare class HudLine {
     private handle;
+    private priority;
+    constructor(options?: HudLineOptions);
     /** Shows `text` to the player on this line, replacing what it showed him before. */
     show(player: Player, text: string, options?: HudOptions): void;
     /** Removes the line's message from the player's screen before its time is up. */
@@ -1525,6 +1556,77 @@ export declare class Screen {
     lightStyle(style: string): void;
 }
 /**
+ * A player's own movement variables: the server moves him by them, and his
+ * game predicts his move by them. Each is the server's cvar until set.
+ *
+ * ```ts
+ * player.movement.airAccelerate = 100;
+ * player.movement.reset();   // the server's again
+ * ```
+ */
+export declare class Movement {
+    private id;
+    constructor(id: i32);
+    /**
+     * The player's acceleration on the ground, `10` by default.
+     *
+     * Pawn: `sv_accelerate`
+     */
+    get accelerate(): number;
+    set accelerate(value: number);
+    /**
+     * The player's acceleration in the air: `10` by default, `100` for strafes that gain speed easily.
+     *
+     * Pawn: `sv_airaccelerate`
+     */
+    get airAccelerate(): number;
+    set airAccelerate(value: number);
+    /**
+     * The player's acceleration in water, `10` by default.
+     *
+     * Pawn: `sv_wateraccelerate`
+     */
+    get waterAccelerate(): number;
+    set waterAccelerate(value: number);
+    /**
+     * The player's friction on the ground: how fast he slows down, `4` by default.
+     *
+     * Pawn: `sv_friction`
+     */
+    get friction(): number;
+    set friction(value: number);
+    /**
+     * The player's friction at a ledge, a multiple of `friction`: `2` by default.
+     *
+     * Pawn: `edgefriction`
+     */
+    get edgeFriction(): number;
+    set edgeFriction(value: number);
+    /**
+     * The player's friction in water, `1` by default.
+     *
+     * Pawn: `sv_waterfriction`
+     */
+    get waterFriction(): number;
+    set waterFriction(value: number);
+    /**
+     * The player's speed below which friction stops him at once, `75` by default.
+     *
+     * Pawn: `sv_stopspeed`
+     */
+    get stopSpeed(): number;
+    set stopSpeed(value: number);
+    /**
+     * The highest step the player walks up without a jump, `18` units by default.
+     *
+     * Pawn: `sv_stepsize`
+     */
+    get stepSize(): number;
+    set stepSize(value: number);
+    /** Gives the player the server's movement variables again. */
+    reset(): void;
+}
+/**
  * The channel a sound plays on, one of `"auto"` (the default), `"weapon"`,
  * `"voice"`, `"item"`, `"body"`, `"stream"`, `"static"`. A new sound on an
  * entity's channel cuts the one playing there; `"auto"` never cuts.
@@ -1540,6 +1642,8 @@ export interface SoundOptions {
     attenuation?: number;
     /** The pitch in percent: `100` (the default) as recorded, `50` an octave lower, up to `255`. */
     pitch?: number;
+    /** The player who hears it, alone: `source.emitSound(sample, { to: player })`; everyone near by default. */
+    to?: Player;
 }
 /**
  * A file the game has precached - a sprite, a model, a sound - as
@@ -1581,6 +1685,8 @@ export declare function __off(event: string, fn: i32): void;
 export declare function __onDirect(event: string, fn: i32, listener: usize, view: usize, player: bool): void;
 /** @hidden playbackEvent's `preventDefault()`: the module stops the event. */
 export declare function __playbackBlock(): void;
+/** @hidden startSound's `recipients`: the module plays the sound to these players alone. */
+export declare function __soundTo(players: Player[]): void;
 /** @hidden playbackEvent's `recipients`: the module plays the event to these players alone. */
 export declare function __playbackTo(players: Player[]): void;
 /** @hidden The table index of a function value - what calling it calls; 0 for null. */
@@ -2017,6 +2123,17 @@ export declare class Server {
      */
     changeLevel(map: string): boolean;
     /**
+     * Shows every player the intermission: the scoreboard, their view still.
+     * It lasts until the map changes:
+     *
+     * ```ts
+     * server.intermission();
+     * setTimeout(() => server.changeLevel("de_dust2"), 5000);
+     * ```
+     * Pawn: `message_begin(MSG_ALL, SVC_INTERMISSION)`
+     */
+    intermission(): void;
+    /**
      * The map's light, `"a"` the darkest to `"z"` the brightest, `"m"` the
      * map's own: `server.lightStyle = "b"`. It lasts until the map changes.
      *
@@ -2240,15 +2357,12 @@ export interface ActionOptions {
  * Pawn: `register_touch`
  */
 export declare class TouchEvent {
+    __toucher: i32;
+    __touched: i32;
     /** The entity that moved into the other. */
-    toucher: Entity;
+    get toucher(): Entity;
     /** The entity it touched. */
-    touched: Entity;
-    constructor(
-    /** The entity that moved into the other. */
-    toucher: Entity, 
-    /** The entity it touched. */
-    touched: Entity);
+    get touched(): Entity;
     /** Blocks the touch: the game does not act on it. */
     preventDefault(): void;
 }
@@ -3065,6 +3179,7 @@ import { GameAnswerMap, GameEventMap } from "./hooks";
 export * from "./vector";
 export * from "./effects";
 export * from "./fetch";
+export * from "./database";
 export { EntityFilter } from "./entities";
 /**
  * A public function of another plugin - a Pawn plugin's public, or a

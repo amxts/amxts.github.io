@@ -435,6 +435,54 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Player.movement': {
+        en: string;
+        ru: string;
+    };
+    'Player.jumpSlowdown': {
+        en: string;
+        ru: string;
+    };
+    Movement: {
+        en: string;
+        ru: string;
+    };
+    'Movement.accelerate': {
+        en: string;
+        ru: string;
+    };
+    'Movement.airAccelerate': {
+        en: string;
+        ru: string;
+    };
+    'Movement.waterAccelerate': {
+        en: string;
+        ru: string;
+    };
+    'Movement.friction': {
+        en: string;
+        ru: string;
+    };
+    'Movement.edgeFriction': {
+        en: string;
+        ru: string;
+    };
+    'Movement.waterFriction': {
+        en: string;
+        ru: string;
+    };
+    'Movement.stopSpeed': {
+        en: string;
+        ru: string;
+    };
+    'Movement.stepSize': {
+        en: string;
+        ru: string;
+    };
+    'Movement.reset': {
+        en: string;
+        ru: string;
+    };
     'Player.give': {
         en: string;
         ru: string;
@@ -555,6 +603,14 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    HudLineOptions: {
+        en: string;
+        ru: string;
+    };
+    'HudLineOptions.priority': {
+        en: string;
+        ru: string;
+    };
     HudLine: {
         en: string;
         ru: string;
@@ -592,6 +648,10 @@ declare const _default: {
         ru: string;
     };
     'SoundOptions.pitch': {
+        en: string;
+        ru: string;
+    };
+    'SoundOptions.to': {
         en: string;
         ru: string;
     };
@@ -1224,6 +1284,10 @@ declare const _default: {
         ru: string;
     };
     'Server.mapExists': {
+        en: string;
+        ru: string;
+    };
+    'Server.intermission': {
         en: string;
         ru: string;
     };

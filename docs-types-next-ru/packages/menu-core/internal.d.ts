@@ -120,6 +120,7 @@ export interface MenuSpec {
     locked: boolean;
     sharedTimer: boolean;
     time: number;
+    linesPerPage: number;
     onTimeout: string;
     /** An items menu's items; a list menu's row template, its VIEW. */
     items: ItemSpec[];
@@ -242,8 +243,8 @@ export interface Viewer {
     target: number;
     history: HistoryStep[];
     slots: ShownSlot[];
-    /** The rows the open menu pages through. */
-    rows: number;
+    /** The pages of the open menu. */
+    pages: number;
     /** What the menu shows, as it was last drawn. */
     text: string;
     locked: boolean;

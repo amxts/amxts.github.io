@@ -923,6 +923,24 @@ export declare class Player extends PlayerFields implements Client {
     /** Эффекты на экране игрока: `player.screen.fade({ ... })`, `.shake(...)`, `.statusIcon(...)` — см. Screen. */
     get screen(): Screen;
     /**
+     * Собственные переменные движения игрока — его ускорение и трение:
+     * `player.movement.airAccelerate = 100`. Сервер двигает его по ним, и его
+     * игра предсказывает по ним его движение; каждая равна квару сервера, пока
+     * не задана, и снова после `player.movement.reset()`. Они действуют, пока
+     * не сменится карта или игрок не уйдёт.
+     */
+    get movement(): Movement;
+    /**
+     * Замедление игрока после прыжка, в оставшихся миллисекундах: игра ставит
+     * его при прыжке, и прыжок, пока оно длится, медленнее. `0` — замедления
+     * нет: `player.jumpSlowdown = 0` вместе с `player.slowdown = 1` сразу
+     * возвращают ему полную скорость.
+     *
+     * Pawn: `pev->fuser2`
+     */
+    get jumpSlowdown(): number;
+    set jumpSlowdown(value: number);
+    /**
      * Выдаёт игроку оружие или предмет: `player.give("weapon_flashbang")`.
      * `false`, если игра его не выдала. Имя, прочитанное из конфига, передаётся как
      * есть; о таком, для которого в игре нет предмета, один раз скажет консоль.
@@ -1367,6 +1385,17 @@ export interface HudOptions {
 }
 /** Эффект появления HUD-сообщения, одно из: `"fade"` — плавно, `"flicker"` — мерцая, `"typewriter"` — по буквам. */
 export type HudEffect = "fade" | "flicker" | "typewriter";
+/** Параметры `new HudLine`. */
+export interface HudLineOptions {
+    /**
+     * Приоритет строки среди других строк: по умолчанию `0`, строка с большим
+     * числом сохраняет свой канал. У игрока их четыре; когда заняты все,
+     * сообщение занимает канал строки с меньшим или таким же приоритетом, а
+     * сообщение, которому все четыре закрыты более важными строками, не
+     * показывается.
+     */
+    priority?: number;
+}
 /**
  * Строка HUD для одного сообщения: новое заменяет прежнее, а не занимает
  * ещё один канал, — для обратного отсчёта, который перерисовывается каждую
@@ -1378,12 +1407,15 @@ export type HudEffect = "fade" | "flicker" | "typewriter";
  * countdown.show(player, `${left}`, { color: [255, 50, 50], hold: 1.1 });
  * countdown.clear(player);
  * countdown.clearAll();
+ * const speed = new HudLine({ priority: 1 }); // сохраняет канал, когда экран заполнен
  * ```
  *
  * Pawn: `CreateHudSyncObj`, `ShowSyncHudMsg`
  */
 export declare class HudLine {
     private handle;
+    private priority;
+    constructor(options?: HudLineOptions);
     /** Показывает игроку `text` на этой строке вместо того, что она показывала ему раньше. */
     show(player: Player, text: string, options?: HudOptions): void;
     /** Убирает сообщение строки с экрана игрока раньше времени. */
@@ -1527,6 +1559,78 @@ export declare class Screen {
     lightStyle(style: string): void;
 }
 /**
+ * Собственные переменные движения игрока: сервер двигает его по ним, и его
+ * игра предсказывает по ним его движение. Каждая равна квару сервера, пока
+ * не задана.
+ *
+ * ```ts
+ * player.movement.airAccelerate = 100;
+ * player.movement.reset();   // снова серверные
+ * ```
+ */
+export declare class Movement {
+    private id;
+    constructor(id: i32);
+    /**
+     * Ускорение игрока на земле, по умолчанию `10`.
+     *
+     * Pawn: `sv_accelerate`
+     */
+    get accelerate(): number;
+    set accelerate(value: number);
+    /**
+     * Ускорение игрока в воздухе: по умолчанию `10`, `100` — для стрейфов, которые легко набирают скорость.
+     *
+     * Pawn: `sv_airaccelerate`
+     */
+    get airAccelerate(): number;
+    set airAccelerate(value: number);
+    /**
+     * Ускорение игрока в воде, по умолчанию `10`.
+     *
+     * Pawn: `sv_wateraccelerate`
+     */
+    get waterAccelerate(): number;
+    set waterAccelerate(value: number);
+    /**
+     * Трение игрока о землю: как быстро он тормозит, по умолчанию `4`.
+     *
+     * Pawn: `sv_friction`
+     */
+    get friction(): number;
+    set friction(value: number);
+    /**
+     * Трение игрока у края обрыва, кратное `friction`: по умолчанию `2`.
+     *
+     * Pawn: `edgefriction`
+     */
+    get edgeFriction(): number;
+    set edgeFriction(value: number);
+    /**
+     * Трение игрока в воде, по умолчанию `1`.
+     *
+     * Pawn: `sv_waterfriction`
+     */
+    get waterFriction(): number;
+    set waterFriction(value: number);
+    /**
+     * Скорость игрока, ниже которой трение останавливает его сразу, по умолчанию `75`.
+     *
+     * Pawn: `sv_stopspeed`
+     */
+    get stopSpeed(): number;
+    set stopSpeed(value: number);
+    /**
+     * Самая высокая ступенька, на которую игрок поднимается без прыжка, по умолчанию `18` единиц.
+     *
+     * Pawn: `sv_stepsize`
+     */
+    get stepSize(): number;
+    set stepSize(value: number);
+    /** Возвращает игроку переменные движения сервера. */
+    reset(): void;
+}
+/**
  * Канал, на котором играет звук, одно из `"auto"` (по умолчанию), `"weapon"`,
  * `"voice"`, `"item"`, `"body"`, `"stream"`, `"static"`. Новый звук на канале
  * сущности обрывает тот, что играет на нём; `"auto"` не обрывает никогда.
@@ -1542,6 +1646,8 @@ export interface SoundOptions {
     attenuation?: number;
     /** Высота в процентах: `100` (по умолчанию) — как записан, `50` — октавой ниже, до `255`. */
     pitch?: number;
+    /** Игрок, который слышит звук, — только он: `source.emitSound(sample, { to: player })`; по умолчанию все рядом. */
+    to?: Player;
 }
 /**
  * Файл, который игра прекэшировала, — спрайт, модель, звук, — как его
@@ -1583,6 +1689,8 @@ export declare function __off(event: string, fn: i32): void;
 export declare function __onDirect(event: string, fn: i32, listener: usize, view: usize, player: bool): void;
 /** @hidden playbackEvent's `preventDefault()`: the module stops the event. */
 export declare function __playbackBlock(): void;
+/** @hidden startSound's `recipients`: the module plays the sound to these players alone. */
+export declare function __soundTo(players: Player[]): void;
 /** @hidden playbackEvent's `recipients`: the module plays the event to these players alone. */
 export declare function __playbackTo(players: Player[]): void;
 /** @hidden The table index of a function value - what calling it calls; 0 for null. */
@@ -2018,6 +2126,17 @@ export declare class Server {
      */
     changeLevel(map: string): boolean;
     /**
+     * Показывает всем игрокам антракт: таблицу счёта, их взгляд замирает.
+     * Он длится до смены карты:
+     *
+     * ```ts
+     * server.intermission();
+     * setTimeout(() => server.changeLevel("de_dust2"), 5000);
+     * ```
+     * Pawn: `message_begin(MSG_ALL, SVC_INTERMISSION)`
+     */
+    intermission(): void;
+    /**
      * Свет карты, от `"a"`, самого тёмного, до `"z"`, самого яркого; `"m"` —
      * свет самой карты: `server.lightStyle = "b"`. Держится до смены карты.
      *
@@ -2241,15 +2360,12 @@ export interface ActionOptions {
  * Pawn: `register_touch`
  */
 export declare class TouchEvent {
+    __toucher: i32;
+    __touched: i32;
     /** Сущность, которая вошла в другую. */
-    toucher: Entity;
+    get toucher(): Entity;
     /** Сущность, которой она коснулась. */
-    touched: Entity;
-    constructor(
-    /** The entity that moved into the other. */
-    toucher: Entity, 
-    /** The entity it touched. */
-    touched: Entity);
+    get touched(): Entity;
     /** Блокирует касание: игра на него не реагирует. */
     preventDefault(): void;
 }
@@ -3066,6 +3182,7 @@ import { GameAnswerMap, GameEventMap } from "./hooks";
 export * from "./vector";
 export * from "./effects";
 export * from "./fetch";
+export * from "./database";
 export { EntityFilter } from "./entities";
 /**
  * Публичная функция другого плагина — паблик Pawn-плагина или имя

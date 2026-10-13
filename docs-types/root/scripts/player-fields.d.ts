@@ -19,6 +19,8 @@ export interface ObjectType {
 export type FieldType = ValueType | ObjectType;
 export interface PlayerField {
     name: string;
+    /** Whose field it is: a player's, or (`"Entity"`) every entity's. */
+    owner?: 'Entity';
     type: FieldType;
     /** Where it was declared: `file:line`. */
     where: string;
@@ -33,8 +35,9 @@ export declare function playerFieldsBuild(): {
     read: (path: string, text: string) => string;
     transform: any;
     fields: Map<string, PlayerField>;
+    entityFields: Map<string, PlayerField>;
 };
 /** A type as it is written, to compare two declarations and to name one. */
 export declare function describe(type: FieldType): string;
-/** The hidden file: the helpers the accessors call, the holder of the accessors, and the classes they read as. */
-export declare function playerFieldsSource(fields: PlayerField[]): string;
+/** The hidden file: the helpers the accessors call, the holders of the accessors, and the classes they read as. */
+export declare function playerFieldsSource(fields: PlayerField[], entityFields?: PlayerField[]): string;

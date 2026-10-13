@@ -1,6 +1,6 @@
 /// <reference path="../as-types.d.ts" />
 import { __Switch } from "./facade";
-import { AddMoneyEvent, BounceGibTouchEvent, BuyAmmoEvent, BuyItemEvent, BuyWeaponEvent, CanPlayerHearPlayerEvent, ChangeLevelEvent, MapResetEvent, ChooseAppearanceEvent, ChooseTeamEvent, ClientConnectedEvent, UserInfoChangeEvent, ConnectClientEvent, DeathNoticeEvent, DeathSoundEvent, DefuseBombEndEvent, DefuseBombStartEvent, DisconnectClientEvent, DropPlayerItemEvent, ExplodeBombEvent, GameThinkEvent, GibSpawnEvent, GiveBombEvent, IntermissionEvent, ItemRestrictedEvent, BecomeBomberEvent, BecomeVipEvent, RoundStartEvent, PainEvent, PlantBombEvent, PlayerBlindEvent, PlayerGotWeaponEvent, PlayerKilledEvent, PlayerSpawnEvent, PrecacheFileEvent, PrecacheModelEvent, PrecacheSoundEvent, NewRoundEvent, RoundEndEvent, SendDeathMessageEvent, ChangeNameEvent, SetModelEvent, ShowVguiMenuEvent, StartSoundEvent, ThrowFlashbangEvent, ThrowGrenadeEvent, ThrowHeGrenadeEvent, ThrowSmokeGrenadeEvent } from "./hooks";
+import { AddMoneyEvent, BounceGibTouchEvent, BuyAmmoEvent, BuyItemEvent, BuyWeaponEvent, CanPlayerHearPlayerEvent, ChangeLevelEvent, MapResetEvent, ChooseAppearanceEvent, ChooseTeamEvent, ClientConnectedEvent, UserInfoChangeEvent, ConnectClientEvent, DeathNoticeEvent, DeathSoundEvent, DefuseBombEndEvent, DefuseBombStartEvent, DisconnectClientEvent, DropPlayerItemEvent, ExplodeBombEvent, GameThinkEvent, GibSpawnEvent, GiveBombEvent, IntermissionEvent, ItemRestrictedEvent, BecomeBomberEvent, BecomeVipEvent, RoundStartEvent, PainEvent, PlantBombEvent, PlayerBlindEvent, PlayerGotWeaponEvent, PlayerKilledEvent, PlayerSpawnEvent, MoveEvent, PrecacheFileEvent, PrecacheModelEvent, PrecacheSoundEvent, NewRoundEvent, RoundEndEvent, SendDeathMessageEvent, ChangeNameEvent, SetModelEvent, ShowVguiMenuEvent, StartSoundEvent, ThrowFlashbangEvent, ThrowGrenadeEvent, ThrowHeGrenadeEvent, ThrowSmokeGrenadeEvent } from "./hooks";
 /** The listeners of one event, phase by phase: as/hooks.ts's `<event>FireHlds`. */
 type Fire<E> = (event: E, post: bool) => void;
 /**
@@ -103,6 +103,8 @@ export declare function bounceGibTouchHlds(fire: Fire<BounceGibTouchEvent>, hook
 export declare function precacheModelHlds(fire: Fire<PrecacheModelEvent>, hook: __Switch): void;
 export declare function precacheSoundHlds(fire: Fire<PrecacheSoundEvent>, hook: __Switch): void;
 export declare function precacheFileHlds(fire: Fire<PrecacheFileEvent>, hook: __Switch): void;
+export declare function moveHlds(fire: Fire<MoveEvent>, hook: __Switch): void;
+export declare function movePostHlds(fire: Fire<MoveEvent>, hook: __Switch): void;
 /** The game's name in the server browser: the one written, or the game's own. */
 export declare function gameNameHlds(): string;
 /** Writes the game's name: the game's GetGameDescription is answered with it from now on. */

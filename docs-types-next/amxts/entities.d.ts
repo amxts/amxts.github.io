@@ -237,7 +237,13 @@ export declare class Entity {
      */
     setSize(mins: number[], maxs: number[]): void;
     /**
-     * Plays a sound from the entity, heard by everyone near and fading with distance: `player.emitSound("myplugin/hit.wav")`. The path is under `sound/`, as `server.precache` takes it; `options` set the channel, the volume, the attenuation and the pitch.
+     * Makes `toucher` touch the entity, as when it moves into it: `trap.touch(player)` runs the trap's teleport or damage on the player. The `touch` event and Ham Sandwich's listeners hear it, a Pawn plugin's `register_touch` does not, as with `ExecuteHamB`; `{ hooks: false }` runs the entity's touch alone.
+     *
+     * Pawn: `ExecuteHamB(Ham_Touch, ...)`, `ExecuteHam`, `fake_touch`
+     */
+    touch(toucher: Entity, options?: ActionOptions): void;
+    /**
+     * Plays a sound from the entity, heard by everyone near and fading with distance: `player.emitSound("myplugin/hit.wav")`. The path is under `sound/`, as `server.precache` takes it; `options` set the channel, the volume, the attenuation, the pitch, and `to` the one player who hears it.
      *
      * Pawn: `emit_sound`, `rh_emit_sound2`
      */

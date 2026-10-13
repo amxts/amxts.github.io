@@ -3924,8 +3924,6 @@ export declare class MonsterInitDeadEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Без ReGameDLL (чистый HLDS) его ничто не слышит.
- *
  * Pawn: `RG_PM_Move` (const playerIndex)
  */
 export declare class MoveEvent extends HookEvent {
@@ -5755,19 +5753,12 @@ export declare class StartSneakingEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить. Без ReHLDS (чистый HLDS): слышно для звуков, которые игра проигрывает через `EmitSound` движка: `preventDefault()` его отменяет; `recipients` читается как 0, запись поля ничего не делает.
+ * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить. Без ReHLDS (чистый HLDS): слышно для звуков, которые игра проигрывает через `EmitSound` движка: `preventDefault()` его отменяет, `recipients` выбирает игроков; запись поля ничего не делает.
  *
  * Pawn: `RH_SV_StartSound` (const recipients, const entity, const channel, const sample[], const volume, Float:attenuation, const fFlags, const pitch)
  */
 export declare class StartSoundEvent extends HookEvent {
     private readonly kind;
-    /**
-     * Аргумент 1.
-     *
-     * Pawn: `recipients`
-     */
-    get recipients(): number;
-    set recipients(value: number);
     /**
      * Аргумент 2, только чтение.
      *
@@ -5816,6 +5807,8 @@ export declare class StartSoundEvent extends HookEvent {
      */
     get pitch(): number;
     set pitch(value: number);
+    /** Проигрывает звук только этим из игроков, до которых он дошёл бы, — `event.recipients = players.filter(...)`; остальные его не слышат. Свои шаги и прыжки игроку проигрывает его собственная игра, так что ему они не отправляются в любом случае. */
+    set recipients(players: Player[]);
 }
 /**
  * The player goes into observer mode. Без ReGameDLL (чистый HLDS) его ничто не слышит.
@@ -7512,11 +7505,7 @@ export interface GameEventMap {
      * Pawn: `Ham_MonsterInitDead`
      */
     monsterInitDead: MonsterInitDeadEvent;
-    /**
-     * Без ReGameDLL (чистый HLDS) его ничто не слышит.
-     *
-     * Pawn: `RG_PM_Move`
-     */
+    /** Pawn: `RG_PM_Move` */
     move: MoveEvent;
     /**
      * Начинается новый раунд. Без ReGameDLL (чистый HLDS): слышно при перезапуске раунда — обработчики «до» игры, когда она объявляет раунд, обработчики «после» — когда её игроки возродились, — но `preventDefault()` ничего не делает.
@@ -7923,7 +7912,7 @@ export interface GameEventMap {
      */
     startSneaking: StartSneakingEvent;
     /**
-     * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить. Без ReHLDS (чистый HLDS): слышно для звуков, которые игра проигрывает через `EmitSound` движка: `preventDefault()` его отменяет; `recipients` читается как 0, запись поля ничего не делает.
+     * Сейчас прозвучит звук. Присвойте `event.sample`, чтобы заменить его, или вызовите `preventDefault()`, чтобы заглушить. Без ReHLDS (чистый HLDS): слышно для звуков, которые игра проигрывает через `EmitSound` движка: `preventDefault()` его отменяет, `recipients` выбирает игроков; запись поля ничего не делает.
      *
      * Pawn: `RH_SV_StartSound`
      */

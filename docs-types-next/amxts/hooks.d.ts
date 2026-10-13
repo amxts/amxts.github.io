@@ -3924,8 +3924,6 @@ export declare class MonsterInitDeadEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * Without ReGameDLL (plain HLDS) nothing hears it.
- *
  * Pawn: `RG_PM_Move` (const playerIndex)
  */
 export declare class MoveEvent extends HookEvent {
@@ -5755,19 +5753,12 @@ export declare class StartSneakingEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * A sound is about to play. Assign `event.sample` to change it, or call `preventDefault()` to keep it silent. Without ReHLDS (plain HLDS): heard for the sounds the game plays through the engine's `EmitSound`: `preventDefault()` stops it; `recipients` reads as 0, and changing a field does nothing.
+ * A sound is about to play. Assign `event.sample` to change it, or call `preventDefault()` to keep it silent. Without ReHLDS (plain HLDS): heard for the sounds the game plays through the engine's `EmitSound`: `preventDefault()` stops it and `recipients` chooses its players; changing a field does nothing.
  *
  * Pawn: `RH_SV_StartSound` (const recipients, const entity, const channel, const sample[], const volume, Float:attenuation, const fFlags, const pitch)
  */
 export declare class StartSoundEvent extends HookEvent {
     private readonly kind;
-    /**
-     * Argument 1.
-     *
-     * Pawn: `recipients`
-     */
-    get recipients(): number;
-    set recipients(value: number);
     /**
      * Argument 2, read only.
      *
@@ -5816,6 +5807,8 @@ export declare class StartSoundEvent extends HookEvent {
      */
     get pitch(): number;
     set pitch(value: number);
+    /** Plays the sound only to these of the players it would reach - `event.recipients = players.filter(...)`; the others do not hear it. A player's own steps and jumps are played by his own game, so he is not sent them either way. */
+    set recipients(players: Player[]);
 }
 /**
  * The player goes into observer mode. Without ReGameDLL (plain HLDS) nothing hears it.
@@ -7512,11 +7505,7 @@ export interface GameEventMap {
      * Pawn: `Ham_MonsterInitDead`
      */
     monsterInitDead: MonsterInitDeadEvent;
-    /**
-     * Without ReGameDLL (plain HLDS) nothing hears it.
-     *
-     * Pawn: `RG_PM_Move`
-     */
+    /** Pawn: `RG_PM_Move` */
     move: MoveEvent;
     /**
      * A new round is starting. Without ReGameDLL (plain HLDS): heard as the round restarts - the listeners before the game when it announces the round, the ones after it once its players have respawned - but `preventDefault()` does nothing.
@@ -7923,7 +7912,7 @@ export interface GameEventMap {
      */
     startSneaking: StartSneakingEvent;
     /**
-     * A sound is about to play. Assign `event.sample` to change it, or call `preventDefault()` to keep it silent. Without ReHLDS (plain HLDS): heard for the sounds the game plays through the engine's `EmitSound`: `preventDefault()` stops it; `recipients` reads as 0, and changing a field does nothing.
+     * A sound is about to play. Assign `event.sample` to change it, or call `preventDefault()` to keep it silent. Without ReHLDS (plain HLDS): heard for the sounds the game plays through the engine's `EmitSound`: `preventDefault()` stops it and `recipients` chooses its players; changing a field does nothing.
      *
      * Pawn: `RH_SV_StartSound`
      */

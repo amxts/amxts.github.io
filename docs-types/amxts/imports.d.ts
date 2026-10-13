@@ -144,6 +144,12 @@ declare global {
 	export import DamageDecalEvent = __0.DamageDecalEvent;
 	export import DamageFields = __0.DamageFields;
 	export import DamageMessage = __0.DamageMessage;
+	export import Database = __0.Database;
+	export import DatabaseConnection = __0.DatabaseConnection;
+	export import DatabaseError = __0.DatabaseError;
+	export import DatabaseQueries = __0.DatabaseQueries;
+	export import DatabaseTransaction = __0.DatabaseTransaction;
+	export import DatabaseValue = __0.DatabaseValue;
 	export import DeadFlag = __0.DeadFlag;
 	export import DeathActivityEvent = __0.DeathActivityEvent;
 	export import DeathMessageFlag = __0.DeathMessageFlag;
@@ -179,6 +185,7 @@ declare global {
 	export import EntityFlag = __0.EntityFlag;
 	export import EntityLightOptions = __0.EntityLightOptions;
 	export import EntityStateEvent = __0.EntityStateEvent;
+	export import ExecuteResult = __0.ExecuteResult;
 	export import ExplodeBombEvent = __0.ExplodeBombEvent;
 	export import ExplodeFlashbangEvent = __0.ExplodeFlashbangEvent;
 	export import ExplodeHeGrenadeEvent = __0.ExplodeHeGrenadeEvent;
@@ -245,6 +252,7 @@ declare global {
 	export import HostagePosMessage = __0.HostagePosMessage;
 	export import HudEffect = __0.HudEffect;
 	export import HudLine = __0.HudLine;
+	export import HudLineOptions = __0.HudLineOptions;
 	export import HudOptions = __0.HudOptions;
 	export import HudTextMessage = __0.HudTextMessage;
 	export import IgnoredChat = __0.IgnoredChat;
@@ -314,6 +322,7 @@ declare global {
 	export import MoveEvent = __0.MoveEvent;
 	export import MoveOptions = __0.MoveOptions;
 	export import MoveType = __0.MoveType;
+	export import Movement = __0.Movement;
 	export import MusicState = __0.MusicState;
 	export import NVGToggleFields = __0.NVGToggleFields;
 	export import NVGToggleMessage = __0.NVGToggleMessage;
@@ -529,6 +538,7 @@ declare global {
 	export import TraceResult = __0.TraceResult;
 	export import TrainFields = __0.TrainFields;
 	export import TrainMessage = __0.TrainMessage;
+	export import Transaction = __0.Transaction;
 	export import TutorCloseFields = __0.TutorCloseFields;
 	export import TutorCloseMessage = __0.TutorCloseMessage;
 	export import URL = __0.URL;

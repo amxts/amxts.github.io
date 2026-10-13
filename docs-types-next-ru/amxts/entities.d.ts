@@ -237,7 +237,13 @@ export declare class Entity {
      */
     setSize(mins: number[], maxs: number[]): void;
     /**
-     * Проигрывает звук от сущности: его слышат все рядом, и он затихает с расстоянием: `player.emitSound("myplugin/hit.wav")`. Путь — внутри `sound/`, как его принимает `server.precache`; `options` задают канал, громкость, затухание и высоту.
+     * Заставляет `toucher` коснуться сущности, как будто он в неё вошёл: `trap.touch(player)` запускает телепорт или урон ловушки на игроке. Его слышат событие `touch` и обработчики Ham Sandwich, а `register_touch` плагина на Pawn — нет, как и при `ExecuteHamB`; `{ hooks: false }` запускает только касание сущности.
+     *
+     * Pawn: `ExecuteHamB(Ham_Touch, ...)`, `ExecuteHam`, `fake_touch`
+     */
+    touch(toucher: Entity, options?: ActionOptions): void;
+    /**
+     * Проигрывает звук от сущности: его слышат все рядом, и он затихает с расстоянием: `player.emitSound("myplugin/hit.wav")`. Путь — внутри `sound/`, как его принимает `server.precache`; `options` задают канал, громкость, затухание, высоту, а `to` — единственного игрока, который его услышит.
      *
      * Pawn: `emit_sound`, `rh_emit_sound2`
      */
