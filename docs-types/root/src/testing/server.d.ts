@@ -195,6 +195,12 @@ export interface ServerOptions {
      * reapi (`modules`) unless said: a server without reapi is plain HLDS's model.
      */
     chains?: boolean;
+    /**
+     * Without the hookchains, whether the module hooks the original game's
+     * functions itself, so their events are heard as their chains: Valve's
+     * game on Linux, or a build of it amxts knows on Windows. Not unless said.
+     */
+    originalRules?: boolean;
 }
 export type TeamName = 'UNASSIGNED' | 'TERRORIST' | 'CT' | 'SPECTATOR';
 export declare const TEAMS: TeamName[];
@@ -430,6 +436,8 @@ export declare class FakeServer {
     readonly reunion: boolean;
     /** Whether the module finds ReGameDLL's and ReHLDS's hookchains (game_api). */
     readonly chains: boolean;
+    /** Whether, without them, it hooks the original game's functions itself (original_hook). */
+    readonly originalRules: boolean;
     /** Milliseconds since the map started; advance() moves it. */
     time: number;
     /** Date.now() when the map started. */
@@ -1300,7 +1308,8 @@ export declare class FakeServer {
         query_cvar(this: FakeServer, plugin: PluginInstance, id: number, name: number): number;
         chain_set(this: FakeServer, _plugin: PluginInstance, index: number, value: number): void;
         chain_set_text(this: FakeServer, plugin: PluginInstance, index: number, text: number): void;
-        game_api(this: FakeServer, _plugin: PluginInstance): 0 | 3;
+        game_api(this: FakeServer, _plugin: PluginInstance): 0 | 3 | 4;
+        original_hook(this: FakeServer, _plugin: PluginInstance, _id: number): 1 | 0;
         chain_dispatch(this: FakeServer, plugin: PluginInstance, id: number, post: number, at: number, count: number, result: number): number;
         ham_bypass(this: FakeServer, _plugin: PluginInstance, _fn: number, _id: number): void;
         tag(this: FakeServer, _plugin: PluginInstance, tag: number): void;

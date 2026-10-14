@@ -2938,6 +2938,8 @@ export declare function __chainSet(index: i32, cell: i32): void;
 export declare function __chainSetText(index: i32, text: string): void;
 /** @hidden Whether the server has the hookchains of ReHLDS (`rehlds`) or of ReGameDLL. */
 export declare function __hasChains(rehlds: bool): bool;
+/** @hidden Whether the module hooks ReGameDLL's chain `name` in Valve's game itself, heard there as with ReGameDLL. */
+export declare function __hooksOriginal(name: HookName): bool;
 /** The plugin's name, version, author and description, given to `plugin({ ... })`; `amxts_plugins` in the server console lists them. */
 export interface PluginInfo {
     /** The plugin's name, e.g. `"My Plugin"`. */
@@ -3079,7 +3081,7 @@ export declare class Forward<T1 = NoArgument, T2 = NoArgument, T3 = NoArgument, 
     name: string, crossing?: string);
     /**
      * Calls `handler` each time the forward is emitted - by this plugin, another
-     * TypeScript plugin or a Pawn plugin:
+     * TypeScript plugin, a Pawn plugin or an AMX Mod X module:
      *
      * ```ts
      * const greeted = new Forward<string, number>("showcase_on_greeted");
@@ -3087,9 +3089,9 @@ export declare class Forward<T1 = NoArgument, T2 = NoArgument, T3 = NoArgument, 
      * ```
      *
      * The handler's parameters take the forward's types; a named function may
-     * take fewer of them. A forward a Pawn plugin makes reaches it after the
-     * Pawn plugins' handlers; one emitted from TypeScript reaches every
-     * subscriber.
+     * take fewer of them. A forward a Pawn plugin or a module makes reaches it
+     * after the Pawn plugins' handlers, unless one of them stopped it; one
+     * emitted from TypeScript reaches every subscriber.
      */
     subscribe(handler: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9, a10: T10, a11: T11, a12: T12, a13: T13, a14: T14, a15: T15, a16: T16, a17: T17, a18: T18, a19: T19, a20: T20, a21: T21, a22: T22, a23: T23, a24: T24, a25: T25, a26: T26, a27: T27, a28: T28, a29: T29, a30: T30, a31: T31, a32: T32) => void): void;
     /** Stops calling a handler given to `subscribe()`. */

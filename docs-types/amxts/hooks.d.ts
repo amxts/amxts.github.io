@@ -233,7 +233,7 @@ export declare class AddItemEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * A player's money changes. Assign `event.amount` to change how much. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing; `amount` is how much his money moved since the game last sent it to him, and `reason` reads as `"none"`.
+ * A player's money changes. Assign `event.amount` to change how much. Without ReGameDLL (plain HLDS): `reason` reads as `"none"`; heard as with ReGameDLL where AMX Mod X's gamedata finds the game's function; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing; `amount` is how much his money moved since the game last sent it to him.
  *
  * Pawn: `RG_CBasePlayer_AddAccount` (const this, amount, RewardType:type, bool:bTrackChange)
  */
@@ -974,7 +974,7 @@ export declare class CanDropEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * The player is touching a CBasePlayerItem, do I give it to him? Without ReGameDLL (plain HLDS) nothing hears it.
+ * The player is touching a CBasePlayerItem, do I give it to him? Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
  *
  * Pawn: `RG_CSGameRules_CanHavePlayerItem` (const index, const item)
  */
@@ -1065,7 +1065,7 @@ export declare class CanPlayerHearPlayerEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Is this player allowed to respawn now? Without ReGameDLL (plain HLDS) nothing hears it.
+ * Is this player allowed to respawn now? Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
  *
  * Pawn: `RG_CSGameRules_FPlayerCanRespawn` (const index)
  */
@@ -1210,7 +1210,7 @@ export declare class CanSwitchTeamEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Can this player take damage from this attacker? Without ReGameDLL (plain HLDS) nothing hears it.
+ * Can this player take damage from this attacker? Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
  *
  * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage` (const index, const attacker)
  */
@@ -1263,7 +1263,7 @@ export declare class CenterEvent extends HookEvent {
     get result(): Vector;
 }
 /**
- * Without ReGameDLL (plain HLDS): `preventDefault()` does nothing.
+ * Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere `preventDefault()` does nothing.
  *
  * Pawn: `RG_CSGameRules_ChangeLevel` ()
  */
@@ -1546,7 +1546,7 @@ export declare class CheckWaterJumpEvent extends HookEvent {
     get frameTime(): number;
 }
 /**
- * The game checks if a side has won. `preventDefault()` stops it from ending the round. Without ReGameDLL (plain HLDS) nothing hears it.
+ * The game checks if a side has won. `preventDefault()` stops it from ending the round. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
  *
  * Pawn: `RG_CSGameRules_CheckWinConditions` ()
  */
@@ -1838,7 +1838,7 @@ export declare class DeathActivityEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Call this from within a GameRules class to report an obituary. Without ReGameDLL (plain HLDS): heard as its death message is sent: `preventDefault()` does nothing, and `inflictor` reads as the world.
+ * Call this from within a GameRules class to report an obituary. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere it is heard as its death message is sent: `preventDefault()` does nothing, and `inflictor` reads as the world.
  *
  * Pawn: `RG_CSGameRules_DeathNotice` (const victim, const killer, const inflictor)
  */
@@ -2300,7 +2300,7 @@ export declare class DropShieldEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * What do I do with player's weapons when he's killed? Without ReGameDLL (plain HLDS) nothing hears it.
+ * What do I do with player's weapons when he's killed? Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
  *
  * Pawn: `RG_CSGameRules_DeadPlayerWeapons` (const index)
  */
@@ -2590,7 +2590,7 @@ export declare class FadeMonsterEvent extends HookEvent {
     get entity(): Entity;
 }
 /**
- * The game works out how much a fall hurts. In a post listener `event.result` is that number; return a number to replace it. Without ReGameDLL (plain HLDS) nothing hears it.
+ * The game works out how much a fall hurts. In a post listener `event.result` is that number; return a number to replace it. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
  *
  * Pawn: `RG_CSGameRules_FlPlayerFallDamage` (const index)
  */
@@ -2719,7 +2719,7 @@ export declare class GameEventEvent extends HookEvent {
     get other(): Entity;
 }
 /**
- * The game rules' think: every frame, the round's clock and win conditions checked. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+ * The game rules' think: every frame, the round's clock and win conditions checked. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
  *
  * Pawn: `RG_CSGameRules_Think` ()
  */
@@ -2779,7 +2779,7 @@ export declare class GetIntoGameEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * I can't use this weapon anymore, get me the next best one. Without ReGameDLL (plain HLDS) nothing hears it.
+ * I can't use this weapon anymore, get me the next best one. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
  *
  * Pawn: `RG_CSGameRules_GetNextBestWeapon` (const index, const currentWeapon)
  */
@@ -2894,7 +2894,7 @@ export declare class GiveAmmoEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing; returning an answer does nothing.
+ * Without ReGameDLL (plain HLDS): returning an answer does nothing; heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
  *
  * Pawn: `RG_CSGameRules_GiveC4` ()
  */
@@ -2914,7 +2914,7 @@ export declare class GiveBombEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * The game hands a spawned player the default weapons. `preventDefault()` gives nothing. Without ReGameDLL (plain HLDS) nothing hears it.
+ * The game hands a spawned player the default weapons. `preventDefault()` gives nothing. Without ReGameDLL (plain HLDS): heard as with ReGameDLL where AMX Mod X's gamedata finds the game's function; elsewhere nothing hears it.
  *
  * Pawn: `RG_CBasePlayer_GiveDefaultItems` (const this)
  */
@@ -3243,7 +3243,7 @@ export declare class ImpulseEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+ * Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
  *
  * Pawn: `RG_CSGameRules_GoToIntermission` ()
  */
@@ -3874,7 +3874,7 @@ export declare class LookEvent extends HookEvent {
     set distance(value: number);
 }
 /**
- * Recreate all the map entities from the map data (preserving their indices),. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+ * Recreate all the map entities from the map data (preserving their indices),. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
  *
  * Pawn: `RG_CSGameRules_CleanUpMap` ()
  */
@@ -3948,7 +3948,7 @@ export declare class MoveEvent extends HookEvent {
     get frameTime(): number;
 }
 /**
- * A new round is starting. Without ReGameDLL (plain HLDS): heard as the round restarts - the listeners before the game when it announces the round, the ones after it once its players have respawned - but `preventDefault()` does nothing.
+ * A new round is starting. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere it is heard as the round restarts - the listeners before the game when it announces the round, the ones after it once its players have respawned - but `preventDefault()` does nothing.
  *
  * Pawn: `RG_CSGameRules_RestartRound` ()
  */
@@ -4196,7 +4196,7 @@ export declare class PlayerDeathThinkEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * Called each time player gets a weapon linked to his inventory. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+ * Called each time player gets a weapon linked to his inventory. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
  *
  * Pawn: `RG_CSGameRules_PlayerGotWeapon` (const pPlayer, const pWeapon)
  */
@@ -4216,7 +4216,7 @@ export declare class PlayerGotWeaponEvent extends HookEvent {
     get weapon(): Weapon;
 }
 /**
- * A player was killed. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+ * A player was killed. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
  *
  * Pawn: `RG_CSGameRules_PlayerKilled` (const victim, const killer, const inflictor)
  */
@@ -4242,7 +4242,7 @@ export declare class PlayerKilledEvent extends HookEvent {
     get inflictor(): Entity;
 }
 /**
- * A player spawned. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+ * A player spawned. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
  *
  * Pawn: `RG_CSGameRules_PlayerSpawn` (const index)
  */
@@ -4747,7 +4747,7 @@ export declare class RemoveAllItemsEvent extends HookEvent {
     set removeSuit(value: boolean);
 }
 /**
- * Without ReGameDLL (plain HLDS) nothing hears it.
+ * Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
  *
  * Pawn: `RG_CSGameRules_RemoveGuns` ()
  */
@@ -5435,7 +5435,7 @@ export declare class ShouldFadeOnDeathEvent extends HookEvent {
     preventDefault(): void;
 }
 /**
- * Should the player switch to this weapon? Without ReGameDLL (plain HLDS) nothing hears it.
+ * Should the player switch to this weapon? Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
  *
  * Pawn: `RG_CSGameRules_FShouldSwitchWeapon` (const index, const weapon)
  */
@@ -5670,7 +5670,7 @@ export declare class SpawnRandomGibsEvent extends HookEvent {
     set human(value: number);
 }
 /**
- * Place this player on his spawnspot and face him in the proper direction. Without ReGameDLL (plain HLDS) nothing hears it.
+ * Place this player on his spawnspot and face him in the proper direction. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
  *
  * Pawn: `RG_CSGameRules_GetPlayerSpawnSpot` (const index)
  */
@@ -6549,19 +6549,19 @@ export declare class UseEvent extends HookEvent {
      */
     get entity(): Entity;
     /**
-     * The entity that passes the use on, e.g. a button to its door.
-     *
-     * Pawn: `caller`
-     */
-    get caller(): Entity;
-    set caller(value: Entity);
-    /**
      * The entity that started it, e.g. the player who pressed the button.
      *
      * Pawn: `activator`
      */
     get activator(): Entity;
     set activator(value: Entity);
+    /**
+     * The entity that passes the use on, e.g. a button to its door.
+     *
+     * Pawn: `caller`
+     */
+    get caller(): Entity;
+    set caller(value: Entity);
     /**
      * The way it is used, one of `"off"`, `"on"`, `"set"` or `"toggle"`.
      *
@@ -6592,7 +6592,7 @@ export declare class UseEmptyEvent extends HookEvent {
     get player(): Player;
 }
 /**
- * The player has changed userinfo; can change it now. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing; `info` reads as `""`.
+ * The player has changed userinfo; can change it now. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing; `info` reads as `""`.
  *
  * Pawn: `RG_CSGameRules_ClientUserInfoChanged` (const index, infobuffer[])
  */
@@ -6724,7 +6724,7 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_AddPlayerItem`, `Ham_AddPlayerItem` */
     addItem: AddItemEvent;
     /**
-     * A player's money changes. Assign `event.amount` to change how much. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing; `amount` is how much his money moved since the game last sent it to him, and `reason` reads as `"none"`.
+     * A player's money changes. Assign `event.amount` to change how much. Without ReGameDLL (plain HLDS): `reason` reads as `"none"`; heard as with ReGameDLL where AMX Mod X's gamedata finds the game's function; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing; `amount` is how much his money moved since the game last sent it to him.
      *
      * Pawn: `RG_CBasePlayer_AddAccount`
      */
@@ -6870,7 +6870,7 @@ export interface GameEventMap {
      */
     canDrop: CanDropEvent;
     /**
-     * The player is touching a CBasePlayerItem, do I give it to him? Without ReGameDLL (plain HLDS) nothing hears it.
+     * The player is touching a CBasePlayerItem, do I give it to him? Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
      *
      * Pawn: `RG_CSGameRules_CanHavePlayerItem`
      */
@@ -6888,7 +6888,7 @@ export interface GameEventMap {
      */
     canPlayerHearPlayer: CanPlayerHearPlayerEvent;
     /**
-     * Is this player allowed to respawn now? Without ReGameDLL (plain HLDS) nothing hears it.
+     * Is this player allowed to respawn now? Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
      *
      * Pawn: `RG_CSGameRules_FPlayerCanRespawn`
      */
@@ -6912,7 +6912,7 @@ export interface GameEventMap {
      */
     canSwitchTeam: CanSwitchTeamEvent;
     /**
-     * Can this player take damage from this attacker? Without ReGameDLL (plain HLDS) nothing hears it.
+     * Can this player take damage from this attacker? Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
      *
      * Pawn: `RG_CSGameRules_FPlayerCanTakeDamage`
      */
@@ -6924,7 +6924,7 @@ export interface GameEventMap {
      */
     center: CenterEvent;
     /**
-     * Without ReGameDLL (plain HLDS): `preventDefault()` does nothing.
+     * Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere `preventDefault()` does nothing.
      *
      * Pawn: `RG_CSGameRules_ChangeLevel`
      */
@@ -6978,7 +6978,7 @@ export interface GameEventMap {
      */
     checkWaterJump: CheckWaterJumpEvent;
     /**
-     * The game checks if a side has won. `preventDefault()` stops it from ending the round. Without ReGameDLL (plain HLDS) nothing hears it.
+     * The game checks if a side has won. `preventDefault()` stops it from ending the round. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
      *
      * Pawn: `RG_CSGameRules_CheckWinConditions`
      */
@@ -7046,7 +7046,7 @@ export interface GameEventMap {
      */
     deathActivity: DeathActivityEvent;
     /**
-     * Call this from within a GameRules class to report an obituary. Without ReGameDLL (plain HLDS): heard as its death message is sent: `preventDefault()` does nothing, and `inflictor` reads as the world.
+     * Call this from within a GameRules class to report an obituary. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere it is heard as its death message is sent: `preventDefault()` does nothing, and `inflictor` reads as the world.
      *
      * Pawn: `RG_CSGameRules_DeathNotice`
      */
@@ -7136,7 +7136,7 @@ export interface GameEventMap {
      */
     dropShield: DropShieldEvent;
     /**
-     * What do I do with player's weapons when he's killed? Without ReGameDLL (plain HLDS) nothing hears it.
+     * What do I do with player's weapons when he's killed? Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
      *
      * Pawn: `RG_CSGameRules_DeadPlayerWeapons`
      */
@@ -7208,7 +7208,7 @@ export interface GameEventMap {
      */
     fadeMonster: FadeMonsterEvent;
     /**
-     * The game works out how much a fall hurts. In a post listener `event.result` is that number; return a number to replace it. Without ReGameDLL (plain HLDS) nothing hears it.
+     * The game works out how much a fall hurts. In a post listener `event.result` is that number; return a number to replace it. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
      *
      * Pawn: `RG_CSGameRules_FlPlayerFallDamage`
      */
@@ -7226,7 +7226,7 @@ export interface GameEventMap {
      */
     gameEvent: GameEventEvent;
     /**
-     * The game rules' think: every frame, the round's clock and win conditions checked. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+     * The game rules' think: every frame, the round's clock and win conditions checked. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
      *
      * Pawn: `RG_CSGameRules_Think`
      */
@@ -7244,7 +7244,7 @@ export interface GameEventMap {
      */
     getIntoGame: GetIntoGameEvent;
     /**
-     * I can't use this weapon anymore, get me the next best one. Without ReGameDLL (plain HLDS) nothing hears it.
+     * I can't use this weapon anymore, get me the next best one. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
      *
      * Pawn: `RG_CSGameRules_GetNextBestWeapon`
      */
@@ -7264,13 +7264,13 @@ export interface GameEventMap {
     /** Pawn: `RG_CBasePlayer_GiveAmmo`, `Ham_GiveAmmo` */
     giveAmmo: GiveAmmoEvent;
     /**
-     * Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing; returning an answer does nothing.
+     * Without ReGameDLL (plain HLDS): returning an answer does nothing; heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
      *
      * Pawn: `RG_CSGameRules_GiveC4`
      */
     giveBomb: GiveBombEvent;
     /**
-     * The game hands a spawned player the default weapons. `preventDefault()` gives nothing. Without ReGameDLL (plain HLDS) nothing hears it.
+     * The game hands a spawned player the default weapons. `preventDefault()` gives nothing. Without ReGameDLL (plain HLDS): heard as with ReGameDLL where AMX Mod X's gamedata finds the game's function; elsewhere nothing hears it.
      *
      * Pawn: `RG_CBasePlayer_GiveDefaultItems`
      */
@@ -7338,7 +7338,7 @@ export interface GameEventMap {
      */
     impulse: ImpulseEvent;
     /**
-     * Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+     * Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
      *
      * Pawn: `RG_CSGameRules_GoToIntermission`
      */
@@ -7488,7 +7488,7 @@ export interface GameEventMap {
      */
     look: LookEvent;
     /**
-     * Recreate all the map entities from the map data (preserving their indices),. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+     * Recreate all the map entities from the map data (preserving their indices),. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
      *
      * Pawn: `RG_CSGameRules_CleanUpMap`
      */
@@ -7508,7 +7508,7 @@ export interface GameEventMap {
     /** Pawn: `RG_PM_Move` */
     move: MoveEvent;
     /**
-     * A new round is starting. Without ReGameDLL (plain HLDS): heard as the round restarts - the listeners before the game when it announces the round, the ones after it once its players have respawned - but `preventDefault()` does nothing.
+     * A new round is starting. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere it is heard as the round restarts - the listeners before the game when it announces the round, the ones after it once its players have respawned - but `preventDefault()` does nothing.
      *
      * Pawn: `RG_CSGameRules_RestartRound`
      */
@@ -7568,19 +7568,19 @@ export interface GameEventMap {
      */
     playerDeathThink: PlayerDeathThinkEvent;
     /**
-     * Called each time player gets a weapon linked to his inventory. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+     * Called each time player gets a weapon linked to his inventory. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
      *
      * Pawn: `RG_CSGameRules_PlayerGotWeapon`
      */
     playerGotWeapon: PlayerGotWeaponEvent;
     /**
-     * A player was killed. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+     * A player was killed. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
      *
      * Pawn: `RG_CSGameRules_PlayerKilled`
      */
     playerKilled: PlayerKilledEvent;
     /**
-     * A player spawned. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing.
+     * A player spawned. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing.
      *
      * Pawn: `RG_CSGameRules_PlayerSpawn`
      */
@@ -7686,7 +7686,7 @@ export interface GameEventMap {
      */
     removeAllItems: RemoveAllItemsEvent;
     /**
-     * Without ReGameDLL (plain HLDS) nothing hears it.
+     * Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
      *
      * Pawn: `RG_CSGameRules_RemoveGuns`
      */
@@ -7840,7 +7840,7 @@ export interface GameEventMap {
      */
     shouldFadeOnDeath: ShouldFadeOnDeathEvent;
     /**
-     * Should the player switch to this weapon? Without ReGameDLL (plain HLDS) nothing hears it.
+     * Should the player switch to this weapon? Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
      *
      * Pawn: `RG_CSGameRules_FShouldSwitchWeapon`
      */
@@ -7888,7 +7888,7 @@ export interface GameEventMap {
      */
     spawnRandomGibs: SpawnRandomGibsEvent;
     /**
-     * Place this player on his spawnspot and face him in the proper direction. Without ReGameDLL (plain HLDS) nothing hears it.
+     * Place this player on his spawnspot and face him in the proper direction. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere nothing hears it.
      *
      * Pawn: `RG_CSGameRules_GetPlayerSpawnSpot`
      */
@@ -8058,7 +8058,7 @@ export interface GameEventMap {
      */
     useEmpty: UseEmptyEvent;
     /**
-     * The player has changed userinfo; can change it now. Without ReGameDLL (plain HLDS): heard after the game has acted, so `preventDefault()` and changing a field do nothing; `info` reads as `""`.
+     * The player has changed userinfo; can change it now. Without ReGameDLL (plain HLDS): heard as with ReGameDLL on Linux, and on Windows with a build of Valve's game amxts knows; elsewhere heard after the game has acted, so `preventDefault()` and changing a field do nothing; `info` reads as `""`.
      *
      * Pawn: `RG_CSGameRules_ClientUserInfoChanged`
      */

@@ -7,6 +7,13 @@ export interface HeardEvent {
     gaps?: Text;
     /** A backend of its own for the listeners after the game. */
     post?: boolean;
+    /**
+     * The original game's function the module hooks itself, heard through
+     * hook() where the module finds it (original_hook): `only` nothing else
+     * hears it, no backend in as/hlds.ts; `first` the backend hears it where
+     * the module does not.
+     */
+    original?: 'only' | 'first';
 }
 export declare const HEARD: Record<string, HeardEvent>;
 /**

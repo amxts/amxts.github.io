@@ -1316,7 +1316,7 @@ export declare class Entity {
      *
      * Pawn: `ExecuteHamB(Ham_Use, ...)`, `ExecuteHam`
      */
-    use(caller: Entity, activator: Entity, useType: UseType, value: number, options?: ActionOptions): void;
+    use(activator: Entity, caller: Entity, useType: UseType, value: number, options?: ActionOptions): void;
     /**
      * Сообщает движущейся сущности — двери, поезду, — что `other` стоит у неё на пути.
      *
@@ -3351,7 +3351,7 @@ export declare class GameFields {
     get skipSpawn(): boolean;
     set skipSpawn(value: boolean);
     /**
-     * `true`, пока входящему игроку не показывается меню выбора команды.
+     * `true`, пока входящий игрок занимает сторону по `mp_auto_join_team`, без меню выбора команды.
      *
      * Pawn: `CSGameRules::m_bSkipShowMenu`
      */
@@ -3386,7 +3386,7 @@ export declare class GameFields {
     get gameStartTime(): number;
     set gameStartTime(value: number);
     /**
-     * `true`, если стороны уравнивались в начале этого раунда.
+     * `true`, пока игра переводит игрока на другую сторону, уравнивая стороны.
      *
      * Pawn: `CSGameRules::m_bTeamBalanced`
      */

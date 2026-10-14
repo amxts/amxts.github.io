@@ -1316,7 +1316,7 @@ export declare class Entity {
      *
      * Pawn: `ExecuteHamB(Ham_Use, ...)`, `ExecuteHam`
      */
-    use(caller: Entity, activator: Entity, useType: UseType, value: number, options?: ActionOptions): void;
+    use(activator: Entity, caller: Entity, useType: UseType, value: number, options?: ActionOptions): void;
     /**
      * Tells a moving entity - a door, a train - that `other` is in its way.
      *
@@ -3351,7 +3351,7 @@ export declare class GameFields {
     get skipSpawn(): boolean;
     set skipSpawn(value: boolean);
     /**
-     * `true` while a joining player is not shown the team menu.
+     * `true` while a joining player takes a side by `mp_auto_join_team`, without the team menu.
      *
      * Pawn: `CSGameRules::m_bSkipShowMenu`
      */
@@ -3386,7 +3386,7 @@ export declare class GameFields {
     get gameStartTime(): number;
     set gameStartTime(value: number);
     /**
-     * `true` when the sides were balanced at this round's start.
+     * `true` while the game moves a player to the other side to even the sides.
      *
      * Pawn: `CSGameRules::m_bTeamBalanced`
      */

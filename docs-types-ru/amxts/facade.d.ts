@@ -2941,6 +2941,8 @@ export declare function __chainSet(index: i32, cell: i32): void;
 export declare function __chainSetText(index: i32, text: string): void;
 /** @hidden Есть ли на сервере хукчейны ReHLDS (`rehlds`) или ReGameDLL. */
 export declare function __hasChains(rehlds: bool): bool;
+/** @hidden Whether the module hooks ReGameDLL's chain `name` in Valve's game itself, heard there as with ReGameDLL. */
+export declare function __hooksOriginal(name: HookName): bool;
 /** Имя, версия, автор и описание плагина для `plugin({ ... })`; их показывает `amxts_plugins` в консоли сервера. */
 export interface PluginInfo {
     /** Имя плагина, например `"My Plugin"`. */
@@ -3082,7 +3084,7 @@ export declare class Forward<T1 = NoArgument, T2 = NoArgument, T3 = NoArgument, 
     name: string, crossing?: string);
     /**
      * Вызывает `handler` при каждом срабатывании форварда — из этого плагина,
-     * другого TypeScript-плагина или Pawn-плагина:
+     * другого TypeScript-плагина, Pawn-плагина или модуля AMX Mod X:
      *
      * ```ts
      * const greeted = new Forward<string, number>("showcase_on_greeted");
@@ -3090,9 +3092,9 @@ export declare class Forward<T1 = NoArgument, T2 = NoArgument, T3 = NoArgument, 
      * ```
      *
      * Параметры обработчика получают типы форварда; именованная функция может
-     * принимать их меньше. Форвард, созданный Pawn-плагином, доходит до него
-     * после обработчиков Pawn-плагинов; отправленный из TypeScript доходит до
-     * всех подписчиков.
+     * принимать их меньше. Форвард, созданный Pawn-плагином или модулем,
+     * доходит до него после обработчиков Pawn-плагинов, если ни один из них
+     * его не остановил; отправленный из TypeScript доходит до всех подписчиков.
      */
     subscribe(handler: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9, a10: T10, a11: T11, a12: T12, a13: T13, a14: T14, a15: T15, a16: T16, a17: T17, a18: T18, a19: T19, a20: T20, a21: T21, a22: T22, a23: T23, a24: T24, a25: T25, a26: T26, a27: T27, a28: T28, a29: T29, a30: T30, a31: T31, a32: T32) => void): void;
     /** Перестаёт вызывать обработчик, переданный в `subscribe()`. */
