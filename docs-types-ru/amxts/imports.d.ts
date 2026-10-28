@@ -5,7 +5,8 @@
 import * as __0 from "@amxts/core";
 import * as __1 from "@amxts/config-core";
 import * as __2 from "@amxts/menu-core";
-import * as __3 from "@amxts/resemiclip";
+import * as __3 from "@amxts/perms";
+import * as __4 from "@amxts/resemiclip";
 
 declare global {
 	export import ADStopFields = __0.ADStopFields;
@@ -596,7 +597,8 @@ declare global {
 	export import weaponKindOf = __0.weaponKindOf;
 	export import configs = __1;
 	export import menus = __2;
-	export import semiclip = __3.semiclip;
+	export import perms = __3;
+	export import semiclip = __4.semiclip;
 }
 
 export {};
