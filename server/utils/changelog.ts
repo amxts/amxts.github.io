@@ -1,7 +1,7 @@
 import process from 'node:process'
 
 /** The repositories of github.com/amxts whose releases the changelog shows. */
-export const changelogRepos = ['amxts', 'amxts-cli', 'menu-core', 'config-core', 'resemiclip', 'ftp', 'amxts-vscode']
+export const changelogRepos = ['amxts', 'amxts-cli', 'menu-core', 'config-core', 'resemiclip', 'ftp', 'perms', 'amxts-vscode']
 
 export interface Release {
   /** The repository: `amxts`, `menu-core`... */
