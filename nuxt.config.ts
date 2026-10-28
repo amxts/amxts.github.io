@@ -181,6 +181,9 @@ export default defineNuxtConfig({
         '/ru/changelog',
         '/api/changelog',
         '/api/next-docs',
+        // the perms editor: no page links to it, a game server prints its address
+        '/modules/perms/editor',
+        '/ru/modules/perms/editor',
         // the next version's docs: no page of the current ones links there
         '/docs/next/getting-started/introduction',
         '/ru/docs/next/getting-started/introduction',

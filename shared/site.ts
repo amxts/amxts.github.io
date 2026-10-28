@@ -19,3 +19,10 @@ export const officialScope = '@amxts'
  * time.
  */
 export const siteUrl = 'https://amxts.github.io'
+
+/**
+ * The store of @amxts/perms' editor sessions, which the editor page (/modules/perms/editor)
+ * reads and writes (a Cloudflare Worker; the module's PERMS_EDITOR_URL points
+ * at it by default); `?store=<url>` on the page names a self-hosted one.
+ */
+export const permsStore = 'https://perms-store.brokukaschannel.workers.dev'
