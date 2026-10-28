@@ -54,6 +54,15 @@ export default defineAppConfig({
         },
       },
     },
+    // a solid button darkens on hover rather than fading: the faded amber
+    // left the light theme's white label hard to read
+    button: {
+      compoundVariants: [{
+        color: 'primary',
+        variant: 'solid',
+        class: 'hover:bg-(--ui-color-primary-600) active:bg-(--ui-color-primary-600) dark:hover:bg-(--ui-color-primary-300) dark:active:bg-(--ui-color-primary-300)',
+      }],
+    },
     footer: {
       slots: {
         root: 'border-t border-default',
