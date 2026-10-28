@@ -19,19 +19,27 @@ const store = computed(() => typeof route.query.store === 'string' && route.quer
 
 /** The session's id is the link's fragment (`/modules/perms/editor#k3x9q2mw7a`), which never reaches a server; ?mock opens the demo. */
 function openFromHash() {
-  const id = decodeURIComponent(location.hash.slice(1)) || (demo.value ? 'demo' : '')
+  const id = decodeURIComponent(route.hash.slice(1)) || (demo.value ? 'demo' : '')
   if (id)
     editor.open(id)
   else
     editor.load.value = 'empty'
 }
 
-onMounted(() => {
+// Read the fragment once Nuxt is ready, not on mount: GitHub Pages sends
+// /editor to /editor/, and while the prerendered page hydrates Nuxt shows the
+// address without the slash and without the fragment, giving it back after
+const ready = ref(false)
+onNuxtReady(() => {
+  ready.value = true
   openFromHash()
-  window.addEventListener('hashchange', openFromHash)
 })
 
-onBeforeUnmount(() => window.removeEventListener('hashchange', openFromHash))
+// a fragment changed by hand opens that session
+watch(() => route.hash, (hash) => {
+  if (ready.value && decodeURIComponent(hash.slice(1)) !== editor.id.value)
+    openFromHash()
+})
 
 const command = 'perms editor'
 
