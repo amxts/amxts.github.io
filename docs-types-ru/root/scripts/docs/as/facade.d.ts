@@ -511,7 +511,31 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'WalksThrough.values': {
+        en: string;
+        ru: string;
+    };
+    'WalksThrough.forEach': {
+        en: string;
+        ru: string;
+    };
     WalkThroughLook: {
+        en: string;
+        ru: string;
+    };
+    WalkThroughLookOptions: {
+        en: string;
+        ru: string;
+    };
+    'WalkThroughLookOptions.fadeDistance': {
+        en: string;
+        ru: string;
+    };
+    'WalkThroughLookOptions.opacity': {
+        en: string;
+        ru: string;
+    };
+    'WalkThroughLookOptions.hideDistance': {
         en: string;
         ru: string;
     };

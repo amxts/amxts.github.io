@@ -1718,27 +1718,37 @@ export declare class WalksThrough {
     has(player: Player): boolean;
     /** Делает его снова твёрдым для всех. */
     clear(): void;
+    /** Игроки, сквозь которых он проходит: их обходят и `for...of`, и `[...]`. */
+    values(): Player[];
+    /** Вызывает `callback` для каждого игрока, сквозь которого он проходит. */
+    forEach(callback: (player: Player) => void): void;
 }
 /**
  * Вид игрока, сквозь которого проходишь, вблизи, для каждого игрока:
  * полупрозрачным ближе `fadeDistance`, совсем не виден ближе `hideDistance`.
- * Оба по умолчанию выключены, `0`.
+ * Оба по умолчанию выключены, `0`. Задаётся целиком или частью:
  *
  * ```ts
- * server.walkThroughLook.fadeDistance = 250;
- * server.walkThroughLook.opacity = 0.4;
+ * server.walkThroughLook = { fadeDistance: 250, opacity: 0.4, hideDistance: 48 };
+ * server.walkThroughLook = { hideDistance: 0 };
  * ```
  */
 export declare class WalkThroughLook {
     /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него полупрозрачен; `0` — выключено. */
     get fadeDistance(): number;
-    set fadeDistance(value: number);
     /** Насколько он непрозрачен вплотную, от `0` до `1`: к `fadeDistance` он становится целым. По умолчанию `0`. */
     get opacity(): number;
-    set opacity(value: number);
     /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него совсем не рисуется, а его прицел, выстрелы и `+use` проходят сквозь этого игрока; `0` — выключено. */
     get hideDistance(): number;
-    set hideDistance(value: number);
+}
+/** Вид для `server.walkThroughLook`: названные поля меняются, остальные остаются. */
+export interface WalkThroughLookOptions {
+    /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него полупрозрачен; `0` — выключено. */
+    fadeDistance?: number;
+    /** Насколько он непрозрачен вплотную, от `0` до `1`: к `fadeDistance` он становится целым. */
+    opacity?: number;
+    /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него совсем не рисуется, а его прицел, выстрелы и `+use` проходят сквозь этого игрока; `0` — выключено. */
+    hideDistance?: number;
 }
 /**
  * Канал, на котором играет звук, одно из `"auto"` (по умолчанию), `"weapon"`,
@@ -2306,18 +2316,12 @@ export declare class Server {
      */
     get game(): string;
     /**
-     * The versions of what the server runs: `server.versions.reGameDll
-     * != null` on ReGameDLL. ReHLDS's and ReGameDLL's are their API's,
-     * `null` on a server without them.
-     *
-     * Pawn: `get_amxx_verstring`, `is_rehlds`, `is_regamedll`
-     */
-    /**
      * Вид игрока, сквозь которого проходишь, вблизи:
-     * `server.walkThroughLook.fadeDistance = 250` делает его полупрозрачным
+     * `server.walkThroughLook = { fadeDistance: 250 }` делает его полупрозрачным
      * ближе 250 юнитов. По умолчанию выключено.
      */
     get walkThroughLook(): WalkThroughLook;
+    set walkThroughLook(value: WalkThroughLookOptions);
     /**
      * Версии того, что запущено на сервере: `server.versions.reGameDll !=
      * null` на ReGameDLL. У ReHLDS и ReGameDLL — версия их API, `null` на сервере
