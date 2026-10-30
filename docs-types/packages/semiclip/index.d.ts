@@ -25,8 +25,9 @@ export type SemiclipRule = (player: Player, target: Player) => boolean;
 export declare class Semiclip {
     /**
      * Whether `player` walks through `target`; a pair walks through when either
-     * way says so. Setting it works every pair out; `null` makes everyone solid
-     * again. The pairs are worked out again when a player comes, spawns, dies or
+     * way says so. Until a plugin sets it, teammates walk through each other.
+     * Setting it works every pair out; `null` makes everyone solid again, and the
+     * rule of a plugin that stops goes back to teammates. The pairs are worked out again when a player comes, spawns, dies or
      * changes sides, and when a field plugins added to `Player` changes.
      */
     get rule(): SemiclipRule | null;

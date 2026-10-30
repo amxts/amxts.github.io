@@ -42,6 +42,8 @@ export interface ModuleDefinition {
     imports: ModuleImport[];
     /** `defineModule<MenuCoreOptions>`: the type setup's parameter is. */
     optionsType: string | null;
+    /** `standalone: true`: built whenever the config lists it, whether a plugin uses it or not. */
+    standalone: boolean;
     hasSetup: boolean;
 }
 export interface ModulePackage {
@@ -160,7 +162,8 @@ export declare function pluginList(project: Project, plugins: string[], modules?
  * The modules the project needs on the server, in load order: the ones its
  * plugins import - by hand or through an auto-import, themselves or through
  * the files they import - with what those modules import and require, and
- * the ones `pawn` keeps for Pawn plugins, whose use no build can see.
+ * the ones `pawn` keeps for Pawn plugins, whose use no build can see, and the
+ * ones that work on their own (`standalone`).
  * Without amxts.config.ts every module is in use: a module's own
  * repository, testing itself. A library is never one: it is compiled into
  * the plugins, and what it imports is reached through them.
