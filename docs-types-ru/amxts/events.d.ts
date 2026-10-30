@@ -1,8 +1,8 @@
 /// <reference path="../as-types.d.ts" />
-import { Client, ClientMessage, FadeDirection, Player, PlayerChangeEvent, StatusIconState, Team, VariantName, __ServerEvent } from "./facade";
+import { Client, ClientMessage, FadeDirection, Player, PlayerChangeEvent, StatusIconState, Team, TempEntityMessage, VariantName, __ServerEvent } from "./facade";
 import { Vector } from "./vector";
 import { WeaponKind } from "./entities";
-import { Damage, HideHud, ScoreStatus } from "./flags";
+import { Button, Damage, HideHud, ScoreStatus } from "./flags";
 import { VguiMenu } from "./hooks";
 /**
  * Плагин загрузился: здесь регистрируют команды, события и хуки.
@@ -536,14 +536,24 @@ export declare class ClientImpulseEvent extends __ServerEvent {
     __keep(): void;
 }
 /**
- * Called for CmdStart() on a client.
+ * Пришла команда движения игрока — каждый кадр его игры, у бота каждый `bot.move`. Игра двигает его по ней после слушателей, так что поле, записанное здесь, меняет движение. Слушатель должен быть крошечным: он работает на каждую команду каждого игрока.
  *
- * Важно: Use [get|set]_usercmd() to read and modify information in the usercmd struct.
+ * Pawn: `client_cmdStart(id, get_usercmd(usercmd_forwardmove), get_usercmd(usercmd_sidemove), get_usercmd(usercmd_upmove), get_usercmd(usercmd_viewangles), get_usercmd(usercmd_buttons), get_usercmd(usercmd_msec), get_usercmd(usercmd_impulse))`
  *
- * Pawn: `client_cmdStart(id)`
+ * @example
+ * server.addEventListener("cmdStart", (event) => {
+ * 	if (event.side != 0 && !event.buttons.includes("moveLeft") && !event.buttons.includes("moveRight")) event.side = 0;
+ * });
  */
 export declare class ClientCmdStartEvent extends __ServerEvent {
     private __player;
+    private __forward;
+    private __side;
+    private __up;
+    private __angles;
+    private __buttons;
+    private __msec;
+    private __impulse;
     /**
      * Игрок, о котором событие.
      *
@@ -551,6 +561,55 @@ export declare class ClientCmdStartEvent extends __ServerEvent {
      */
     get player(): Player;
     set player(value: Player);
+    /**
+     * Скорость вперёд в юнитах в секунду, назад — отрицательная: `400` — зажата клавиша вперёд (`cl_forwardspeed`).
+     *
+     * Pawn: `get_usercmd(usercmd_forwardmove)`
+     */
+    get forward(): number;
+    set forward(value: number);
+    /**
+     * Скорость вправо в юнитах в секунду, влево — отрицательная: `400` — зажата клавиша стрейфа (`cl_sidespeed`).
+     *
+     * Pawn: `get_usercmd(usercmd_sidemove)`
+     */
+    get side(): number;
+    set side(value: number);
+    /**
+     * Скорость вверх в юнитах в секунду, вниз — отрицательная: плавание и лестницы.
+     *
+     * Pawn: `get_usercmd(usercmd_upmove)`
+     */
+    get up(): number;
+    set up(value: number);
+    /**
+     * Направление взгляда игрока в этой команде, `[pitch, yaw, roll]` в градусах.
+     *
+     * Pawn: `get_usercmd(usercmd_viewangles)`
+     */
+    get angles(): Vector;
+    set angles(value: number[]);
+    /**
+     * Кнопки, зажатые во время команды: `event.buttons.includes("jump")`. Клавиша и её скорость приходят отдельно: клавиша стрейфа даёт `"moveLeft"` или `"moveRight"` и скорость `side`.
+     *
+     * Pawn: `get_usercmd(usercmd_buttons)`
+     */
+    get buttons(): Button[];
+    set buttons(value: Button[]);
+    /**
+     * Длина команды в миллисекундах, от `1` до `255`: сколько времени игра двигает игрока по ней.
+     *
+     * Pawn: `get_usercmd(usercmd_msec)`
+     */
+    get msec(): number;
+    set msec(value: number);
+    /**
+     * Impulse команды, `0` — нет: `100` — фонарик, `201` — спрей. `0` его отменяет.
+     *
+     * Pawn: `get_usercmd(usercmd_impulse)`
+     */
+    get impulse(): number;
+    set impulse(value: number);
     /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
     __keep(): void;
 }
@@ -2257,7 +2316,7 @@ export interface ServerEventMap {
      */
     impulse: ClientImpulseEvent;
     /**
-     * Called for CmdStart() on a client.
+     * Пришла команда движения игрока — каждый кадр его игры, у бота каждый `bot.move`. Игра двигает его по ней после слушателей, так что поле, записанное здесь, меняет движение. Слушатель должен быть крошечным: он работает на каждую команду каждого игрока.
      *
      * Pawn: `client_cmdStart`
      */
@@ -2915,6 +2974,12 @@ export interface ServerMessageMap {
      * Pawn: `register_message(get_user_msgid("WeapPickup"), ...)`
      */
     weaponPickup: WeapPickupMessage;
+    /**
+     * Временный эффект, который шлёт сервер, — след на стене, спрей, искра, луч: `type` — его номер `TE_*`, `source` — что его создало, остальные аргументы читаются по месту, через `event.args`. Сообщение движка `SVC_TEMPENTITY`.
+     *
+     * Pawn: `register_message(SVC_TEMPENTITY, ...)`
+     */
+    tempEntity: TempEntityMessage;
 }
 /** Что принимают `player.send("adStop", ...)` и `server.send("adStop", ...)`: сообщение игры `ADStop`, каждое поле — один его аргумент. Пропущенное поле уходит как `0` или пустой текст. Pawn: `message_begin(..., get_user_msgid("ADStop"))`, `write_*`, `message_end` */
 export interface ADStopFields {

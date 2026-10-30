@@ -1,8 +1,8 @@
 /// <reference path="../as-types.d.ts" />
-import { Client, ClientMessage, FadeDirection, Player, PlayerChangeEvent, StatusIconState, Team, VariantName, __ServerEvent } from "./facade";
+import { Client, ClientMessage, FadeDirection, Player, PlayerChangeEvent, StatusIconState, Team, TempEntityMessage, VariantName, __ServerEvent } from "./facade";
 import { Vector } from "./vector";
 import { WeaponKind } from "./entities";
-import { Damage, HideHud, ScoreStatus } from "./flags";
+import { Button, Damage, HideHud, ScoreStatus } from "./flags";
 import { VguiMenu } from "./hooks";
 /**
  * The plugin has loaded: register commands, events and hooks here.
@@ -536,14 +536,24 @@ export declare class ClientImpulseEvent extends __ServerEvent {
     __keep(): void;
 }
 /**
- * Called for CmdStart() on a client.
+ * A player's move command arrived - every frame of his game, a bot's every `bot.move`. The game moves him by it after the listeners, so a field written here changes the move. Keep the listener tiny: it runs for every command of every player.
  *
- * Note: Use [get|set]_usercmd() to read and modify information in the usercmd struct.
+ * Pawn: `client_cmdStart(id, get_usercmd(usercmd_forwardmove), get_usercmd(usercmd_sidemove), get_usercmd(usercmd_upmove), get_usercmd(usercmd_viewangles), get_usercmd(usercmd_buttons), get_usercmd(usercmd_msec), get_usercmd(usercmd_impulse))`
  *
- * Pawn: `client_cmdStart(id)`
+ * @example
+ * server.addEventListener("cmdStart", (event) => {
+ * 	if (event.side != 0 && !event.buttons.includes("moveLeft") && !event.buttons.includes("moveRight")) event.side = 0;
+ * });
  */
 export declare class ClientCmdStartEvent extends __ServerEvent {
     private __player;
+    private __forward;
+    private __side;
+    private __up;
+    private __angles;
+    private __buttons;
+    private __msec;
+    private __impulse;
     /**
      * The player the event is about.
      *
@@ -551,6 +561,55 @@ export declare class ClientCmdStartEvent extends __ServerEvent {
      */
     get player(): Player;
     set player(value: Player);
+    /**
+     * Forward speed in units a second, back when negative: `400` is the forward key held (`cl_forwardspeed`).
+     *
+     * Pawn: `get_usercmd(usercmd_forwardmove)`
+     */
+    get forward(): number;
+    set forward(value: number);
+    /**
+     * Speed to the right in units a second, to the left when negative: `400` is the strafe key held (`cl_sidespeed`).
+     *
+     * Pawn: `get_usercmd(usercmd_sidemove)`
+     */
+    get side(): number;
+    set side(value: number);
+    /**
+     * Speed up in units a second, down when negative: swimming and climbing a ladder.
+     *
+     * Pawn: `get_usercmd(usercmd_upmove)`
+     */
+    get up(): number;
+    set up(value: number);
+    /**
+     * The direction the player looks in for this command, `[pitch, yaw, roll]` in degrees.
+     *
+     * Pawn: `get_usercmd(usercmd_viewangles)`
+     */
+    get angles(): Vector;
+    set angles(value: number[]);
+    /**
+     * The buttons held during the command: `event.buttons.includes("jump")`. A key and its speed are sent apart: a strafe key gives `"moveLeft"` or `"moveRight"` and a `side` speed.
+     *
+     * Pawn: `get_usercmd(usercmd_buttons)`
+     */
+    get buttons(): Button[];
+    set buttons(value: Button[]);
+    /**
+     * The command's length in milliseconds, `1` to `255`: how long the game moves the player by it.
+     *
+     * Pawn: `get_usercmd(usercmd_msec)`
+     */
+    get msec(): number;
+    set msec(value: number);
+    /**
+     * The command's impulse, `0` for none: `100` is the flashlight, `201` the spray. `0` takes it away.
+     *
+     * Pawn: `get_usercmd(usercmd_impulse)`
+     */
+    get impulse(): number;
+    set impulse(value: number);
     /** @hidden Reads every field from the running call into the object, once (__ServerEvent). */
     __keep(): void;
 }
@@ -2257,7 +2316,7 @@ export interface ServerEventMap {
      */
     impulse: ClientImpulseEvent;
     /**
-     * Called for CmdStart() on a client.
+     * A player's move command arrived - every frame of his game, a bot's every `bot.move`. The game moves him by it after the listeners, so a field written here changes the move. Keep the listener tiny: it runs for every command of every player.
      *
      * Pawn: `client_cmdStart`
      */
@@ -2915,6 +2974,12 @@ export interface ServerMessageMap {
      * Pawn: `register_message(get_user_msgid("WeapPickup"), ...)`
      */
     weaponPickup: WeapPickupMessage;
+    /**
+     * A temporary effect the server sends - a decal on a wall, a spray, a spark, a beam: `type` is its `TE_*` number, `source` what made it, and the rest of its arguments are read by place, through `event.args`. The engine's `SVC_TEMPENTITY` message.
+     *
+     * Pawn: `register_message(SVC_TEMPENTITY, ...)`
+     */
+    tempEntity: TempEntityMessage;
 }
 /** What `player.send("adStop", ...)` and `server.send("adStop", ...)` take: the game's `ADStop` message, each field one of its arguments. A field left out goes as `0` or empty text. Pawn: `message_begin(..., get_user_msgid("ADStop"))`, `write_*`, `message_end` */
 export interface ADStopFields {

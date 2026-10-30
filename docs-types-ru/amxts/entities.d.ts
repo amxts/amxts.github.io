@@ -243,6 +243,12 @@ export declare class Entity {
      */
     touch(toucher: Entity, options?: ActionOptions): void;
     /**
+     * Насколько дверь, платформа или кнопка не доходит до конца хода, в единицах: ключ `lip` карты. Дверь движется вдоль `movedir` на свой размер по этой оси минус 2 и минус `lip`. Имеет смысл только у движущегося браша (`func_door`, `func_plat`, `func_button` и подобных). Только чтение.
+     *
+     * Pawn: `get_ent_data_float(entity, "CBaseToggle", "m_flLip")`
+     */
+    get lip(): number;
+    /**
      * Проигрывает звук от сущности: его слышат все рядом, и он затихает с расстоянием: `player.emitSound("myplugin/hit.wav")`. Путь — внутри `sound/`, как его принимает `server.precache`; `options` задают канал, громкость, затухание, высоту, а `to` — единственного игрока, который его услышит.
      *
      * Pawn: `emit_sound`, `rh_emit_sound2`
@@ -3410,6 +3416,13 @@ export declare class Weapon extends Entity {
      */
     get classname(): WeaponName;
     set classname(value: WeaponName);
+    /**
+     * Тело (body), с которым рисуется модель оружия от первого лица в руках владельца: одна модель с несколькими видами в группах тел — задавайте его в слушателе `defaultDeploy` при каждом доставании, `weapon.viewBody = 2`. Присвоение удерживает оружие, `0` — одно из тел: пока оружие у него в руках, каждая его анимация приходит с сервера с этим телом, и клиент их не предсказывает. Когда оружие покидает его руки — убрано, выброшено, отобрано — удержание отпускается, а значение забывается; геттер читает `0`, когда ничего не задано.
+     *
+     * Pawn: `pev->body`, `register_forward(FM_UpdateClientData, ..., 1)` с `set_cd(cd, CD_flNextAttack, ...)`
+     */
+    get viewBody(): number;
+    set viewBody(value: number);
     /**
      * Игрок, у которого оружие, или `null`, если оно лежит на земле. Только чтение.
      *

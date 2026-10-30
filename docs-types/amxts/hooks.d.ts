@@ -1,5 +1,5 @@
 /// <reference path="../as-types.d.ts" />
-import { EntityStateEvent, Player, RoundWinner, Team, TouchEvent, UseType, Vector } from "./facade";
+import { ClientDataEvent, EntityStateEvent, Player, RoundWinner, Team, TouchEvent, UseType, Vector, VisibilityEvent } from "./facade";
 import { Entity, HitGroup, Weapon, WeaponKind } from "./entities";
 import { Damage } from "./flags";
 /**
@@ -77,6 +77,8 @@ export declare class HookEntry<E, T> {
     answer: ((event: E) => T) | null;
     /** An async listener as it was added: `silent` holds its wrapper, asyncListener. */
     source: usize;
+    /** @hidden The listener's function value, the async one rather than its wrapper (__probe). */
+    __listener(): usize;
 }
 /**
  * The reason a player is paid. "unknown" - a number the include does not name.
@@ -8099,6 +8101,18 @@ export interface GameEventMap {
      * Pawn: `register_forward(FM_AddToFullPack, ..., 1)`, `get_es`, `set_es`
      */
     entityState: EntityStateEvent;
+    /**
+     * The data a player's client is sent of the player himself each frame - the time to his next attack, his field of view, his weapon's animation, his top speed - read and written for his client alone.
+     *
+     * Pawn: `register_forward(FM_UpdateClientData, ..., 1)`, `get_cd`, `set_cd`
+     */
+    clientData: ClientDataEvent;
+    /**
+     * The point a player sees from each frame: the server sends him the entities seen from `event.origin` - his eyes, or those of the player he watches. `event.addOrigin(point)` sends him what is seen from one more point; writing `event.origin` moves his own.
+     *
+     * Pawn: `register_forward(FM_SetupVisibility, ..., 1)`
+     */
+    visibility: VisibilityEvent;
 }
 /**
  * What a listener may return for each event: the game's answer type, or
@@ -8348,6 +8362,8 @@ export interface GameAnswerMap {
     weaponIdle: void;
     touch: void;
     entityState: void;
+    clientData: void;
+    visibility: void;
 }
 /**
  * Adds a listener for the event E - game.addEventListener's hood. `classname`

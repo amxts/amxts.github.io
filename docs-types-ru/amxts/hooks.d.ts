@@ -1,5 +1,5 @@
 /// <reference path="../as-types.d.ts" />
-import { EntityStateEvent, Player, RoundWinner, Team, TouchEvent, UseType, Vector } from "./facade";
+import { ClientDataEvent, EntityStateEvent, Player, RoundWinner, Team, TouchEvent, UseType, Vector, VisibilityEvent } from "./facade";
 import { Entity, HitGroup, Weapon, WeaponKind } from "./entities";
 import { Damage } from "./flags";
 /**
@@ -77,6 +77,8 @@ export declare class HookEntry<E, T> {
     answer: ((event: E) => T) | null;
     /** An async listener as it was added: `silent` holds its wrapper, asyncListener. */
     source: usize;
+    /** @hidden The listener's function value, the async one rather than its wrapper (__probe). */
+    __listener(): usize;
 }
 /**
  * The reason a player is paid. "unknown" - a number the include does not name.
@@ -8099,6 +8101,18 @@ export interface GameEventMap {
      * Pawn: `register_forward(FM_AddToFullPack, ..., 1)`, `get_es`, `set_es`
      */
     entityState: EntityStateEvent;
+    /**
+     * Данные о самом игроке, которые его клиент получает каждый кадр: время до его следующей атаки, угол обзора, анимация оружия, предельная скорость, — их можно читать и менять только для его клиента.
+     *
+     * Pawn: `register_forward(FM_UpdateClientData, ..., 1)`, `get_cd`, `set_cd`
+     */
+    clientData: ClientDataEvent;
+    /**
+     * Точка, откуда игрок видит каждый кадр: сервер отправляет ему сущности, видные из `event.origin`, — это его глаза или глаза того, за кем он наблюдает. `event.addOrigin(point)` отправляет ему и то, что видно ещё из одной точки; запись `event.origin` переносит его собственную.
+     *
+     * Pawn: `register_forward(FM_SetupVisibility, ..., 1)`
+     */
+    visibility: VisibilityEvent;
 }
 /**
  * What a listener may return for each event: the game's answer type, or
@@ -8348,6 +8362,8 @@ export interface GameAnswerMap {
     weaponIdle: void;
     touch: void;
     entityState: void;
+    clientData: void;
+    visibility: void;
 }
 /**
  * Adds a listener for the event E - game.addEventListener's hood. `classname`

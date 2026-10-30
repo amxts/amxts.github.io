@@ -29,11 +29,14 @@ export declare class Service {
     hash: i32;
     private id;
     private failed;
+    private toldNoOwner;
     constructor(name: string, hash: i32);
     /** A call of the module's `op`-th function (or field). */
     begin(op: i32): Writer;
     /** Runs it in the owner and returns the answer; an empty one, and an error in the log, when it cannot. */
     call(w: Writer): Reader;
+    /** The empty answer of a module no plugin runs, said on the console and in the log once a load: its every call is lost. */
+    private noOwner;
     private fail;
 }
 /** Calls `fn`, a function of signature `sig`, with the arguments in `r`; its answer goes to `w`. */

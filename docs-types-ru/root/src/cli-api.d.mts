@@ -8,8 +8,8 @@
 export function localModules(): Record<string, string>;
 /**
  * @typedef {object} Task
- * @property {'bun' | 'node'} runtime what runs it
- * @property {string[]} args its arguments, the script first; the project is the current folder
+ * @property {'node'} runtime what runs it: the Node the command runs on
+ * @property {string[]} args its arguments - Node's flags, then the script; the project is the current folder
  */
 /**
  * How to run one of the core's tasks in the current folder:
@@ -17,7 +17,8 @@ export function localModules(): Record<string, string>;
  * - `prepare` writes .amxts/tsconfig.json;
  * - `build` builds the plugins and the modules (`--deploy`, `--watch`, and
  *   `--docker`: for the Docker server that mounts the project - no deploy,
- *   Linux only, its console shown);
+ *   Linux only, its console shown; `--against <module file>`: and whether
+ *   that module loads them, see `buildAgainst`);
  * - `check` checks a module package before it is published;
  * - `upgrade` rewrites the project's code to this core's API, listing each change;
  *   `--dry-run` writes nothing, `--report <file>` writes `{ changes, left }` there as JSON
@@ -51,17 +52,6 @@ export function includeSources(): Record<string, {
     sha256: string;
     include?: string;
 }>;
-/**
- * The Bun a `bun` task runs on: the binary of the `bun` package the core
- * depends on, so a project needs no Bun of its own. It is looked for in the
- * platform package (`@oven/bun-<os>-<arch>`), which every package manager
- * installs as an optional dependency without running a script, then where
- * `bun`'s own postinstall puts it (`bun/bin/bun.exe`, a placeholder until
- * then). Null when neither is there - the command then takes a Bun on PATH.
- *
- * @returns {string | null} the binary's path
- */
-export function bunBinary(): string | null;
 /**
  * This version's GitHub Release, for a server of one system: `url` is where
  * its files are (AMXTS_RELEASE_URL - a URL or a folder - takes another),
@@ -108,16 +98,22 @@ export const version: string;
  * returns changes in a way an older command would misread; the command says
  * which of the two to update when they differ.
  */
-export const cliApi: 5;
+export const cliApi: 6;
+/**
+ * Whether `build` takes `--against <module file>`: it checks the built
+ * plugins against a server's module. A command asks before it passes it,
+ * since a core without it would build without the check.
+ */
+export const buildAgainst: true;
 /** Whether the core runs from a checkout (a .git folder beside it) rather than from npm. */
 export const fromSource: boolean;
 export type Task = {
     /**
-     * what runs it
+     * what runs it: the Node the command runs on
      */
-    runtime: "bun" | "node";
+    runtime: "node";
     /**
-     * its arguments, the script first; the project is the current folder
+     * its arguments - Node's flags, then the script; the project is the current folder
      */
     args: string[];
 };

@@ -16,19 +16,21 @@ export interface Plugin {
     system?: System;
     /**
      * Compiled for a development loop (`amxts dev`): Binaryen's -O1 in place
-     * of asc's full optimisation, and wamrc at -O0 - a few seconds for a small
-     * plugin rather than ten. It does the same, a little slower.
+     * of asc's full optimisation, and wamrc at -O0 (QUICK_LEVELS) - a few
+     * seconds for a small plugin rather than ten. It does the same, a little slower.
      */
     quick?: boolean;
 }
 /** The hood's exports every plugin carries; see compilePlugin. */
 export declare const HOOD_EXPORTS = "__amxts_exports.ts";
 /**
- * The second entry of a plugin that never waits: the hood has nothing to
- * export, but its globals - Promise, defineModule - are there for any
- * plugin, one that imports nothing included.
+ * The second entry of a plugin that never waits: its globals - Promise,
+ * defineModule - are there for any plugin, one that imports nothing
+ * included; and the hood exports where its walks of listeners keep the
+ * slowest one, which the module reads and sets (as/facade.ts, __probe):
+ * exported, the optimiser does not fold them away.
  */
-export declare const BASE_EXPORTS = "import \"~/facade\";\n";
+export declare const BASE_EXPORTS = "import \"~/facade\";\nexport { __probe, __probeAt, __probeEnv, __probeUs } from \"~/facade\";\n";
 /**
  * What the module's coroutine scheduler calls, for a plugin that uses
  * Promise or async/await (as/promise.ts, runtime/src/module.cpp). Only such a
@@ -48,6 +50,13 @@ export declare class HoistImports {
 }
 /** The import a coroutine parks in - the one Asyncify unwinds from. */
 export declare const SUSPEND_IMPORT = "env.co_suspend";
+/**
+ * What finishing throws to stop asc as soon as a plugin compiled without the
+ * scheduler's exports turns out to make a promise: it is compiled again with
+ * them, and asc's optimiser - most of a compile's time - is not run on a
+ * module that goes. asc hands a transform's throw back as its error.
+ */
+export declare const MAKES_PROMISE: Error;
 /**
  * Where compilePlugin writes the Pawn include for a plugin's natives: beside
  * the .aot, named after the plugin - or, for a plugin that implements an
@@ -87,8 +96,12 @@ export declare function compileToWasm(plugin: Pick<Plugin, 'source' | 'root' | '
  * calls once to write the module. `done` gets the functions' names, by wasm
  * index, as they are written.
  *
- * A plugin that makes a promise but was compiled without the scheduler's
- * exports is compiled again (compileToWasm), so nothing is done for it.
+ * A plugin that makes a promise - an async function, fetch, sleep - has the
+ * host drive its jobs, so one compiled without the scheduler's exports stops
+ * here, before asc's optimiser, with MAKES_PROMISE, to be compiled again with
+ * them: the optimiser has the whole program, and one compiled with them comes
+ * out otherwise. The optimiser only takes imports away, so a plugin that does
+ * not import co_wake here never does.
  */
 export declare function finishing(hoodExports: string, level: number | null, done?: (first: number, names: string[]) => void): {
     afterCompile(module: any): void;

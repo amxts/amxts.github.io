@@ -1,5 +1,7 @@
 import type { EventDoc, Text } from './events';
 export declare const MESSAGES: Record<string, EventDoc>;
+/** The words of `tempEntity`, the engine's own message rather than the game's. */
+export declare const TEMP_ENTITY: Text;
 /** The line every message's words end with: the game's names of the messages it hears. */
 export declare function gameName(names: string[]): Text;
 /** The words of a field only some of a name's messages carry: what it reads as on the others. */
