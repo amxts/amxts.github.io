@@ -117,4 +117,10 @@ export declare function timeLimitHlds(): i32;
 export declare function setTimeLimitHlds(cell: i32): void;
 export declare function maxPlayersHlds(): i32;
 export declare function setMaxPlayersHlds(cell: i32): void;
+/** Whether the game waits for players: ReGameDLL sets it as its win check finds a side with none to spawn. */
+export declare function neededPlayersHlds(): i32;
+export declare function setNeededPlayersHlds(cell: i32): void;
+/** The share of the escaping terrorists who escaped, as ReGameDLL divides them. */
+export declare function escapeRatioHlds(): i32;
+export declare function setEscapeRatioHlds(cell: i32): void;
 export {};

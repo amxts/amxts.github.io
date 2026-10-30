@@ -243,6 +243,12 @@ export declare class Entity {
      */
     touch(toucher: Entity, options?: ActionOptions): void;
     /**
+     * How far short of its full travel a door, a platform or a button stops, in units: the map's `lip` key. A door moves along `movedir` by its size on that axis, less 2, less `lip`. Means something only on a moving brush (`func_door`, `func_plat`, `func_button` and the like). Read only.
+     *
+     * Pawn: `get_ent_data_float(entity, "CBaseToggle", "m_flLip")`
+     */
+    get lip(): number;
+    /**
      * Plays a sound from the entity, heard by everyone near and fading with distance: `player.emitSound("myplugin/hit.wav")`. The path is under `sound/`, as `server.precache` takes it; `options` set the channel, the volume, the attenuation, the pitch, and `to` the one player who hears it.
      *
      * Pawn: `emit_sound`, `rh_emit_sound2`
@@ -1316,7 +1322,7 @@ export declare class Entity {
      *
      * Pawn: `ExecuteHamB(Ham_Use, ...)`, `ExecuteHam`
      */
-    use(caller: Entity, activator: Entity, useType: UseType, value: number, options?: ActionOptions): void;
+    use(activator: Entity, caller: Entity, useType: UseType, value: number, options?: ActionOptions): void;
     /**
      * Tells a moving entity - a door, a train - that `other` is in its way.
      *
@@ -3351,7 +3357,7 @@ export declare class GameFields {
     get skipSpawn(): boolean;
     set skipSpawn(value: boolean);
     /**
-     * `true` while a joining player is not shown the team menu.
+     * `true` while a joining player takes a side by `mp_auto_join_team`, without the team menu.
      *
      * Pawn: `CSGameRules::m_bSkipShowMenu`
      */
@@ -3386,7 +3392,7 @@ export declare class GameFields {
     get gameStartTime(): number;
     set gameStartTime(value: number);
     /**
-     * `true` when the sides were balanced at this round's start.
+     * `true` while the game moves a player to the other side to even the sides.
      *
      * Pawn: `CSGameRules::m_bTeamBalanced`
      */
@@ -3410,6 +3416,13 @@ export declare class Weapon extends Entity {
      */
     get classname(): WeaponName;
     set classname(value: WeaponName);
+    /**
+     * The body the weapon's view model is drawn with in its holder's hands: one model with several looks as body groups - set it in a `defaultDeploy` listener on every draw, `weapon.viewBody = 2`. Setting it holds the weapon, `0` among the bodies: while the weapon is in his hands, every animation of it comes from the server with this body, and his client does not predict them. When it leaves his hands - holstered, dropped, taken away - the hold is let go and the value forgotten; the getter reads `0` when none is set.
+     *
+     * Pawn: `pev->body`, `register_forward(FM_UpdateClientData, ..., 1)` with `set_cd(cd, CD_flNextAttack, ...)`
+     */
+    get viewBody(): number;
+    set viewBody(value: number);
     /**
      * The player holding the weapon, or `null` if it lies on the ground. Read only.
      *

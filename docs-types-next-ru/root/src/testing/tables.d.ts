@@ -15,7 +15,7 @@ export interface HookShape {
     ham?: number;
 }
 export interface Tables {
-    /** Every `export const X: i32 = N` in as/constants.ts. */
+    /** Every `export const X: i32 = N` in as/constants.ts, and the gamedata's members reapi does not list. */
     constants: Map<string, number>;
     /** The dispatcher's native ids (`NATIVE_x`) to names. */
     dispatched: Map<number, string>;

@@ -1,7 +1,7 @@
 /**
  * The server image of this core's version. Its module loads only the .aot of
  * the same release's wamrc, so a project runs on the image of its own core;
- * `bun run server:image` builds it from a checkout under the same name.
+ * `npm run server:image` builds it from a checkout under the same name.
  */
 export declare const SERVER_IMAGE: string;
 /**

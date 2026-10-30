@@ -1,4 +1,4 @@
-/** The third-party includes the core generates the API from: `bun run setup` fetches them. */
+/** The third-party includes the core generates the API from: `npm run setup` fetches them. */
 export declare const VENDOR: string;
 /** The server's own includes: addons/amxmodx/scripting/include beside its addons/amxts (AMXTS_SERVER), when it is there. */
 export declare function serverIncludes(): string | null;

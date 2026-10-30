@@ -6,6 +6,12 @@ export interface Place {
     line: number;
     column: number;
 }
+/** Where a function the compiler named starts: its wasm index, file and line. */
+export interface FunctionPlace {
+    index: number;
+    file: string;
+    line: number;
+}
 /** A plugin's map, read back. */
 export interface PluginMap {
     /** The project's folder for a dev build, else empty: the files are relative to it. */
@@ -14,15 +20,26 @@ export interface PluginMap {
     first: number;
     functions: string[];
     mappings: string;
+    places: FunctionPlace[];
 }
+/** A function's code in the wasm: its first byte and the one past its last. */
+export interface Body {
+    start: number;
+    end: number;
+}
+/** Whether a function's name, as a stack shows it, is the compiler's: an arrow's, an adapter's (`~arity|...`). */
+export declare function compilerNamed(name: string): boolean;
 /**
  * A plugin's map from asc's source map: each file by `name` - null leaves it
  * out, its code then has no place - and `functions`, by wasm index from
- * `first`. Code the source map gives no place - a call the optimiser made
- * anew, as often as not - is where the code before it is: a frame stops at
- * such calls. A mapping that says what the one before it said goes.
+ * `first`, their code at `bodies`. Code the source map gives no place - a
+ * call the optimiser made anew, as often as not - is where the code before it
+ * is: a frame stops at such calls. A mapping that says what the one before it
+ * said goes.
  */
-export declare function pluginMap(sourceMap: string, name: (file: string) => string | null, first: number, functions: string[], root?: string): PluginMap;
+export declare function pluginMap(sourceMap: string, name: (file: string) => string | null, first: number, functions: string[], bodies: Body[], root?: string): PluginMap;
+/** The code of each function the wasm defines, by index from the first defined one. */
+export declare function bodiesOf(wasm: Uint8Array): Body[];
 /** Where the code at byte `offset` of the wasm came from, or null. */
 export declare function placeOf(map: PluginMap, offset: number): Place | null;
 /**

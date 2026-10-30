@@ -3,7 +3,7 @@ import ts from 'typescript';
 export interface AutoImport {
     /** What the plugin writes: `Player`, `semiclip`. */
     name: string;
-    /** Where it comes from, as an import line writes it: `@amxts/core`, `@amxts/resemiclip`. */
+    /** Where it comes from, as an import line writes it: `@amxts/core`, `@amxts/semiclip`. */
     from: string;
     /** `import * as semiclip from "..."` rather than `import { Player } from "..."`. */
     namespace: boolean;

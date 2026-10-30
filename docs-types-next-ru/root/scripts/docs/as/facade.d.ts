@@ -439,6 +439,10 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Player.walksThrough': {
+        en: string;
+        ru: string;
+    };
     'Player.jumpSlowdown': {
         en: string;
         ru: string;
@@ -480,6 +484,70 @@ declare const _default: {
         ru: string;
     };
     'Movement.reset': {
+        en: string;
+        ru: string;
+    };
+    WalksThrough: {
+        en: string;
+        ru: string;
+    };
+    'WalksThrough.size': {
+        en: string;
+        ru: string;
+    };
+    'WalksThrough.add': {
+        en: string;
+        ru: string;
+    };
+    'WalksThrough.delete': {
+        en: string;
+        ru: string;
+    };
+    'WalksThrough.has': {
+        en: string;
+        ru: string;
+    };
+    'WalksThrough.clear': {
+        en: string;
+        ru: string;
+    };
+    'WalksThrough.values': {
+        en: string;
+        ru: string;
+    };
+    'WalksThrough.forEach': {
+        en: string;
+        ru: string;
+    };
+    WalkThroughLook: {
+        en: string;
+        ru: string;
+    };
+    WalkThroughLookOptions: {
+        en: string;
+        ru: string;
+    };
+    'WalkThroughLookOptions.fadeDistance': {
+        en: string;
+        ru: string;
+    };
+    'WalkThroughLookOptions.opacity': {
+        en: string;
+        ru: string;
+    };
+    'WalkThroughLookOptions.hideDistance': {
+        en: string;
+        ru: string;
+    };
+    'WalkThroughLook.fadeDistance': {
+        en: string;
+        ru: string;
+    };
+    'WalkThroughLook.opacity': {
+        en: string;
+        ru: string;
+    };
+    'WalkThroughLook.hideDistance': {
         en: string;
         ru: string;
     };
@@ -703,6 +771,22 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'ClientMessage.recipients': {
+        en: string;
+        ru: string;
+    };
+    TempEntityMessage: {
+        en: string;
+        ru: string;
+    };
+    'TempEntityMessage.type': {
+        en: string;
+        ru: string;
+    };
+    'TempEntityMessage.source': {
+        en: string;
+        ru: string;
+    };
     Resource: {
         en: string;
         ru: string;
@@ -712,6 +796,54 @@ declare const _default: {
         ru: string;
     };
     'Resource.index': {
+        en: string;
+        ru: string;
+    };
+    UserMessage: {
+        en: string;
+        ru: string;
+    };
+    'UserMessage.name': {
+        en: string;
+        ru: string;
+    };
+    'UserMessage.byte': {
+        en: string;
+        ru: string;
+    };
+    'UserMessage.char': {
+        en: string;
+        ru: string;
+    };
+    'UserMessage.short': {
+        en: string;
+        ru: string;
+    };
+    'UserMessage.long': {
+        en: string;
+        ru: string;
+    };
+    'UserMessage.angle': {
+        en: string;
+        ru: string;
+    };
+    'UserMessage.coord': {
+        en: string;
+        ru: string;
+    };
+    'UserMessage.text': {
+        en: string;
+        ru: string;
+    };
+    'UserMessage.entity': {
+        en: string;
+        ru: string;
+    };
+    'UserMessage.send': {
+        en: string;
+        ru: string;
+    };
+    'UserMessage.sendAll': {
         en: string;
         ru: string;
     };
@@ -1103,6 +1235,14 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Server.keep': {
+        en: string;
+        ru: string;
+    };
+    'Server.kept': {
+        en: string;
+        ru: string;
+    };
     PluginLanguage: {
         en: string;
         ru: string;
@@ -1279,7 +1419,15 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'Server.walkThroughLook': {
+        en: string;
+        ru: string;
+    };
     'Server.versions': {
+        en: string;
+        ru: string;
+    };
+    'Server.precached': {
         en: string;
         ru: string;
     };
@@ -1300,6 +1448,22 @@ declare const _default: {
         ru: string;
     };
     'Server.print': {
+        en: string;
+        ru: string;
+    };
+    Precached: {
+        en: string;
+        ru: string;
+    };
+    'Precached.models': {
+        en: string;
+        ru: string;
+    };
+    'Precached.sounds': {
+        en: string;
+        ru: string;
+    };
+    'Precached.files': {
         en: string;
         ru: string;
     };
@@ -1427,7 +1591,95 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'EntityStateEvent.sequence': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.gaitSequence': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.frame': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.frameRate': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.animTime': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.ducking': {
+        en: string;
+        ru: string;
+    };
+    'EntityStateEvent.solid': {
+        en: string;
+        ru: string;
+    };
     'EntityStateEvent.preventDefault': {
+        en: string;
+        ru: string;
+    };
+    ClientDataEvent: {
+        en: string;
+        ru: string;
+    };
+    'ClientDataEvent.player': {
+        en: string;
+        ru: string;
+    };
+    'ClientDataEvent.nextAttack': {
+        en: string;
+        ru: string;
+    };
+    'ClientDataEvent.fov': {
+        en: string;
+        ru: string;
+    };
+    'ClientDataEvent.weaponAnim': {
+        en: string;
+        ru: string;
+    };
+    'ClientDataEvent.maxSpeed': {
+        en: string;
+        ru: string;
+    };
+    'ClientDataEvent.origin': {
+        en: string;
+        ru: string;
+    };
+    'ClientDataEvent.velocity': {
+        en: string;
+        ru: string;
+    };
+    'ClientDataEvent.punchAngle': {
+        en: string;
+        ru: string;
+    };
+    'ClientDataEvent.viewOffset': {
+        en: string;
+        ru: string;
+    };
+    'ClientDataEvent.flags': {
+        en: string;
+        ru: string;
+    };
+    VisibilityEvent: {
+        en: string;
+        ru: string;
+    };
+    'VisibilityEvent.player': {
+        en: string;
+        ru: string;
+    };
+    'VisibilityEvent.origin': {
+        en: string;
+        ru: string;
+    };
+    'VisibilityEvent.addOrigin': {
         en: string;
         ru: string;
     };

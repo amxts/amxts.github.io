@@ -47,6 +47,10 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'AmxtsModule.standalone': {
+        en: string;
+        ru: string;
+    };
     'AmxtsModule.setup': {
         en: string;
         ru: string;

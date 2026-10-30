@@ -5,7 +5,8 @@
 import * as __0 from "@amxts/core";
 import * as __1 from "@amxts/config-core";
 import * as __2 from "@amxts/menu-core";
-import * as __3 from "@amxts/resemiclip";
+import * as __3 from "@amxts/perms";
+import * as __4 from "@amxts/semiclip";
 
 declare global {
 	export import ADStopFields = __0.ADStopFields;
@@ -120,6 +121,7 @@ declare global {
 	export import ClientConnectEvent = __0.ClientConnectEvent;
 	export import ClientConnectedEvent = __0.ClientConnectedEvent;
 	export import ClientConnectexEvent = __0.ClientConnectexEvent;
+	export import ClientDataEvent = __0.ClientDataEvent;
 	export import ClientDisconnectedEvent = __0.ClientDisconnectedEvent;
 	export import ClientImpulseEvent = __0.ClientImpulseEvent;
 	export import ClientInfochangedEvent = __0.ClientInfochangedEvent;
@@ -373,6 +375,7 @@ declare global {
 	export import PrecacheFileEvent = __0.PrecacheFileEvent;
 	export import PrecacheModelEvent = __0.PrecacheModelEvent;
 	export import PrecacheSoundEvent = __0.PrecacheSoundEvent;
+	export import Precached = __0.Precached;
 	export import PrimaryAmmoIndexEvent = __0.PrimaryAmmoIndexEvent;
 	export import PrimaryAttackEvent = __0.PrimaryAttackEvent;
 	export import PrintfEvent = __0.PrintfEvent;
@@ -517,6 +520,7 @@ declare global {
 	export import TeamScoreFields = __0.TeamScoreFields;
 	export import TeamScoreMessage = __0.TeamScoreMessage;
 	export import TeamStackedEvent = __0.TeamStackedEvent;
+	export import TempEntityMessage = __0.TempEntityMessage;
 	export import TextMsgFields = __0.TextMsgFields;
 	export import TextMsgMessage = __0.TextMsgMessage;
 	export import ThinkEvent = __0.ThinkEvent;
@@ -553,6 +557,7 @@ declare global {
 	export import UseType = __0.UseType;
 	export import UserInfo = __0.UserInfo;
 	export import UserInfoChangeEvent = __0.UserInfoChangeEvent;
+	export import UserMessage = __0.UserMessage;
 	export import VGUIMenuMessage = __0.VGUIMenuMessage;
 	export import Variant = __0.Variant;
 	export import VariantName = __0.VariantName;
@@ -560,8 +565,12 @@ declare global {
 	export import VguiMenu = __0.VguiMenu;
 	export import ViewModeFields = __0.ViewModeFields;
 	export import ViewModeMessage = __0.ViewModeMessage;
+	export import VisibilityEvent = __0.VisibilityEvent;
 	export import VisibleEvent = __0.VisibleEvent;
 	export import WaitTillLandEvent = __0.WaitTillLandEvent;
+	export import WalkThroughLook = __0.WalkThroughLook;
+	export import WalkThroughLookOptions = __0.WalkThroughLookOptions;
+	export import WalksThrough = __0.WalksThrough;
 	export import WaterJumpEvent = __0.WaterJumpEvent;
 	export import WaterLevel = __0.WaterLevel;
 	export import WeapPickupFields = __0.WeapPickupFields;
@@ -596,7 +605,8 @@ declare global {
 	export import weaponKindOf = __0.weaponKindOf;
 	export import configs = __1;
 	export import menus = __2;
-	export import semiclip = __3.semiclip;
+	export import perms = __3;
+	export import semiclip = __4.semiclip;
 }
 
 export {};

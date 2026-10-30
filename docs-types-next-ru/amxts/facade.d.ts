@@ -96,6 +96,20 @@ export declare class __ServerEvent {
     __keep(): void;
 }
 /**
+ * @hidden The slowest listener the plugin's walks of its events' listeners
+ * timed, for the module's line on a call that held the frame (amxts_slow_ms):
+ * 0 while the module looks for none - nothing is timed then - -1 while none
+ * is timed yet, else the listener's function in the table. The module sets
+ * it; an older one never does.
+ */
+export declare let __probe: i32;
+/** @hidden Where that listener is in its list: its place from 1, and the list's length in the high 16 bits. */
+export declare let __probeAt: i32;
+/** @hidden That listener's closure variables: for an adapter (`~arity|`), the function it calls. */
+export declare let __probeEnv: i32;
+/** @hidden That listener's own time, in microseconds. */
+export declare let __probeUs: i32;
+/**
  * @hidden The listeners of one event, walked by its dispatch in place - no
  * copy, no allocation - with the DOM's rules: a dispatch calls the listeners
  * there when it began (`begin` gives their count), so one added meanwhile
@@ -112,6 +126,10 @@ export declare class __Listeners<T> {
     private items;
     private depth;
     private holes;
+    private timedAt;
+    private timedFn;
+    private timedFrom;
+    private timedBase;
     /** How many listeners there are. */
     count: i32;
     push(item: T): void;
@@ -127,6 +145,12 @@ export declare class __Listeners<T> {
     begin(): i32;
     /** A dispatch ends; the outermost one closes the holes. */
     end(): void;
+    /**
+     * In a dispatch, ends the timing of the listener before `at` - its own
+     * time kept when it is the slowest yet - and starts `item`'s. The first
+     * place starts a dispatch afresh: a listener that trapped is not timed.
+     */
+    private time;
     private close;
 }
 /**
@@ -511,11 +535,30 @@ export declare function __countryOf(ip: string, code: bool): string | null;
 export declare function __logText(): string;
 /** @hidden The log line's arguments, as AMX Mod X's read_logargv gives them. */
 export declare function __logArgs(): string[];
+/** @hidden A number of the running command, by its field's number. */
+export declare function __usercmd(field: i32): f64;
+/** @hidden Writes a number of the running command. */
+export declare function __setUsercmd(field: i32, value: f64): void;
+/** @hidden The running command's view angles. */
+export declare function __usercmdAngles(): Vector;
+/** @hidden Writes the running command's view angles. */
+export declare function __setUsercmdAngles(value: number[]): void;
+/**
+ * @hidden A float field of the running command, by its engine_const.inc
+ * number (`usercmd_forwardmove`, `usercmd_viewangles`), through AMX Mod X's
+ * get_usercmd: what a kept cmdStart event reads into itself. Its __keep is
+ * compiled into every plugin that waits, so it takes no import of its own.
+ */
+export declare function __keptUsercmd(type: i32): Vector;
+/** @hidden A whole number field of the running command the same way (`usercmd_buttons`). */
+export declare function __keptUsercmdWhole(type: i32): f64;
+/** @hidden A Vector of `value`'s first three numbers, 0 for those it lacks. */
+export declare function __vectorOf(value: number[]): Vector;
 /** @hidden The name of the console command being told: `read_argv(0)`. */
 export declare function __commandName(): string;
 /** @hidden Its text after the name: a chat line without its quotes. */
 export declare function __commandText(): string;
-/** @hidden Its words after the name: the chat line's for `say` and `say_team`, the engine's for any other. */
+/** @hidden Its words after the name, as a command's (CommandLine): the chat line's for `say` and `say_team`. */
 export declare function __commandArgs(): string[];
 /** Параметры `player.setModel`: что идёт вместе с моделью. */
 export interface ModelOptions {
@@ -545,6 +588,26 @@ export declare class ServerVersions {
     reHlds: string | null, 
     /** ReGameDLL's API version, e.g. `"5.28"`; `null` on the original game. */
     reGameDll: string | null);
+}
+/**
+ * Доля места движка для прекешированных файлов, занятая картой:
+ * `server.precached.models`. На каждый вид — 512, вместе с моделями самой
+ * карты; ещё один останавливает сервер.
+ */
+export declare class Precached {
+    /** Прекешированные модели и спрайты, вместе с моделями карты, например `230`. */
+    readonly models: number;
+    /** Прекешированные звуки, например `180`. */
+    readonly sounds: number;
+    /** Другие прекешированные файлы, которые скачивают игроки, например `12`. */
+    readonly files: number;
+    constructor(
+    /** The models and sprites precached, the map's own included, e.g. `230`. */
+    models: number, 
+    /** The sounds precached, e.g. `180`. */
+    sounds: number, 
+    /** The other files precached for players to download, e.g. `12`. */
+    files: number);
 }
 /** Параметры `player.removeAllItems`: что уходит вместе с оружием. */
 export interface RemoveAllItemsOptions {
@@ -931,6 +994,12 @@ export declare class Player extends PlayerFields implements Client {
      */
     get movement(): Movement;
     /**
+     * Игроки, сквозь которых он проходит и которые проходят сквозь него: пара
+     * действует в обе стороны. `player.walksThrough.add(teammate)`; пара
+     * держится, пока её не удалят или один из двоих не уйдёт.
+     */
+    get walksThrough(): WalksThrough;
+    /**
      * Замедление игрока после прыжка, в оставшихся миллисекундах: игра ставит
      * его при прыжке, и прыжок, пока оно длится, медленнее. `0` — замедления
      * нет: `player.jumpSlowdown = 0` вместе с `player.slowdown = 1` сразу
@@ -975,8 +1044,9 @@ export declare class Player extends PlayerFields implements Client {
      */
     respawn(): void;
     /**
-     * Убивает игрока, как консольная команда `kill`. С
-     * `{ keepFrags: true }` смерть не отнимает фрагов.
+     * Убивает живого игрока, как консольная команда `kill`: самоубийство,
+     * которое стоит ему фрага. С `{ keepFrags: true }` смерть не отнимает
+     * фрагов.
      *
      * Pawn: `user_kill`, `user_silentkill`
      */
@@ -1280,29 +1350,19 @@ export declare class CommandInfo {
  * one who typed it with the usage, and sets `failed`: the handler does not run.
  */
 export declare class __CommandWords {
-    /** The player who typed it; `null` for the server's console. */
-    player: Player | null;
-    usage: string;
-    /** The line from each word on, as typed: what the last text argument takes; `null` for the words joined by a space. */
-    readonly rests: string[] | null;
     /** Set once a word is wrong: the one who typed it has been told. */
     failed: bool;
     /** How many words were typed. */
     count: i32;
     /** The player an async handler started before this command ran under, given back once it is done (__commandDone). */
     ambient: i32;
-    private read;
-    constructor(
     /** The player who typed it; `null` for the server's console. */
-    player: Player | null, usage: string, 
-    /** The words; `null` for the engine's command that runs, read the first time they are asked. */
-    words: string[] | null, 
-    /** The line from each word on, as typed: what the last text argument takes; `null` for the words joined by a space. */
-    rests?: string[] | null);
-    /** The object for the engine's command that runs now, typed with `argc` words, its name counted (consoleWords). */
-    again(player: Player | null, usage: string, argc: i32): __CommandWords;
-    /** The words, read from the engine's command while it runs: a command that takes none makes nothing. */
-    private get words();
+    player: Player | null;
+    usage: string;
+    private words;
+    private rests;
+    /** Takes the words of `line`, the command's text after its name, typed by `player` into the command of `usage`. */
+    again(player: Player | null, usage: string, line: string): __CommandWords;
     /** The word at `at`; `""` when it was not typed. */
     text(at: i32): string;
     /** The rest of the line from the word at `at`. */
@@ -1631,6 +1691,66 @@ export declare class Movement {
     reset(): void;
 }
 /**
+ * Игроки, сквозь которых проходит игрок, как множество: пара действует в обе
+ * стороны, так что `a.walksThrough.add(b)` — то же, что `b.walksThrough.add(a)`.
+ * Двое проходят друг сквозь друга, и их игры это предсказывают; мёртвый игрок
+ * и зритель проходят сквозь всех. Как партнёр выглядит вблизи —
+ * `server.walkThroughLook`.
+ *
+ * ```ts
+ * game.addEventListener("playerSpawn", ({ player }) => {
+ *   for (const other of server.players) {
+ *     if (other.team == player.team) player.walksThrough.add(other);
+ *   }
+ * }, { post: true });
+ * ```
+ */
+export declare class WalksThrough {
+    private id;
+    constructor(id: i32);
+    /** Число игроков, сквозь которых он проходит. */
+    get size(): number;
+    /** Пускает его и `player` друг сквозь друга. */
+    add(player: Player): WalksThrough;
+    /** Делает его и `player` снова твёрдыми друг для друга; `false`, если они и были. */
+    delete(player: Player): boolean;
+    /** Проходят ли он и `player` друг сквозь друга. */
+    has(player: Player): boolean;
+    /** Делает его снова твёрдым для всех. */
+    clear(): void;
+    /** Игроки, сквозь которых он проходит: их обходят и `for...of`, и `[...]`. */
+    values(): Player[];
+    /** Вызывает `callback` для каждого игрока, сквозь которого он проходит. */
+    forEach(callback: (player: Player) => void): void;
+}
+/**
+ * Вид игрока, сквозь которого проходишь, вблизи, для каждого игрока:
+ * полупрозрачным ближе `fadeDistance`, совсем не виден ближе `hideDistance`.
+ * Оба по умолчанию выключены, `0`. Задаётся целиком или частью:
+ *
+ * ```ts
+ * server.walkThroughLook = { fadeDistance: 250, opacity: 0.4, hideDistance: 48 };
+ * server.walkThroughLook = { hideDistance: 0 };
+ * ```
+ */
+export declare class WalkThroughLook {
+    /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него полупрозрачен; `0` — выключено. */
+    get fadeDistance(): number;
+    /** Насколько он непрозрачен вплотную, от `0` до `1`: к `fadeDistance` он становится целым. По умолчанию `0`. */
+    get opacity(): number;
+    /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него совсем не рисуется, а его прицел, выстрелы и `+use` проходят сквозь этого игрока; `0` — выключено. */
+    get hideDistance(): number;
+}
+/** Вид для `server.walkThroughLook`: названные поля меняются, остальные остаются. */
+export interface WalkThroughLookOptions {
+    /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него полупрозрачен; `0` — выключено. */
+    fadeDistance?: number;
+    /** Насколько он непрозрачен вплотную, от `0` до `1`: к `fadeDistance` он становится целым. */
+    opacity?: number;
+    /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него совсем не рисуется, а его прицел, выстрелы и `+use` проходят сквозь этого игрока; `0` — выключено. */
+    hideDistance?: number;
+}
+/**
  * Канал, на котором играет звук, одно из `"auto"` (по умолчанию), `"weapon"`,
  * `"voice"`, `"item"`, `"body"`, `"stream"`, `"static"`. Новый звук на канале
  * сущности обрывает тот, что играет на нём; `"auto"` не обрывает никогда.
@@ -1759,6 +1879,14 @@ export declare class ClientMessage {
      * Pawn: `return PLUGIN_HANDLED`
      */
     preventDefault(): void;
+    /**
+     * Отправляет сообщение только этим игрокам из тех, до кого оно дошло бы, —
+     * каждому копию: `event.recipients = players.filter(...)`; остальные его не
+     * получат.
+     *
+     * Pawn: `message_begin(MSG_ONE, ...)` для каждого игрока
+     */
+    set recipients(players: Player[]);
     /** @hidden Whether the message has the argument. */
     protected __has(arg: i32): bool;
     /** @hidden An argument as a number. */
@@ -1788,6 +1916,33 @@ export declare class ClientMessage {
     /** @hidden Sets or clears one bit of the argument, keeping the others. */
     protected __setBit(arg: i32, bit: i32, on: bool): void;
 }
+/**
+ * Временный эффект, который шлёт игра, — след на стене, спрей, искра, луч, —
+ * услышанный до того, как ушёл:
+ *
+ * ```ts
+ * server.addMessageListener("tempEntity", (event) => {
+ *   const maker = event.source?.owner ?? 0; // игрок банки спрея
+ *   if (maker != 0) event.recipients = server.players.filter(p => p.id == maker || !hidesOthers.has(p.id));
+ * });
+ * ```
+ *
+ * `type` — номер эффекта `TE_*`; остальные аргументы читаются по месту,
+ * через `event.args`, первый после типа — на месте `1`.
+ *
+ * Pawn: `register_message(SVC_TEMPENTITY, ...)`
+ */
+export declare class TempEntityMessage extends ClientMessage {
+    private readonly kind;
+    /** Эффект по его номеру `TE_*`: `TE_DECAL`, `TE_PLAYERDECAL`, `TE_SPARKS`, ... */
+    get type(): number;
+    /**
+     * Создатель эффекта: сущность, чей think сейчас идёт, — след спрея
+     * принадлежит банке спрея, чей `owner` — игрок, — иначе игрок, чья команда
+     * сейчас идёт; `null`, если ни то ни другое.
+     */
+    get source(): Entity | null;
+}
 /** Параметры `server.send`: игроки, которым уходит сообщение. */
 export interface SendOptions {
     /** Только игрокам, которые видят эту точку, как эффекты, — без гарантии доставки. */
@@ -1816,6 +1971,62 @@ export declare class __MessageOut {
     __setBytes(arg: i32, value: number[]): void;
     __setBit(arg: i32, bit: i32, on: bool): void;
     private reach;
+}
+/**
+ * Собственное сообщение плагина — для клиентского мода, который читает его по
+ * имени. Созданное на верхнем уровне, оно регистрируется при запуске сервера;
+ * его значения пишутся одно за другим и отправляются одному игроку или
+ * всем:
+ *
+ * ```ts
+ * const jump = new UserMessage("KzJump");
+ *
+ * jump.byte(1).coord(distance).text(player.name).send(player);
+ * jump.byte(2).sendAll();
+ * ```
+ *
+ * Имя — не длиннее 11 символов, сообщение несёт не больше 192 байт.
+ *
+ * Pawn: `engfunc(EngFunc_RegUserMsg, ...)`
+ */
+export declare class UserMessage {
+    /** Имя сообщения, по которому его ловит мод клиента, например `"KzJump"`; не длиннее 11 символов. */
+    readonly name: string;
+    private id;
+    private kinds;
+    private numbers;
+    private texts;
+    private size;
+    constructor(
+    /** The message's name, as the client's mod hooks it, e.g. `"KzJump"`; at most 11 characters. */
+    name: string);
+    /** Пишет байт, от `0` до `255`. */
+    byte(value: number): UserMessage;
+    /** Пишет байт со знаком, от `-128` до `127`. */
+    char(value: number): UserMessage;
+    /** Пишет число в два байта, от `-32768` до `32767`. */
+    short(value: number): UserMessage;
+    /** Пишет целое число в четыре байта. */
+    long(value: number): UserMessage;
+    /** Пишет угол в градусах, в один байт: с точностью до 1,4 градуса. */
+    angle(value: number): UserMessage;
+    /** Пишет координату, в два байта: с точностью до восьмой доли юнита, от `-4096` до `4096`. */
+    coord(value: number): UserMessage;
+    /** Пишет текст: его байты в UTF-8 и нулевой байт после них. */
+    text(value: string): UserMessage;
+    /** Пишет сущность — и игрока — её номером, в два байта; `0` для `null`. */
+    entity(value: Entity | null): UserMessage;
+    /**
+     * Отправляет игроку то, что записано после прошлой отправки. Сообщение
+     * больше 192 байт не отправляется, и консоль сервера говорит об этом.
+     */
+    send(player: Player): void;
+    /** Отправляет всем то, что записано после прошлой отправки: `jump.byte(2).sendAll()`. */
+    sendAll(): void;
+    private write;
+    private register;
+    private flush;
+    private writeAll;
 }
 /**
  * @hidden A handler of the game's message `id` (receiver, id, destination),
@@ -2105,6 +2316,13 @@ export declare class Server {
      */
     get game(): string;
     /**
+     * Вид игрока, сквозь которого проходишь, вблизи:
+     * `server.walkThroughLook = { fadeDistance: 250 }` делает его полупрозрачным
+     * ближе 250 юнитов. По умолчанию выключено.
+     */
+    get walkThroughLook(): WalkThroughLook;
+    set walkThroughLook(value: WalkThroughLookOptions);
+    /**
      * Версии того, что запущено на сервере: `server.versions.reGameDll !=
      * null` на ReGameDLL. У ReHLDS и ReGameDLL — версия их API, `null` на сервере
      * без них.
@@ -2112,6 +2330,12 @@ export declare class Server {
      * Pawn: `get_amxx_verstring`, `is_rehlds`, `is_regamedll`
      */
     get versions(): ServerVersions;
+    /**
+     * Доля места движка для прекешированных файлов, занятая картой, из 512
+     * на каждый вид: `server.precached.models`. Считается по уже сделанным
+     * прекешам; консоль предупреждает, когда вид близок к пределу.
+     */
+    get precached(): Precached;
     /**
      * Есть ли карта на сервере: `server.mapExists("de_dust2")`.
      *
@@ -2188,6 +2412,21 @@ export declare class Server {
      * Pawn: `amxts_load`
      */
     loadPlugin(file: string): void;
+    /**
+     * Сохраняет `value` под ключом `key` для следующего запуска плагина —
+     * перезагрузки, нового `.aot`, `amxts dev`, — который читает его через `server.kept`:
+     * `server.addEventListener("end", () => server.keep("run", run))`. Текст
+     * сохраняется как есть, `Uint8Array` — как байты, остальное — как JSON. Оно
+     * ждёт в памяти сервера: смена карты его удаляет.
+     */
+    keep<T>(key: string, value: T): void;
+    /**
+     * Значение, которое прошлый запуск плагина сохранил под ключом `key` через `server.keep`,
+     * или `undefined`, если там ничего нет: `server.kept<Uint8Array>("run")`.
+     * Оно доступно, пока плагин запускается, — на верхнем уровне и в событиях
+     * запуска, — и пропадает после.
+     */
+    kept<T>(key: string): T | undefined;
     /**
      * @hidden A player's command, its words read by `run` - the parser the
      * build writes for each `addCommand` call (scripts/typed-commands.ts).
@@ -2462,8 +2701,176 @@ export declare class EntityStateEvent {
      */
     get skin(): number;
     set skin(value: number);
+    /**
+     * Номер анимации, которую он видит у модели.
+     *
+     * Pawn: `ES_Sequence`
+     */
+    get sequence(): number;
+    set sequence(value: number);
+    /**
+     * Номер анимации ног игрока, которую он видит, поверх `sequence`; его клиент двигает ноги, пока игрок движется.
+     *
+     * Pawn: `ES_GaitSequence`
+     */
+    get gaitSequence(): number;
+    set gaitSequence(value: number);
+    /**
+     * Позиция в анимации, которую он видит на момент `animTime`, от `0` до `255` на всю последовательность; его клиент играет дальше от неё со скоростью `frameRate`.
+     *
+     * Pawn: `ES_Frame`
+     */
+    get frame(): number;
+    set frame(value: number);
+    /**
+     * Скорость анимации, которую он видит: `1` — обычная, `0` держит позу на `frame`.
+     *
+     * Pawn: `ES_FrameRate`
+     */
+    get frameRate(): number;
+    set frameRate(value: number);
+    /**
+     * Игровое время, когда анимация была на `frame`: его клиент играет её дальше от него.
+     *
+     * Pawn: `ES_AnimTime`
+     */
+    get animTime(): number;
+    set animTime(value: number);
+    /**
+     * Получает ли он игрока присевшим: его клиент тогда берёт размер присевшего игрока и, при наблюдении его глазами, высоту глаз присевшего. Позу присевшего задают `sequence` и `gaitSequence`.
+     *
+     * Pawn: `ES_UseHull`
+     */
+    get ducking(): boolean;
+    set ducking(value: boolean);
+    /**
+     * Получает ли он сущность твёрдой: его клиент предсказывает столкновение с ней. Столкновения на сервере от этого не меняются; игрок, сквозь которого он проходит, приходит нетвёрдым.
+     *
+     * Pawn: `ES_Solid`
+     */
+    get solid(): boolean;
+    set solid(value: boolean);
     /** Скрывает от него сущность в этом кадре. */
     preventDefault(): void;
+}
+/**
+ * Данные о самом игроке, которые его клиент получает в этом кадре. Запись поля меняет
+ * то, что есть у его клиента, а не самого игрока: по этим данным клиент
+ * предсказывает его движение и оружие. Зритель, который смотрит глазами игрока,
+ * получает данные этого игрока.
+ *
+ * ```ts
+ * game.addEventListener("clientData", (event) => {
+ *   event.nextAttack = 1; // его клиент в этом кадре не запускает его оружие
+ * });
+ * ```
+ *
+ * Pawn: `register_forward(FM_UpdateClientData, ..., 1)`, `get_cd`, `set_cd`
+ */
+export declare class ClientDataEvent {
+    /** @hidden */ __player: i32;
+    /** Игрок, которому они отправляются. */
+    get player(): Player;
+    /**
+     * Секунды до следующей атаки игрока, как их отсчитывает его клиент: клиент
+     * запускает его оружие — выстрелы и анимации — только при `0` и меньше.
+     *
+     * Pawn: `CD_flNextAttack`
+     */
+    get nextAttack(): number;
+    set nextAttack(value: number);
+    /**
+     * Угол обзора игрока в градусах, как его рисует клиент.
+     *
+     * Pawn: `CD_FOV`
+     */
+    get fov(): number;
+    set fov(value: number);
+    /**
+     * Анимация модели оружия от первого лица, по её номеру в модели.
+     *
+     * Pawn: `CD_WeaponAnim`
+     */
+    get weaponAnim(): number;
+    set weaponAnim(value: number);
+    /**
+     * Предельная скорость игрока, с которой клиент предсказывает его движение.
+     *
+     * Pawn: `CD_MaxSpeed`
+     */
+    get maxSpeed(): number;
+    set maxSpeed(value: number);
+    /**
+     * Позиция игрока, от которой его клиент предсказывает его движение.
+     *
+     * Pawn: `CD_Origin`
+     */
+    get origin(): Vector;
+    set origin(value: number[]);
+    /**
+     * Скорость игрока, юнитов в секунду: по ней клиент предсказывает его движение
+     * и покачивает его взгляд по её величине вдоль земли.
+     *
+     * Pawn: `CD_Velocity`
+     */
+    get velocity(): Vector;
+    set velocity(value: number[]);
+    /**
+     * Отброс взгляда игрока от отдачи или попадания, в градусах; прибавляется к углам его взгляда.
+     *
+     * Pawn: `CD_PunchAngle`
+     */
+    get punchAngle(): Vector;
+    set punchAngle(value: number[]);
+    /**
+     * Положение глаз игрока относительно `origin`, от которого клиент рисует его
+     * взгляд: `(0, 0, 17)` стоя, `(0, 0, 12)` присев.
+     *
+     * Pawn: `CD_ViewOfs`
+     */
+    get viewOffset(): Vector;
+    set viewOffset(value: number[]);
+    /**
+     * Флаги состояния игрока, с которыми клиент предсказывает его движение:
+     * `"onGround"`, `"ducking"` и остальные из `player.flags`.
+     *
+     * Pawn: `CD_Flags`
+     */
+    get flags(): EntityFlag[];
+    set flags(value: EntityFlag[]);
+}
+/**
+ * Точка, откуда игрок видит в этом кадре: сервер отправляет ему сущности, которые
+ * видны из `origin`. Запись переносит эту точку только на этот кадр — его вид и сам
+ * игрок остаются как были.
+ *
+ * ```ts
+ * game.addEventListener("visibility", (event) => {
+ *   event.origin = [0, 0, 1000]; // ему отправят то, что видно оттуда, сверху
+ * });
+ * ```
+ *
+ * Pawn: `register_forward(FM_SetupVisibility, ..., 1)`, `engfunc(EngFunc_SetFatPVS, ...)`
+ */
+export declare class VisibilityEvent {
+    /** @hidden */ __player: i32;
+    /** Игрок, о котором событие. */
+    get player(): Player;
+    /**
+     * Точка, откуда он видит: его глаза, или глаза игрока, за которым он наблюдает
+     * зрителем, или его `view`.
+     */
+    get origin(): Vector;
+    set origin(value: number[]);
+    /**
+     * Добавляет точку, откуда он видит в этом кадре: ему отправляется и то, что
+     * видно из `point`, а его собственный `origin` остаётся. До 15 точек за кадр.
+     *
+     * ```ts
+     * event.addOrigin(replay.origin); // ему отправят и место повтора
+     * ```
+     */
+    addOrigin(point: number[]): void;
 }
 /** Победитель раунда, одно из `"TERRORIST"`, `"CT"`, `"draw"` или `"none"` — рестарт без победителя. */
 export type RoundWinner = "TERRORIST" | "CT" | "draw" | "none";
@@ -2941,6 +3348,8 @@ export declare function __chainSet(index: i32, cell: i32): void;
 export declare function __chainSetText(index: i32, text: string): void;
 /** @hidden Есть ли на сервере хукчейны ReHLDS (`rehlds`) или ReGameDLL. */
 export declare function __hasChains(rehlds: bool): bool;
+/** @hidden Whether the module hooks ReGameDLL's chain `name` in Valve's game itself, heard there as with ReGameDLL. */
+export declare function __hooksOriginal(name: HookName): bool;
 /** Имя, версия, автор и описание плагина для `plugin({ ... })`; их показывает `amxts_plugins` в консоли сервера. */
 export interface PluginInfo {
     /** Имя плагина, например `"My Plugin"`. */
@@ -3082,7 +3491,7 @@ export declare class Forward<T1 = NoArgument, T2 = NoArgument, T3 = NoArgument, 
     name: string, crossing?: string);
     /**
      * Вызывает `handler` при каждом срабатывании форварда — из этого плагина,
-     * другого TypeScript-плагина или Pawn-плагина:
+     * другого TypeScript-плагина, Pawn-плагина или модуля AMX Mod X:
      *
      * ```ts
      * const greeted = new Forward<string, number>("showcase_on_greeted");
@@ -3090,9 +3499,9 @@ export declare class Forward<T1 = NoArgument, T2 = NoArgument, T3 = NoArgument, 
      * ```
      *
      * Параметры обработчика получают типы форварда; именованная функция может
-     * принимать их меньше. Форвард, созданный Pawn-плагином, доходит до него
-     * после обработчиков Pawn-плагинов; отправленный из TypeScript доходит до
-     * всех подписчиков.
+     * принимать их меньше. Форвард, созданный Pawn-плагином или модулем,
+     * доходит до него после обработчиков Pawn-плагинов, если ни один из них
+     * его не остановил; отправленный из TypeScript доходит до всех подписчиков.
      */
     subscribe(handler: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9, a10: T10, a11: T11, a12: T12, a13: T13, a14: T14, a15: T15, a16: T16, a17: T17, a18: T18, a19: T19, a20: T20, a21: T21, a22: T22, a23: T23, a24: T24, a25: T25, a26: T26, a27: T27, a28: T28, a29: T29, a30: T30, a31: T31, a32: T32) => void): void;
     /** Перестаёт вызывать обработчик, переданный в `subscribe()`. */
@@ -3140,7 +3549,10 @@ export declare class Storage<T = string> {
     name: string);
     /**
      * Значение по ключу `key` или `undefined`, если его нет, как у `Map.get`:
-     * `points.get(player.steamId) ?? 0`.
+     * `points.get(player.steamId) ?? 0`. Поле, без которого значение было
+     * сохранено, получает значение по умолчанию, а необязательное — `undefined`;
+     * значение, которое всё равно не читается как `T`, — `TypeError` с именем
+     * хранилища, ключом и полем, а само оно остаётся на диске.
      *
      * Pawn: `nvault_get`, `nvault_lookup`
      */
@@ -3176,7 +3588,7 @@ export declare class Storage<T = string> {
     private open;
 }
 export * from "./flags";
-import { Access, Effect, HideHud } from "./flags";
+import { Access, Effect, EntityFlag, HideHud } from "./flags";
 export * from "./hooks";
 import { GameAnswerMap, GameEventMap } from "./hooks";
 export * from "./vector";

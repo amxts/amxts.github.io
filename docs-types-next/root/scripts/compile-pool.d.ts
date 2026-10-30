@@ -2,10 +2,16 @@ import type { Plugin } from './compile';
 import type { NativesBeside, PluginNative } from './plugin-natives';
 /** A compile's peak, asc's and wamrc's together: measured at about a gigabyte, with room. */
 export declare const COMPILE_MEMORY: number;
-/** What the compiles of a build may hold together, unless AMXTS_BUILD_MEMORY says otherwise. */
+/**
+ * The least the compiles of a build may hold together: they take half the
+ * memory free when it starts, unless AMXTS_BUILD_MEMORY says otherwise. A
+ * large plugin's compile holds more than COMPILE_MEMORY - one measured
+ * close to 3 GB - and the other half is room for it and for the machine's
+ * other work.
+ */
 export declare const BUILD_MEMORY: number;
 /** How many compiles run at once: AMXTS_BUILD_JOBS, else as many as the memory budget holds, at most one per CPU. */
-export declare function compileSlots(env?: Record<string, string | undefined>, cpus?: number): number;
+export declare function compileSlots(env?: Record<string, string | undefined>, cpus?: number, free?: number): number;
 /**
  * `run` on every item, at most `slots` at a time, each given the slot it runs
  * in (0, 1, ...) and its index: the items start in order, and the results come
