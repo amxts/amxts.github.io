@@ -1731,7 +1731,7 @@ export declare class WalkThroughLook {
     /** The opacity of a partner at the closest, `0` to `1`: he grows to whole at `fadeDistance`. `0` by default. */
     get opacity(): number;
     set opacity(value: number);
-    /** Closer than this, in units, a player he walks through is not drawn for him at all; `0` is off. */
+    /** Closer than this, in units, a player he walks through is not drawn for him at all, and his aim, shots and `+use` go through him; `0` is off. */
     get hideDistance(): number;
     set hideDistance(value: number);
 }
