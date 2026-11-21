@@ -16,6 +16,15 @@ export interface AmxtsConfig {
     modules?: string[];
     /** Where the project's plugins are, from the project's folder: "plugins". */
     pluginsDir?: string;
+    /** Folders inside the plugins folder whose .ts files are plugins too: "games", or `{ path: "games", prefix: "minigame_" }`. */
+    plugins?: (string | {
+        path: string;
+        prefix?: string;
+    })[];
+    /** Folders inside the plugins folder that have a role: `api`, the modules plugins share ("modules"). */
+    dir?: {
+        api?: string;
+    };
     /** Where the build writes the .aot files and plugins.ini: "dist". */
     outDir?: string;
     /** The server the project is for, "rehlds" or "hlds": which includes the amxts command fetches without a server. */
@@ -82,10 +91,19 @@ export interface ModulePackage {
     description: string;
     definition: ModuleDefinition;
 }
+/** A folder of plugins: its path inside the plugins folder, with forward slashes, and the start of its .aot names. */
+export interface PluginFolder {
+    path: string;
+    prefix: string;
+}
 export interface Project {
     dir: string;
     config: AmxtsConfig | null;
     pluginsDir: string;
+    /** The folders whose .ts files are plugins: the plugins folder's top (`path` ""), then the config's `plugins`. */
+    pluginFolders: PluginFolder[];
+    /** The folder of the modules the project's plugins share, inside the plugins folder: "modules", or the config's `dir.api`. */
+    apiDir: string;
     outDir: string;
     /** Every module package found: the project itself, modules/*, node_modules. */
     packages: ModulePackage[];
@@ -136,11 +154,16 @@ export declare const CORE_ENTRIES: Record<string, string>;
 /** How a plugin names the core's file at a place: its entry, or the facade, which exports the rest. */
 export declare function coreEntryOf(place: string): string;
 /**
- * The project's own plugins: the .ts files at the top of its plugins folder.
- * A module's own folder, without a plugins folder, has none - only the core's
- * repository builds the core's as/.
+ * The project's own plugins: the .ts files at the top of its plugins folder
+ * and of each folder the config's `plugins` names. A module's own folder,
+ * without a plugins folder, has none - only the core's repository builds the
+ * core's as/.
  */
 export declare function projectPlugins(project: Project): string[];
+/** The folder of plugins a file is at the top of, or null. */
+export declare function pluginFolderOf(project: Project, source: string): PluginFolder | null;
+/** A plugin's name on the server, its .aot's: its file's, after its folder's prefix - games/hns.ts is minigame_hns. */
+export declare function pluginName(project: Project, source: string): string;
 /** A server's addons/amxts: the module's files, written over on every start. */
 export declare const SERVER_FOLDER: RegExp;
 /** The server's addons/amxts that AMXTS_SERVER names, or '' when it names none. */
@@ -204,12 +227,23 @@ export declare class Sources {
      * project's file of that name is at `<name>~.ts` (`place`).
      */
     ownFile(place: string): string | null;
+    /**
+     * A path inside the plugins folder as the tree has it. The modules the
+     * plugins share are at modules/ wherever `dir.api` keeps them; a folder
+     * called modules beside them is at modules~/.
+     */
+    private treePath;
+    /** treePath backwards: where a place in the tree is inside the plugins folder. */
+    private diskPath;
     /** Whether a file on disk is the project's own, in its plugins folder over the core's as/. */
     private isOwn;
+    /** Whether an own file's place in the tree is not its path in the plugins folder: hooks.ts is ~/hooks~.ts, api/x.ts ~/modules/x.ts. */
+    private movedInTree;
     /**
-     * An own file's import of the project's file at a place the core has -
-     * `./hooks`, `~/hooks` - as that file's place, `~/hooks~`; null for any
-     * other import.
+     * An own file's import of the project's file at another place in the tree
+     * than its path - `./hooks`, `~/hooks`, `~/api/duel` - as that file's place,
+     * `~/hooks~`, `~/modules/duel`; any import of an own file from a file
+     * moved so, since its relative paths no longer hold; null for any other import.
      */
     private ownMoved;
     /** The file on disk at this place in the tree, or null. */
@@ -217,6 +251,16 @@ export declare class Sources {
     /** The owner the build writes for a module without natives, at ~/<name>.ts. */
     generated(path: string): string | null;
     exists(path: string): boolean;
+    /**
+     * The plugin that owns ~/modules/<name>: the one of that name at the top
+     * of the plugins folder - a package's natives or generated owner among
+     * them - or else of a folder the config's `plugins` names. Its place in the
+     * tree, and its name on the server, which the module's calls go by.
+     */
+    ownerOf(name: string): {
+        place: string;
+        service: string;
+    } | null;
     /** What the build compiles as a module's owner: its natives file, or the generated one's place. */
     ownerSource(pkg: ModulePackage): string;
     /** Where a file on disk is in the tree: a package's plugin is ~/<name>.ts. */

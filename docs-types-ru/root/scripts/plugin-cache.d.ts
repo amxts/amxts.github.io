@@ -16,7 +16,7 @@ export declare function pluginCache(dir: string | null, ownIncludes?: string[]):
         misses: number;
     };
     /** The plugin as an earlier build kept it, put in place; its natives. Null when there is none to take. */
-    reuse(plugin: Plugin): PluginNative[] | null;
+    reuse(plugin: Plugin): Promise<PluginNative[] | null>;
     take: typeof take;
     /** compilePlugin, and what it made kept: what went wrong, or null. `natives` gets the plugin's natives. */
     compile(plugin: Plugin, natives: PluginNative[]): Promise<string | null>;

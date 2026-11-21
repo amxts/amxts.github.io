@@ -10,7 +10,7 @@ export interface SetupOptions extends ServerOptions {
     rootDir?: string;
     /**
      * Which of the project's plugins load, by file name - `["welcome.ts"]`,
-     * `["welcome"]` - in this order; all of them when left out, none for `[]`.
+     * `["welcome"]`, `["games/hns"]` - in this order; all of them when left out, none for `[]`.
      */
     plugins?: string[];
     /** Starts the map - plugin_init, plugin_cfg, then OnConfigsExecuted - once everything is loaded. True when left out. */

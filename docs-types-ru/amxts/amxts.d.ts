@@ -63,12 +63,35 @@ declare global {
 		autoImport?: boolean;
 	}
 
+	/** Папка плагинов в `plugins` файла `amxts.config.ts`. */
+	interface AmxtsPluginFolder {
+		/** Папка внутри папки плагинов, например `"games"`. */
+		path: string;
+		/** Начало имён её плагинов на сервере, например `"minigame_"`: тогда `games/hns.ts` — это `minigame_hns.aot`. */
+		prefix?: string;
+	}
+
+	/** `dir` в `amxts.config.ts`: папки внутри папки плагинов, у которых есть роль. */
+	interface AmxtsDirs {
+		/** Модули, общие для плагинов проекта (`~/api/duel` обслуживает плагин `duel`); по умолчанию `"modules"`. */
+		api?: string;
+	}
+
 	/** Настройки проекта, которые экспортирует `amxts.config.ts`: модули проекта и их настройки. */
 	interface AmxtsConfig extends ModuleOptions {
 		/** Пакеты модулей проекта по имени, например `"@amxts/menu-core"`. Сборка загружает каждый после тех, от которых он зависит. */
 		modules?: string[];
 		/** Папка с плагинами проекта; по умолчанию `"plugins"`. */
 		pluginsDir?: string;
+		/**
+		 * Папки внутри папки плагинов, `.ts`-файлы которых — тоже плагины, кроме её
+		 * верхнего уровня: `["games"]` или `[{ path: "games", prefix: "minigame_" }]` —
+		 * тогда `games/hns.ts` — это `minigame_hns.aot`. Остальные папки — код,
+		 * который плагины импортируют.
+		 */
+		plugins?: (string | AmxtsPluginFolder)[];
+		/** Папки внутри папки плагинов, у которых есть роль. */
+		dir?: AmxtsDirs;
 		/** Папка, куда сборка пишет файлы `.aot` и `plugins.ini`; по умолчанию `"dist"`. */
 		outDir?: string;
 		/**

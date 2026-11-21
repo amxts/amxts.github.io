@@ -67,6 +67,34 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'AmxtsConfig.plugins': {
+        en: string;
+        ru: string;
+    };
+    'AmxtsConfig.dir': {
+        en: string;
+        ru: string;
+    };
+    AmxtsPluginFolder: {
+        en: string;
+        ru: string;
+    };
+    'AmxtsPluginFolder.path': {
+        en: string;
+        ru: string;
+    };
+    'AmxtsPluginFolder.prefix': {
+        en: string;
+        ru: string;
+    };
+    AmxtsDirs: {
+        en: string;
+        ru: string;
+    };
+    'AmxtsDirs.api': {
+        en: string;
+        ru: string;
+    };
     'AmxtsConfig.outDir': {
         en: string;
         ru: string;
