@@ -108,6 +108,12 @@ export declare let __probeAt: i32;
 export declare let __probeEnv: i32;
 /** @hidden That listener's own time, in microseconds. */
 export declare let __probeUs: i32;
+/** @hidden The gap between the walk's time and the listeners' time, in microseconds. */
+export declare let __probeGap: i32;
+/** @hidden The timer handler's function in the table, set before it is called. */
+export declare let __timerFn: i32;
+/** @hidden That handler's closure variables. */
+export declare let __timerEnv: i32;
 /**
  * @hidden The listeners of one event, walked by its dispatch in place - no
  * copy, no allocation - with the DOM's rules: a dispatch calls the listeners
@@ -129,6 +135,8 @@ export declare class __Listeners<T> {
     private timedFn;
     private timedFrom;
     private timedBase;
+    private walkFrom;
+    private walkBase;
     /** How many listeners there are. */
     count: i32;
     push(item: T): void;
@@ -510,7 +518,35 @@ export declare class UserInfo {
      * Pawn: `set_user_info`
      */
     set(key: string, value: string): void;
+    /**
+     * Sends his userinfo to every client now, as the engine does when it
+     * changes: each client's `sendUserInfo` event hears it on its way.
+     * Without ReHLDS it goes through the engine's own function where amxts
+     * finds it - on Linux, and on Windows with a build of HLDS it knows -
+     * and elsewhere nothing is sent.
+     *
+     * Pawn: `rh_update_user_info`
+     */
+    resend(): void;
 }
+/**
+ * The userinfo a `sendUserInfo` event sends one client: a copy of the
+ * player's, keyed as `player.info` is. Writing a key changes what this client
+ * is sent and nothing else - not the player's own userinfo, not what the game
+ * knows of him.
+ */
+export declare class SentUserInfo {
+    /** A key's value in what is sent: `event.info.get("name")`; `""` for a key it has not. */
+    get(key: string): string;
+    /**
+     * Writes a key in what is sent: `event.info.set("name", "Bob + Alice")`.
+     * A key or a value with a backslash, which the text uses between them, is
+     * not written.
+     */
+    set(key: string, value: string): void;
+}
+/** @hidden What every `sendUserInfo` event's `info` is: it reads the call that runs. */
+export declare const __sentUserInfo: SentUserInfo;
 /** @hidden Every weapon's class name: what Ham Sandwich hooks a weapon's event on for "every weapon". */
 export declare function __weaponClassnames(): string[];
 /** An AMX Mod X module a plugin can check for, one of `"reapi"`, `"cstrike"`, `"fun"`, `"hamsandwich"`, `"engine"`, `"fakemeta"`. */
@@ -991,12 +1027,6 @@ export declare class Player extends PlayerFields implements Client {
      * changes or the player leaves.
      */
     get movement(): Movement;
-    /**
-     * The players he walks through, who walk through him: a pair is both
-     * ways. `player.walksThrough.add(teammate)`; a pair lasts until it is
-     * deleted or one of the two leaves.
-     */
-    get walksThrough(): WalksThrough;
     /**
      * The player's slowdown after a jump, in milliseconds left: the game sets
      * it as he jumps, and a jump while it lasts is slower. `0` for none:
@@ -1688,18 +1718,19 @@ export declare class Movement {
 }
 /**
  * The players a player walks through, as a set: a pair is both ways, so
- * `a.walksThrough.add(b)` is `b.walksThrough.add(a)`. The two pass through
- * each other, and their games predict it; a dead player or a spectator
- * passes everyone. How a partner looks close up is `server.walkThroughLook`.
+ * `walksThrough(a).add(b)` is `walksThrough(b).add(a)`. The two pass through
+ * each other, and their games predict it; while any pair is set, a dead
+ * player or a spectator passes everyone. A pair lasts until it is deleted or
+ * one of the two leaves.
  *
  * ```ts
- * game.addEventListener("playerSpawn", ({ player }) => {
- *   for (const other of server.players) {
- *     if (other.team == player.team) player.walksThrough.add(other);
- *   }
- * }, { post: true });
+ * for (const other of server.players) {
+ *   if (other.team == player.team) walksThrough(player).add(other);
+ * }
  * ```
  */
+export declare function walksThrough(player: Player): WalksThrough;
+/** The players a player walks through, as `walksThrough(player)` gives them. */
 export declare class WalksThrough {
     private id;
     constructor(id: i32);
@@ -1718,31 +1749,17 @@ export declare class WalksThrough {
     /** Calls `callback` for each player he walks through. */
     forEach(callback: (player: Player) => void): void;
 }
-/**
- * The look of a player one walks through, close up, for every player:
- * see-through below `fadeDistance`, not drawn at all below `hideDistance`.
- * Both are off, `0`, by default. It is set as a whole, or a part of it:
- *
- * ```ts
- * server.walkThroughLook = { fadeDistance: 250, opacity: 0.4, hideDistance: 48 };
- * server.walkThroughLook = { hideDistance: 0 };
- * ```
- */
-export declare class WalkThroughLook {
-    /** Closer than this, in units, a player he walks through is see-through to him; `0` is off. */
-    get fadeDistance(): number;
-    /** The opacity of a partner at the closest, `0` to `1`: he grows to whole at `fadeDistance`. `0` by default. */
-    get opacity(): number;
-    /** Closer than this, in units, a player he walks through is not drawn for him at all, and his aim, shots and `+use` go through him; `0` is off. */
-    get hideDistance(): number;
-}
-/** The look of `server.walkThroughLook` to set: the fields given change, the others stay. */
-export interface WalkThroughLookOptions {
+/** The options of `setWalkThroughOptions()`: the fields given change, the others stay. */
+export interface WalkThroughOptions {
+    /** Whether a grenade in flight passes the players its thrower walks through. */
+    grenades?: boolean;
+    /** Whether a player wholly above one he walks through stands on him, instead of falling through. */
+    standOnHead?: boolean;
     /** Closer than this, in units, a player he walks through is see-through to him; `0` is off. */
     fadeDistance?: number;
-    /** The opacity of a partner at the closest, `0` to `1`: he grows to whole at `fadeDistance`. */
+    /** The opacity of a partner at `hideDistance` (right up close without one), `0` to `1`: he grows to whole at `fadeDistance`. */
     opacity?: number;
-    /** Closer than this, in units, a player he walks through is not drawn for him at all, and his aim, shots and `+use` go through him; `0` is off. */
+    /** Closer than this, in units, a player he walks through fades out for him in a tenth of a second and is not drawn at all, and his aim, shots and `+use` go through him; `0` is off. */
     hideDistance?: number;
 }
 /**
@@ -1980,6 +1997,7 @@ export declare class __MessageOut {
  * ```
  *
  * A name is at most 11 characters, and a message carries at most 192 bytes.
+ * A game's message of a fixed size (`BuyClose`, of none) is sent only at that size.
  *
  * Pawn: `engfunc(EngFunc_RegUserMsg, ...)`
  */
@@ -1987,6 +2005,8 @@ export declare class UserMessage {
     /** The message's name, as the client's mod hooks it, e.g. `"KzJump"`; at most 11 characters. */
     readonly name: string;
     private id;
+    /** The size the game sends its message of this name with, `-1` for any. */
+    private fixedSize;
     private kinds;
     private numbers;
     private texts;
@@ -2310,13 +2330,6 @@ export declare class Server {
      * Pawn: `get_modname`
      */
     get game(): string;
-    /**
-     * The look of a player one walks through, close up:
-     * `server.walkThroughLook = { fadeDistance: 250 }` makes him see-through
-     * nearer than 250 units. Off by default.
-     */
-    get walkThroughLook(): WalkThroughLook;
-    set walkThroughLook(value: WalkThroughLookOptions);
     /**
      * The versions of what the server runs: `server.versions.reGameDll
      * != null` on ReGameDLL. ReHLDS's and ReGameDLL's are their API's,
@@ -3418,6 +3431,17 @@ export declare function callingPlugin(): number;
  * ```
  */
 export declare function onPluginStop(listener: (plugin: number) => void): void;
+/**
+ * Sets how partners pass and look, for every pair: a grenade passing its
+ * thrower's partners, a player standing on a partner's head, and a partner
+ * see-through or not drawn up close. All are off until a module turns them on.
+ *
+ * ```ts
+ * setWalkThroughOptions({ grenades: true });   // a grenade passes the partners of its thrower
+ * setWalkThroughOptions({ fadeDistance: 250, opacity: 0.4, hideDistance: 60 });
+ * ```
+ */
+export declare function setWalkThroughOptions(options: WalkThroughOptions): void;
 /** @hidden as/remote.ts: a call of the run `from` starts; the run whose call ran before it, to give back. */
 export declare function __callFrom(from: i32): i32;
 /** @hidden as/remote.ts: the plugin of the run `run` stopped. */

@@ -1,14 +1,30 @@
 /**
  * Semiclip for amxts plugins: who walks through whom, as a rule over two
- * players. The core keeps the pairs (`player.walksThrough`); this module asks
+ * players. The core keeps the pairs (the kit's `walksThrough`); this module asks
  * the rule and sets them, again whenever what the rule reads may have changed.
  * How to use it: README.md.
  */
 import { Player } from "@amxts/core";
-declare const _default: AmxtsModule<{
-    [key: string]: undefined;
-}>;
+/** Настройки проекта, `semiclip: { ... }` в `amxts.config.ts`. */
+export interface SemiclipOptions {
+    /** Пролетает ли граната сквозь игроков, сквозь которых проходит бросивший её. */
+    grenades: boolean;
+    /** Стоит ли игрок, целиком оказавшийся над тем, сквозь кого проходит, у него на голове, а не проваливается. */
+    standOnHead: boolean;
+    /** Ближе этого расстояния, в юнитах, партнёр полупрозрачен; `0` — выключено. */
+    fadeDistance: number;
+    /** Насколько партнёр непрозрачен на `hideDistance`, от `0` до `1`: к `fadeDistance` он становится целым. */
+    opacity: number;
+    /** Ближе этого расстояния, в юнитах, партнёр исчезает, не рисуется и не служит целью прицела; `0` — выключено. */
+    hideDistance: number;
+}
+declare const _default: AmxtsModule<SemiclipOptions>;
 export default _default;
+declare module "@amxts/core" {
+    interface ModuleOptions {
+        semiclip?: Partial<SemiclipOptions>;
+    }
+}
 /**
  * Проходит ли `player` сквозь `target`. Два игрока проходят друг сквозь
  * друга, когда правило разрешает это хотя бы в одну сторону:
@@ -34,6 +50,18 @@ export declare class Semiclip {
      */
     get rule(): SemiclipRule | null;
     set rule(rule: SemiclipRule | null);
+    /**
+     * Стоит ли игрок, целиком оказавшийся над тем, сквозь кого проходит, у него
+     * на голове, а не проваливается; `standOnHead` проекта, пока плагин его не
+     * задал. Заданное плагином действует, пока он работает: когда он
+     * останавливается, возвращается настройка проекта.
+     *
+     * ```ts
+     * semiclip.standOnHead = false; // пока работает этот плагин, буста с головы партнёра нет
+     * ```
+     */
+    get standOnHead(): boolean;
+    set standOnHead(on: boolean);
     /**
      * Рассчитывает пары заново — пары `player` или всех — после того, как
      * изменилось то, что читает правило и чего модуль не слышит: режим раунда,

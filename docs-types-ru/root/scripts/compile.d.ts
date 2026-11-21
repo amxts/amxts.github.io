@@ -30,7 +30,7 @@ export declare const HOOD_EXPORTS = "__amxts_exports.ts";
  * slowest one, which the module reads and sets (as/facade.ts, __probe):
  * exported, the optimiser does not fold them away.
  */
-export declare const BASE_EXPORTS = "import \"~/facade\";\nexport { __probe, __probeAt, __probeEnv, __probeUs } from \"~/facade\";\n";
+export declare const BASE_EXPORTS = "import \"~/facade\";\nexport { __probe, __probeAt, __probeEnv, __probeUs, __probeGap, __timerFn, __timerEnv } from \"~/facade\";\n";
 /**
  * What the module's coroutine scheduler calls, for a plugin that uses
  * Promise or async/await (as/promise.ts, runtime/src/module.cpp). Only such a

@@ -28,12 +28,12 @@ export interface Group {
 export interface User {
     id: string;
     name: string;
-    /** A `name:` entry's password, `sha256:<hex>`; "" for none. */
+    /** The entry's password, `sha256:<hex>`; "" for none. */
     password: string;
     groups: Membership[];
     grants: Grant[];
 }
-export type ChangeOp = "grant" | "revoke" | "groupCreate" | "groupDelete" | "groupWeight" | "parentAdd" | "parentRemove" | "memberAdd" | "memberRemove" | "userCreate";
+export type ChangeOp = "grant" | "revoke" | "groupCreate" | "groupDelete" | "groupWeight" | "parentAdd" | "parentRemove" | "memberAdd" | "memberRemove" | "userCreate" | "userPassword";
 /** One change, the editor's contract in one shape: the fields an op does not use stay empty. */
 export interface Change {
     op: ChangeOp;
@@ -48,6 +48,8 @@ export interface Change {
     weight: number;
     parent: string;
     name: string;
+    /** A userPassword's password, `sha256:<hex>`; "" takes it away. */
+    password: string;
 }
 /** Why a change was skipped, as the editor's contract names it; "" when it was applied. */
 export type SkipCode = "" | "groupMissing" | "groupExists" | "userMissing" | "parentMissing" | "cycle" | "defaultGroup" | "invalid";
@@ -57,6 +59,8 @@ export interface Declared {
     byDefault: boolean;
     /** Declared by a Pawn plugin, through perms_declare. */
     pawn: boolean;
+    /** The plugin that declared it, from callingPlugin(); 0 for the module's own or a Pawn plugin. */
+    plugin: number;
 }
 export declare const DEFAULT_GROUP = "default";
 /** A blank change of an op, to fill. */
@@ -73,7 +77,9 @@ export declare function userWith(id: string): User | null;
 /** `name:` ids are kept in lower case, the rest as written. */
 export declare function normalId(id: string): string;
 /** Declares a node; `false` when another plugin declared it first. */
-export declare function declare(node: string, description: string, byDefault: boolean, pawn: boolean): boolean;
+export declare function declare(node: string, description: string, byDefault: boolean, pawn: boolean, plugin?: number): boolean;
+/** Drops every node a stopped plugin declared, so a reload declares them again. */
+export declare function forgetPlugin(plugin: number): void;
 export declare function declaredNodes(): Declared[];
 /** The groups a player is in now, highest weight first, `default` last. */
 export declare function groupsOf(user: User | null, now: number): Group[];

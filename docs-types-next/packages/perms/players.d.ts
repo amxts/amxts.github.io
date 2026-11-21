@@ -3,7 +3,7 @@
  * may do, and AMX Mod X's flags written from his `amxx.*` nodes, so Pawn
  * plugins' `access` and `cmd_access` keep working.
  */
-import { Player } from "@amxts/core";
+import { Cvar, Player } from "@amxts/core";
 import type { User } from "./model";
 /** AMX Mod X's admin flags: the `amxx.<name>` node and its letter in `users.ini`. */
 export interface AdminFlag {
@@ -11,6 +11,7 @@ export interface AdminFlag {
     letter: string;
 }
 export declare const FLAGS: AdminFlag[];
+export declare const passwordField: Cvar;
 export declare function onChange(listener: (player: Player) => void): void;
 /** Whether the module writes the players' flags; not while admin.amxx does. */
 export declare function setWritesFlags(on: boolean): void;

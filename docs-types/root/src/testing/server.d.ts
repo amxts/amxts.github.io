@@ -201,6 +201,8 @@ export interface ServerOptions {
      * game on Linux, or a build of it amxts knows on Windows. Not unless said.
      */
     originalRules?: boolean;
+    /** Milliseconds between frames that `advance` fires: 10 (100 fps) unless said. */
+    frameTime?: number;
 }
 export type TeamName = 'UNASSIGNED' | 'TERRORIST' | 'CT' | 'SPECTATOR';
 export declare const TEAMS: TeamName[];
@@ -468,6 +470,8 @@ export declare class FakeServer {
     readonly originalRules: boolean;
     /** Milliseconds since the map started; advance() moves it. */
     time: number;
+    /** Milliseconds between frames that advance() fires; 10 (100 fps) unless set. */
+    frameTime: number;
     /** Date.now() when the map started. */
     readonly startedAt: number;
     /** The server's time zone; this machine's when undefined. */
@@ -610,13 +614,18 @@ export declare class FakeServer {
     readonly semiclipMasks: Map<number, number>;
     /** Whether a plugin took resemiclip's rules over (resemiclip_take_control). */
     semiclipControlled: boolean;
-    /** The players each walks through (player.walksThrough), by player: bit N - player N+1. One pair sets both. @internal */
+    /** The players each walks through (the kit's walksThrough), by player: bit N - player N+1. One pair sets both. @internal */
     readonly walkPartners: Map<number, number>;
-    /** How a partner looks close up, as plugins set server.walkThroughLook. */
+    /** How a partner looks close up, as a module set it with setWalkThroughOptions. */
     readonly walkThroughLook: {
         fadeDistance: number;
         opacity: number;
         hideDistance: number;
+    };
+    /** What else passes a partner, as a module set it with setWalkThroughOptions. */
+    readonly walkThroughOptions: {
+        grenades: boolean;
+        standOnHead: boolean;
     };
     /** The progress bar each player was last shown (rg_send_bartime), in seconds. */
     readonly bartimes: Map<number, number>;
@@ -871,7 +880,7 @@ export declare class FakeServer {
      * `bot.move` runs one too.
      */
     runCommand(player: FakePlayer, command?: Partial<FakeCommand>): FakeCommand;
-    /** The ids of the players `id` walks through (player.walksThrough), in order. */
+    /** The ids of the players `id` walks through, in order. */
     walksThrough(id: number): number[];
     /** Two players walk through each other, or not: both bits at once, as semiclip.h's SetPair. @internal */
     setWalkPair(a: number, b: number, on: boolean): void;
@@ -908,12 +917,15 @@ export declare class FakeServer {
     responses(): Promise<void>;
     /**
      * Moves the clock forward and runs every timer that comes due on the way,
-     * in order - a repeating one as many times as it fits. As on the server,
-     * a timer armed or repeated while timers fire waits for a later frame, a
-     * millisecond on: `setTimeout(fn, 0)` from a handler never fires in the
-     * same moment.
+     * in order, with a frame event every `frameTime` milliseconds in between -
+     * as the server fires timers and then `server_frame` each tick. A repeating
+     * timer fires as many times as it fits. A timer armed or repeated while
+     * timers fire waits for a later frame, a millisecond on: `setTimeout(fn, 0)`
+     * from a handler never fires in the same moment.
      */
     advance(ms: number): void;
+    /** A frame's server_frame, skipped while nothing listens: advance() runs one every frame time. */
+    private fireFrame;
     /**
      * Raises a forward the module raises - "client_putinserver",
      * "plugin_cfg" - or one a Pawn plugin sends: every handler and every
@@ -1358,6 +1370,7 @@ export declare class FakeServer {
         env_get(this: FakeServer, plugin: PluginInstance, name: number, out: number, max: number): number;
         info_get(this: FakeServer, plugin: PluginInstance, id: number, key: number, out: number, max: number): number;
         info_set(this: FakeServer, plugin: PluginInstance, id: number, key: number, value: number): void;
+        info_resend(this: FakeServer, _plugin: PluginInstance, id: number): void;
         player_silent(this: FakeServer, plugin: PluginInstance, id: number, on: number): 1 | 0;
         geo_country(this: FakeServer, plugin: PluginInstance, ip: number, what: number, out: number, max: number): number;
         player_switch_team(this: FakeServer, plugin: PluginInstance, id: number): void;
@@ -1441,7 +1454,7 @@ export declare class FakeServer {
         chain_set(this: FakeServer, _plugin: PluginInstance, index: number, value: number): void;
         chain_set_text(this: FakeServer, plugin: PluginInstance, index: number, text: number): void;
         game_api(this: FakeServer, _plugin: PluginInstance): 0 | 3 | 4;
-        original_hook(this: FakeServer, _plugin: PluginInstance, _id: number): 1 | 0;
+        original_hook(this: FakeServer, _plugin: PluginInstance, id: number): 1 | 0;
         chain_dispatch(this: FakeServer, plugin: PluginInstance, id: number, post: number, at: number, count: number, result: number): number;
         ham_bypass(this: FakeServer, _plugin: PluginInstance, _fn: number, _id: number): void;
         tag(this: FakeServer, _plugin: PluginInstance, tag: number): void;
@@ -1464,11 +1477,13 @@ export declare class FakeServer {
         send_string(this: FakeServer, plugin: PluginInstance, text: number): void;
         send_end(this: FakeServer, plugin: PluginInstance): void;
         msg_register(this: FakeServer, plugin: PluginInstance, name: number): number;
+        msg_fixed_size(this: FakeServer, _plugin: PluginInstance, _name: number): number;
         send_cells(this: FakeServer, plugin: PluginInstance, player: number, type: number, first: number, second: number, kinds: number): void;
         walk_through(this: FakeServer, plugin: PluginInstance, id: number, other: number, on: number): void;
         walk_through_get(this: FakeServer, plugin: PluginInstance, id: number): number;
         walk_look(this: FakeServer, plugin: PluginInstance, field: number, value: number): void;
         walk_look_get(this: FakeServer, plugin: PluginInstance, field: number): number;
+        walk_option(this: FakeServer, plugin: PluginInstance, field: number, on: number): void;
         ent_entity(this: FakeServer, plugin: PluginInstance, id: number, offset: number): number;
         ent_set_entity(this: FakeServer, plugin: PluginInstance, id: number, offset: number, index: number): void;
         member_slot(this: FakeServer, plugin: PluginInstance, className: number, name: number): number;

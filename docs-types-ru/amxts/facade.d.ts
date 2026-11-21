@@ -109,6 +109,12 @@ export declare let __probeAt: i32;
 export declare let __probeEnv: i32;
 /** @hidden That listener's own time, in microseconds. */
 export declare let __probeUs: i32;
+/** @hidden The gap between the walk's time and the listeners' time, in microseconds. */
+export declare let __probeGap: i32;
+/** @hidden The timer handler's function in the table, set before it is called. */
+export declare let __timerFn: i32;
+/** @hidden That handler's closure variables. */
+export declare let __timerEnv: i32;
 /**
  * @hidden The listeners of one event, walked by its dispatch in place - no
  * copy, no allocation - with the DOM's rules: a dispatch calls the listeners
@@ -130,6 +136,8 @@ export declare class __Listeners<T> {
     private timedFn;
     private timedFrom;
     private timedBase;
+    private walkFrom;
+    private walkBase;
     /** How many listeners there are. */
     count: i32;
     push(item: T): void;
@@ -511,7 +519,35 @@ export declare class UserInfo {
      * Pawn: `set_user_info`
      */
     set(key: string, value: string): void;
+    /**
+     * Сразу отправляет его userinfo всем клиентам, как движок делает, когда
+     * userinfo меняется: по пути его слышит событие `sendUserInfo` каждого
+     * клиента. Без ReHLDS он уходит через собственную функцию движка там, где
+     * amxts её находит, — на Linux, а на Windows в сборке HLDS, которую он
+     * знает, — а в остальных случаях ничего не отправляется.
+     *
+     * Pawn: `rh_update_user_info`
+     */
+    resend(): void;
 }
+/**
+ * Userinfo, который событие `sendUserInfo` отправляет одному клиенту: копия
+ * userinfo игрока, с ключами, как у `player.info`. Запись ключа меняет то,
+ * что уходит этому клиенту, и больше ничего — ни userinfo самого игрока, ни
+ * то, что о нём знает игра.
+ */
+export declare class SentUserInfo {
+    /** Значение ключа в том, что уходит: `event.info.get("name")`; `""` для ключа, которого там нет. */
+    get(key: string): string;
+    /**
+     * Записывает ключ в то, что уходит: `event.info.set("name", "Bob + Alice")`.
+     * Ключ или значение с обратной косой чертой, которой текст их разделяет, не
+     * записывается.
+     */
+    set(key: string, value: string): void;
+}
+/** @hidden What every `sendUserInfo` event's `info` is: it reads the call that runs. */
+export declare const __sentUserInfo: SentUserInfo;
 /** @hidden Every weapon's class name: what Ham Sandwich hooks a weapon's event on for "every weapon". */
 export declare function __weaponClassnames(): string[];
 /** Модуль AMX Mod X, наличие которого плагин может проверить, — одно из `"reapi"`, `"cstrike"`, `"fun"`, `"hamsandwich"`, `"engine"`, `"fakemeta"`. */
@@ -993,12 +1029,6 @@ export declare class Player extends PlayerFields implements Client {
      * не сменится карта или игрок не уйдёт.
      */
     get movement(): Movement;
-    /**
-     * Игроки, сквозь которых он проходит и которые проходят сквозь него: пара
-     * действует в обе стороны. `player.walksThrough.add(teammate)`; пара
-     * держится, пока её не удалят или один из двоих не уйдёт.
-     */
-    get walksThrough(): WalksThrough;
     /**
      * Замедление игрока после прыжка, в оставшихся миллисекундах: игра ставит
      * его при прыжке, и прыжок, пока оно длится, медленнее. `0` — замедления
@@ -1692,19 +1722,19 @@ export declare class Movement {
 }
 /**
  * Игроки, сквозь которых проходит игрок, как множество: пара действует в обе
- * стороны, так что `a.walksThrough.add(b)` — то же, что `b.walksThrough.add(a)`.
- * Двое проходят друг сквозь друга, и их игры это предсказывают; мёртвый игрок
- * и зритель проходят сквозь всех. Как партнёр выглядит вблизи —
- * `server.walkThroughLook`.
+ * стороны, так что `walksThrough(a).add(b)` — то же, что `walksThrough(b).add(a)`.
+ * Двое проходят друг сквозь друга, и их игры это предсказывают; пока задана
+ * хоть одна пара, мёртвый игрок и зритель проходят сквозь всех. Пара держится,
+ * пока её не удалят или один из двоих не уйдёт.
  *
  * ```ts
- * game.addEventListener("playerSpawn", ({ player }) => {
- *   for (const other of server.players) {
- *     if (other.team == player.team) player.walksThrough.add(other);
- *   }
- * }, { post: true });
+ * for (const other of server.players) {
+ *   if (other.team == player.team) walksThrough(player).add(other);
+ * }
  * ```
  */
+export declare function walksThrough(player: Player): WalksThrough;
+/** Игроки, сквозь которых проходит игрок, как их даёт `walksThrough(player)`. */
 export declare class WalksThrough {
     private id;
     constructor(id: i32);
@@ -1723,31 +1753,17 @@ export declare class WalksThrough {
     /** Вызывает `callback` для каждого игрока, сквозь которого он проходит. */
     forEach(callback: (player: Player) => void): void;
 }
-/**
- * Вид игрока, сквозь которого проходишь, вблизи, для каждого игрока:
- * полупрозрачным ближе `fadeDistance`, совсем не виден ближе `hideDistance`.
- * Оба по умолчанию выключены, `0`. Задаётся целиком или частью:
- *
- * ```ts
- * server.walkThroughLook = { fadeDistance: 250, opacity: 0.4, hideDistance: 48 };
- * server.walkThroughLook = { hideDistance: 0 };
- * ```
- */
-export declare class WalkThroughLook {
-    /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него полупрозрачен; `0` — выключено. */
-    get fadeDistance(): number;
-    /** Насколько он непрозрачен вплотную, от `0` до `1`: к `fadeDistance` он становится целым. По умолчанию `0`. */
-    get opacity(): number;
-    /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него совсем не рисуется, а его прицел, выстрелы и `+use` проходят сквозь этого игрока; `0` — выключено. */
-    get hideDistance(): number;
-}
-/** Вид для `server.walkThroughLook`: названные поля меняются, остальные остаются. */
-export interface WalkThroughLookOptions {
+/** Настройки для `setWalkThroughOptions()`: названные поля меняются, остальные остаются. */
+export interface WalkThroughOptions {
+    /** Пролетает ли граната сквозь игроков, сквозь которых проходит бросивший её. */
+    grenades?: boolean;
+    /** Стоит ли игрок, целиком оказавшийся над тем, сквозь кого проходит, у него на голове, а не проваливается. */
+    standOnHead?: boolean;
     /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него полупрозрачен; `0` — выключено. */
     fadeDistance?: number;
-    /** Насколько он непрозрачен вплотную, от `0` до `1`: к `fadeDistance` он становится целым. */
+    /** Насколько он непрозрачен на `hideDistance` (без неё — вплотную), от `0` до `1`: к `fadeDistance` он становится целым. */
     opacity?: number;
-    /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, для него совсем не рисуется, а его прицел, выстрелы и `+use` проходят сквозь этого игрока; `0` — выключено. */
+    /** Ближе этого расстояния, в юнитах, игрок, сквозь которого он проходит, за десятую долю секунды исчезает для него и совсем не рисуется, а его прицел, выстрелы и `+use` проходят сквозь этого игрока; `0` — выключено. */
     hideDistance?: number;
 }
 /**
@@ -1986,6 +2002,7 @@ export declare class __MessageOut {
  * ```
  *
  * Имя — не длиннее 11 символов, сообщение несёт не больше 192 байт.
+ * Сообщение игры фиксированного размера (`BuyClose`, без байт) отправляется только этого размера.
  *
  * Pawn: `engfunc(EngFunc_RegUserMsg, ...)`
  */
@@ -1993,6 +2010,8 @@ export declare class UserMessage {
     /** Имя сообщения, по которому его ловит мод клиента, например `"KzJump"`; не длиннее 11 символов. */
     readonly name: string;
     private id;
+    /** The size the game sends its message of this name with, `-1` for any. */
+    private fixedSize;
     private kinds;
     private numbers;
     private texts;
@@ -2315,13 +2334,6 @@ export declare class Server {
      * Pawn: `get_modname`
      */
     get game(): string;
-    /**
-     * Вид игрока, сквозь которого проходишь, вблизи:
-     * `server.walkThroughLook = { fadeDistance: 250 }` делает его полупрозрачным
-     * ближе 250 юнитов. По умолчанию выключено.
-     */
-    get walkThroughLook(): WalkThroughLook;
-    set walkThroughLook(value: WalkThroughLookOptions);
     /**
      * Версии того, что запущено на сервере: `server.versions.reGameDll !=
      * null` на ReGameDLL. У ReHLDS и ReGameDLL — версия их API, `null` на сервере
@@ -3423,6 +3435,17 @@ export declare function callingPlugin(): number;
  * ```
  */
 export declare function onPluginStop(listener: (plugin: number) => void): void;
+/**
+ * Задаёт, как партнёры проходят и выглядят, для всех пар: граната сквозь
+ * партнёров бросившего, стояние на голове партнёра и партнёр вблизи
+ * полупрозрачный или невидимый. Всё выключено, пока не включит модуль.
+ *
+ * ```ts
+ * setWalkThroughOptions({ grenades: true });   // граната пролетает сквозь партнёров бросившего
+ * setWalkThroughOptions({ fadeDistance: 250, opacity: 0.4, hideDistance: 60 });
+ * ```
+ */
+export declare function setWalkThroughOptions(options: WalkThroughOptions): void;
 /** @hidden as/remote.ts: a call of the run `from` starts; the run whose call ran before it, to give back. */
 export declare function __callFrom(from: i32): i32;
 /** @hidden as/remote.ts: the plugin of the run `run` stopped. */

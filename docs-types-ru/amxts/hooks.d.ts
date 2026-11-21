@@ -1,5 +1,5 @@
 /// <reference path="../as-types.d.ts" />
-import { ClientDataEvent, EntityStateEvent, Player, RoundWinner, Team, TouchEvent, UseType, Vector, VisibilityEvent } from "./facade";
+import { ClientDataEvent, EntityStateEvent, Player, RoundWinner, SentUserInfo, Team, TouchEvent, UseType, Vector, VisibilityEvent } from "./facade";
 import { Entity, HitGroup, Weapon, WeaponKind } from "./entities";
 import { Damage } from "./flags";
 /**
@@ -5086,6 +5086,20 @@ export declare class SendDeathMessageEvent extends HookEvent {
     set rarity(values: KillRarity[]);
 }
 /**
+ * Движок отправляет клиенту userinfo игрока — его имя, модель и остальные ключи: когда он заходит, когда userinfo меняется, по `player.info.resend()`. Запишите `event.info`, чтобы показать этому клиенту другое; у самого игрока всё остаётся как было. Без ReHLDS (чистый HLDS): слышно, как с ReHLDS, на Linux, а на Windows — со сборкой HLDS, которую amxts знает; в остальных случаях его ничто не слышит. `receiver` — `null`, когда движок отправляет всем клиентам сразу.
+ *
+ * Pawn: `RH_SV_WriteFullClientUpdate` (const client, buffer, const receiver)
+ */
+export declare class SendUserInfoEvent extends HookEvent {
+    private readonly kind;
+    /** Игрок, чей userinfo отправляется. */
+    get player(): Player;
+    /** Клиент, которому он отправляется; `null`, когда он уходит всем сразу. */
+    get receiver(): Player | null;
+    /** Что этому клиенту уходит из userinfo игрока, по ключам, как `player.info`: `event.info.set("name", ...)` меняет то, что видит этот клиент, и больше ничего. */
+    get info(): SentUserInfo;
+}
+/**
  * Called whenever game sends an animation to his current holder (player)
  *
  * Pawn: `RG_CBasePlayerWeapon_SendWeaponAnim` (const this, iAnim, skiplocal), `Ham_CS_Weapon_SendWeaponAnim`
@@ -7776,6 +7790,12 @@ export interface GameEventMap {
      */
     sendDeathMessage: SendDeathMessageEvent;
     /**
+     * Движок отправляет клиенту userinfo игрока — его имя, модель и остальные ключи: когда он заходит, когда userinfo меняется, по `player.info.resend()`. Запишите `event.info`, чтобы показать этому клиенту другое; у самого игрока всё остаётся как было. Без ReHLDS (чистый HLDS): слышно, как с ReHLDS, на Linux, а на Windows — со сборкой HLDS, которую amxts знает; в остальных случаях его ничто не слышит. `receiver` — `null`, когда движок отправляет всем клиентам сразу.
+     *
+     * Pawn: `RH_SV_WriteFullClientUpdate`
+     */
+    sendUserInfo: SendUserInfoEvent;
+    /**
      * Called whenever game sends an animation to his current holder (player)
      *
      * Pawn: `RG_CBasePlayerWeapon_SendWeaponAnim`, `Ham_CS_Weapon_SendWeaponAnim`
@@ -8307,6 +8327,7 @@ export interface GameAnswerMap {
     secondaryAttack: void;
     selectSpawnPoint: Entity;
     sendDeathMessage: void;
+    sendUserInfo: void;
     sendWeaponAnim: void;
     serverCommand: void;
     serverDeactivate: void;

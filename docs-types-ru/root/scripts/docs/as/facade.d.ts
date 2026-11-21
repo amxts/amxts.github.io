@@ -439,10 +439,6 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    'Player.walksThrough': {
-        en: string;
-        ru: string;
-    };
     'Player.jumpSlowdown': {
         en: string;
         ru: string;
@@ -487,6 +483,10 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    walksThrough: {
+        en: string;
+        ru: string;
+    };
     WalksThrough: {
         en: string;
         ru: string;
@@ -519,35 +519,31 @@ declare const _default: {
         en: string;
         ru: string;
     };
-    WalkThroughLook: {
+    'WalkThroughOptions.fadeDistance': {
         en: string;
         ru: string;
     };
-    WalkThroughLookOptions: {
+    'WalkThroughOptions.opacity': {
         en: string;
         ru: string;
     };
-    'WalkThroughLookOptions.fadeDistance': {
+    'WalkThroughOptions.hideDistance': {
         en: string;
         ru: string;
     };
-    'WalkThroughLookOptions.opacity': {
+    setWalkThroughOptions: {
         en: string;
         ru: string;
     };
-    'WalkThroughLookOptions.hideDistance': {
+    WalkThroughOptions: {
         en: string;
         ru: string;
     };
-    'WalkThroughLook.fadeDistance': {
+    'WalkThroughOptions.grenades': {
         en: string;
         ru: string;
     };
-    'WalkThroughLook.opacity': {
-        en: string;
-        ru: string;
-    };
-    'WalkThroughLook.hideDistance': {
+    'WalkThroughOptions.standOnHead': {
         en: string;
         ru: string;
     };
@@ -1155,6 +1151,22 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'UserInfo.resend': {
+        en: string;
+        ru: string;
+    };
+    SentUserInfo: {
+        en: string;
+        ru: string;
+    };
+    'SentUserInfo.get': {
+        en: string;
+        ru: string;
+    };
+    'SentUserInfo.set': {
+        en: string;
+        ru: string;
+    };
     'Client.isHltv': {
         en: string;
         ru: string;
@@ -1416,10 +1428,6 @@ declare const _default: {
         ru: string;
     };
     'Server.game': {
-        en: string;
-        ru: string;
-    };
-    'Server.walkThroughLook': {
         en: string;
         ru: string;
     };

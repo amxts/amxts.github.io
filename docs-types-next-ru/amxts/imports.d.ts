@@ -442,7 +442,9 @@ declare global {
 	export import SendAudioMessage = __0.SendAudioMessage;
 	export import SendDeathMessageEvent = __0.SendDeathMessageEvent;
 	export import SendOptions = __0.SendOptions;
+	export import SendUserInfoEvent = __0.SendUserInfoEvent;
 	export import SendWeaponAnimEvent = __0.SendWeaponAnimEvent;
+	export import SentUserInfo = __0.SentUserInfo;
 	export import Server = __0.Server;
 	export import ServerChangelevelEvent = __0.ServerChangelevelEvent;
 	export import ServerCommandEvent = __0.ServerCommandEvent;
@@ -568,9 +570,6 @@ declare global {
 	export import VisibilityEvent = __0.VisibilityEvent;
 	export import VisibleEvent = __0.VisibleEvent;
 	export import WaitTillLandEvent = __0.WaitTillLandEvent;
-	export import WalkThroughLook = __0.WalkThroughLook;
-	export import WalkThroughLookOptions = __0.WalkThroughLookOptions;
-	export import WalksThrough = __0.WalksThrough;
 	export import WaterJumpEvent = __0.WaterJumpEvent;
 	export import WaterLevel = __0.WaterLevel;
 	export import WeapPickupFields = __0.WeapPickupFields;
