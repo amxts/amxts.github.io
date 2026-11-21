@@ -1,6 +1,6 @@
 /**
- * Whether a plugin owns `~/modules/<name>`: as/<name>.ts beside it - or, on a
- * server, where plugins are compiled from the plugins folder, <name>.aot.
+ * Whether a plugin owns `~/modules/<name>`: a plugin of that name (Sources.ownerOf)
+ * - or, on a server, where plugins are compiled from the plugins folder, <name>.aot.
  */
 export declare function hasOwner(root: string, name: string): boolean;
 type Wire = {
@@ -97,7 +97,7 @@ export interface ModuleSurface {
     serve: string;
     callbacks: boolean;
 }
-export declare function surfaceOf(analysis: ModuleAnalysis): ModuleSurface;
+export declare function surfaceOf(analysis: ModuleAnalysis, service?: string): ModuleSurface;
 /** The current project's surfaces on disk. */
 export declare function keptSurfaces(): import("./compile-cache").DiskCache;
 /**
@@ -115,9 +115,11 @@ export declare function analyzeModule(root: string, name: string): Promise<Modul
  */
 export declare function compileAlone(root: string, name: string): Promise<any>;
 /** The module as a plugin that does not own it reads it. */
-export declare function proxySource(analysis: ModuleAnalysis): string;
-/** The owner's side: the dispatcher that runs each call on the real module. */
-export declare function serveSource(analysis: ModuleAnalysis): string;
+export declare function proxySource(analysis: ModuleAnalysis, service?: string): string;
+/** The owner's side: the dispatcher that runs each call on the real module, as the plugin `service` on the server. */
+export declare function serveSource(analysis: ModuleAnalysis, service?: string): string;
+/** The modules with an owner a plugin reaches, as `<name>:<hash>`: a kept compile of it holds while these do. */
+export declare function moduleVersions(root: string, entry: string): Promise<string[]>;
 /**
  * One compile's shared modules: which of the modules it reaches it runs and
  * which it calls, worked out - and the modules analysed - before asc starts.
