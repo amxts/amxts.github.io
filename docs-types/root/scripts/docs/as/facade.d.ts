@@ -1167,6 +1167,10 @@ declare const _default: {
         en: string;
         ru: string;
     };
+    'SentUserInfo.clear': {
+        en: string;
+        ru: string;
+    };
     'Client.isHltv': {
         en: string;
         ru: string;

@@ -111,6 +111,15 @@ export interface HookResult {
 /** A hookchain's argument: a number, a boolean, text, or a vector as `[x, y, z]`. */
 export type HookArg = Value | number[];
 /** A user message a plugin sent: ScreenFade, StatusIcon, ... */
+/** A round a plugin ended: `server.roundEnds`. */
+export interface RoundEnd {
+    status: number;
+    event: number;
+    delay: number;
+    message: string;
+    sound: string;
+    trigger: boolean;
+}
 export interface UserMessage {
     name: string;
     /** The player it went to; 0 for everyone. */
@@ -319,8 +328,10 @@ export declare class FakePlayer extends FakeEntity {
     get team(): TeamName;
     set team(value: TeamName);
     get muted(): boolean;
-    /** The chat lines he was shown, one a line, colour bytes taken out. */
+    /** The chat lines he was shown, one a line, colour bytes taken out: one text. */
     get chat(): string;
+    /** The same lines one by one: `chatLines.at(-1)` is the last. */
+    get chatLines(): string[];
     /**
      * The chat lines as the client got them, colour codes `\x01`-`\x04` kept:
      * the client draws no colour in a line that does not start with one.
@@ -341,7 +352,10 @@ export declare class FakePlayer extends FakeEntity {
     get items(): FakeWeapon[];
     /** What is in his hands. */
     get activeItem(): FakeWeapon | null;
-    /** Hands him a weapon, at the end of its slot's chain. */
+    /**
+     * Hands him a weapon, at the end of its slot's chain; with empty hands he
+     * draws it, as the game's FShouldSwitchWeapon has it.
+     */
     give(kind: string): FakeWeapon;
     /** Takes a weapon out of his slots, as the game's RemovePlayerItem does: it is no longer his. */
     takeWeapon(weapon: FakeEntity): void;
@@ -573,15 +587,17 @@ export declare class FakeServer {
     };
     /** The map's light, as `server.lightStyle` last set it: `"m"` the map's own. */
     lightStyle: string;
-    /** Rounds a plugin ended with rg_round_end, in order. */
-    readonly roundEnds: {
-        status: number;
-        event: number;
-        delay: number;
-        message: string;
-        sound: string;
-        trigger: boolean;
-    }[];
+    /** The spawn point the game gave each side last, by team: the next respawn takes the one after it. @internal */
+    readonly lastSpawns: Map<TeamName, number>;
+    /**
+     * Rounds a plugin ended, in order: with rg_round_end, its arguments; with
+     * game.endRound, the winner and the delay it wrote in the game rules, the
+     * message and the sound it told everyone (`""` none), and `trigger` when it
+     * told the round's listeners too (`dispatch`).
+     */
+    readonly roundEnds: RoundEnd[];
+    /** The round game.endRound is ending, while the call that ends it runs: what it tells everyone fills it in. @internal */
+    roundEnding: RoundEnd | null;
     /** Sounds played: from an entity (emit_sound, rh_emit_sound2, `to` the one player who hears it), or to a player alone (SendAudio, rg_send_audio). */
     readonly sounds: {
         entity: number;
@@ -727,6 +743,8 @@ export declare class FakeServer {
     }>;
     private menuIds;
     private userids;
+    /** A round game.endRound ended, from the game rules it wrote: its winner, why (rg_round_end's event for it), the delay. */
+    private endRound;
     /** A userid for a player who comes: one more than the last. @internal */
     nextUserid(): number;
     /** What precache_model and precache_sound were asked for, in order: the index is the place + 1. */

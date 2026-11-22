@@ -30,6 +30,8 @@ export interface WorkerJob {
     dir: string | null;
     /** The includes the build writes itself. */
     includes: string[];
+    /** asc's check alone (checkPlugin), past the plugin cache: `amxts typecheck`. */
+    check?: boolean;
 }
 export type WorkerResult = Compiled & {
     beside: NativesBeside;
@@ -44,10 +46,12 @@ export interface CompileAll {
     finished?: (index: number, compiled: Compiled) => void;
     /** The workers below the machine's other work: the test server's build, which no one waits on at the keyboard. */
     low?: boolean;
+    /** asc's check alone, of every plugin even after a failure: `amxts typecheck`. */
+    check?: boolean;
 }
 /**
  * The plugins compiled, several at once when there is room - in this process
- * when there is room for one. After a failure no other compile starts: those
- * that did not are null.
+ * when there is room for one. After a failure no other compile starts, but
+ * for a check: those that did not are null.
  */
 export declare function compileAll(plugins: Plugin[], options: CompileAll): Promise<(Compiled | null)[]>;
