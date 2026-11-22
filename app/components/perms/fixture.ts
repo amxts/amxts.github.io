@@ -76,7 +76,7 @@ export function demoSession(now = Date.now()): PermsSession {
   return {
     version: 1,
     revision: 0,
-    server: { name: 'KZ #1 · Climb & Bhop', address: '46.174.52.17:27015', storage: 'mysql', context: 'kz1' },
+    server: { name: 'KZ #1 · Climb & Bhop', address: '46.174.52.17:27015', storage: 'mysql', context: 'kz1', contexts: ['kz1', 'classic', 'nhnse'] },
     createdAt: at(-0.2),
     expiresAt: at(0.8),
     nodes: declared,

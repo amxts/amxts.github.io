@@ -47,7 +47,7 @@ export interface PermsUser {
 export interface PermsSession {
   version: number
   revision?: number
-  server: { name: string, address: string, storage: 'file' | 'mysql', context: string | null }
+  server: { name: string, address: string, storage: 'file' | 'mysql', context: string | null, contexts?: string[] }
   createdAt: string
   expiresAt: string
   nodes: PermsNode[]
