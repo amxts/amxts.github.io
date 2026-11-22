@@ -97,6 +97,10 @@ export declare class MenuEvent {
     timeout: boolean;
     /** Отметка `preventDefault()`: `true`, если его вызвали. */
     defaultPrevented: boolean;
+    /** На `"message"`: текст на языке игрока, без префикса чата - например, «Список наблюдателей пуст». */
+    text: string;
+    /** На `"message"`: текст, как он записан в файле меню - ключ перевода, например `"MYMENU_SPEC_EMPTY"`, или сам текст. */
+    key: string;
     constructor(
     /** The player whose menu it is. */
     player: Player, 

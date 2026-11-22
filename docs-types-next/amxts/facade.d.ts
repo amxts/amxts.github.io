@@ -544,6 +544,12 @@ export declare class SentUserInfo {
      * not written.
      */
     set(key: string, value: string): void;
+    /**
+     * Empties what is sent, which is what the engine sends of a player who
+     * left: this client forgets the player - he is gone from its scoreboard -
+     * until his userinfo is sent to it again.
+     */
+    clear(): void;
 }
 /** @hidden What every `sendUserInfo` event's `info` is: it reads the call that runs. */
 export declare const __sentUserInfo: SentUserInfo;
@@ -1345,7 +1351,7 @@ export interface CommandOptions {
     access?: Access;
     /** The command's description, for `server.commands` - what a `/help` prints. */
     description?: string;
-    /** The chat a chat command is heard in, one of: `"say"` the common chat, `"team"` the team's, `"both"` either (the default). */
+    /** The chat a chat command is heard in, one of: `"say"` the common chat, `"team"` the team's, `"both"` either (the default). It is about the names with `/`: a name without one, as `"cp"` in `["/cp", "cp"]`, is a console command whatever this says. */
     chat?: "say" | "team" | "both";
 }
 /** A command the plugin added, as `server.commands` lists it: what a `/help` shows. */
@@ -2152,6 +2158,11 @@ export declare class Cvar {
      * while plugins are still loading takes the server down.
      */
     attach(): void;
+    /**
+     * Whether the server has the cvar now: one with no default may be made by
+     * a plugin that loads later, so a Cvar not found yet looks again.
+     */
+    private found;
     private hook;
     /** `true` when the server has this cvar. */
     get exists(): bool;

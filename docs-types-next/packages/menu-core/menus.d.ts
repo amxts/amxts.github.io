@@ -97,6 +97,10 @@ export declare class MenuEvent {
     timeout: boolean;
     /** A mark of `preventDefault()`: `true` once it was called. */
     defaultPrevented: boolean;
+    /** On `"message"`: the text in the player's language, without the chat prefix - e.g. `"Spectator list is empty"`. */
+    text: string;
+    /** On `"message"`: the text as the menu file has it - a translation key, e.g. `"MYMENU_SPEC_EMPTY"`, or the text itself. */
+    key: string;
     constructor(
     /** The player whose menu it is. */
     player: Player, 

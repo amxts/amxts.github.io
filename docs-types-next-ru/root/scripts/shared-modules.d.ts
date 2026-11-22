@@ -1,3 +1,18 @@
+/** A .aot as its modules' section tells (compile.ts's MODULES_SECTION): `[serves|calls, module, hash]` a line; null when an older core built it. */
+export interface PluginVersions {
+    name: string;
+    lines: string[][] | null;
+}
+export declare function pluginVersions(name: string, section: string | null): PluginVersions;
+/**
+ * The calls in `built` of another version of a module than its owner in one
+ * of `folders` serves - a line each. On the server such a call answers
+ * nothing, so a build stops on it.
+ */
+export declare function wrongVersions(built: PluginVersions[], folders: {
+    where: string;
+    plugins: PluginVersions[];
+}[]): string[];
 /**
  * Whether a plugin owns `~/modules/<name>`: a plugin of that name (Sources.ownerOf)
  * - or, on a server, where plugins are compiled from the plugins folder, <name>.aot.
@@ -126,6 +141,8 @@ export declare function moduleVersions(root: string, entry: string): Promise<str
  * `read` goes into the compile's readFile, `transform` into its transforms.
  */
 export declare function sharedModulesBuild(root: string, entry: string): Promise<{
+    /** The modules it serves and calls, the lines of compile.ts's MODULES_SECTION. */
+    versions: string[];
     /** The proxy in place of a module this plugin does not own. */
     read(path: string, text: string): string;
     transform: {

@@ -545,6 +545,12 @@ export declare class SentUserInfo {
      * записывается.
      */
     set(key: string, value: string): void;
+    /**
+     * Опустошает то, что уходит, — это же движок отправляет об игроке, который
+     * вышел: этот клиент забывает игрока — тот пропадает из его таблицы
+     * счёта, — пока его userinfo не отправят ему снова.
+     */
+    clear(): void;
 }
 /** @hidden What every `sendUserInfo` event's `info` is: it reads the call that runs. */
 export declare const __sentUserInfo: SentUserInfo;
@@ -1346,7 +1352,7 @@ export interface CommandOptions {
     access?: Access;
     /** Описание команды для `server.commands` - то, что печатает `/help`. */
     description?: string;
-    /** Чат, в котором слышно команду чата, одно из: `"say"` — общий, `"team"` — командный, `"both"` — любой (по умолчанию). */
+    /** Чат, в котором слышно команду чата, одно из: `"say"` — общий, `"team"` — командный, `"both"` — любой (по умолчанию). Относится к именам со `/`: имя без него, как `"cp"` в `["/cp", "cp"]`, — команда консоли, что бы здесь ни стояло. */
     chat?: "say" | "team" | "both";
 }
 /** Команда, которую добавил плагин, как её перечисляет `server.commands`: то, что показывает `/help`. */
@@ -2157,6 +2163,11 @@ export declare class Cvar {
      * плагины ещё загружаются, роняет сервер.
      */
     attach(): void;
+    /**
+     * Whether the server has the cvar now: one with no default may be made by
+     * a plugin that loads later, so a Cvar not found yet looks again.
+     */
+    private found;
     private hook;
     /** `true`, если такой квар есть на сервере. */
     get exists(): bool;

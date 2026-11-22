@@ -4,6 +4,8 @@ export declare const CORE_DIR: string;
 /** What `~/` is: the core's facade, natives and libraries. */
 export declare const CORE_PLUGINS: string;
 export declare const CONFIG_FILE = "amxts.config.ts";
+/** The official modules that took another name: the old one, the new one. */
+export declare const RENAMED_PACKAGES: Map<string, string>;
 /**
  * A project's folders of game files and where each goes in the game folder,
  * as the amxts-server image lays a project out (docker/server/start.sh): its
@@ -206,11 +208,11 @@ export declare class Sources {
     private readonly stale;
     constructor(root: string, project: Project);
     /**
-     * Whether a file is a plugin's code, which auto-imports reach: the
-     * project's plugins folder but its modules/, or a plugin outside every
-     * package (a test's). The core's as/ and a module - a package, or a file
-     * under modules/ - import what they use: a module is compiled in projects
-     * and on servers whose settings it does not know.
+     * Whether a file is the project's code, which auto-imports reach: its
+     * plugins folder - its own modules too, which only it builds - or a
+     * plugin outside every package (a test's). The core's as/ and a module
+     * package import what they use: a package is compiled in projects and on
+     * servers whose settings it does not know.
      */
     private isPlugin;
     /** A plugin's text with the imports of what it uses without importing (scripts/auto-imports.ts). */
@@ -244,6 +246,7 @@ export declare class Sources {
      * than its path - `./hooks`, `~/hooks`, `~/api/duel` - as that file's place,
      * `~/hooks~`, `~/modules/duel`; any import of an own file from a file
      * moved so, since its relative paths no longer hold; null for any other import.
+     * A test's plugin outside the plugins folder reaches them by `~/` the same way.
      */
     private ownMoved;
     /** The file on disk at this place in the tree, or null. */

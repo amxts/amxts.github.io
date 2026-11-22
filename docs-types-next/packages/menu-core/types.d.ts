@@ -162,7 +162,7 @@ export type RowTest = (context: MenuContext) => boolean;
 /** A list source: the rows of a list menu for the player who looks; `null` lists the players instead. */
 export type ListSource = (context: MenuContext) => ListRow[] | null;
 /** A menu event's type, one of `"open"` and `"close"` as they happen, or `"show"` before a menu opens, to stop it. */
-export type MenuEventType = "open" | "close" | "show";
+export type MenuEventType = "open" | "close" | "show" | "message";
 /** Menu Core's options: `menus` in `amxts.config.ts`. */
 export interface MenuCoreOptions {
     /** The menu file, from `configs/`: e.g. `"menu"` is `configs/menu.ini`, `menu.yaml`, `menu.yml`, `menu.json` or `menu.jsonc` - the first that is there; `"myserver/menu.yaml"` is that file. */

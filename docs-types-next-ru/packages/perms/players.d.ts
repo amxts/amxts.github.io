@@ -13,8 +13,12 @@ export interface AdminFlag {
 export declare const FLAGS: AdminFlag[];
 export declare const passwordField: Cvar;
 export declare function onChange(listener: (player: Player) => void): void;
-/** Whether the module writes the players' flags; not while admin.amxx does. */
-export declare function setWritesFlags(on: boolean): void;
+/**
+ * Whether the module writes the players' flags and AMX Mod X's admin list:
+ * not while admin.amxx or admin_sql.amxx runs. Asked at each write, so a
+ * load that did not see the plugin does not take its admins from it.
+ */
+export declare function writesFlags(): boolean;
 export declare function sha256(text: string): string;
 /** Works out a player's permissions again, writes his flags, and tells the listeners when anything changed. */
 export declare function refresh(player: Player): void;

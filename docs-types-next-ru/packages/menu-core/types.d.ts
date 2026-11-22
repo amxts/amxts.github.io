@@ -162,7 +162,7 @@ export type RowTest = (context: MenuContext) => boolean;
 /** Источник списка: строки меню-списка для игрока, который смотрит; `null` — вместо них список игроков. */
 export type ListSource = (context: MenuContext) => ListRow[] | null;
 /** Тип события меню, одно из `"open"` и `"close"` — когда это происходит, или `"show"` — до открытия меню, чтобы его остановить. */
-export type MenuEventType = "open" | "close" | "show";
+export type MenuEventType = "open" | "close" | "show" | "message";
 /** Настройки Menu Core: `menus` в `amxts.config.ts`. */
 export interface MenuCoreOptions {
     /** Файл меню от `configs/`: например, `"menu"` — `configs/menu.ini`, `menu.yaml`, `menu.yml`, `menu.json` или `menu.jsonc` — первый, который есть; `"myserver/menu.yaml"` — этот файл. */

@@ -84,6 +84,17 @@ export declare class ConfigNode {
     setStrings(path: string, values: string[]): boolean;
     /** Удаляет значение, к которому ведёт путь; `false`, если его не было. */
     remove(path: string): boolean;
+    /**
+     * Задаёт комментарий на строках перед значением, к которому ведёт путь, —
+     * перед этим значением для `""` — вместо прежнего: каждую строку текста
+     * после знака формата, `;` в INI, `#` в YAML, `//` в JSON. `""`
+     * убирает его. `false`, если путь не ведёт ни к какому значению, и для
+     * верха INI-файла: у него нет своей строки.
+     *
+     *     maps.setStrings("de_dust2.2x2", ["240", "90"]);
+     *     maps.setComment("de_dust2.2x2", "ROUND TIME | FREEZE TIME");
+     */
+    setComment(path: string, comment: string): boolean;
     /** Записывает весь файл обратно в его формате, с комментариями, которые стояли на отдельных строках. `false` для текста, отданного `parse()`. */
     save(): boolean;
     private put;

@@ -58,6 +58,12 @@ export declare const SUSPEND_IMPORT = "env.co_suspend";
  */
 export declare const MAKES_PROMISE: Error;
 /**
+ * The .aot's section of the modules' versions it serves and calls, a line
+ * each - `serves minigame_hns 1234`, `calls duel -5678` - which a build checks
+ * across dist/, and against a server's plugins folder (scripts/shared-modules.ts).
+ */
+export declare const MODULES_SECTION = "amxts.modules";
+/**
  * Where compilePlugin writes the Pawn include for a plugin's natives: beside
  * the .aot, named after the plugin - or, for a plugin that implements an
  * include (a contract), under that include's own name, so a Pawn plugin's
@@ -87,6 +93,12 @@ export declare function writeInclude(output: string, natives: PluginNative[]): v
  */
 export declare function compileToWasm(plugin: Pick<Plugin, 'source' | 'root' | 'quick'>, wasm: string, names?: boolean, natives?: PluginNative[]): Promise<string | null>;
 /**
+ * What asc says of a plugin, as a build would compile it - the same files,
+ * auto-imports, proxies, natives and settings - without making the binary:
+ * `amxts typecheck`'s second half. What went wrong, or null.
+ */
+export declare function checkPlugin(plugin: Pick<Plugin, 'source' | 'root'>): Promise<string | null>;
+/**
  * The last transform of a compile: Binaryen's work after asc's own, on the
  * module asc is about to write - a quick build's optimisation at `level`,
  * and Asyncify for a plugin whose coroutines can park. It runs there rather
@@ -106,5 +118,12 @@ export declare function compileToWasm(plugin: Pick<Plugin, 'source' | 'root' | '
 export declare function finishing(hoodExports: string, level: number | null, done?: (first: number, names: string[]) => void): {
     afterCompile(module: any): void;
 };
+/**
+ * A compile's problem as the build and the typecheck print it: asc's errors,
+ * one per block, as `as/file.ts:line:col - message` over the line it points
+ * at, each file named from the current folder. Anything else - wamrc's - is
+ * passed through as it came.
+ */
+export declare function readable(problem: string): string;
 /** `module.name` of every function a wasm binary imports. */
 export declare function importsOf(wasm: Uint8Array): Set<string>;

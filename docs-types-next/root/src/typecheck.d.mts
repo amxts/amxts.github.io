@@ -11,4 +11,11 @@ export function buildProblems(program: ts.Program, root?: string): {
     node: ts.Node;
     message: string;
 }[];
+/**
+ * TypeScript over the project in the current folder, and what the build reads
+ * otherwise, printed as tsc prints its errors.
+ *
+ * @returns {number} how many errors
+ */
+export function typescriptErrors(): number;
 import ts from 'typescript';
